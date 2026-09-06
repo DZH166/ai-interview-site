@@ -33,10 +33,11 @@ const Search = (() => {
     (ctx.docs || []).forEach(d => {
       units.push({ kind: 'doc', docId: d.id, field: 'title', anchor: '', text: norm(d.title + ' ' + (d.summary || '')), raw: d.title, weight: 2.0, topic: d.topic });
       Markdown.sections(d.md).forEach(sec => {
-        if (sec.buf.join('').trim()) {
+        const body = sec.buf.join('\n');
+        if (body.trim()) {
           units.push({
             kind: 'doc', docId: d.id, field: 'section', anchor: sec.id, topic: d.topic,
-            text: norm(sec.title + '\n' + sec.buf.join('\n')), raw: sec.title, weight: 1.2
+            text: norm(sec.title + '\n' + body), raw: sec.title + '\n' + body, weight: 1.2
           });
         }
       });
@@ -44,10 +45,11 @@ const Search = (() => {
     (ctx.userDocs || []).forEach(d => {
       units.push({ kind: 'udoc', docId: d.id, field: 'title', anchor: '', text: norm(d.title), raw: d.title, weight: 2.0, topic: '' });
       Markdown.sections(d.text || '').forEach(sec => {
-        if (sec.buf.join('').trim()) {
+        const body = sec.buf.join('\n');
+        if (body.trim()) {
           units.push({
             kind: 'udoc', docId: d.id, field: 'section', anchor: sec.id, topic: '',
-            text: norm(sec.title + '\n' + sec.buf.join('\n')), raw: sec.title, weight: 1.2
+            text: norm(sec.title + '\n' + body), raw: sec.title + '\n' + body, weight: 1.2
           });
         }
       });
@@ -80,28 +82,31 @@ const Search = (() => {
       if (!ok) return;
       /* 题号直查加权 */
       if (terms.length === 1 && /^([a-z]{2,4}-\d{3})$/i.test(q.trim()) && u.field === 'title') score += 50;
-      results.push({ unit: u, score, snippet: makeSnippet(u.raw, u.field === 'title' ? u.raw : u.text, terms) });
+      results.push({ unit: u, score, snippet: makeSnippet(u.raw, terms) });
     });
     results.sort((a, b) => b.score - a.score);
     return results.slice(0, 60);
   }
 
-  function makeSnippet(rawText, normText, terms) {
-    const raw = String(rawText || '');
+  /* 在原文中定位最早命中处,取前后窗口生成片段并高亮 */
+  function makeSnippet(raw, terms) {
+    const text = String(raw || '');
     let start = -1;
     for (const t of terms) {
-      const i = norm(normText).indexOf(norm(t));
+      if (!t) continue;
+      const safe = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const i = text.search(new RegExp(safe, 'i'));
       if (i >= 0 && (start < 0 || i < start)) start = i;
     }
-    let snippet, window_;
-    if (start < 0) { snippet = raw.slice(0, 120); window_ = [0, snippet.length]; }
+    let from, to;
+    if (start < 0) { from = 0; to = Math.min(text.length, 120); }
     else {
-      const from = Math.max(0, start - 40);
-      const to = Math.min(raw.length, start + 110);
-      snippet = (from > 0 ? '…' : '') + raw.slice(from, to) + (to < raw.length ? '…' : '');
-      window_ = [from, to];
+      from = Math.max(0, start - 40);
+      to = Math.min(text.length, start + 110);
     }
-    /* 高亮 */
+    /* 避免截断在代理对中间 */
+    while (from > 0 && /[\uD800-\uDFFF]/.test(text[from])) from--;
+    const snippet = (from > 0 ? '…' : '') + text.slice(from, to) + (to < text.length ? '…' : '');
     let html = esc(snippet);
     terms.forEach(t => {
       if (!t) return;

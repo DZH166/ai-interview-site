@@ -1,661 +1,661 @@
 [
-  {
-    "id": "EN-044",
-    "topic": "engineering",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "生成式功能的产品度量:怎么衡量『AI 建议的质量』而不只是『用户点没点』?",
-    "tags": [
-      "度量",
-      "产品",
-      "质量"
-    ],
-    "prerequisites": [
-      "EN-027",
-      "AG-041"
-    ],
-    "answer": "建议质量的度量三层:①行为层——采纳率(直接采纳)、修改后采纳率(方向对质量欠)、忽略率(无价值)——三者的组合比单一采纳率信息量大(修改后采纳=最有价值的改进信号,EN-013);②内容层——建议与最终产出的差异分析(修改的模式:措辞级=可接受,事实级=质量问题);③结果层——采纳后的下游结果(采纳的代码通过了测试吗/采纳的建议被执行后成功吗)——结果的延迟反馈。度量的陷阱:采纳率受 UI 影响(一键采纳 vs 复制粘贴的摩擦差异)、修改率受用户习惯(完美主义用户全改)、baseline 的选择(没有 AI 时用户的效率)。度量的演进:从行为到结果的分析发现『哪里建议好哪里差』——按场景分桶(EN-013 的分诊)。",
-    "plain": "衡量『建议质量』像衡量『副驾的导航质量』:采纳率=听了几次导航;修改后采纳=听了但改了路线(方向对细节差);忽略率=完全没听。三者组合才知道——采纳率高但都是『修改后采纳』=方向对细节烂(该优化的是细节);忽略率高=导航基本没用。结果层=按导航走有没有到目的地(最终的验证)。陷阱:采纳率受 UI 影响(一键采纳的摩擦低,采纳率虚高)——UI 变化时采纳率不可比。比喻局限:AI 建议的『修改模式分析』(改的是措辞还是事实)是数字特有的精细——导航只有路线一个维度。",
-    "deep": "1) 行为层的三指标:\n   - 直接采纳:一键接受(方向与质量都对);\n   - 修改后采纳:方向对但需要调整(最有价值的信号——改进的精确方向在修改的 diff 里:措辞级修改=可接受,事实级修改=内容质量问题);\n   - 忽略:无价值(建议的时机/相关性/质量的总失败);\n   三者的迁移分析(采纳率不变但『修改后采纳』占比升=质量在退化,EN-013 的趋势信号)。\n2) 内容层的 diff 分析:建议与用户最终版本的 diff 分类:措辞级(风格润色——可接受的质量差距)/结构级(重排——建议的结构欠佳)/事实级(用户改了事实——严重,建议的内容错误,FD-002 关联);diff 的模式聚类(哪些场景的事实级修改集中——该场景的建议质量专项)。\n3) 结果层的延迟验证:采纳的代码通过了测试/采纳的文案被发布/采纳的建议被执行——结果的延迟反馈(采纳≠最终有用,EN-027 的行为证据设计);结果层的采集成本(下游结果的追踪)与价值(最终有效性的验证)——采样追踪。\n4) UI 摩擦的控制:采纳的交互成本(一键 vs 多步)——交互变更时采纳率的不可比标注(EN-027 的口径);A/B 的 UI 因素控制(建议质量的评测 vs UI 的效果分离,LP-019 的变量纪律)。\n5) 分桶与改进:按场景分桶的建议质量(哪些场景的建议质量高/低——EN-013 的分诊);低质量场景的改进(提示词/上下文的专项,EN-011 的迭代);分桶的维度:任务类型/用户水平/文档上下文。",
-    "example": "建议质量的分桶(示例):\n```\n场景分桶 × 行为:\n              直接采纳  修改后采纳  忽略\n代码补全        62%      28%        10%\n错误解释        45%      40%        15%  ← 修改后采纳高\n文档生成        38%      35%        27%  ← 忽略率高!\n→ 文档生成的建议质量专项:忽略样本的 diff 分析\n  → 发现:生成的文档结构不符合团队规范 → 提示词更新\n```",
-    "interview": "口述版:『建议质量的度量三层:行为(直接采纳/修改后采纳/忽略——组合比单指标信息大,修改后采纳是改进的精确信号)、内容(diff 分析:措辞级可接受,事实级是内容错误)、结果(采纳后的下游验证——采样追踪)。陷阱:UI 摩擦影响采纳率(UI 变更时不可比)、baseline 缺失。分桶与改进:场景×行为的矩阵定位低质量场景——EN-013 的分诊在建议质量的落地。』追问展开:diff 分析的实现、结果层的采样、UI 摩擦的控制。",
-    "followups": [
-      {
-        "q": "diff 分析的实现?",
-        "a": "建议文本与最终文本的 diff(结构化:句级/段落级)→修改的分类(措辞/结构/事实)——分类用规则(小改)+judge(语义级,RG-009 的校准);聚合:修改的模式的统计(哪类场景的事实级修改集中);成本:diff 分析的自动化程度(全自动+抽检人工)。"
-      },
-      {
-        "q": "结果层的采样追踪怎么做?",
-        "a": "采样的策略:采纳样本的下游追踪(代码:是否通过 CI/是否被回滚;文案:是否被发布)——追踪的深度按价值(高价值场景全追踪,一般场景抽样);隐私与授权(下游结果的追踪的知情与许可,EN-012);价值:采纳≠结果好(采纳的代码测试失败)——结果层是最终的真值(EN-027 的行为证据)。"
-      }
-    ],
-    "pitfalls": [
-      "只看采纳率(修改后采纳的占比被掩盖,质量退化不可见)。",
-      "UI 变更后采纳率不可比(口径断裂,EN-027 的口径纪律)。",
-      "建议与最终版本的 diff 不做(改进方向靠猜)。",
-      "忽略率高不治理(建议无价值,用户关闭功能)。"
-    ],
-    "check": {
-      "q": "代码助手的采纳率 65%,但用户反馈『建议经常编译不过』。采纳率高怎么解释?",
-      "a": "可能的解释组合:①采纳≠通过(用户采纳后自己修——修改后采纳被计为直接采纳?采集的粒度问题);②采纳的是简单场景(复杂场景的采纳率低——分桶看);③编译失败的真正原因不在建议(用户的上下文问题)。排查:采纳后的编译失败率(结果层——EN-027 的延迟验证)、修改后采纳的占比、分桶的场景分析。『采纳率高+编译不过』的最常见根因:采纳的采集把『采纳后手动修复』也算采纳——行为粒度的问题(EN-013 的信号校准)。",
-      "explain": "检验点:采纳率高与质量差的矛盾的排查(采集粒度/分桶/结果层)——行为指标的医疗。"
-    },
-    "related": [
-      "EN-027",
-      "AG-041",
-      "EN-013",
-      "FD-002"
-    ],
-    "doc_refs": [
-      "doc-eng-1"
-    ],
-    "sources": [
-      {
-        "name": "独立整理",
-        "url": "",
-        "kind": "independent",
-        "note": "为独立整理"
-      }
-    ],
-    "verify": {
-      "status": "verified",
-      "checked_date": "2026-09-06",
-      "note": "为独立整理;分桶为演示。"
-    }
+ {
+  "id": "EN-044",
+  "topic": "engineering",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "生成式功能的产品度量:怎么衡量『AI 建议的质量』而不只是『用户点没点』?",
+  "tags": [
+   "度量",
+   "产品",
+   "质量"
+  ],
+  "prerequisites": [
+   "EN-027",
+   "AG-041"
+  ],
+  "answer": "建议质量的度量三层:①行为层——采纳率(直接采纳)、修改后采纳率(方向对质量欠)、忽略率(无价值)——三者的组合比单一采纳率信息量大(修改后采纳=最有价值的改进信号,EN-013);②内容层——建议与最终产出的差异分析(修改的模式:措辞级=可接受,事实级=质量问题);③结果层——采纳后的下游结果(采纳的代码通过了测试吗/采纳的建议被执行后成功吗)——结果的延迟反馈。度量的陷阱:采纳率受 UI 影响(一键采纳 vs 复制粘贴的摩擦差异)、修改率受用户习惯(完美主义用户全改)、baseline 的选择(没有 AI 时用户的效率)。度量的演进:从行为到结果的分析发现『哪里建议好哪里差』——按场景分桶(EN-013 的分诊)。",
+  "plain": "衡量『建议质量』像衡量『副驾的导航质量』:采纳率=听了几次导航;修改后采纳=听了但改了路线(方向对细节差);忽略率=完全没听。三者组合才知道——采纳率高但都是『修改后采纳』=方向对细节烂(该优化的是细节);忽略率高=导航基本没用。结果层=按导航走有没有到目的地(最终的验证)。陷阱:采纳率受 UI 影响(一键采纳的摩擦低,采纳率虚高)——UI 变化时采纳率不可比。比喻局限:AI 建议的『修改模式分析』(改的是措辞还是事实)是数字特有的精细——导航只有路线一个维度。",
+  "deep": "1) 行为层的三指标:\n   - 直接采纳:一键接受(方向与质量都对);\n   - 修改后采纳:方向对但需要调整(最有价值的信号——改进的精确方向在修改的 diff 里:措辞级修改=可接受,事实级修改=内容质量问题);\n   - 忽略:无价值(建议的时机/相关性/质量的总失败);\n   三者的迁移分析(采纳率不变但『修改后采纳』占比升=质量在退化,EN-013 的趋势信号)。\n2) 内容层的 diff 分析:建议与用户最终版本的 diff 分类:措辞级(风格润色——可接受的质量差距)/结构级(重排——建议的结构欠佳)/事实级(用户改了事实——严重,建议的内容错误,FD-002 关联);diff 的模式聚类(哪些场景的事实级修改集中——该场景的建议质量专项)。\n3) 结果层的延迟验证:采纳的代码通过了测试/采纳的文案被发布/采纳的建议被执行——结果的延迟反馈(采纳≠最终有用,EN-027 的行为证据设计);结果层的采集成本(下游结果的追踪)与价值(最终有效性的验证)——采样追踪。\n4) UI 摩擦的控制:采纳的交互成本(一键 vs 多步)——交互变更时采纳率的不可比标注(EN-027 的口径);A/B 的 UI 因素控制(建议质量的评测 vs UI 的效果分离,LP-019 的变量纪律)。\n5) 分桶与改进:按场景分桶的建议质量(哪些场景的建议质量高/低——EN-013 的分诊);低质量场景的改进(提示词/上下文的专项,EN-011 的迭代);分桶的维度:任务类型/用户水平/文档上下文。",
+  "example": "建议质量的分桶(示例):\n```\n场景分桶 × 行为:\n              直接采纳  修改后采纳  忽略\n代码补全        62%      28%        10%\n错误解释        45%      40%        15%  ← 修改后采纳高\n文档生成        38%      35%        27%  ← 忽略率高!\n→ 文档生成的建议质量专项:忽略样本的 diff 分析\n  → 发现:生成的文档结构不符合团队规范 → 提示词更新\n```",
+  "interview": "口述版:『建议质量的度量三层:行为(直接采纳/修改后采纳/忽略——组合比单指标信息大,修改后采纳是改进的精确信号)、内容(diff 分析:措辞级可接受,事实级是内容错误)、结果(采纳后的下游验证——采样追踪)。陷阱:UI 摩擦影响采纳率(UI 变更时不可比)、baseline 缺失。分桶与改进:场景×行为的矩阵定位低质量场景——EN-013 的分诊在建议质量的落地。』追问展开:diff 分析的实现、结果层的采样、UI 摩擦的控制。",
+  "followups": [
+   {
+    "q": "diff 分析的实现?",
+    "a": "建议文本与最终文本的 diff(结构化:句级/段落级)→修改的分类(措辞/结构/事实)——分类用规则(小改)+judge(语义级,RG-009 的校准);聚合:修改的模式的统计(哪类场景的事实级修改集中);成本:diff 分析的自动化程度(全自动+抽检人工)。"
+   },
+   {
+    "q": "结果层的采样追踪怎么做?",
+    "a": "采样的策略:采纳样本的下游追踪(代码:是否通过 CI/是否被回滚;文案:是否被发布)——追踪的深度按价值(高价值场景全追踪,一般场景抽样);隐私与授权(下游结果的追踪的知情与许可,EN-012);价值:采纳≠结果好(采纳的代码测试失败)——结果层是最终的真值(EN-027 的行为证据)。"
+   }
+  ],
+  "pitfalls": [
+   "只看采纳率(修改后采纳的占比被掩盖,质量退化不可见)。",
+   "UI 变更后采纳率不可比(口径断裂,EN-027 的口径纪律)。",
+   "建议与最终版本的 diff 不做(改进方向靠猜)。",
+   "忽略率高不治理(建议无价值,用户关闭功能)。"
+  ],
+  "check": {
+   "q": "代码助手的采纳率 65%,但用户反馈『建议经常编译不过』。采纳率高怎么解释?",
+   "a": "可能的解释组合:①采纳≠通过(用户采纳后自己修——修改后采纳被计为直接采纳?采集的粒度问题);②采纳的是简单场景(复杂场景的采纳率低——分桶看);③编译失败的真正原因不在建议(用户的上下文问题)。排查:采纳后的编译失败率(结果层——EN-027 的延迟验证)、修改后采纳的占比、分桶的场景分析。『采纳率高+编译不过』的最常见根因:采纳的采集把『采纳后手动修复』也算采纳——行为粒度的问题(EN-013 的信号校准)。",
+   "explain": "检验点:采纳率高与质量差的矛盾的排查(采集粒度/分桶/结果层)——行为指标的医疗。"
   },
-  {
-    "id": "EN-043",
-    "topic": "engineering",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "AI 功能的渐进出道(gradual rollout):从内部试用到全量的用户分层策略?",
-    "tags": [
-      "发布",
-      "分层",
-      "产品"
-    ],
-    "prerequisites": [
-      "EN-005",
-      "EN-039"
-    ],
-    "answer": "渐进出道的分层:①内部 dogfood(工程团队自用)——发现基本问题,工程团队的宽容度与反馈质量高;②友好用户(opt-in 的早期用户)——真实场景但容忍度高(知道是测试);③小比例外部(1~5%)——真实环境的首次检验;④扩大(10/25/50%)——统计显著性的积累;⑤全量。每层的观察重点:dogfood(功能的基本可用)、友好用户(真实场景的价值感知)、外部小比例(行为指标与护栏)、扩大(稳定性与规模效应)。与 EN-005 的灰度的差异:这里强调『用户分层』——不同层的用户特征(宽容度/场景/反馈质量)不同,每层的目的不同。分层的选择标准:opt-in 的意愿(友好用户是愿意试的)、特征的代表性(外部小比例要随机不能只挑大客户)。",
-    "plain": "渐进出道像『新菜的上市节奏』:先给自家厨师吃(dogfood——自己人挑毛病最狠)、再给常客试(友好用户——愿意尝鲜)、再上 5% 的菜单(外部小比例)、最后全菜单(全量)。每层的目的不同:厨师挑基本问题、常客验口味、外部验真实接受度。分层的选择:常客是自愿的(友好用户),外部的 5% 要随机(不能只挑好说话的大客户)。比喻局限:AI 功能的『行为指标』(采纳率/纠错率)是每层都要看的——菜品只看口碑,AI 看的是行为数据。",
-    "deep": "1) 各层的设计与观察:\n   - dogfood:全功能开放+反馈渠道直通(工程的反馈质量高:具体的、可操作的);观察:基本可用性/明显的愚蠢行为;周期:1~2 周;\n   - 友好用户:opt-in 的机制(自愿加入+知情——知道是测试,EN-033 的期望管理)、反馈的激励(徽章/优先功能);观察:真实场景的价值感知/期望校准(EN-033 的示例驱动);\n   - 外部小比例:随机选择(代表性)或特征选择(特定用户群)、护栏的严格(EN-021 的 L0+);观察:行为指标(EN-027 的北极星)、支持工单(意外的失败模式);\n   - 扩大:统计的显著性(LP-019 的功效)、运营的准备(支持团队的知识,EN-039)、规模的容量(EN-009);\n2) 层间的晋级标准:每层到下一层的晋级条件(明确写:dogfood 的 P0 问题清零→友好用户;友好用户的采纳率>X→外部小比例)——晋级是数据决策不是时间决策;\n3) 回退的路径:每层都可回退(回上一层的用户群),回退的触发(护栏破线,EN-005);回退后的分析(哪个用户群的问题——分层的信息价值在回退时兑现);\n4) 用户分层的信息管理:每层的用户名单与特征(dogfood 的工程师名单/友好用户的 opt-in 记录/外部的哈希分组)——分层的准确性(别让友好用户进外部组);分层的隐私(用户被分到测试组的知情,EN-012);\n5) 与 EN-005 的关系:EN-005 讲发布的技术面(版本/回滚),本题讲用户面(分层的用户策略)——两者的结合(技术灰度×用户分层=完整的 rollout)。",
-    "example": "晋级标准(示例):\n```\ndogfood → 友好用户:\n  条件:P0/P1 问题清零;核心场景的内部采纳率 >60%\n友好用户 → 外部 1%:\n  条件:友好用户的周留存 >50%;N0 严重事故;评测门禁全过\n外部 1% → 25%:\n  条件:北极星指标不降;护栏全绿;支持工单率稳定\n25% → 100%:\n  条件:统计显著的正面或中性 + 护栏稳定(EN-021/LP-019)\n```",
-    "interview": "口述版:『渐进出道四层:dogfood(工程师自用,挑基本问题)、友好用户(opt-in,真实场景的价值感知)、外部小比例(随机,行为指标)、扩大(统计积累)。每层的晋级是数据决策(明确写条件:P0 清零/采纳率/护栏),不是时间决策。回退路径每层都有(护栏破线回上一层)。与 EN-005 的灰度结合:技术灰度×用户分层=完整 rollout。』追问展开:晋级标准的设计、opt-in 的机制、回退的分析。",
-    "followups": [
-      {
-        "q": "友好用户的 opt-in 怎么设计?",
-        "a": "招募:明确告知(这是早期版本,可能有不稳定)、激励(优先新功能/专属支持/徽章)、筛选(意愿+场景匹配——重度用户与轻度用户都要);知情同意(数据与反馈的使用说明,EN-012);退出机制(随时退出,无惩罚)。友好用户的价值:真实场景+高容忍——两者的平衡(容忍度高可能掩盖真实体验的问题——外部的 1% 才是真检验)。"
-      },
-      {
-        "q": "晋级标准的数据决策怎么避免 gaming?",
-        "a": "标准的独立性:晋级条件的数据与被评审的团队分离(数据由评测/数据团队出具);条件的抗操纵(北极星的抗操纵标准,EN-027);时间的固定(预定的观察窗口,不提前不推迟——除非护栏破线)。gaming 的形态:挑好的时间段/挑好的用户群/指标的选择性报告——治理靠数据的独立与公开(EN-013 的文化)。"
-      }
-    ],
-    "pitfalls": [
-      "层间跳级(内部直接全量,友好用户层被跳过——真实场景未验证)。",
-      "外部小比例不随机(只挑大客户,代表性失真)。",
-      "晋级靠拍脑袋(『感觉可以了』——数据决策缺失)。",
-      "回退后不分析(回退的信息价值浪费)。"
-    ],
-    "check": {
-      "q": "友好用户层的反馈非常好(95% 好评),可以直接跳到全量吗?",
-      "a": "不建议跳:友好用户的特征偏差(opt-in 的早期用户——技术 savvy、宽容、场景可能特殊)不代表全量用户;95% 好评的样本量与分布检查(多少人/什么场景);外部小比例(1%)的价值:真实用户的非自愿场景检验(不知道是 AI 生成的?期望管理的自然测试,EN-033)+规模效应(容量/成本)。跳层的风险:友好用户的成功→全量的意外(真实用户的期望与场景不同)。正确:按分层走,每层的目的不同——速度的诱惑不敌分层的信息价值。",
-      "explain": "检验点:友好用户层与外部层的特征差异(自愿/宽容 vs 真实/自然)——跳层的风险论证。"
-    },
-    "related": [
-      "EN-005",
-      "EN-039",
-      "EN-033",
-      "EN-027",
-      "EN-021"
-    ],
-    "doc_refs": [
-      "doc-eng-1"
-    ],
-    "sources": [
-      {
-        "name": "独立整理",
-        "url": "",
-        "kind": "independent",
-        "note": "为独立整理"
-      }
-    ],
-    "verify": {
-      "status": "verified",
-      "checked_date": "2026-09-06",
-      "note": "为独立整理;标准为演示。"
-    }
-  },
-  {
-    "id": "PY-037",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "Python 的异步生成器和 async iterator 在流式管道里怎么用?",
-    "tags": [
-      "Python",
-      "异步生成器",
-      "流式"
-    ],
-    "prerequisites": [
-      "PY-002",
-      "PY-021"
-    ],
-    "answer": "异步生成器(async def + yield)产出异步可迭代对象:每次 yield 前可以 await(如从上游异步拉取数据再产出)——LLM 流式的标准模式(上游 SSE 的 async for → 处理 → yield 给下游,FastAPI 的 StreamingResponse 消费)。用法要点:①消费用 async for(或 manual __anext__);②关闭的清理(async for 结束或 aclose 时,finally 执行,LP-005 的取消清理);③组合(异步生成器可以嵌套 yield from 类似的 async for 循环);④与同步生成器的选择(数据源是异步的→async;纯 CPU 的转换→同步即可,同步生成器在 async 管道里会阻塞——包装或用 to_thread)。",
-    "plain": "异步生成器像『会等快递的流水线』:普通生成器=流水线只管转(源头没货就空转或阻塞——同步阻塞整个事件循环);异步生成器=『每道工序之间可以等』——上游的快递(异步拉取)没到就 await 等,到了就加工传给下游。LLM 流式的标准姿势:从上游 await 拉一段→加工→yield 给前端。比喻局限:async 生成器的『取消传播』(上游取消→下游的 finally 清理)是流水线比喻没有的关键语义(PY-002 的 close 的异步版)。",
-    "deep": "1) 基本模式:\n```python\nasync def transform_stream(upstream):\n    async for chunk in upstream:      # await 上游\n        processed = process(chunk)    # CPU 处理(短)\n        yield processed               # 产出给下游\n\n# FastAPI 消费\nasync def gen():\n    async for piece in transform_stream(llm_stream(prompt)):\n        yield f\"data: {piece}\\n\\n\"\n```\n2) 清理与取消:async generator 的 aclose(或 async for 的正常结束/GC)触发 finally——上游连接的关闭(LLP-005 的取消语义在生成器层的落地);注意:aclose 的触发时机(异步 GC 的不确定性——显式管理更可靠:上下文管理器包装或框架的生命周期);\n3) 组合管道:多层 async 生成器的串联(每层 await 上游 yield 下游)——管道的每一层都是 async(同步层会阻塞);thread 的桥接(同步生成器→异步:run_in_executor 逐块桥接,或 asyncio.to_thread + queue);桥接的坑(to_thread 的线程安全、背压的丢失)。\n4) 背压:async 生成器的下游消费速度决定上游的拉取速度(async for 的节奏=消费节奏)——天然的背压(生产不会快于消费);对比:Queue 的显式背压(PY-003)——生成器管道的背压是隐式而优雅的;\n5) 性能:每个 yield 的开销(异步生成的调度)、大流的优化(块合并,LP-005)、超时(asyncio.timeout 包住整个流的消费,LP-004)。",
-    "example": "```python\n# 多层异步管道(示意)\nasync def sse_source(prompt):\n    async with client.stream(\"POST\", ...) as r:\n        async for line in r.aiter_lines():\n            yield parse_sse(line)\n\nasync def with_metadata(source):\n    async for item in source:\n        yield {\"text\": item, \"ts\": now()}   # 加工层\n\nasync def sse_frames(source):\n    async for item in with_metadata(source):\n        yield f\"data: {json.dumps(item)}\\n\\n\"  # 输出层\n```",
-    "interview": "口述版:『异步生成器是 LLM 流式的标准模式:async for 上游→加工→yield 下游,每层可 await。要点:清理放 finally(取消传播,LP-005)、管道的每层都要 async(同步层阻塞事件循环,PY-003)、背压是天然的(async for 的节奏=消费节奏)。同步生成器的桥接(to_thread+queue)有背压丢失的坑。性能上:块合并、超时包整个流。』追问展开:aclose 的时机、同步桥接的坑、背压的对比。",
-    "followups": [
-      {
-        "q": "异步生成器的 aclose 时机为什么不确定?",
-        "a": "async generator 的 GC(aclose 的调用)由事件循环调度——不保证立即(引用消失后要等循环的 async gen 钩子)。后果:清理(关上游连接)可能延迟。对策:显式管理(调用方的 await gen.aclose() 或上下文管理器包装)、框架的消费(FastAPI 的 StreamingResponse 在断开时会 aclose——但依赖框架行为不如显式)。显式 > 依赖 GC(与 PY-021 的 sync aclose 同理)。"
-      },
-      {
-        "q": "同步生成器怎么接入异步管道?",
-        "a": "桥接:①逐块 to_thread(同步生成器的 next 在线程池跑——阻塞不伤事件循环,但要处理线程与 async 的交接);②queue 桥接(线程跑同步生成器推 queue,async 侧从 queue 异步读——注意背压与结束信号,PY-003);③优先:源头直接改 async(如果可控)。坑:to_thread 的每次调用开销、线程安全(生成器的状态在单线程内)。"
-      }
-    ],
-    "pitfalls": [
-      "管道里混入同步生成器,事件循环被阻塞(PY-003 的经典坑)。",
-      "清理依赖 GC 的 aclose,上游连接的关闭延迟。",
-      "异常在管道中传播的处理缺失(某层抛异常,下游的清理未执行)。",
-      "async for 一个不是 async iterable 的对象(同步生成器直接 async for,TypeError)。"
-    ],
-    "check": {
-      "q": "客户端断开连接后,你的异步生成器管道的清理顺序是什么?",
-      "a": "取消传播链:客户端断开→FastAPI 取消响应任务→async for 的消费方被取消→管道的每一层在 await 点收到 CancelledError→各层的 finally 执行(从下游到上游的逆序清理)→最上游的连接关闭。保证的要点:每层的清理放 finally(PY-002)、不吞 CancelledError(PY-005)、管道的每层都是 async(取消才能传播——同步层是取消的盲区)。测试:模拟断开(取消任务)断言上游连接的关闭——取消传播是管道正确性的必测项。",
-      "explain": "检验点:取消在异步管道中的传播链与各层 finally 的逆序清理。"
-    },
-    "related": [
-      "PY-002",
-      "PY-003",
-      "LP-005",
-      "PY-021"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "Python 官方文档 · 异步生成器",
-        "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#asynchronous-generator-functions",
-        "kind": "official",
-        "note": "语义参考(未逐页抓取,标注)"
-      }
-    ],
-    "verify": {
-      "status": "partial",
-      "checked_date": "2026-09-06",
-      "note": "语义为官方稳定知识;模式为独立整理。"
-    }
-  },
-  {
-    "id": "PY-038",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "Python 的异常组(ExceptionGroup)和 except* 语法怎么用于并发错误处理?",
-    "tags": [
-      "Python",
-      "异常组",
-      "并发"
-    ],
-    "prerequisites": [
-      "PY-022",
-      "PY-005"
-    ],
-    "answer": "ExceptionGroup(3.11+)打包多个异常(TaskGroup 的并发失败,gather 的聚合),except*(3.11+)按异常类型分别捕获组内的异常:except* ValueError 处理组内所有 ValueError、except* TypeError 处理 TypeError——与普通 except 的区别:except* 可以匹配组内的部分异常(其余继续传播),且可多分支同时命中(不同类型的分支都执行)。用法:并发操作的多类失败处理(AG-017 的失败聚合:网络错误与业务错误分别处理)、嵌套组(组内组的递归处理)。设计:并发失败的业务分类(PY-005 的层次:哪些可重试哪些终止)映射到 except* 的分支;裸 ExceptionGroup 的处理(兜底分支)。",
-    "plain": "异常组像『打包的投诉信』:一次并发操作失败,包装了一堆投诉(每个子任务的异常)——except* 像『按投诉类型分拣』:所有『服务态度』的分给客服部处理,所有『产品质量』的分给质检部,两类都有的话两个部门都处理;没分拣到的类型继续往上抛(上级处理)。普通 except 是『抓到一封处理一封』(对组不适用)。比喻局限:except* 的语义是『组内过滤』(每组类型一个子组),匹配到的子组继续传播或处理——分拣的细节比比喻精确。",
-    "deep": "1) 语法与语义:\n```python\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(network_op())     # 可能 ConnectionError\n        tg.create_task(validate_op())    # 可能 ValueError\nexcept* ConnectionError as eg:         # 组内的连接错误\n    handle_network(eg.exceptions)\nexcept* ValueError as eg:              # 组内的校验错误\n    handle_validation(eg.exceptions)\n# 两类都出现 → 两个分支都执行\n# 未匹配的类型 → 打包成新的组继续传播\n```\n2) 与 gather 的组合:gather(return_exceptions=True) 的结果列表手动分类(PY-022)vs TaskGroup+except*(自动打包)——TaskGroup 的结构化+except* 的分类是现代姿势;\n3) 业务的应用:AG-017 的失败聚合(部分失败的处理策略)映射到 except* 的分支(网络错误→重试逻辑,业务错误→降级,权限错误→终止);嵌套的组(fanout 内的 TaskGroup)的递归处理;\n4) 设计的纪律:异常类型的层次(业务异常的基类设计,PY-005)与 except* 的分支对齐(每个分支=一类处理策略);裸组兜底(未预期的类型不能静默——记录+上抛);组内异常的全量处理(每个子异常都要被看到——日志与指标的完整)。\n5) 版本:3.11+ 的特性(老版本用收集中转:结果的异常检查+手动分组——PY-022 的 gather 模式),迁移的路径(3.11+ 的 except* 是目标形态)。",
-    "example": "```python\n# 并发失败的业务分类(示意)\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(fetch_data())\n        tg.create_task(validate(input))\nexcept* TransientError as eg:          # 瞬时:走重试/降级\n    schedule_retry(eg.exceptions)\nexcept* ValidationError as eg:         # 参数:回喂修正\n    feed_back_errors(eg.exceptions)\nexcept* PermissionError as eg:         # 权限:终止\n    abort_with_audit(eg.exceptions)\n```",
-    "interview": "口述版:『ExceptionGroup+except* 是并发失败的业务分拣:TaskGroup 打包失败,except* 按异常类型分拣(部分匹配,多分支可同时命中,未匹配的继续传播)。与 gather 的组合:gather(return_exceptions) 手动分类 vs TaskGroup+except* 的自动分拣——现代姿势是后者。设计:业务异常的层次与 except* 分支对齐(每分支=一类策略:瞬时重试/参数回喂/权限终止)+裸组兜底。』追问展开:与 gather 的选择、异常层次的设计、嵌套组。",
-    "followups": [
-      {
-        "q": "except* 和普通 except 的关键区别?",
-        "a": "普通 except:匹配『抛出的那个异常』(一对一);except*:匹配『组内的一部分异常』(过滤语义)——匹配的子组被该分支处理,其余的打包继续传播;多个 except* 分支可同时命中(不同类型);同一类型不能重复匹配。语义上:except* 是『组的分区处理』,普通 except 是『单异常的拦截』。"
-      },
-      {
-        "q": "异常层次怎么设计才好用?",
-        "a": "业务异常的基类树(PY-005):Transient(可重试)/Permanent(参数/权限)/System(内部)——except* 的分支按顶层类设计;分支的处理策略与异常类的语义对齐(Transient→重试/降级,Permanent→告警修正);子类的细化在分支内(eg.exceptions 过滤)。层次与分支的对齐让并发错误处理的意图清晰。"
-      }
-    ],
-    "pitfalls": [
-      "except* 分支漏了兜底(未匹配的类型静默丢失——裸 ExceptionGroup 的兜底分支)。",
-      "把 except* 当普通 except 用(期望拦截整个组——语义误解)。",
-      "组内异常不逐个处理(只看第一个——丢其他根因)。",
-      "3.11 以下硬用(版本检查与回退)。"
-    ],
-    "check": {
-      "q": "TaskGroup 中 3 个任务:1 个超时、1 个参数错误、1 个成功。except* 的各分支会发生什么?",
-      "a": "TaskGroup 抛出含 2 个异常的组(超时 TimeoutError、参数 ValidationError;成功的无异常)。except* TimeoutError 分支命中(处理超时);except* ValidationError 分支命中(处理参数错误)——两个分支都执行(组内部分匹配的语义);成功的任务的结果在组的上下文外(需要另行收集——TaskGroup 的结果通过闭包/字典收集,不是组的返回值)。若还有未匹配的类型(如 PermissionError)→打包成新组继续传播。这展示了 except* 的『分区处理』语义。",
-      "explain": "检验点:except* 的分区语义(部分匹配+多分支+未匹配传播)在具体例子的推演。"
-    },
-    "related": [
-      "PY-022",
-      "PY-005",
-      "AG-017",
-      "PY-011"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "Python 官方文档 · ExceptionGroup 与 except*",
-        "url": "https://docs.python.org/zh-cn/3/library/exceptions.html#exception-groups",
-        "kind": "official",
-        "note": "语义参考(未逐页抓取,标注)"
-      }
-    ],
-    "verify": {
-      "status": "partial",
-      "checked_date": "2026-09-06",
-      "note": "语义为官方稳定知识;业务映射为独立整理。"
-    }
-  },
-  {
-    "id": "PY-039",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的函数签名设计:参数太多时怎么重构?kwargs 的使用边界?",
-    "tags": [
-      "Python",
-      "函数设计",
-      "重构"
-    ],
-    "prerequisites": [
-      "PY-013",
-      "PY-028"
-    ],
-    "answer": "参数过多的重构选项:①参数对象——相关参数打包成 dataclass/Pydantic(配置类参数:LLMParams(model/temperature/max_tokens...),PY-013 的选型);②拆函数——参数多常意味着函数做太多(拆成几个职责单一的函数);③默认值与必填的梳理——必填最少化(默认值覆盖常见场景)、互斥参数的显式化;④kwargs 的边界——转发层(装饰器/包装器透传,**kwargs 合理)、动态配置(**config 的解包)可以用;业务函数的『随意扩展』(**kwargs 接收一切=签名失去文档价值,mypy 失效)。原则:签名是接口文档(参数=函数的能力声明),参数对象>拆函数>kwargs(可读性顺序)。",
-    "plain": "参数太多像『遥控器太多按键』:重构选项=①万能遥控(参数对象:把相关按键组合成一个场景键『观影模式』);②拆遥控(电视一个空调一个——函数拆分);③梳理按键(常用的留,不常用的进设置菜单——默认值);④**kwargs 像『其他任意键』——万能但按了不知道发生什么(签名失去文档价值)。LLM 场景的典型:chat(model, temperature, top_p, max_tokens, stop, seed, tools, tool_choice, response_format, user...) 十几个参数——参数对象(LLMParams)是标准解。比喻局限:参数对象不只是收纳——它还可以有校验(Pydantic 的约束)、默认值的组合逻辑(场景预设)——比遥控器智能。",
-    "deep": "1) 参数对象的实践:\n```python\n@dataclass(slots=True, frozen=True)\nclass LLMParams:\n    model: str\n    temperature: float = 0.7\n    max_tokens: int = 2000\n    tools: list | None = None\n    # 场景预设(工厂方法)\n    @classmethod\n    def extraction(cls): return cls(model=..., temperature=0.0)\n    @classmethod\n    def creative(cls): return cls(model=..., temperature=0.9)\n\ndef chat(prompt: str, params: LLMParams) -> Completion: ...\n```\n2) 拆函数的信号:参数的分组使用(某些参数总是一起用=一个职责的信号)、函数的文档难以写清(一个 docstring 描述不了)、调用方的组合(调用方总是配合使用某些参数)——拆分的 smell 检测;\n3) kwargs 的合理场景:转发层(装饰器的透传:f(*args, **kwargs)——保持签名透明)、真正的动态(配置驱动的调用:参数名来自配置)、API 的兼容层(接收超集过滤)——业务函数避免(签名是文档,kwargs 是文档的黑洞);\n4) LLM 场景的特殊:参数与 API 的映射(LLMParams→SDK 的参数:适配层,EN-014)、场景预设(extraction/creative 的工厂——LP-001 的参数策略的代码化)、与 Pydantic 的关系(参数对象也可用 Pydantic——需要校验时,PY-013 的选型)。\n5) 演进的纪律:新参数的加入评审(签名是接口——加参数=接口变更,LP-021 的评审)、废弃参数的移除( deprecation 流程)、兼容(旧调用不断——默认值的设计)。",
-    "example": "```python\n# 场景预设的调用(可读性)\nresult = await chat(\n    prompt=user_msg,\n    params=LLMParams.extraction(),   # 抽取场景的参数预设\n)\n# vs 十几个散参数(难读难维护)\n# result = await chat(user_msg, model=..., temperature=0, ...)\n```",
-    "interview": "口述版:『参数过多的重构三选:参数对象(LLMParams 的 dataclass——场景预设工厂)、拆函数(参数分组使用的信号)、梳理默认值(必填最少化)。kwargs 的边界:转发层和动态配置可以用,业务函数禁用(签名是文档,kwargs 是文档黑洞)。LLM 场景的标准解:LLMParams 的场景预设(extraction/creative)——参数策略的代码化(LP-001 的取值表落地)。签名是接口:加参数=接口变更,走评审。』追问展开:场景预设的设计、拆函数的信号、kwargs 的合理场景。",
-    "followups": [
-      {
-        "q": "场景预设(factory)和让调用方自由组合的权衡?",
-        "a": "预设:常见的组合固化(抽取=低温+结构化,创意=高温+长输出)——调用方简单、组合经过验证;自由组合:灵活但每个组合都要自己调对(LP-001 的参数知识要求)。实践:预设覆盖 80%(常见场景)+自由组合兜底(预设的变体:预设的字段可覆盖)——便利与灵活的平衡。"
-      },
-      {
-        "q": "参数对象的校验加不加?",
-        "a": "内部传递(dataclass)→mypy 静态即可(PY-020);跨边界(配置文件构造/用户传入)→Pydantic(运行时校验,PY-013 的选型);LLMParams 的场景:如果从配置文件构造(参数策略可配置)→Pydantic;纯代码构造→dataclass 够。校验的需求来自数据的来源可信度(PY-031 的边界判断)。"
-      },
-      {
-        "q": "废弃参数怎么移除不破坏调用方?",
-        "a": "deprecation 流程:先标记(warn)+继续支持(一个版本周期)→调用方迁移的引导(文档+告警日志)→移除(大版本)。内部 API:直接改+调用方同步修(自己控制调用方);对外 API(EN-039 的 API 设计):严格的 deprecation(对外部的承诺)。移除的检查:调用点的搜索+测试的覆盖(PY-011)。"
-      }
-    ],
-    "pitfalls": [
-      "十几个散参数的函数(可读性/维护性/调用错误的三重灾难)。",
-      "业务函数用 **kwargs 接收一切(签名失去文档与类型价值)。",
-      "参数对象无预设(每个调用方自己配参数,策略散落)。",
-      "加参数不走评审(签名是接口,LP-021 的纪律)。"
-    ],
-    "check": {
-      "q": "chat() 函数已有 8 个参数,又要加 retry 和 fallback 两个。怎么处理?",
-      "a": "分辨:retry/fallback 不是『LLM 调用的参数』而是『调用策略』——语义上属于组合器层(with_resilience,PY-030),不属于 chat 的签名。正确:retry/fallback 放在组合器的参数里(策略与调用分离)——chat 保持纯粹的『调用参数』(LLMParams),韧性策略(ResiliencePolicy)是另一层。这个案例的考点:参数过多时先问『这些参数属于同一个职责吗』——不属于就分层,而不是打包成更大的参数对象(大杂烩参数对象是反模式)。",
-      "explain": "检验点:参数的职责分辨(调用参数 vs 策略参数)与分层——参数对象不是垃圾抽屉。"
-    },
-    "related": [
-      "PY-013",
-      "PY-028",
-      "PY-030",
-      "LP-001"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "独立整理",
-        "url": "",
-        "kind": "independent",
-        "note": "为独立整理"
-      }
-    ],
-    "verify": {
-      "status": "verified",
-      "checked_date": "2026-09-06",
-      "note": "为独立整理;代码为演示。"
-    }
-  },
-  {
-    "id": "PY-040",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的模块循环依赖怎么避免?架构上的 import 纪律?",
-    "tags": [
-      "Python",
-      "模块",
-      "架构"
-    ],
-    "prerequisites": [
-      "PY-028"
-    ],
-    "answer": "循环依赖的成因与解法:①成因——模块的职责边界模糊(A 需要 B 的功能,B 需要 A 的类型);②解法:提取共享(公共部分下沉到第三个模块:core/domain)、依赖倒置(A 依赖 B 的接口,B 实现——接口定义在 A 侧或独立接口模块)、延迟导入(函数内 import——治标,降低为设计问题的遮掩)、重构边界(循环=职责划分错的信号)。import 纪律:单向依赖(分层:api→service→repo→infra→core,-domain 被所有层用但不依赖任何层)、lint 强制(import-linter 的契约:层间的允许依赖矩阵)、循环的 CI 检测。循环依赖的运行时症状:ImportError(部分初始化的模块被引用)、诡异的 None 属性(导入顺序依赖)。",
-    "plain": "循环依赖像『两个部门的互相审批』:A 部门要 B 部门签字,B 部门要 A 部门签字——死锁。解法:①共同的上游(需要双方确认的事项,提到共同上级——提取共享模块);②一方只给标准(A 定义『我需要什么样的审批』,B 按标准执行——依赖倒置);③拖延(B 用到时再 import——治标,审批的死锁还在,只是没被发现);④重新划分职责(互相审批=职责划分错了)。import 纪律像组织的汇报关系(单向清晰,不循环)。比喻局限:Python 的循环导入有『部分初始化』的诡异表现(不一定报错,可能拿到半成品模块)——比组织死锁更隐蔽。",
-    "deep": "1) 循环的表现形式:\n   - 直接循环:a.py import b;b.py import a——最明显;\n   - 间接循环:a→b→c→a(链条更长更隐蔽);\n   - 类型循环:a 需要 b 的类型做标注,b 需要 a 的实例——类型循环可用 TYPE_CHECKING + 字符串标注(纯类型依赖不触发运行时导入);\n   - 运行时的症状:ImportError(cannot import name)、AttributeError(partially initialized module)、诡异的行为依赖导入顺序(顺序敏感=架构坏味道)。\n2) 解法的详细:\n   - 提取共享:循环的两方共同依赖的内容(类型/常量/工具函数)下沉到 core/common——双方都依赖下游(单向恢复);\n   - 依赖倒置:A 定义 Protocol(A 需要的能力接口),B 实现该 Protocol——A 不再 import B(B import A 的接口模块),依赖方向反转(PY-034 的 Protocol);\n   - TYPE_CHECKING:纯类型依赖(from __future__ import annotations + if TYPE_CHECKING: import)——运行时不导入(只解决类型循环,运行时的循环仍要重构);\n   - 延迟导入:函数内 import(用到才导)——临时方案(掩盖问题+测试困难),标注为技术债;\n3) import 纪律的强制:import-linter(层间的依赖契约:api 不 import infra 等)、ruff/mypy 的循环检测、CI 的架构测试(PY-020 的静态检查延伸到架构层);契约的定义(分层矩阵:哪些层可以依赖哪些层,EN-021 的清单思想);\n4) LLM 应用的典型循环:service ↔ prompts(service 用 prompts 的组装,prompts 需要 service 的上下文类型)→ 解法:类型下沉到 domain(prompts 依赖 domain 的类型,service 依赖两者)——LLM 应用的分层(PY-028)的纪律落实;\n5) 循环依赖的哲学:循环=模块间的『互相知晓』——好的架构里模块只『向下知晓』(依赖更底层的抽象);循环的出现是重构的信号(不是要消除循环的技术,是要修正职责的设计)。",
-    "example": "```python\n# 依赖倒置解循环(示例)\n# services/chat.py 需要 infra/llm.py 的类型 —— 反过来依赖:\n# infra/llm.py 不应该 import services(它更底层)\n\n# 解:接口下沉到 core/interfaces.py\nclass LLMClient(Protocol): ...        # core/interfaces.py\n# services/chat.py: 用 LLMClient(PY-034)\n# infra/llm.py: 实现 LLMClient(OpenAI 实现)\n# → service → core ← infra:无循环 ✅\n```",
-    "interview": "口述版:『循环依赖四解:提取共享(公共下沉)、依赖倒置(A 定义 Protocol,B 实现——PY-034)、TYPE_CHECKING(纯类型循环)、延迟导入(治标)。症状的认识:ImportError/部分初始化/顺序敏感——比报错更隐蔽的是行为依赖导入顺序。纪律:import-linter 的层间契约+CI 检测。LLM 应用的典型循环(service↔prompts)解法:类型下沉到 domain。循环是重构的信号——不是消除循环,是修正职责。』追问展开:TYPE_CHECKING 的用法、import-linter、延迟导入的债务。",
-    "followups": [
-      {
-        "q": "TYPE_CHECKING 的用法与局限?",
-        "a": "用法:if TYPE_CHECKING: from b import BType(类型检查时导入,运行时不导)+ 字符串标注(def f(x: \"BType\"))+ from __future__ import annotations(自动延迟)。局限:只解决『类型标注的循环』——运行时的真实依赖(调用 b 的函数)仍在,要用提取共享/依赖倒置重构。TYPE_CHECKING 是胶布不是手术。"
-      },
-      {
-        "q": "import-linter 怎么配置分层契约?",
-        "a": "契约类型:分层契约(api→service→repository→infra 的层级,上层可用下层)、禁止契约(特定的 import 禁止:api 禁 import infra)、独立契约(互不依赖的模块);CI 集成(架构测试进 lint 门禁,PY-020);契约的演进(新层的加入→契约的更新评审)。契约让架构的纪律从『口头约定』变成『机器检查』。"
-      },
-      {
-        "q": "延迟导入什么时候可以接受?",
-        "a": "可接受:重依赖的懒加载(大模型的导入延迟到首次使用——启动速度)、可选依赖(某功能需要可选包)、CLI 入口的分发。不可接受:掩盖循环依赖(设计问题的遮掩)、热路径的反复导入(性能)。用延迟导入时标注原因(# lazy: 避免 circular import → 应该记债进 backlog)。"
-      }
-    ],
-    "pitfalls": [
-      "延迟导入到处用(循环的遮掩,问题的债务化)。",
-      "部分初始化的诡异行为(ImportError 时有时无,依赖运行顺序)。",
-      "domain 层依赖框架(纯模型被污染,PY-028 的分层破坏)。",
-      "循环依赖靠『试导入顺序』修复(不修设计,靠运气)。"
-    ],
-    "check": {
-      "q": "services/payment.py 需要 utils/notify.py 发通知,notify.py 需要 payment 的订单类型。怎么解?",
-      "a": "判断:notify 需要的是『订单的类型定义』(纯类型)还是『payment 的业务功能』(调用)?类型→TYPE_CHECKING+字符串标注(类型循环的轻解)+长期:类型下沉到 domain(订单类型是领域模型,PY-028);功能→依赖倒置(notify 定义 NotifierProtocol,payment 实现或注入——notify 不该知道 payment)。更根本的复审:发通知是否应该是 payment 的职责(领域事件的解耦,PY-024 的事件)?循环的解法选择取决于『循环的内容』——类型/功能/职责三个层次。",
-      "explain": "检验点:循环依赖的解法选择按『循环的内容』(类型循环/功能循环/职责循环)分级。"
-    },
-    "related": [
-      "PY-028",
-      "PY-034",
-      "PY-020",
-      "PY-024"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "独立整理",
-        "url": "",
-        "kind": "independent",
-        "note": "为独立整理"
-      }
-    ],
-    "verify": {
-      "status": "verified",
-      "checked_date": "2026-09-06",
-      "note": "为独立整理;代码为演示。"
-    }
-  },
-  {
-    "id": "PY-041",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的字符串格式化:f-string、format、% 的选择与 f-string 的陷阱?",
-    "tags": [
-      "Python",
-      "字符串",
-      "基础"
-    ],
-    "prerequisites": [],
-    "answer": "选择:f-string(3.6+,首选——可读、快、支持表达式);format(动态模板:模板与参数分离的场景,如配置化的模板);%(兼容遗留)。f-string 的注意:①表达式复杂度(f-string 里塞复杂逻辑可读性差——复杂计算先算再格式化);②调试用法 f\"{x=}\"(输出 x=值,3.8+);③嵌套引号(3.12 前内外引号不能相同);④安全性——f-string 不做转义(直接拼接用户内容到 SQL/HTML/提示词的注入风险,PY-031/LP-025:SQL 用参数化,提示词用转义与隔离);⑤性能(f-string 最快,但热点里的格式化仍是成本,PY-018)。LLM 场景:提示词的模板拼接(PY-022 的组装器 vs 散落的 f-string)、日志的结构化(f-string 拼 JSON vs logger 的结构化参数,PY-009)。",
-    "plain": "字符串格式化的选择像『写字的三种方式』:f-string=随身钢笔(顺手快,首选);format=表单模板(空格预留,动态填);%=老式打字机(兼容遗留)。f-string 的陷阱:钢笔太顺手,什么都往上写——复杂逻辑塞进一句话(可读性崩)、用户内容直接写上信纸(注入:SQL/HTML/提示词的三种注入场景)。原则:顺手归顺手,信纸的规矩不能破(参数化/转义)。比喻局限:f-string 的调试用法({x=})和嵌套引号的版本差异(3.12)是工具细节。",
-    "deep": "1) 三者的定位:\n   - f-string:字面量已知的格式化(首选)——可读性/性能/表达力最优;\n   - str.format:模板动态(模板字符串来自配置/外部——运行时才知道格式);format_map(安全的键缺失处理);\n   - %:遗留代码的维护(新代码不用);\n2) f-string 的细节:\n   - 表达式:任意 Python 表达式可用——可读性的纪律(复杂表达先算,格式化只做格式);\n   - 格式规格:{x:.2f}、{x:>10}、{dt:%Y-%m-%d}(日期的格式)、{x=}的调试;\n   - 嵌套引号:3.12 前内外不同引号(单双交替)——复杂嵌套的痛苦是 3.12 的 PEP 701 解决;\n   - 性能:f-string 编译为高效字节码(比 format/% 快)——但热路径的格式化仍要测量(PY-018);\n3) 注入的三场景(格式化的安全):\n   - SQL:f\"SELECT ... WHERE name='{name}'\"——SQL 注入!参数化(cursor.execute(sql, params));\n   - HTML:f\"<div>{user_content}</div>\"——XSS!转义或模板引擎的自动转义;\n   - 提示词:f\"...{user_content}...\"——提示注入(LP-025 的转义与隔离);\n   共同点:用户内容未经处理直接进入『有语法语义的容器』——容器的语法被劫持;各自的安全手段不同(参数化/转义/隔离)。\n4) LLM 场景的格式化:\n   - 提示词模板:LP-022 的组装器(变量的校验与转义)vs 裸 f-string(注入与插槽的风险,LP-025);\n   - 日志:logger.info(f\"...\") 的 f-string 求值总是发生(即使日志级别过滤掉——性能浪费)vs logger.info(\"...\", extra=...) 的惰性(PY-009 的性能注意);\n   - 结构化输出:f-string 拼 JSON(转义地狱)→json.dumps(正确姿势)——f-string 拼 JSON 是错误做法(转义与合法性的坑)。",
-    "example": "```python\n# ❌ 三种注入的同一根源\nquery = f\"SELECT * FROM users WHERE name = '{name}'\"    # SQL 注入\nhtml = f\"<p>{comment}</p>\"                              # XSS\nprompt = f\"总结:{user_note}\"                            # 提示注入\n\n# ✅ 各自的正解\ncur.execute(\"SELECT * FROM users WHERE name = %s\", (name,))\nhtml = \"<p>\" + escape(comment) + \"</p>\"\nprompt = assemble(PROMPT_TEMPLATE, {\"content\": sanitize(user_note)})  # LP-022\n\n# 日志的惰性\nlog.debug(\"详细: %s\", expensive_repr())   # 级别不够时不求值 ✅\nlog.debug(f\"详细: {expensive_repr()}\")     # 总是求值 ❌\n```",
-    "interview": "口述版:『格式化的选择:f-string 首选(可读快)、format 用于动态模板、% 只维护遗留。f-string 的两个纪律:表达式复杂度(复杂先算)与注入的三场景(SQL 参数化/HTML 转义/提示词的组装器隔离——用户内容进有语法语义的容器是共同的根源)。LLM 场景的两个细节:提示词用组装器不用裸 f-string(LP-025)、日志的惰性求值(级别过滤时 f-string 白算)。』追问展开:注入的三场景、日志的惰性、3.12 的嵌套引号。",
-    "followups": [
-      {
-        "q": "f-string 拼 JSON 为什么是错误做法?",
-        "a": "转义地狱:字符串值的引号/换行/特殊字符都要手动转义(漏一个就 JSON 非法);正确:json.dumps(data, ensure_ascii=False)——序列化器处理全部转义。f-string 拼 JSON 的事故形态:值里有个双引号,JSON 就坏了(LP-003 的解析失败的上游制造)。原则:结构化数据的组装用序列化器,不用字符串拼接。"
-      },
-      {
-        "q": "日志的惰性求值是什么?",
-        "a": "logging 的惰性:消息与参数在记录时才格式化(级别过滤掉的日志不求值)——log.debug(\"%s\", expensive()) 在 DEBUG 关闭时不执行 expensive();f-string 版本总是求值(字符串先拼好)——即使这条日志会被过滤。性能的场景:热路径的 DEBUG 日志(高频调用×昂贵格式化)——惰性是 logging 相对 f-string 的性能优势(PY-009)。"
-      },
-      {
-        "q": "动态模板(模板来自配置)的安全?",
-        "a": "模板来自配置/外部时:①格式化者的安全(format 的字段注入:模板里的 {key} 引用未提供的键——KeyError/信息泄露;format_map+SafeDict 缺省);②模板的来源信任(外部模板=代码注入的变体:模板可以执行格式规格的攻击——不受信模板的风险);③与 LP-022 的组装器的衔接(模板的版本管理与校验)。外部模板的信任模型要显式(谁写的模板=多大的信任)。"
-      }
-    ],
-    "pitfalls": [
-      "f-string 拼 SQL/JSON/提示词(三种注入与转义地狱的同一根源)。",
-      "f-string 里塞复杂逻辑(一行 50 字符的表达式,可读性崩)。",
-      "热路径的 f-string 日志(级别过滤了也白算,性能浪费)。",
-      "新代码用 % 或 format(无理由地放弃 f-string 的可读性)。"
-    ],
-    "check": {
-      "q": "code review 发现:prompt = f\"请总结:{user_input},注意:{rules}\"。三个风险与正解?",
-      "a": "风险:①提示注入(user_input 里的指令伪装,LP-025);②rules 的来源(如果是动态拼接的多段,变量错配与标记破坏);③转义的缺失(user_input 中的分隔标记破坏模板结构)。正解:组装器(LP-022)接管——user_input 经转义与结构隔离(⟨⟨U⟩⟩ 包裹),rules 来自版本化的模板片段(校验过的),渲染后结构校验(LP-025 的标记计数)。f-string 的便利不能牺牲提示词的结构安全——这正是组装器存在的理由(PY-022 的『消灭散落 f-string』)。",
-      "explain": "检验点:f-string 拼提示词的三风险(注入/错配/转义)与组装器的正解——本站 PY-022 的核心论点。"
-    },
-    "related": [
-      "PY-031",
-      "PY-009",
-      "LP-025",
-      "PY-022"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "PEP 701(f-string 语法, 3.12)与官方文档",
-        "url": "https://docs.python.org/zh-cn/3/reference/lexical_analysis.html#f-strings",
-        "kind": "official",
-        "note": "语义参考(未逐页抓取,标注)"
-      }
-    ],
-    "verify": {
-      "status": "partial",
-      "checked_date": "2026-09-06",
-      "note": "语义为官方稳定知识;安全场景为独立整理。"
-    }
-  },
-  {
-    "id": "PY-042",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的 deepcopy 与引用语义:什么时候会踩『改了一个全变了』?",
-    "tags": [
-      "Python",
-      "引用语义",
-      "基础"
-    ],
-    "prerequisites": [
-      "PY-001"
-    ],
-    "answer": "Python 的赋值是引用传递(变量是对象的标签):b = a 后改 b 的内容,a 也变(同一对象)。踩坑场景:①列表的复制——b = a.copy() 是浅拷贝(嵌套的可变对象仍共享:b[0].append 影响 a[0]);深拷贝用 copy.deepcopy(递归复制全树);②默认参数(PY-033 的可变默认);③对象属性的共享(初始化时赋同一个列表给多个实例的属性);④dict 的 copy(浅)。浅 vs 深的选择:浅拷贝够用(一层结构/不可变元素)用浅(快);嵌套可变→深拷贝;性能:deepcopy 慢(递归+循环引用处理)——大量数据的复制考虑不可变结构(frozen dataclass/PY-013)或重建(推导式)。LLM 场景:messages 列表的复制(多轮对话的历史复制给新会话——浅拷贝的嵌套消息共享,串话的变体)。",
-    "plain": "引用语义像『文件快捷方式』:b = a 创建的是快捷方式(指向同一文件)——改快捷方式指向的文件,原文件也变了(同一对象);a.copy() 像『复制文件的第一层文件夹』(浅拷贝:子文件夹还是快捷方式);deepcopy 像『连子文件夹带内容全复制』(全树复制)。踩坑:复制了第一层,以为完全独立,结果改子文件夹的内容,原件也变了(浅拷贝的嵌套共享)。比喻局限:Python 的变量是『名字绑定到对象』,不是盒子装东西——变量赋值从不复制对象(除非显式 copy),这是理解一切的根基。",
-    "deep": "1) 引用语义的精确理解:变量=名字到对象的绑定;赋值=名字的重新绑定(不复制);函数传参=绑定传递(PY-033 的可变默认的同源机制);is 与 ==(身份 vs 值)的区分(面试高频);id() 的观察工具。\n2) 拷贝的层次:\n```python\na = [[1, 2], [3, 4]]\nb = a                 # 同一对象(b is a)\nc = a.copy()          # 浅:c[0] is a[0](内层共享)\nd = copy.deepcopy(a)  # 深:全独立\na[0].append(5)\n# b[0] == [1,2,5] ✅(同一对象)\n# c[0] == [1,2,5] ⚠️(浅拷贝的内层共享!)\n# d[0] == [1,2]     ✅(深拷贝独立)\n```\n3) 常见的踩点:\n   - 多轮对话的历史复制:messages.copy() 后 append 新消息(第一层安全)——但消息 dict 是共享的(修改某条消息的内容影响原历史,LP-007 的串话变体);\n   - 默认参数(PY-033);类属性(PY-033 的兄弟);闭包捕获(共享的可变状态);\n   - 缓存的对象被修改(缓存的 dict 被调用方改——缓存的防御性复制,PY-017);\n4) deepcopy 的代价与替代:deepcopy 的性能(递归+memo 循环处理——大对象慢)与限制(不可 deepcopy 的:锁/文件句柄/线程——含资源的对象不能深拷贝);替代:不可变设计(frozen dataclass,共享安全)、重建(推导式构造新对象)、显式的字段复制(只复制需要的);\n5) LLM 场景的清单:messages 的历史复制(LP-007)、组装器的片段引用(PY-022 的 Segment 共享)、缓存的防御(PY-017)、并发下的共享(PY-042 的 contextvars 对比——引用共享是并发错的近亲)。",
-    "example": "```python\n# LLM 场景的踩点:messages 的浅拷贝\nbase = [{\"role\": \"system\", \"content\": \"规则\"}]\nnew_chat = base.copy()\nnew_chat.append({\"role\": \"user\", \"content\": \"你好\"})\n# base 没变 ✅(append 只改 new_chat 的列表)\n\nnew_chat[0][\"content\"] = \"被篡改的规则\"   # ⚠️ 内层 dict 共享!\n# base[0][\"content\"] 也变了 → 所有会话的 system 被篡改!\n# 修:copy.deepcopy(base) 或重建消息列表\n```",
-    "interview": "口述版:『Python 赋值是引用绑定:b=a 是同一对象;a.copy() 浅拷贝(嵌套共享),deepcopy 全独立。LLM 场景的踩点:messages.copy() 后改内层 dict 的 content——所有引用 base 的会话的 system 被篡改(浅拷贝的嵌套共享)。选择:一层结构浅拷贝够,嵌套可变用 deepcopy 或不可变设计(frozen)。deepcopy 的代价(递归慢+资源对象不可拷)。is 与 == 的区分(身份 vs 值)是面试的高频。』追问展开:messages 的修法、deepcopy 的限制、is 和 ==。",
-    "followups": [
-      {
-        "q": "is 和 == 的区别?",
-        "a": "is:同一对象(id 相同——内存身份);==:值相等(对象的 __eq__)。经典坑:小整数缓存(-5~256 的 is 为 True——实现细节不可依赖)、字符串驻留;判据:值比较用 ==,单例/None/哨兵用 is(x is None 是惯例)。混用的 bug:is 比较字符串(驻留的实现细节导致时对时错)。"
-      },
-      {
-        "q": "deepcopy 的限制(什么不能深拷贝)?",
-        "a": "含外部资源的对象:锁(threading.Lock——不可 pickle 不可拷)、文件句柄、网络连接、线程——deepcopy 报错或产出无意义的副本(锁的副本不是锁)。含弱引用的(PY-041 的 weakref 拷贝语义)、模块对象。解:不可拷贝的对象用重建(重新创建资源)或排除(deepcopy 的 memo/忽略机制)。"
-      },
-      {
-        "q": "messages 列表的正确复制姿势?",
-        "a": "按需分层:①只追加新消息:base + [new](创建新列表,内层 dict 引用共享但只读不改→安全);②要修改内层:deepcopy 或逐条重建([{**m} for m in base]——浅拷贝每个 dict,一层 dict 的字段独立);③系统提示的不可变:system 消息用 frozen 的结构或约定只读。原则:共享只读的引用安全,共享可写的引用是事故(PY-028 的共享纪律)。"
-      }
-    ],
-    "pitfalls": [
-      "messages.copy() 后修改内层 dict,全局的 system 提示被篡改(事故级)。",
-      "缓存的对象被调用方修改(缓存的防御性复制缺失,PY-017)。",
-      "deepcopy 滥用(大对象的全树复制,性能浪费——一层够就不用深)。",
-      "is 用来比较值(小整数的缓存让测试偶尔通过,上线爆雷)。"
-    ],
-    "check": {
-      "q": "params = {\"temperature\": 0.7};p2 = params.copy();p2[\"temperature\"] = 0.9。params 会变吗?如果值是列表呢?",
-      "a": "第一问:params 不变——顶层赋值(p2[\"temperature\"] = 0.9)是 p2 的键重新绑定,顶层独立。第二问:如果值是列表(p2[\"history\"].append(x))——会变!copy 是浅拷贝,内层的列表对象共享,append 修改共享对象(params 的 history 也多了元素)。总结:copy 保护『键的重新绑定』,不保护『共享的内层可变对象』——浅拷贝的安全边界就在第一层(PY-038 的引用语义)。",
-      "explain": "检验点:浅拷贝的保护范围(顶层赋值安全,内层可变共享)——精确到操作类型的推理。"
-    },
-    "related": [
-      "PY-001",
-      "PY-033",
-      "PY-013",
-      "PY-017"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "Python 官方文档 · copy 模块",
-        "url": "https://docs.python.org/zh-cn/3/library/copy.html",
-        "kind": "official",
-        "note": "语义参考(未逐页抓取,标注)"
-      }
-    ],
-    "verify": {
-      "status": "partial",
-      "checked_date": "2026-09-06",
-      "note": "语义为官方稳定知识;LLM 场景为独立整理。"
-    }
-  },
-  {
-    "id": "PY-043",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的鸭子类型实践:什么时候该显式检查类型(type/isinstance)?",
-    "tags": [
-      "Python",
-      "类型",
-      "边界"
-    ],
-    "prerequisites": [
-      "PY-034",
-      "PY-031"
-    ],
-    "answer": "鸭子类型(不查类型直接用)是 Python 的默认哲学——但显式检查的合理场景:①边界防御(不可信输入的类型断言,Pydantic 优先,PY-031);②多分派逻辑(不同类型的对象走不同分支:isinstance 分派——或用 functools.singledispatch 更优雅);③契约的运行时校验(协议的 runtime_checkable,PY-034 的限制);④fail fast(错误的类型晚崩溃不如早失败,PY-005)。反模式:过度检查(每个函数查每个参数——Python 的表达力丧失,应该信 mypy+测试);检查后不用(isinstance 后还用字符串操作)。现代姿势:类型标注+mypy(PY-020 的静态)承担大部分,运行时检查只放边界与关键契约(PY-031 的两道岗)。",
-    "plain": "鸭子类型像『不问学历看能力』——Python 的默认;显式检查像『关键岗位查证书』——边界(海关)和关键岗位(资金操作)要查,朋友帮忙(内部调用)不查(信 mypy 和交情)。反模式:朋友间也互相查证书(过度检查,关系僵硬=代码冗长)。判断:这个函数的输入可信吗(PY-031 的边界判据)——不可信查,可信信类型标注。比喻局限:isinstance 的检查可以很优雅(singledispatch 的分派),不是『查证书』的官僚形象。",
-    "deep": "1) 显式检查的合理场景:\n   - 边界(PY-031):HTTP/MQ/LLM 返回的输入——Pydantic 优先(声明式),裸 isinstance 兜底;\n   - 多分派:不同类型不同行为(isinstance 链/singledispatch/match 语句)——OO 的多态或 functools.singledispatch 的函数式;\n   - 关键契约:资金/权限操作的参数断言(运行时的最后防线,PY-031 的 beartype);\n   - fail fast:错误的类型延后处理的成本高(早失败好于晚崩溃);\n2) 反模式的识别:\n   - 检查后不用:type(x) == str 后还是当通用对象用(检查无意义);should isinstance 后不收窄(检查了继续当 Any 用);\n   - 处处检查(每个函数的每个参数)——Python 的简洁丧失(Java 化);信 mypy(静态已查)+测试;\n   - type() 代替 isinstance(破坏子类——isinstance 是正确的类型检查);\n   - 检查的歧视(只接受自己的类,拒绝 duck——过度封闭,Protocol 的精神是结构匹配,PY-034)。\n3) 现代的替代与增强:\n   - singledispatch:基于类型的函数分派(注册各类型的实现,扩展开放);\n   - match 语句(3.10+):结构化匹配(类型+结构的一次性匹配);\n   - Protocol+静态(PY-034):契约的静态化(运行时零检查);\n   - Pydantic:边界的声明式校验;\n4) LLM 场景的判断:LLM 返回的解析(边界,Pydantic)、工具参数(边界,Pydantic/schema)、内部的 messages 构造(类型标注+mypy)、分派的工具执行(singledispatch 或 match)——『边界查、内部信』的分布(PY-031 的两道岗)。\n5) 与 mypy 的协同:mypy 静态查(写代码时),isinstance 动态查(运行时的边界)——动态检查是静态的补充(静态查不到运行时的数据,PY-020 的诚实),两者覆盖不同的失败面。",
-    "example": "```python\n# ✅ 合理的显式检查:边界+分派\n@functools.singledispatch\ndef serialize(obj): raise NotImplementedError(obj)\n@serialize.register\ndef _(obj: ChatRequest): ...     # 分派到各类型的序列化\n\n# ❌ 反模式:内部函数的过度检查\ndef merge(a: list, b: list) -> list:\n    assert isinstance(a, list)    # mypy 已保证,断言冗余\n    assert isinstance(b, list)\n    ...\n```",
-    "interview": "口述版:『鸭子类型是默认(不查直接用),显式检查的合理场景:边界防御(Pydantic 优先)、多分派(singledispatch/match)、关键契约的运行时断言、fail fast。反模式:处处检查(Java 化)、检查后不收窄、type() 代替 isinstance。现代姿势:mypy 静态承担大部分(写代码时),运行时只放边界与关键契约(PY-031 的两道岗)——LLM 场景的分布:LLM 返回解析查,内部 messages 构造信。』追问展开:singledispatch、两道岗的协同、LLM 场景的分布。",
-    "followups": [
-      {
-        "q": "singledispatch 的用法与价值?",
-        "a": "基于第一个参数的类型分派:基函数(默认实现)+register(各类型的实现)——扩展开放(新类型注册新实现,不改基函数);比 isinstance 链优雅(加类型=加注册,不改逻辑);泛型注册(singledispatchmethod 的方法版)。价值:类型分派的逻辑集中且可扩展(serialize 工具的典型用法,LP-024 的管道)。"
-      },
-      {
-        "q": "fail fast 的度怎么把握?",
-        "a": "fail fast 的对象:错误会在远处爆炸的(错误的类型传进来,三层之后才崩——早失败好定位,AG-009 的失败定位);不 fail fast 的对象:可以容错的(默认值兜底/自动转换合理)。判据:这个错误晚发现,排查的成本多大?——早失败是排查成本的优化(PY-005 的 fail fast 原则)。"
-      },
-      {
-        "q": "LLM 返回的解析什么时候用 isinstance 什么时候用 Pydantic?",
-        "a": "结构化且关键(要进业务的字段)→Pydantic(声明式+错误信息+转换,PY-013);简单的存在性检查(返回有没有 choices)→isinstance/get 的防御(轻量);原则:要用的数据结构化校验(Pydantic 的闭环,LP-003),路过的结构轻检查。过度:返回的每个嵌套都建 Pydantic 模型(过度建模,够用即可)。"
-      }
-    ],
-    "pitfalls": [
-      "内部函数的参数全查(Java 化,Python 的简洁丧失)。",
-      "type(x) == str 代替 isinstance(子类被拒绝)。",
-      "assert 做运行时校验(-O 下失效,PY-031 的安全漏洞)。",
-      "isinstance 链太长(应该 singledispatch/match/多态重构)。"
-    ],
-    "check": {
-      "q": "函数 process(data) 需要同时支持 dict 和 Pydantic 模型输入。三种实现方式与推荐?",
-      "a": "①isinstance 分派:if isinstance(data, dict): normalize... else: data.model_dump()——直白;②singledispatch:注册 dict 与模型的实现——扩展优雅(新类型注册即可);③入口归一:调用前统一转模型(边界统一,内部单类型)——最干净但改调用方。推荐:内部函数③(归一化入口,内部单一类型)+对外的适配层②(注册扩展)——组合后 process 内部无类型分支(简洁)。选择的经验:类型分支多(>3)→singledispatch;入口可控→归一化。",
-      "explain": "检验点:多类型输入的三种实现(分派/归一/分支)与选择的经验法则。"
-    },
-    "related": [
-      "PY-034",
-      "PY-031",
-      "PY-020",
-      "PY-013"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "独立整理",
-        "url": "",
-        "kind": "independent",
-        "note": "为独立整理"
-      }
-    ],
-    "verify": {
-      "status": "verified",
-      "checked_date": "2026-09-06",
-      "note": "为独立整理;代码为演示。"
-    }
-  },
-  {
-    "id": "PY-044",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的切片(slicing)与不可变序列的操作要点?常见错误?",
-    "tags": [
-      "Python",
-      "切片",
-      "基础"
-    ],
-    "prerequisites": [
-      "PY-001"
-    ],
-    "answer": "切片的要点:①语法 a[start:stop:step](stop 不含,负索引/负步长);②切片产生新对象(不可变序列的切片是新对象,可变序列的切片赋值是原地修改——两个不同的语义);③越界安全(切片越界不报错,返回空/截断——与索引的越界报错不同,双刃剑:安全但可能掩盖 bug);④切片是视图还是拷贝——list/tuple/str 的切片是拷贝(list),numpy/array 的切片是视图(改视图改原——库的差异);⑤常见错误:step 为 0(报错)、切片做单元素访问(a[5:6] vs a[5] 的语义差异)、可变序列的切片赋值的长度不匹配(可以不匹配——插入或删除)。LLM 场景:文本的窗口切片(LP-002)、流式缓冲的截断(LP-005)、列表的分页切片(PY-026 的 offset 陷阱)。",
-    "plain": "切片像『切面包』:a[1:4] 切第 2 到 4 片(不含第 4 个刻度,像数数的规矩);越界切不报错(刀不够长就切到头——安全但可能以为切到了);列表的切片是新面包(改新面包不影响旧的);numpy 的切片是『同一块面包的托盘视图』(改托盘里的,原面包也变——库的差异!)。错误:把『切片安全』当成『索引安全』(a[100] 报错,a[99:100] 不报错但可能拿到空——静默的空结果掩盖 bug)。比喻局限:切片赋值(a[1:3] = [...])可以改变长度(插入删除语义)——切面包没有这个操作。",
-    "deep": "1) 语义的精确性:\n   - 索引 vs 切片:a[5] 越界报 IndexError(必须存在);a[5:10] 越界返回短/空(宽容)——宽容的双刃剑:安全(不用边界检查)与掩盖(空结果可能是 bug 的信号——上游的边界检查不能省);\n   - 切片的拷贝语义:a[:] 是浅拷贝(PY-042 的引用共享:嵌套可变共享);b = a[:] 与 b = list(a) 等价;\n   - 切片赋值(可变序列):a[1:3] = [x, y, z](长度可不同——替换/插入/删除的统一语法);a[1:1] = [x](插入);del a[1:3](删除);\n2) 库的差异(numpy/bytes/memoryview):list 切片=拷贝;numpy 数组切片=视图(零拷贝,改视图改原——性能的利器与 bug 的来源);bytes 切片=新 bytes(不可变);memoryview=零拷贝视图。LLM 场景:大文本的切片(list 切片拷贝大文本的内存——分段处理用 islice/视图, itertools.islice 的惰性切片,PY-018)。\n3) 常见错误:\n   - off-by-one:stop 不含的规则(a[0:len(a)] 是全量;a[len(a)] 报错);负索引的混用(a[-1:] 最后一个,a[-1] 同义;a[1:-1] 去头尾);\n   - 空切片的静默:a[big:bigger] 返回空(上游的边界错误被吞,PY-031 的宽容的双刃剑);\n   - 步长的误用:a[::-1] 反转(新对象)、a[::2] 隔一个;\n   - 切片赋值的长度假设(长度不匹配的插入/删除语义忘记);\n4) LLM 场景:文本窗口(LP-002 的上下文窗口:token 级切片,不是字符级——FD-005 的 tokenizer 计数);流式缓冲的帧切分(LP-005 的缓冲按 \\n\\n 切);长列表的分页(PY-026 的游标优于切片——大列表的切片拷贝);\n5) 性能:切片的拷贝成本(大列表的 a[:] 是 O(n)——只需要遍历用迭代器/islice,不需要切片);链式切片的中间对象(多次切片的中间拷贝——合并切片)。",
-    "example": "```python\ntext = \"很长的文档……\"\nwindow = text[start:end]           # 字符级切片(token 级要 tokenizer,FD-005)\n\n# 大列表的分页:切片拷贝 vs islice\nfrom itertools import islice\npage = list(islice(iter(all_items), offset, offset+20))  # 惰性\n# vs all_items[offset:offset+20]  # 先全量再切(大列表的浪费)\n```",
-    "interview": "口述版:『切片的要点:stop 不含、越界宽容(与索引的区别——宽容是双刃剑,空切片可能掩盖 bug)、列表切片是新对象而 numpy 是视图(库的差异)、切片赋值可变长(插入删除的统一语法)。LLM 场景:文本窗口是字符级(.token 级要 tokenizer,FD-005)、大列表分页用 islice(切片拷贝的浪费)。宽容的双刃剑:上游的边界检查不能省(空切片的静默)。』追问展开:视图与拷贝的库差异、islice、负索引。",
-    "followups": [
-      {
-        "q": "切片越界宽容的应用与风险?",
-        "a": "应用:安全的截取(不用检查边界:text[:max] 自动适配)——简洁;风险:静默的空/短结果(预期的内容没拿到不报错——上游的 bug 被吞,PY-031 的宽容双刃剑)。纪律:业务关键的截取(检索窗口/分页)显式检查边界(空结果的告警),工具性的截取(文本预览)用宽容切片。"
-      },
-      {
-        "q": "numpy 视图与 list 拷贝的差异的实际影响?",
-        "a": "numpy:切片是视图(零拷贝,改视图改原)——大数组的处理高效,但要 .copy() 才独立;list:切片是拷贝(独立但 O(n))。混用的 bug:从 numpy 切片后修改,意外改了原数组(视图语义的忘记)。LLM 场景:嵌入向量的切片(numpy)——视图修改污染原始嵌入(防御性 copy 或只读纪律)。"
-      },
-      {
-        "q": "itertools.islice 的价值?",
-        "a": "惰性切片:迭代器的切片(不物化全量)——大列表/生成器的分页与截取(O(k) 不 O(n));与 list 切片的对比:list 切片先物化全量(内存+时间),islice 迭代到位置(惰性);场景:大文件的行切片、生成器的分页(PY-026 的游标的迭代器版)。"
-      }
-    ],
-    "pitfalls": [
-      "空切片的静默(预期的内容没拿到不报错,下游的空输入)。",
-      "大列表的切片分页(全量物化的浪费,islice 替代)。",
-      "numpy 视图当拷贝用(修改污染原始数组)。",
-      "字符级切片当 token 级窗口用(FD-005 的计数错误)。"
-    ],
-    "check": {
-      "q": "tokens = tokenizer.encode(text) 返回 list;想要前 512 个 token 的文本。怎么写才对?常见错误?",
-      "a": "正确:tokenizer.decode(tokens[:512])——token 级切片后解码。常见错误:①text[:2048] 字符级切片再解码(字符与 token 不对齐,FD-005——切的位置可能在 token 中间,解码出乱码或数量不准);②直接改 tokens 列表再 decode(如果 tokens 是其他格式);③忽略特殊 token(编码的头尾标记被切掉——tokenizer 的 add_special_tokens 语义)。检验点:token 级的窗口操作要在 token 空间做(encode→slice→decode),字符级的直觉在这里失效(FD-005 的工程含义)。",
-      "explain": "检验点:token 级窗口的正确操作(encode→slice→decode)与字符级直觉的失效。"
-    },
-    "related": [
-      "PY-001",
-      "FD-005",
-      "PY-026",
-      "LP-002"
-    ],
-    "doc_refs": [
-      "doc-python-1"
-    ],
-    "sources": [
-      {
-        "name": "Python 官方文档 · 序列类型(切片语义)",
-        "url": "https://docs.python.org/zh-cn/3/library/stdtypes.html#common-sequence-operations",
-        "kind": "official",
-        "note": "语义参考(未逐页抓取,标注)"
-      }
-    ],
-    "verify": {
-      "status": "partial",
-      "checked_date": "2026-09-06",
-      "note": "切片语义为官方稳定知识;LLM 场景为独立整理。"
-    }
+  "related": [
+   "EN-027",
+   "AG-041",
+   "EN-013",
+   "FD-002"
+  ],
+  "doc_refs": [
+   "doc-eng-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;分桶为演示。"
   }
+ },
+ {
+  "id": "EN-043",
+  "topic": "engineering",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "AI 功能的渐进出道(gradual rollout):从内部试用到全量的用户分层策略?",
+  "tags": [
+   "发布",
+   "分层",
+   "产品"
+  ],
+  "prerequisites": [
+   "EN-005",
+   "EN-039"
+  ],
+  "answer": "渐进出道的分层:①内部 dogfood(工程团队自用)——发现基本问题,工程团队的宽容度与反馈质量高;②友好用户(opt-in 的早期用户)——真实场景但容忍度高(知道是测试);③小比例外部(1~5%)——真实环境的首次检验;④扩大(10/25/50%)——统计显著性的积累;⑤全量。每层的观察重点:dogfood(功能的基本可用)、友好用户(真实场景的价值感知)、外部小比例(行为指标与护栏)、扩大(稳定性与规模效应)。与 EN-005 的灰度的差异:这里强调『用户分层』——不同层的用户特征(宽容度/场景/反馈质量)不同,每层的目的不同。分层的选择标准:opt-in 的意愿(友好用户是愿意试的)、特征的代表性(外部小比例要随机不能只挑大客户)。",
+  "plain": "渐进出道像『新菜的上市节奏』:先给自家厨师吃(dogfood——自己人挑毛病最狠)、再给常客试(友好用户——愿意尝鲜)、再上 5% 的菜单(外部小比例)、最后全菜单(全量)。每层的目的不同:厨师挑基本问题、常客验口味、外部验真实接受度。分层的选择:常客是自愿的(友好用户),外部的 5% 要随机(不能只挑好说话的大客户)。比喻局限:AI 功能的『行为指标』(采纳率/纠错率)是每层都要看的——菜品只看口碑,AI 看的是行为数据。",
+  "deep": "1) 各层的设计与观察:\n   - dogfood:全功能开放+反馈渠道直通(工程的反馈质量高:具体的、可操作的);观察:基本可用性/明显的愚蠢行为;周期:1~2 周;\n   - 友好用户:opt-in 的机制(自愿加入+知情——知道是测试,EN-033 的期望管理)、反馈的激励(徽章/优先功能);观察:真实场景的价值感知/期望校准(EN-033 的示例驱动);\n   - 外部小比例:随机选择(代表性)或特征选择(特定用户群)、护栏的严格(EN-021 的 L0+);观察:行为指标(EN-027 的北极星)、支持工单(意外的失败模式);\n   - 扩大:统计的显著性(LP-019 的功效)、运营的准备(支持团队的知识,EN-039)、规模的容量(EN-009);\n2) 层间的晋级标准:每层到下一层的晋级条件(明确写:dogfood 的 P0 问题清零→友好用户;友好用户的采纳率>X→外部小比例)——晋级是数据决策不是时间决策;\n3) 回退的路径:每层都可回退(回上一层的用户群),回退的触发(护栏破线,EN-005);回退后的分析(哪个用户群的问题——分层的信息价值在回退时兑现);\n4) 用户分层的信息管理:每层的用户名单与特征(dogfood 的工程师名单/友好用户的 opt-in 记录/外部的哈希分组)——分层的准确性(别让友好用户进外部组);分层的隐私(用户被分到测试组的知情,EN-012);\n5) 与 EN-005 的关系:EN-005 讲发布的技术面(版本/回滚),本题讲用户面(分层的用户策略)——两者的结合(技术灰度×用户分层=完整的 rollout)。",
+  "example": "晋级标准(示例):\n```\ndogfood → 友好用户:\n  条件:P0/P1 问题清零;核心场景的内部采纳率 >60%\n友好用户 → 外部 1%:\n  条件:友好用户的周留存 >50%;N0 严重事故;评测门禁全过\n外部 1% → 25%:\n  条件:北极星指标不降;护栏全绿;支持工单率稳定\n25% → 100%:\n  条件:统计显著的正面或中性 + 护栏稳定(EN-021/LP-019)\n```",
+  "interview": "口述版:『渐进出道四层:dogfood(工程师自用,挑基本问题)、友好用户(opt-in,真实场景的价值感知)、外部小比例(随机,行为指标)、扩大(统计积累)。每层的晋级是数据决策(明确写条件:P0 清零/采纳率/护栏),不是时间决策。回退路径每层都有(护栏破线回上一层)。与 EN-005 的灰度结合:技术灰度×用户分层=完整 rollout。』追问展开:晋级标准的设计、opt-in 的机制、回退的分析。",
+  "followups": [
+   {
+    "q": "友好用户的 opt-in 怎么设计?",
+    "a": "招募:明确告知(这是早期版本,可能有不稳定)、激励(优先新功能/专属支持/徽章)、筛选(意愿+场景匹配——重度用户与轻度用户都要);知情同意(数据与反馈的使用说明,EN-012);退出机制(随时退出,无惩罚)。友好用户的价值:真实场景+高容忍——两者的平衡(容忍度高可能掩盖真实体验的问题——外部的 1% 才是真检验)。"
+   },
+   {
+    "q": "晋级标准的数据决策怎么避免 gaming?",
+    "a": "标准的独立性:晋级条件的数据与被评审的团队分离(数据由评测/数据团队出具);条件的抗操纵(北极星的抗操纵标准,EN-027);时间的固定(预定的观察窗口,不提前不推迟——除非护栏破线)。gaming 的形态:挑好的时间段/挑好的用户群/指标的选择性报告——治理靠数据的独立与公开(EN-013 的文化)。"
+   }
+  ],
+  "pitfalls": [
+   "层间跳级(内部直接全量,友好用户层被跳过——真实场景未验证)。",
+   "外部小比例不随机(只挑大客户,代表性失真)。",
+   "晋级靠拍脑袋(『感觉可以了』——数据决策缺失)。",
+   "回退后不分析(回退的信息价值浪费)。"
+  ],
+  "check": {
+   "q": "友好用户层的反馈非常好(95% 好评),可以直接跳到全量吗?",
+   "a": "不建议跳:友好用户的特征偏差(opt-in 的早期用户——技术 savvy、宽容、场景可能特殊)不代表全量用户;95% 好评的样本量与分布检查(多少人/什么场景);外部小比例(1%)的价值:真实用户的非自愿场景检验(不知道是 AI 生成的?期望管理的自然测试,EN-033)+规模效应(容量/成本)。跳层的风险:友好用户的成功→全量的意外(真实用户的期望与场景不同)。正确:按分层走,每层的目的不同——速度的诱惑不敌分层的信息价值。",
+   "explain": "检验点:友好用户层与外部层的特征差异(自愿/宽容 vs 真实/自然)——跳层的风险论证。"
+  },
+  "related": [
+   "EN-005",
+   "EN-039",
+   "EN-033",
+   "EN-027",
+   "EN-021"
+  ],
+  "doc_refs": [
+   "doc-eng-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;标准为演示。"
+  }
+ },
+ {
+  "id": "PY-037",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "Python 的异步生成器和 async iterator 在流式管道里怎么用?",
+  "tags": [
+   "Python",
+   "异步生成器",
+   "流式"
+  ],
+  "prerequisites": [
+   "PY-002",
+   "PY-021"
+  ],
+  "answer": "异步生成器(async def + yield)产出异步可迭代对象:每次 yield 前可以 await(如从上游异步拉取数据再产出)——LLM 流式的标准模式(上游 SSE 的 async for → 处理 → yield 给下游,FastAPI 的 StreamingResponse 消费)。用法要点:①消费用 async for(或 manual __anext__);②关闭的清理(async for 结束或 aclose 时,finally 执行,LP-005 的取消清理);③组合(异步生成器可以嵌套 yield from 类似的 async for 循环);④与同步生成器的选择(数据源是异步的→async;纯 CPU 的转换→同步即可,同步生成器在 async 管道里会阻塞——包装或用 to_thread)。",
+  "plain": "异步生成器像『会等快递的流水线』:普通生成器=流水线只管转(源头没货就空转或阻塞——同步阻塞整个事件循环);异步生成器=『每道工序之间可以等』——上游的快递(异步拉取)没到就 await 等,到了就加工传给下游。LLM 流式的标准姿势:从上游 await 拉一段→加工→yield 给前端。比喻局限:async 生成器的『取消传播』(上游取消→下游的 finally 清理)是流水线比喻没有的关键语义(PY-002 的 close 的异步版)。",
+  "deep": "1) 基本模式:\n```python\nasync def transform_stream(upstream):\n    async for chunk in upstream:      # await 上游\n        processed = process(chunk)    # CPU 处理(短)\n        yield processed               # 产出给下游\n\n# FastAPI 消费\nasync def gen():\n    async for piece in transform_stream(llm_stream(prompt)):\n        yield f\"data: {piece}\\n\\n\"\n```\n2) 清理与取消:async generator 的 aclose(或 async for 的正常结束/GC)触发 finally——上游连接的关闭(LLP-005 的取消语义在生成器层的落地);注意:aclose 的触发时机(异步 GC 的不确定性——显式管理更可靠:上下文管理器包装或框架的生命周期);\n3) 组合管道:多层 async 生成器的串联(每层 await 上游 yield 下游)——管道的每一层都是 async(同步层会阻塞);thread 的桥接(同步生成器→异步:run_in_executor 逐块桥接,或 asyncio.to_thread + queue);桥接的坑(to_thread 的线程安全、背压的丢失)。\n4) 背压:async 生成器的下游消费速度决定上游的拉取速度(async for 的节奏=消费节奏)——天然的背压(生产不会快于消费);对比:Queue 的显式背压(PY-003)——生成器管道的背压是隐式而优雅的;\n5) 性能:每个 yield 的开销(异步生成的调度)、大流的优化(块合并,LP-005)、超时(asyncio.timeout 包住整个流的消费,LP-004)。",
+  "example": "```python\n# 多层异步管道(示意)\nasync def sse_source(prompt):\n    async with client.stream(\"POST\", ...) as r:\n        async for line in r.aiter_lines():\n            yield parse_sse(line)\n\nasync def with_metadata(source):\n    async for item in source:\n        yield {\"text\": item, \"ts\": now()}   # 加工层\n\nasync def sse_frames(source):\n    async for item in with_metadata(source):\n        yield f\"data: {json.dumps(item)}\\n\\n\"  # 输出层\n```",
+  "interview": "口述版:『异步生成器是 LLM 流式的标准模式:async for 上游→加工→yield 下游,每层可 await。要点:清理放 finally(取消传播,LP-005)、管道的每层都要 async(同步层阻塞事件循环,PY-003)、背压是天然的(async for 的节奏=消费节奏)。同步生成器的桥接(to_thread+queue)有背压丢失的坑。性能上:块合并、超时包整个流。』追问展开:aclose 的时机、同步桥接的坑、背压的对比。",
+  "followups": [
+   {
+    "q": "异步生成器的 aclose 时机为什么不确定?",
+    "a": "async generator 的 GC(aclose 的调用)由事件循环调度——不保证立即(引用消失后要等循环的 async gen 钩子)。后果:清理(关上游连接)可能延迟。对策:显式管理(调用方的 await gen.aclose() 或上下文管理器包装)、框架的消费(FastAPI 的 StreamingResponse 在断开时会 aclose——但依赖框架行为不如显式)。显式 > 依赖 GC(与 PY-021 的 sync aclose 同理)。"
+   },
+   {
+    "q": "同步生成器怎么接入异步管道?",
+    "a": "桥接:①逐块 to_thread(同步生成器的 next 在线程池跑——阻塞不伤事件循环,但要处理线程与 async 的交接);②queue 桥接(线程跑同步生成器推 queue,async 侧从 queue 异步读——注意背压与结束信号,PY-003);③优先:源头直接改 async(如果可控)。坑:to_thread 的每次调用开销、线程安全(生成器的状态在单线程内)。"
+   }
+  ],
+  "pitfalls": [
+   "管道里混入同步生成器,事件循环被阻塞(PY-003 的经典坑)。",
+   "清理依赖 GC 的 aclose,上游连接的关闭延迟。",
+   "异常在管道中传播的处理缺失(某层抛异常,下游的清理未执行)。",
+   "async for 一个不是 async iterable 的对象(同步生成器直接 async for,TypeError)。"
+  ],
+  "check": {
+   "q": "客户端断开连接后,你的异步生成器管道的清理顺序是什么?",
+   "a": "取消传播链:客户端断开→FastAPI 取消响应任务→async for 的消费方被取消→管道的每一层在 await 点收到 CancelledError→各层的 finally 执行(从下游到上游的逆序清理)→最上游的连接关闭。保证的要点:每层的清理放 finally(PY-002)、不吞 CancelledError(PY-005)、管道的每层都是 async(取消才能传播——同步层是取消的盲区)。测试:模拟断开(取消任务)断言上游连接的关闭——取消传播是管道正确性的必测项。",
+   "explain": "检验点:取消在异步管道中的传播链与各层 finally 的逆序清理。"
+  },
+  "related": [
+   "PY-002",
+   "PY-003",
+   "LP-005",
+   "PY-021"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · 异步生成器",
+    "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#asynchronous-generator-functions",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "语义为官方稳定知识;模式为独立整理。"
+  }
+ },
+ {
+  "id": "PY-038",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "Python 的异常组(ExceptionGroup)和 except* 语法怎么用于并发错误处理?",
+  "tags": [
+   "Python",
+   "异常组",
+   "并发"
+  ],
+  "prerequisites": [
+   "PY-022",
+   "PY-005"
+  ],
+  "answer": "ExceptionGroup(3.11+)打包多个异常(TaskGroup 的并发失败,gather 的聚合),except*(3.11+)按异常类型分别捕获组内的异常:except* ValueError 处理组内所有 ValueError、except* TypeError 处理 TypeError——与普通 except 的区别:except* 可以匹配组内的部分异常(其余继续传播),且可多分支同时命中(不同类型的分支都执行)。用法:并发操作的多类失败处理(AG-017 的失败聚合:网络错误与业务错误分别处理)、嵌套组(组内组的递归处理)。设计:并发失败的业务分类(PY-005 的层次:哪些可重试哪些终止)映射到 except* 的分支;裸 ExceptionGroup 的处理(兜底分支)。",
+  "plain": "异常组像『打包的投诉信』:一次并发操作失败,包装了一堆投诉(每个子任务的异常)——except* 像『按投诉类型分拣』:所有『服务态度』的分给客服部处理,所有『产品质量』的分给质检部,两类都有的话两个部门都处理;没分拣到的类型继续往上抛(上级处理)。普通 except 是『抓到一封处理一封』(对组不适用)。比喻局限:except* 的语义是『组内过滤』(每组类型一个子组),匹配到的子组继续传播或处理——分拣的细节比比喻精确。",
+  "deep": "1) 语法与语义:\n```python\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(network_op())     # 可能 ConnectionError\n        tg.create_task(validate_op())    # 可能 ValueError\nexcept* ConnectionError as eg:         # 组内的连接错误\n    handle_network(eg.exceptions)\nexcept* ValueError as eg:              # 组内的校验错误\n    handle_validation(eg.exceptions)\n# 两类都出现 → 两个分支都执行\n# 未匹配的类型 → 打包成新的组继续传播\n```\n2) 与 gather 的组合:gather(return_exceptions=True) 的结果列表手动分类(PY-022)vs TaskGroup+except*(自动打包)——TaskGroup 的结构化+except* 的分类是现代姿势;\n3) 业务的应用:AG-017 的失败聚合(部分失败的处理策略)映射到 except* 的分支(网络错误→重试逻辑,业务错误→降级,权限错误→终止);嵌套的组(fanout 内的 TaskGroup)的递归处理;\n4) 设计的纪律:异常类型的层次(业务异常的基类设计,PY-005)与 except* 的分支对齐(每个分支=一类处理策略);裸组兜底(未预期的类型不能静默——记录+上抛);组内异常的全量处理(每个子异常都要被看到——日志与指标的完整)。\n5) 版本:3.11+ 的特性(老版本用收集中转:结果的异常检查+手动分组——PY-022 的 gather 模式),迁移的路径(3.11+ 的 except* 是目标形态)。",
+  "example": "```python\n# 并发失败的业务分类(示意)\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(fetch_data())\n        tg.create_task(validate(input))\nexcept* TransientError as eg:          # 瞬时:走重试/降级\n    schedule_retry(eg.exceptions)\nexcept* ValidationError as eg:         # 参数:回喂修正\n    feed_back_errors(eg.exceptions)\nexcept* PermissionError as eg:         # 权限:终止\n    abort_with_audit(eg.exceptions)\n```",
+  "interview": "口述版:『ExceptionGroup+except* 是并发失败的业务分拣:TaskGroup 打包失败,except* 按异常类型分拣(部分匹配,多分支可同时命中,未匹配的继续传播)。与 gather 的组合:gather(return_exceptions) 手动分类 vs TaskGroup+except* 的自动分拣——现代姿势是后者。设计:业务异常的层次与 except* 分支对齐(每分支=一类策略:瞬时重试/参数回喂/权限终止)+裸组兜底。』追问展开:与 gather 的选择、异常层次的设计、嵌套组。",
+  "followups": [
+   {
+    "q": "except* 和普通 except 的关键区别?",
+    "a": "普通 except:匹配『抛出的那个异常』(一对一);except*:匹配『组内的一部分异常』(过滤语义)——匹配的子组被该分支处理,其余的打包继续传播;多个 except* 分支可同时命中(不同类型);同一类型不能重复匹配。语义上:except* 是『组的分区处理』,普通 except 是『单异常的拦截』。"
+   },
+   {
+    "q": "异常层次怎么设计才好用?",
+    "a": "业务异常的基类树(PY-005):Transient(可重试)/Permanent(参数/权限)/System(内部)——except* 的分支按顶层类设计;分支的处理策略与异常类的语义对齐(Transient→重试/降级,Permanent→告警修正);子类的细化在分支内(eg.exceptions 过滤)。层次与分支的对齐让并发错误处理的意图清晰。"
+   }
+  ],
+  "pitfalls": [
+   "以为没写分支的异常类型会被顺手处理——未匹配的部分会打包成新的组继续向上传播(本机 3.13 实测:except* ValueError 只拿走 ValueError,残留的 TypeError 以 ExceptionGroup 形态上抛),上层必须用 except* 兜底或记录,否则错误在高层才爆。",
+   "把 except* 当普通 except 用(期望拦截整个组——语义误解)。",
+   "组内异常不逐个处理(只看第一个——丢其他根因)。",
+   "3.11 以下硬用(版本检查与回退)。"
+  ],
+  "check": {
+   "q": "TaskGroup 中 3 个任务:1 个超时、1 个参数错误、1 个成功。except* 的各分支会发生什么?",
+   "a": "TaskGroup 抛出含 2 个异常的组(超时 TimeoutError、参数 ValidationError;成功的无异常)。except* TimeoutError 分支命中(处理超时);except* ValidationError 分支命中(处理参数错误)——两个分支都执行(组内部分匹配的语义);成功的任务的结果在组的上下文外(需要另行收集——TaskGroup 的结果通过闭包/字典收集,不是组的返回值)。若还有未匹配的类型(如 PermissionError)→打包成新组继续传播。这展示了 except* 的『分区处理』语义。",
+   "explain": "检验点:except* 的分区语义(部分匹配+多分支+未匹配传播)在具体例子的推演。"
+  },
+  "related": [
+   "PY-022",
+   "PY-005",
+   "AG-017",
+   "PY-011"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · ExceptionGroup 与 except*",
+    "url": "https://docs.python.org/zh-cn/3/library/exceptions.html#exception-groups",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-07",
+   "note": "except* 分区语义已在本机 Python 3.13 运行验证(匹配分支处理子集 [1,3];未匹配的 TypeError 打包成单成员组继续传播);业务映射为独立整理。"
+  }
+ },
+ {
+  "id": "PY-039",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的函数签名设计:参数太多时怎么重构?kwargs 的使用边界?",
+  "tags": [
+   "Python",
+   "函数设计",
+   "重构"
+  ],
+  "prerequisites": [
+   "PY-013",
+   "PY-028"
+  ],
+  "answer": "参数过多的重构选项:①参数对象——相关参数打包成 dataclass/Pydantic(配置类参数:LLMParams(model/temperature/max_tokens...),PY-013 的选型);②拆函数——参数多常意味着函数做太多(拆成几个职责单一的函数);③默认值与必填的梳理——必填最少化(默认值覆盖常见场景)、互斥参数的显式化;④kwargs 的边界——转发层(装饰器/包装器透传,**kwargs 合理)、动态配置(**config 的解包)可以用;业务函数的『随意扩展』(**kwargs 接收一切=签名失去文档价值,mypy 失效)。原则:签名是接口文档(参数=函数的能力声明),参数对象>拆函数>kwargs(可读性顺序)。",
+  "plain": "参数太多像『遥控器太多按键』:重构选项=①万能遥控(参数对象:把相关按键组合成一个场景键『观影模式』);②拆遥控(电视一个空调一个——函数拆分);③梳理按键(常用的留,不常用的进设置菜单——默认值);④**kwargs 像『其他任意键』——万能但按了不知道发生什么(签名失去文档价值)。LLM 场景的典型:chat(model, temperature, top_p, max_tokens, stop, seed, tools, tool_choice, response_format, user...) 十几个参数——参数对象(LLMParams)是标准解。比喻局限:参数对象不只是收纳——它还可以有校验(Pydantic 的约束)、默认值的组合逻辑(场景预设)——比遥控器智能。",
+  "deep": "1) 参数对象的实践:\n```python\n@dataclass(slots=True, frozen=True)\nclass LLMParams:\n    model: str\n    temperature: float = 0.7\n    max_tokens: int = 2000\n    tools: list | None = None\n    # 场景预设(工厂方法)\n    @classmethod\n    def extraction(cls): return cls(model=..., temperature=0.0)\n    @classmethod\n    def creative(cls): return cls(model=..., temperature=0.9)\n\ndef chat(prompt: str, params: LLMParams) -> Completion: ...\n```\n2) 拆函数的信号:参数的分组使用(某些参数总是一起用=一个职责的信号)、函数的文档难以写清(一个 docstring 描述不了)、调用方的组合(调用方总是配合使用某些参数)——拆分的 smell 检测;\n3) kwargs 的合理场景:转发层(装饰器的透传:f(*args, **kwargs)——保持签名透明)、真正的动态(配置驱动的调用:参数名来自配置)、API 的兼容层(接收超集过滤)——业务函数避免(签名是文档,kwargs 是文档的黑洞);\n4) LLM 场景的特殊:参数与 API 的映射(LLMParams→SDK 的参数:适配层,EN-014)、场景预设(extraction/creative 的工厂——LP-001 的参数策略的代码化)、与 Pydantic 的关系(参数对象也可用 Pydantic——需要校验时,PY-013 的选型)。\n5) 演进的纪律:新参数的加入评审(签名是接口——加参数=接口变更,LP-021 的评审)、废弃参数的移除( deprecation 流程)、兼容(旧调用不断——默认值的设计)。",
+  "example": "```python\n# 场景预设的调用(可读性)\nresult = await chat(\n    prompt=user_msg,\n    params=LLMParams.extraction(),   # 抽取场景的参数预设\n)\n# vs 十几个散参数(难读难维护)\n# result = await chat(user_msg, model=..., temperature=0, ...)\n```",
+  "interview": "口述版:『参数过多的重构三选:参数对象(LLMParams 的 dataclass——场景预设工厂)、拆函数(参数分组使用的信号)、梳理默认值(必填最少化)。kwargs 的边界:转发层和动态配置可以用,业务函数禁用(签名是文档,kwargs 是文档黑洞)。LLM 场景的标准解:LLMParams 的场景预设(extraction/creative)——参数策略的代码化(LP-001 的取值表落地)。签名是接口:加参数=接口变更,走评审。』追问展开:场景预设的设计、拆函数的信号、kwargs 的合理场景。",
+  "followups": [
+   {
+    "q": "场景预设(factory)和让调用方自由组合的权衡?",
+    "a": "预设:常见的组合固化(抽取=低温+结构化,创意=高温+长输出)——调用方简单、组合经过验证;自由组合:灵活但每个组合都要自己调对(LP-001 的参数知识要求)。实践:预设覆盖 80%(常见场景)+自由组合兜底(预设的变体:预设的字段可覆盖)——便利与灵活的平衡。"
+   },
+   {
+    "q": "参数对象的校验加不加?",
+    "a": "内部传递(dataclass)→mypy 静态即可(PY-020);跨边界(配置文件构造/用户传入)→Pydantic(运行时校验,PY-013 的选型);LLMParams 的场景:如果从配置文件构造(参数策略可配置)→Pydantic;纯代码构造→dataclass 够。校验的需求来自数据的来源可信度(PY-031 的边界判断)。"
+   },
+   {
+    "q": "废弃参数怎么移除不破坏调用方?",
+    "a": "deprecation 流程:先标记(warn)+继续支持(一个版本周期)→调用方迁移的引导(文档+告警日志)→移除(大版本)。内部 API:直接改+调用方同步修(自己控制调用方);对外 API(EN-039 的 API 设计):严格的 deprecation(对外部的承诺)。移除的检查:调用点的搜索+测试的覆盖(PY-011)。"
+   }
+  ],
+  "pitfalls": [
+   "十几个散参数的函数(可读性/维护性/调用错误的三重灾难)。",
+   "业务函数用 **kwargs 接收一切(签名失去文档与类型价值)。",
+   "参数对象无预设(每个调用方自己配参数,策略散落)。",
+   "加参数不走评审(签名是接口,LP-021 的纪律)。"
+  ],
+  "check": {
+   "q": "chat() 函数已有 8 个参数,又要加 retry 和 fallback 两个。怎么处理?",
+   "a": "分辨:retry/fallback 不是『LLM 调用的参数』而是『调用策略』——语义上属于组合器层(with_resilience,PY-030),不属于 chat 的签名。正确:retry/fallback 放在组合器的参数里(策略与调用分离)——chat 保持纯粹的『调用参数』(LLMParams),韧性策略(ResiliencePolicy)是另一层。这个案例的考点:参数过多时先问『这些参数属于同一个职责吗』——不属于就分层,而不是打包成更大的参数对象(大杂烩参数对象是反模式)。",
+   "explain": "检验点:参数的职责分辨(调用参数 vs 策略参数)与分层——参数对象不是垃圾抽屉。"
+  },
+  "related": [
+   "PY-013",
+   "PY-028",
+   "PY-030",
+   "LP-001"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+  }
+ },
+ {
+  "id": "PY-040",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的模块循环依赖怎么避免?架构上的 import 纪律?",
+  "tags": [
+   "Python",
+   "模块",
+   "架构"
+  ],
+  "prerequisites": [
+   "PY-028"
+  ],
+  "answer": "循环依赖的成因与解法:①成因——模块的职责边界模糊(A 需要 B 的功能,B 需要 A 的类型);②解法:提取共享(公共部分下沉到第三个模块:core/domain)、依赖倒置(A 依赖 B 的接口,B 实现——接口定义在 A 侧或独立接口模块)、延迟导入(函数内 import——治标,降低为设计问题的遮掩)、重构边界(循环=职责划分错的信号)。import 纪律:单向依赖(分层:api→service→repo→infra→core,-domain 被所有层用但不依赖任何层)、lint 强制(import-linter 的契约:层间的允许依赖矩阵)、循环的 CI 检测。循环依赖的运行时症状:ImportError(部分初始化的模块被引用)、诡异的 None 属性(导入顺序依赖)。",
+  "plain": "循环依赖像『两个部门的互相审批』:A 部门要 B 部门签字,B 部门要 A 部门签字——死锁。解法:①共同的上游(需要双方确认的事项,提到共同上级——提取共享模块);②一方只给标准(A 定义『我需要什么样的审批』,B 按标准执行——依赖倒置);③拖延(B 用到时再 import——治标,审批的死锁还在,只是没被发现);④重新划分职责(互相审批=职责划分错了)。import 纪律像组织的汇报关系(单向清晰,不循环)。比喻局限:Python 的循环导入有『部分初始化』的诡异表现(不一定报错,可能拿到半成品模块)——比组织死锁更隐蔽。",
+  "deep": "1) 循环的表现形式:\n   - 直接循环:a.py import b;b.py import a——最明显;\n   - 间接循环:a→b→c→a(链条更长更隐蔽);\n   - 类型循环:a 需要 b 的类型做标注,b 需要 a 的实例——类型循环可用 TYPE_CHECKING + 字符串标注(纯类型依赖不触发运行时导入);\n   - 运行时的症状:ImportError(cannot import name)、AttributeError(partially initialized module)、诡异的行为依赖导入顺序(顺序敏感=架构坏味道)。\n2) 解法的详细:\n   - 提取共享:循环的两方共同依赖的内容(类型/常量/工具函数)下沉到 core/common——双方都依赖下游(单向恢复);\n   - 依赖倒置:A 定义 Protocol(A 需要的能力接口),B 实现该 Protocol——A 不再 import B(B import A 的接口模块),依赖方向反转(PY-034 的 Protocol);\n   - TYPE_CHECKING:纯类型依赖(from __future__ import annotations + if TYPE_CHECKING: import)——运行时不导入(只解决类型循环,运行时的循环仍要重构);\n   - 延迟导入:函数内 import(用到才导)——临时方案(掩盖问题+测试困难),标注为技术债;\n3) import 纪律的强制:import-linter(层间的依赖契约:api 不 import infra 等)、ruff/mypy 的循环检测、CI 的架构测试(PY-020 的静态检查延伸到架构层);契约的定义(分层矩阵:哪些层可以依赖哪些层,EN-021 的清单思想);\n4) LLM 应用的典型循环:service ↔ prompts(service 用 prompts 的组装,prompts 需要 service 的上下文类型)→ 解法:类型下沉到 domain(prompts 依赖 domain 的类型,service 依赖两者)——LLM 应用的分层(PY-028)的纪律落实;\n5) 循环依赖的哲学:循环=模块间的『互相知晓』——好的架构里模块只『向下知晓』(依赖更底层的抽象);循环的出现是重构的信号(不是要消除循环的技术,是要修正职责的设计)。",
+  "example": "```python\n# 依赖倒置解循环(示例)\n# services/chat.py 需要 infra/llm.py 的类型 —— 反过来依赖:\n# infra/llm.py 不应该 import services(它更底层)\n\n# 解:接口下沉到 core/interfaces.py\nclass LLMClient(Protocol): ...        # core/interfaces.py\n# services/chat.py: 用 LLMClient(PY-034)\n# infra/llm.py: 实现 LLMClient(OpenAI 实现)\n# → service → core ← infra:无循环 ✅\n```",
+  "interview": "口述版:『循环依赖四解:提取共享(公共下沉)、依赖倒置(A 定义 Protocol,B 实现——PY-034)、TYPE_CHECKING(纯类型循环)、延迟导入(治标)。症状的认识:ImportError/部分初始化/顺序敏感——比报错更隐蔽的是行为依赖导入顺序。纪律:import-linter 的层间契约+CI 检测。LLM 应用的典型循环(service↔prompts)解法:类型下沉到 domain。循环是重构的信号——不是消除循环,是修正职责。』追问展开:TYPE_CHECKING 的用法、import-linter、延迟导入的债务。",
+  "followups": [
+   {
+    "q": "TYPE_CHECKING 的用法与局限?",
+    "a": "用法:if TYPE_CHECKING: from b import BType(类型检查时导入,运行时不导)+ 字符串标注(def f(x: \"BType\"))+ from __future__ import annotations(自动延迟)。局限:只解决『类型标注的循环』——运行时的真实依赖(调用 b 的函数)仍在,要用提取共享/依赖倒置重构。TYPE_CHECKING 是胶布不是手术。"
+   },
+   {
+    "q": "import-linter 怎么配置分层契约?",
+    "a": "契约类型:分层契约(api→service→repository→infra 的层级,上层可用下层)、禁止契约(特定的 import 禁止:api 禁 import infra)、独立契约(互不依赖的模块);CI 集成(架构测试进 lint 门禁,PY-020);契约的演进(新层的加入→契约的更新评审)。契约让架构的纪律从『口头约定』变成『机器检查』。"
+   },
+   {
+    "q": "延迟导入什么时候可以接受?",
+    "a": "可接受:重依赖的懒加载(大模型的导入延迟到首次使用——启动速度)、可选依赖(某功能需要可选包)、CLI 入口的分发。不可接受:掩盖循环依赖(设计问题的遮掩)、热路径的反复导入(性能)。用延迟导入时标注原因(# lazy: 避免 circular import → 应该记债进 backlog)。"
+   }
+  ],
+  "pitfalls": [
+   "延迟导入到处用(循环的遮掩,问题的债务化)。",
+   "部分初始化的诡异行为(ImportError 时有时无,依赖运行顺序)。",
+   "domain 层依赖框架(纯模型被污染,PY-028 的分层破坏)。",
+   "循环依赖靠『试导入顺序』修复(不修设计,靠运气)。"
+  ],
+  "check": {
+   "q": "services/payment.py 需要 utils/notify.py 发通知,notify.py 需要 payment 的订单类型。怎么解?",
+   "a": "判断:notify 需要的是『订单的类型定义』(纯类型)还是『payment 的业务功能』(调用)?类型→TYPE_CHECKING+字符串标注(类型循环的轻解)+长期:类型下沉到 domain(订单类型是领域模型,PY-028);功能→依赖倒置(notify 定义 NotifierProtocol,payment 实现或注入——notify 不该知道 payment)。更根本的复审:发通知是否应该是 payment 的职责(领域事件的解耦,PY-024 的事件)?循环的解法选择取决于『循环的内容』——类型/功能/职责三个层次。",
+   "explain": "检验点:循环依赖的解法选择按『循环的内容』(类型循环/功能循环/职责循环)分级。"
+  },
+  "related": [
+   "PY-028",
+   "PY-034",
+   "PY-020",
+   "PY-024"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+  }
+ },
+ {
+  "id": "PY-041",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的字符串格式化:f-string、format、% 的选择与 f-string 的陷阱?",
+  "tags": [
+   "Python",
+   "字符串",
+   "基础"
+  ],
+  "prerequisites": [],
+  "answer": "选择:f-string(3.6+,首选——可读、快、支持表达式);format(动态模板:模板与参数分离的场景,如配置化的模板);%(兼容遗留)。f-string 的注意:①表达式复杂度(f-string 里塞复杂逻辑可读性差——复杂计算先算再格式化);②调试用法 f\"{x=}\"(输出 x=值,3.8+);③嵌套引号(3.12 前内外引号不能相同);④安全性——f-string 不做转义(直接拼接用户内容到 SQL/HTML/提示词的注入风险,PY-031/LP-025:SQL 用参数化,提示词用转义与隔离);⑤性能(f-string 最快,但热点里的格式化仍是成本,PY-018)。LLM 场景:提示词的模板拼接(PY-022 的组装器 vs 散落的 f-string)、日志的结构化(f-string 拼 JSON vs logger 的结构化参数,PY-009)。",
+  "plain": "字符串格式化的选择像『写字的三种方式』:f-string=随身钢笔(顺手快,首选);format=表单模板(空格预留,动态填);%=老式打字机(兼容遗留)。f-string 的陷阱:钢笔太顺手,什么都往上写——复杂逻辑塞进一句话(可读性崩)、用户内容直接写上信纸(注入:SQL/HTML/提示词的三种注入场景)。原则:顺手归顺手,信纸的规矩不能破(参数化/转义)。比喻局限:f-string 的调试用法({x=})和嵌套引号的版本差异(3.12)是工具细节。",
+  "deep": "1) 三者的定位:\n   - f-string:字面量已知的格式化(首选)——可读性/性能/表达力最优;\n   - str.format:模板动态(模板字符串来自配置/外部——运行时才知道格式);format_map(安全的键缺失处理);\n   - %:遗留代码的维护(新代码不用);\n2) f-string 的细节:\n   - 表达式:任意 Python 表达式可用——可读性的纪律(复杂表达先算,格式化只做格式);\n   - 格式规格:{x:.2f}、{x:>10}、{dt:%Y-%m-%d}(日期的格式)、{x=}的调试;\n   - 嵌套引号:3.12 前内外不同引号(单双交替)——复杂嵌套的痛苦是 3.12 的 PEP 701 解决;\n   - 性能:f-string 编译为高效字节码(比 format/% 快)——但热路径的格式化仍要测量(PY-018);\n3) 注入的三场景(格式化的安全):\n   - SQL:f\"SELECT ... WHERE name='{name}'\"——SQL 注入!参数化(cursor.execute(sql, params));\n   - HTML:f\"<div>{user_content}</div>\"——XSS!转义或模板引擎的自动转义;\n   - 提示词:f\"...{user_content}...\"——提示注入(LP-025 的转义与隔离);\n   共同点:用户内容未经处理直接进入『有语法语义的容器』——容器的语法被劫持;各自的安全手段不同(参数化/转义/隔离)。\n4) LLM 场景的格式化:\n   - 提示词模板:LP-022 的组装器(变量的校验与转义)vs 裸 f-string(注入与插槽的风险,LP-025);\n   - 日志:logger.info(f\"...\") 的 f-string 求值总是发生(即使日志级别过滤掉——性能浪费)vs logger.info(\"...\", extra=...) 的惰性(PY-009 的性能注意);\n   - 结构化输出:f-string 拼 JSON(转义地狱)→json.dumps(正确姿势)——f-string 拼 JSON 是错误做法(转义与合法性的坑)。",
+  "example": "```python\n# ❌ 三种注入的同一根源\nquery = f\"SELECT * FROM users WHERE name = '{name}'\"    # SQL 注入\nhtml = f\"<p>{comment}</p>\"                              # XSS\nprompt = f\"总结:{user_note}\"                            # 提示注入\n\n# ✅ 各自的正解\ncur.execute(\"SELECT * FROM users WHERE name = %s\", (name,))\nhtml = \"<p>\" + escape(comment) + \"</p>\"\nprompt = assemble(PROMPT_TEMPLATE, {\"content\": sanitize(user_note)})  # LP-022\n\n# 日志的惰性\nlog.debug(\"详细: %s\", expensive_repr())   # 级别不够时不求值 ✅\nlog.debug(f\"详细: {expensive_repr()}\")     # 总是求值 ❌\n```",
+  "interview": "口述版:『格式化的选择:f-string 首选(可读快)、format 用于动态模板、% 只维护遗留。f-string 的两个纪律:表达式复杂度(复杂先算)与注入的三场景(SQL 参数化/HTML 转义/提示词的组装器隔离——用户内容进有语法语义的容器是共同的根源)。LLM 场景的两个细节:提示词用组装器不用裸 f-string(LP-025)、日志的惰性求值(级别过滤时 f-string 白算)。』追问展开:注入的三场景、日志的惰性、3.12 的嵌套引号。",
+  "followups": [
+   {
+    "q": "f-string 拼 JSON 为什么是错误做法?",
+    "a": "转义地狱:字符串值的引号/换行/特殊字符都要手动转义(漏一个就 JSON 非法);正确:json.dumps(data, ensure_ascii=False)——序列化器处理全部转义。f-string 拼 JSON 的事故形态:值里有个双引号,JSON 就坏了(LP-003 的解析失败的上游制造)。原则:结构化数据的组装用序列化器,不用字符串拼接。"
+   },
+   {
+    "q": "日志的惰性求值是什么?",
+    "a": "logging 的惰性:消息与参数在记录时才格式化(级别过滤掉的日志不求值)——log.debug(\"%s\", expensive()) 在 DEBUG 关闭时不执行 expensive();f-string 版本总是求值(字符串先拼好)——即使这条日志会被过滤。性能的场景:热路径的 DEBUG 日志(高频调用×昂贵格式化)——惰性是 logging 相对 f-string 的性能优势(PY-009)。"
+   },
+   {
+    "q": "动态模板(模板来自配置)的安全?",
+    "a": "模板来自配置/外部时:①格式化者的安全(format 的字段注入:模板里的 {key} 引用未提供的键——KeyError/信息泄露;format_map+SafeDict 缺省);②模板的来源信任(外部模板=代码注入的变体:模板可以执行格式规格的攻击——不受信模板的风险);③与 LP-022 的组装器的衔接(模板的版本管理与校验)。外部模板的信任模型要显式(谁写的模板=多大的信任)。"
+   }
+  ],
+  "pitfalls": [
+   "f-string 拼 SQL/JSON/提示词(三种注入与转义地狱的同一根源)。",
+   "f-string 里塞复杂逻辑(一行 50 字符的表达式,可读性崩)。",
+   "热路径的 f-string 日志(级别过滤了也白算,性能浪费)。",
+   "新代码用 % 或 format(无理由地放弃 f-string 的可读性)。"
+  ],
+  "check": {
+   "q": "code review 发现:prompt = f\"请总结:{user_input},注意:{rules}\"。三个风险与正解?",
+   "a": "风险:①提示注入(user_input 里的指令伪装,LP-025);②rules 的来源(如果是动态拼接的多段,变量错配与标记破坏);③转义的缺失(user_input 中的分隔标记破坏模板结构)。正解:组装器(LP-022)接管——user_input 经转义与结构隔离(⟨⟨U⟩⟩ 包裹),rules 来自版本化的模板片段(校验过的),渲染后结构校验(LP-025 的标记计数)。f-string 的便利不能牺牲提示词的结构安全——这正是组装器存在的理由(PY-022 的『消灭散落 f-string』)。",
+   "explain": "检验点:f-string 拼提示词的三风险(注入/错配/转义)与组装器的正解——本站 PY-022 的核心论点。"
+  },
+  "related": [
+   "PY-031",
+   "PY-009",
+   "LP-025",
+   "PY-022"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "PEP 701(f-string 语法, 3.12)与官方文档",
+    "url": "https://docs.python.org/zh-cn/3/reference/lexical_analysis.html#f-strings",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "语义为官方稳定知识;安全场景为独立整理。"
+  }
+ },
+ {
+  "id": "PY-042",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的 deepcopy 与引用语义:什么时候会踩『改了一个全变了』?",
+  "tags": [
+   "Python",
+   "引用语义",
+   "基础"
+  ],
+  "prerequisites": [
+   "PY-001"
+  ],
+  "answer": "Python 的赋值是引用传递(变量是对象的标签):b = a 后改 b 的内容,a 也变(同一对象)。踩坑场景:①列表的复制——b = a.copy() 是浅拷贝(嵌套的可变对象仍共享:b[0].append 影响 a[0]);深拷贝用 copy.deepcopy(递归复制全树);②默认参数(PY-033 的可变默认);③对象属性的共享(初始化时赋同一个列表给多个实例的属性);④dict 的 copy(浅)。浅 vs 深的选择:浅拷贝够用(一层结构/不可变元素)用浅(快);嵌套可变→深拷贝;性能:deepcopy 慢(递归+循环引用处理)——大量数据的复制考虑不可变结构(frozen dataclass/PY-013)或重建(推导式)。LLM 场景:messages 列表的复制(多轮对话的历史复制给新会话——浅拷贝的嵌套消息共享,串话的变体)。",
+  "plain": "引用语义像『文件快捷方式』:b = a 创建的是快捷方式(指向同一文件)——改快捷方式指向的文件,原文件也变了(同一对象);a.copy() 像『复制文件的第一层文件夹』(浅拷贝:子文件夹还是快捷方式);deepcopy 像『连子文件夹带内容全复制』(全树复制)。踩坑:复制了第一层,以为完全独立,结果改子文件夹的内容,原件也变了(浅拷贝的嵌套共享)。比喻局限:Python 的变量是『名字绑定到对象』,不是盒子装东西——变量赋值从不复制对象(除非显式 copy),这是理解一切的根基。",
+  "deep": "1) 引用语义的精确理解:变量=名字到对象的绑定;赋值=名字的重新绑定(不复制);函数传参=绑定传递(PY-033 的可变默认的同源机制);is 与 ==(身份 vs 值)的区分(面试高频);id() 的观察工具。\n2) 拷贝的层次:\n```python\na = [[1, 2], [3, 4]]\nb = a                 # 同一对象(b is a)\nc = a.copy()          # 浅:c[0] is a[0](内层共享)\nd = copy.deepcopy(a)  # 深:全独立\na[0].append(5)\n# b[0] == [1,2,5] ✅(同一对象)\n# c[0] == [1,2,5] ⚠️(浅拷贝的内层共享!)\n# d[0] == [1,2]     ✅(深拷贝独立)\n```\n3) 常见的踩点:\n   - 多轮对话的历史复制:messages.copy() 后 append 新消息(第一层安全)——但消息 dict 是共享的(修改某条消息的内容影响原历史,LP-007 的串话变体);\n   - 默认参数(PY-033);类属性(PY-033 的兄弟);闭包捕获(共享的可变状态);\n   - 缓存的对象被修改(缓存的 dict 被调用方改——缓存的防御性复制,PY-017);\n4) deepcopy 的代价与替代:deepcopy 的性能(递归+memo 循环处理——大对象慢)与限制(不可 deepcopy 的:锁/文件句柄/线程——含资源的对象不能深拷贝);替代:不可变设计(frozen dataclass,共享安全)、重建(推导式构造新对象)、显式的字段复制(只复制需要的);\n5) LLM 场景的清单:messages 的历史复制(LP-007)、组装器的片段引用(PY-022 的 Segment 共享)、缓存的防御(PY-017)、并发下的共享(PY-042 的 contextvars 对比——引用共享是并发错的近亲)。",
+  "example": "```python\n# LLM 场景的踩点:messages 的浅拷贝\nbase = [{\"role\": \"system\", \"content\": \"规则\"}]\nnew_chat = base.copy()\nnew_chat.append({\"role\": \"user\", \"content\": \"你好\"})\n# base 没变 ✅(append 只改 new_chat 的列表)\n\nnew_chat[0][\"content\"] = \"被篡改的规则\"   # ⚠️ 内层 dict 共享!\n# base[0][\"content\"] 也变了 → 所有会话的 system 被篡改!\n# 修:copy.deepcopy(base) 或重建消息列表\n```",
+  "interview": "口述版:『Python 赋值是引用绑定:b=a 是同一对象;a.copy() 浅拷贝(嵌套共享),deepcopy 全独立。LLM 场景的踩点:messages.copy() 后改内层 dict 的 content——所有引用 base 的会话的 system 被篡改(浅拷贝的嵌套共享)。选择:一层结构浅拷贝够,嵌套可变用 deepcopy 或不可变设计(frozen)。deepcopy 的代价(递归慢+资源对象不可拷)。is 与 == 的区分(身份 vs 值)是面试的高频。』追问展开:messages 的修法、deepcopy 的限制、is 和 ==。",
+  "followups": [
+   {
+    "q": "is 和 == 的区别?",
+    "a": "is:同一对象(id 相同——内存身份);==:值相等(对象的 __eq__)。经典坑:小整数缓存(-5~256 的 is 为 True——实现细节不可依赖)、字符串驻留;判据:值比较用 ==,单例/None/哨兵用 is(x is None 是惯例)。混用的 bug:is 比较字符串(驻留的实现细节导致时对时错)。"
+   },
+   {
+    "q": "deepcopy 的限制(什么不能深拷贝)?",
+    "a": "含外部资源的对象:锁(threading.Lock——不可 pickle 不可拷)、文件句柄、网络连接、线程——deepcopy 报错或产出无意义的副本(锁的副本不是锁)。含弱引用的(PY-041 的 weakref 拷贝语义)、模块对象。解:不可拷贝的对象用重建(重新创建资源)或排除(deepcopy 的 memo/忽略机制)。"
+   },
+   {
+    "q": "messages 列表的正确复制姿势?",
+    "a": "按需分层:①只追加新消息:base + [new](创建新列表,内层 dict 引用共享但只读不改→安全);②要修改内层:deepcopy 或逐条重建([{**m} for m in base]——浅拷贝每个 dict,一层 dict 的字段独立);③系统提示的不可变:system 消息用 frozen 的结构或约定只读。原则:共享只读的引用安全,共享可写的引用是事故(PY-028 的共享纪律)。"
+   }
+  ],
+  "pitfalls": [
+   "messages.copy() 后修改内层 dict,全局的 system 提示被篡改(事故级)。",
+   "缓存的对象被调用方修改(缓存的防御性复制缺失,PY-017)。",
+   "deepcopy 滥用(大对象的全树复制,性能浪费——一层够就不用深)。",
+   "is 用来比较值(小整数的缓存让测试偶尔通过,上线爆雷)。"
+  ],
+  "check": {
+   "q": "params = {\"temperature\": 0.7};p2 = params.copy();p2[\"temperature\"] = 0.9。params 会变吗?如果值是列表呢?",
+   "a": "第一问:params 不变——顶层赋值(p2[\"temperature\"] = 0.9)是 p2 的键重新绑定,顶层独立。第二问:如果值是列表(p2[\"history\"].append(x))——会变!copy 是浅拷贝,内层的列表对象共享,append 修改共享对象(params 的 history 也多了元素)。总结:copy 保护『键的重新绑定』,不保护『共享的内层可变对象』——浅拷贝的安全边界就在第一层(PY-038 的引用语义)。",
+   "explain": "检验点:浅拷贝的保护范围(顶层赋值安全,内层可变共享)——精确到操作类型的推理。"
+  },
+  "related": [
+   "PY-001",
+   "PY-033",
+   "PY-013",
+   "PY-017"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · copy 模块",
+    "url": "https://docs.python.org/zh-cn/3/library/copy.html",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "语义为官方稳定知识;LLM 场景为独立整理。"
+  }
+ },
+ {
+  "id": "PY-043",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的鸭子类型实践:什么时候该显式检查类型(type/isinstance)?",
+  "tags": [
+   "Python",
+   "类型",
+   "边界"
+  ],
+  "prerequisites": [
+   "PY-034",
+   "PY-031"
+  ],
+  "answer": "鸭子类型(不查类型直接用)是 Python 的默认哲学——但显式检查的合理场景:①边界防御(不可信输入的类型断言,Pydantic 优先,PY-031);②多分派逻辑(不同类型的对象走不同分支:isinstance 分派——或用 functools.singledispatch 更优雅);③契约的运行时校验(协议的 runtime_checkable,PY-034 的限制);④fail fast(错误的类型晚崩溃不如早失败,PY-005)。反模式:过度检查(每个函数查每个参数——Python 的表达力丧失,应该信 mypy+测试);检查后不用(isinstance 后还用字符串操作)。现代姿势:类型标注+mypy(PY-020 的静态)承担大部分,运行时检查只放边界与关键契约(PY-031 的两道岗)。",
+  "plain": "鸭子类型像『不问学历看能力』——Python 的默认;显式检查像『关键岗位查证书』——边界(海关)和关键岗位(资金操作)要查,朋友帮忙(内部调用)不查(信 mypy 和交情)。反模式:朋友间也互相查证书(过度检查,关系僵硬=代码冗长)。判断:这个函数的输入可信吗(PY-031 的边界判据)——不可信查,可信信类型标注。比喻局限:isinstance 的检查可以很优雅(singledispatch 的分派),不是『查证书』的官僚形象。",
+  "deep": "1) 显式检查的合理场景:\n   - 边界(PY-031):HTTP/MQ/LLM 返回的输入——Pydantic 优先(声明式),裸 isinstance 兜底;\n   - 多分派:不同类型不同行为(isinstance 链/singledispatch/match 语句)——OO 的多态或 functools.singledispatch 的函数式;\n   - 关键契约:资金/权限操作的参数断言(运行时的最后防线,PY-031 的 beartype);\n   - fail fast:错误的类型延后处理的成本高(早失败好于晚崩溃);\n2) 反模式的识别:\n   - 检查后不用:type(x) == str 后还是当通用对象用(检查无意义);should isinstance 后不收窄(检查了继续当 Any 用);\n   - 处处检查(每个函数的每个参数)——Python 的简洁丧失(Java 化);信 mypy(静态已查)+测试;\n   - type() 代替 isinstance(破坏子类——isinstance 是正确的类型检查);\n   - 检查的歧视(只接受自己的类,拒绝 duck——过度封闭,Protocol 的精神是结构匹配,PY-034)。\n3) 现代的替代与增强:\n   - singledispatch:基于类型的函数分派(注册各类型的实现,扩展开放);\n   - match 语句(3.10+):结构化匹配(类型+结构的一次性匹配);\n   - Protocol+静态(PY-034):契约的静态化(运行时零检查);\n   - Pydantic:边界的声明式校验;\n4) LLM 场景的判断:LLM 返回的解析(边界,Pydantic)、工具参数(边界,Pydantic/schema)、内部的 messages 构造(类型标注+mypy)、分派的工具执行(singledispatch 或 match)——『边界查、内部信』的分布(PY-031 的两道岗)。\n5) 与 mypy 的协同:mypy 静态查(写代码时),isinstance 动态查(运行时的边界)——动态检查是静态的补充(静态查不到运行时的数据,PY-020 的诚实),两者覆盖不同的失败面。",
+  "example": "```python\n# ✅ 合理的显式检查:边界+分派\n@functools.singledispatch\ndef serialize(obj): raise NotImplementedError(obj)\n@serialize.register\ndef _(obj: ChatRequest): ...     # 分派到各类型的序列化\n\n# ❌ 反模式:内部函数的过度检查\ndef merge(a: list, b: list) -> list:\n    assert isinstance(a, list)    # mypy 已保证,断言冗余\n    assert isinstance(b, list)\n    ...\n```",
+  "interview": "口述版:『鸭子类型是默认(不查直接用),显式检查的合理场景:边界防御(Pydantic 优先)、多分派(singledispatch/match)、关键契约的运行时断言、fail fast。反模式:处处检查(Java 化)、检查后不收窄、type() 代替 isinstance。现代姿势:mypy 静态承担大部分(写代码时),运行时只放边界与关键契约(PY-031 的两道岗)——LLM 场景的分布:LLM 返回解析查,内部 messages 构造信。』追问展开:singledispatch、两道岗的协同、LLM 场景的分布。",
+  "followups": [
+   {
+    "q": "singledispatch 的用法与价值?",
+    "a": "基于第一个参数的类型分派:基函数(默认实现)+register(各类型的实现)——扩展开放(新类型注册新实现,不改基函数);比 isinstance 链优雅(加类型=加注册,不改逻辑);泛型注册(singledispatchmethod 的方法版)。价值:类型分派的逻辑集中且可扩展(serialize 工具的典型用法,LP-024 的管道)。"
+   },
+   {
+    "q": "fail fast 的度怎么把握?",
+    "a": "fail fast 的对象:错误会在远处爆炸的(错误的类型传进来,三层之后才崩——早失败好定位,AG-009 的失败定位);不 fail fast 的对象:可以容错的(默认值兜底/自动转换合理)。判据:这个错误晚发现,排查的成本多大?——早失败是排查成本的优化(PY-005 的 fail fast 原则)。"
+   },
+   {
+    "q": "LLM 返回的解析什么时候用 isinstance 什么时候用 Pydantic?",
+    "a": "结构化且关键(要进业务的字段)→Pydantic(声明式+错误信息+转换,PY-013);简单的存在性检查(返回有没有 choices)→isinstance/get 的防御(轻量);原则:要用的数据结构化校验(Pydantic 的闭环,LP-003),路过的结构轻检查。过度:返回的每个嵌套都建 Pydantic 模型(过度建模,够用即可)。"
+   }
+  ],
+  "pitfalls": [
+   "内部函数的参数全查(Java 化,Python 的简洁丧失)。",
+   "type(x) == str 代替 isinstance(子类被拒绝)。",
+   "assert 做运行时校验(-O 下失效,PY-031 的安全漏洞)。",
+   "isinstance 链太长(应该 singledispatch/match/多态重构)。"
+  ],
+  "check": {
+   "q": "函数 process(data) 需要同时支持 dict 和 Pydantic 模型输入。三种实现方式与推荐?",
+   "a": "①isinstance 分派:if isinstance(data, dict): normalize... else: data.model_dump()——直白;②singledispatch:注册 dict 与模型的实现——扩展优雅(新类型注册即可);③入口归一:调用前统一转模型(边界统一,内部单类型)——最干净但改调用方。推荐:内部函数③(归一化入口,内部单一类型)+对外的适配层②(注册扩展)——组合后 process 内部无类型分支(简洁)。选择的经验:类型分支多(>3)→singledispatch;入口可控→归一化。",
+   "explain": "检验点:多类型输入的三种实现(分派/归一/分支)与选择的经验法则。"
+  },
+  "related": [
+   "PY-034",
+   "PY-031",
+   "PY-020",
+   "PY-013"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+  }
+ },
+ {
+  "id": "PY-044",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的切片(slicing)与不可变序列的操作要点?常见错误?",
+  "tags": [
+   "Python",
+   "切片",
+   "基础"
+  ],
+  "prerequisites": [
+   "PY-001"
+  ],
+  "answer": "切片的要点:①语法 a[start:stop:step](stop 不含,负索引/负步长);②切片产生新对象(不可变序列的切片是新对象,可变序列的切片赋值是原地修改——两个不同的语义);③越界安全(切片越界不报错,返回空/截断——与索引的越界报错不同,双刃剑:安全但可能掩盖 bug);④切片是视图还是拷贝——list/tuple/str 的切片是拷贝(list),numpy/array 的切片是视图(改视图改原——库的差异);⑤常见错误:step 为 0(报错)、切片做单元素访问(a[5:6] vs a[5] 的语义差异)、可变序列的切片赋值的长度不匹配(可以不匹配——插入或删除)。LLM 场景:文本的窗口切片(LP-002)、流式缓冲的截断(LP-005)、列表的分页切片(PY-026 的 offset 陷阱)。",
+  "plain": "切片像『切面包』:a[1:4] 切第 2 到 4 片(不含第 4 个刻度,像数数的规矩);越界切不报错(刀不够长就切到头——安全但可能以为切到了);列表的切片是新面包(改新面包不影响旧的);numpy 的切片是『同一块面包的托盘视图』(改托盘里的,原面包也变——库的差异!)。错误:把『切片安全』当成『索引安全』(a[100] 报错,a[99:100] 不报错但可能拿到空——静默的空结果掩盖 bug)。比喻局限:切片赋值(a[1:3] = [...])可以改变长度(插入删除语义)——切面包没有这个操作。",
+  "deep": "1) 语义的精确性:\n   - 索引 vs 切片:a[5] 越界报 IndexError(必须存在);a[5:10] 越界返回短/空(宽容)——宽容的双刃剑:安全(不用边界检查)与掩盖(空结果可能是 bug 的信号——上游的边界检查不能省);\n   - 切片的拷贝语义:a[:] 是浅拷贝(PY-042 的引用共享:嵌套可变共享);b = a[:] 与 b = list(a) 等价;\n   - 切片赋值(可变序列):a[1:3] = [x, y, z](长度可不同——替换/插入/删除的统一语法);a[1:1] = [x](插入);del a[1:3](删除);\n2) 库的差异(numpy/bytes/memoryview):list 切片=拷贝;numpy 数组切片=视图(零拷贝,改视图改原——性能的利器与 bug 的来源);bytes 切片=新 bytes(不可变);memoryview=零拷贝视图。LLM 场景:大文本的切片(list 切片拷贝大文本的内存——分段处理用 islice/视图, itertools.islice 的惰性切片,PY-018)。\n3) 常见错误:\n   - off-by-one:stop 不含的规则(a[0:len(a)] 是全量;a[len(a)] 报错);负索引的混用(a[-1:] 最后一个,a[-1] 同义;a[1:-1] 去头尾);\n   - 空切片的静默:a[big:bigger] 返回空(上游的边界错误被吞,PY-031 的宽容的双刃剑);\n   - 步长的误用:a[::-1] 反转(新对象)、a[::2] 隔一个;\n   - 切片赋值的长度假设(长度不匹配的插入/删除语义忘记);\n4) LLM 场景:文本窗口(LP-002 的上下文窗口:token 级切片,不是字符级——FD-005 的 tokenizer 计数);流式缓冲的帧切分(LP-005 的缓冲按 \\n\\n 切);长列表的分页(PY-026 的游标优于切片——大列表的切片拷贝);\n5) 性能:切片的拷贝成本(大列表的 a[:] 是 O(n)——只需要遍历用迭代器/islice,不需要切片);链式切片的中间对象(多次切片的中间拷贝——合并切片)。",
+  "example": "```python\ntext = \"很长的文档……\"\nwindow = text[start:end]           # 字符级切片(token 级要 tokenizer,FD-005)\n\n# 大列表的分页:切片拷贝 vs islice\nfrom itertools import islice\npage = list(islice(iter(all_items), offset, offset+20))  # 惰性\n# vs all_items[offset:offset+20]  # 先全量再切(大列表的浪费)\n```",
+  "interview": "口述版:『切片的要点:stop 不含、越界宽容(与索引的区别——宽容是双刃剑,空切片可能掩盖 bug)、列表切片是新对象而 numpy 是视图(库的差异)、切片赋值可变长(插入删除的统一语法)。LLM 场景:文本窗口是字符级(.token 级要 tokenizer,FD-005)、大列表分页用 islice(切片拷贝的浪费)。宽容的双刃剑:上游的边界检查不能省(空切片的静默)。』追问展开:视图与拷贝的库差异、islice、负索引。",
+  "followups": [
+   {
+    "q": "切片越界宽容的应用与风险?",
+    "a": "应用:安全的截取(不用检查边界:text[:max] 自动适配)——简洁;风险:静默的空/短结果(预期的内容没拿到不报错——上游的 bug 被吞,PY-031 的宽容双刃剑)。纪律:业务关键的截取(检索窗口/分页)显式检查边界(空结果的告警),工具性的截取(文本预览)用宽容切片。"
+   },
+   {
+    "q": "numpy 视图与 list 拷贝的差异的实际影响?",
+    "a": "numpy:切片是视图(零拷贝,改视图改原)——大数组的处理高效,但要 .copy() 才独立;list:切片是拷贝(独立但 O(n))。混用的 bug:从 numpy 切片后修改,意外改了原数组(视图语义的忘记)。LLM 场景:嵌入向量的切片(numpy)——视图修改污染原始嵌入(防御性 copy 或只读纪律)。"
+   },
+   {
+    "q": "itertools.islice 的价值?",
+    "a": "惰性切片:迭代器的切片(不物化全量)——大列表/生成器的分页与截取(O(k) 不 O(n));与 list 切片的对比:list 切片先物化全量(内存+时间),islice 迭代到位置(惰性);场景:大文件的行切片、生成器的分页(PY-026 的游标的迭代器版)。"
+   }
+  ],
+  "pitfalls": [
+   "空切片的静默(预期的内容没拿到不报错,下游的空输入)。",
+   "大列表的切片分页(全量物化的浪费,islice 替代)。",
+   "numpy 视图当拷贝用(修改污染原始数组)。",
+   "字符级切片当 token 级窗口用(FD-005 的计数错误)。"
+  ],
+  "check": {
+   "q": "tokens = tokenizer.encode(text) 返回 list;想要前 512 个 token 的文本。怎么写才对?常见错误?",
+   "a": "正确:tokenizer.decode(tokens[:512])——token 级切片后解码。常见错误:①text[:2048] 字符级切片再解码(字符与 token 不对齐,FD-005——切的位置可能在 token 中间,解码出乱码或数量不准);②直接改 tokens 列表再 decode(如果 tokens 是其他格式);③忽略特殊 token(编码的头尾标记被切掉——tokenizer 的 add_special_tokens 语义)。检验点:token 级的窗口操作要在 token 空间做(encode→slice→decode),字符级的直觉在这里失效(FD-005 的工程含义)。",
+   "explain": "检验点:token 级窗口的正确操作(encode→slice→decode)与字符级直觉的失效。"
+  },
+  "related": [
+   "PY-001",
+   "FD-005",
+   "PY-026",
+   "LP-002"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · 序列类型(切片语义)",
+    "url": "https://docs.python.org/zh-cn/3/library/stdtypes.html#common-sequence-operations",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "切片语义为官方稳定知识;LLM 场景为独立整理。"
+  }
+ }
 ]

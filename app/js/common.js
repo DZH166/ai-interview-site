@@ -10,14 +10,17 @@ const Data = (() => {
   function init() {
     const base = (window.APP_DATA && window.APP_DATA.questions) || [];
     const extra = Store.extraBankLoad();
-    const baseIds = new Set(base.map(q => q.id));
     questions = base.slice();
+    /* 用本轮新建的 seen 判重:不能用上一轮的 byId,否则重复 init 会把
+       已导入的扩展题误判为冲突而丢弃(init 必须可重入) */
+    const seen = new Set(questions.map(q => q.id));
     extra.forEach(q => {
-      if (baseIds.has(q.id) || byId.has(q.id)) {
-        console.warn('导入题库与内置题号冲突,已跳过:', q.id);
+      if (!q || !q.id || seen.has(q.id)) {
+        console.warn('导入题库题号缺失或与现有冲突,已跳过:', q && q.id);
         return;
       }
       questions.push(q);
+      seen.add(q.id);
     });
     byId = new Map(questions.map(q => [q.id, q]));
     docs = ((window.APP_DATA && window.APP_DATA.docs) || []).slice();
@@ -29,6 +32,13 @@ const Data = (() => {
   function allDocs() { return docs; }
   function doc(id) { return docs.find(d => d.id === id) || userDocs.find(d => d.id === id); }
   function allUserDocs() { return userDocs; }
+  /* 删除/导入资料后调用:重建闭包内的集合,目录与索引立即同步 */
+  function reloadUserDocs() { userDocs = Store.userDocsLoad(); return userDocs; }
+  /* 某专题的主章节:按 order 取最小(与文档目录排序一致);无则返回 null */
+  function topicMainDoc(topicId) {
+    const list = docs.filter(d => d.topic === topicId);
+    return list.length ? list.reduce((a, b) => ((a.order || 99) <= (b.order || 99) ? a : b)) : null;
+  }
 
   function topic(id) { return ((window.APP_DATA && window.APP_DATA.topics) || []).find(t => t.id === id); }
   function topicName(id) { const t = topic(id); return t ? t.name : (id || '通用'); }
@@ -50,7 +60,7 @@ const Data = (() => {
     return Store.STATUS.find(x => x.id === s) || Store.STATUS[0];
   }
 
-  return { init, allQuestions, question, allDocs, doc, allUserDocs, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
+  return { init, allQuestions, question, allDocs, doc, allUserDocs, reloadUserDocs, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
 
 /* 浏览上下文:记录上一题/下一题列表(来自浏览页筛选) */
@@ -58,7 +68,10 @@ const NavCtx = {
   ids: null,   /* 数组或 null(全部) */
   set(ids) { this.ids = ids; },
   neighbors(qid) {
-    const list = (this.ids && this.ids.length ? this.ids : Data.allQuestions().map(q => q.id));
+    /* 当前集合包含该题时按集合导航;否则回退全量(直接打开学习页的场景) */
+    const list = (this.ids && this.ids.length && this.ids.includes(qid))
+      ? this.ids
+      : Data.allQuestions().map(q => q.id);
     const idx = list.indexOf(qid);
     return {
       prev: idx > 0 ? list[idx - 1] : null,
@@ -145,11 +158,12 @@ const QRender = (() => {
     const pre = (q.prerequisites || []).filter(id => Data.question(id));
     const rel = (q.related || []).filter(id => Data.question(id));
     const docs = (q.doc_refs || []).filter(d => Data.doc(d));
+    const tdoc = Data.topicMainDoc(q.topic);
     return `
       ${pre.length ? `<div class="rel-row"><span class="rel-label">前置知识:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
       ${rel.length ? `<div class="rel-row"><span class="rel-label">相关题目:</span>${rel.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
       ${docs.length ? `<div class="rel-row"><span class="rel-label">原理章节:</span>${docs.map(id => `<a class="rel-link" href="#/docs/${id}">${esc(Data.doc(id) ? Data.doc(id).title : id)}</a>`).join(' ')}</div>` : ''}
-      <div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/doc-${esc(q.topic)}-1">${esc(Data.topicName(q.topic))}</a></div>`;
+      ${tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : ''}`;
   }
 
   /* 学习页主体(完整展开结构) */

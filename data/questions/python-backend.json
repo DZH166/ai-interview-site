@@ -1,150 +1,294 @@
 [
-  {
-    "id": "PY-001",
-    "topic": "python-backend",
-    "type": "comparison",
-    "difficulty": "basic",
-    "title": "Python 里列表(list)和元组(tuple)有什么区别?什么时候用哪个?",
-    "tags": ["Python", "数据结构", "可哈希"],
-    "prerequisites": [],
-    "answer": "列表(list)可变:可以随时增、删、改元素;元组(tuple)不可变:创建之后顶层结构不能改。选择规则很简单——内容会变的集合用列表,一组固定搭配的数据用元组。不可变还带来两个实际差别:元组可以被哈希(能当字典的键、放进集合),并且内存布局更紧凑。",
-    "plain": "把列表想成购物清单:买一样划一样,随时能加新条目——它是『会变化的同类东西的集合』。把元组想成身份证上的(姓名, 出生日期, 性别):这几项是一套固定搭配,数量和位置都有含义,不该被增删。另一个实用角度:字典的键必须『稳定』,如果键本身会变,字典就找不到它了,所以可变的列表不能当键,元组可以。比喻的局限:这个『清单 vs 搭配』的说法没有体现性能与内存差异,那要用实现层面的知识来解释(见下一节)。",
-    "deep": "从三个层面拆:\n1) 语义层面。列表表达『同类元素的集合』,元素含义由位置无关地决定;元组表达『异构数据的结构』,位置本身携带含义,比如 (name, age, city) 的第 0 位永远是名字。函数返回多个值时返回的其实就是元组,因为『这几个值是一组』。\n2) 实现层面。list 底层是一块会自动扩容的指针数组,为了支持 append 会预留额外空间;tuple 长度固定,一次性分配,没有扩容开销,相同内容下占内存更少,创建也更快。但注意:两者存的都是『对象的引用』,差别主要在容器本身,不是元素。\n3) 哈希层面。可哈希(hashable)要求对象生命周期内哈希值不变。list 会变,所以 unhashable,放进 dict 键或 set 会报 TypeError;tuple 顶层不可变所以可哈希——但有个重要例外:如果元组里嵌着列表,如 ([1,2], 3),它依然不可哈希,因为哈希时内容可能通过内层列表改变。『不可变』默认只保护顶层。\n适用条件与边界:需要 in-place 排序、追加、切片赋值→list;需要作为 dict 键、多返回值、函数参数 *args 的载体、常量配置→tuple。不要为了『省一点内存』刻意把该变的集合换成 tuple,语义优先。",
-    "example": "```python\n# 场景 1:函数返回一组固定数据 → 元组\ndef get_user(uid):\n    return (\"小明\", 22, \"北京\")  # 位置有含义,不该增删\nname, age, city = get_user(1)   # 解包\n\n# 场景 2:元组可哈希,能当字典的键\nprice = {(\"北京\", \"上海\"): 520, (\"北京\", \"广州\"): 880}\nprice[(\"北京\", \"上海\")]  # 520\n\n# 场景 3:列表不能当键\n# d = {[1, 2]: \"x\"}        # TypeError: unhashable type: 'list'\n\n# 场景 4:『元组不可变』只保护顶层\nt = (1, [2, 3])\n# t[1] = 9                  # TypeError,顶层不能改\nt[1].append(4)              # 但内层列表可以改 → t 变成 (1, [2, 3, 4])\n```",
-    "interview": "口述版:『列表可变、元组不可变。我会用列表装会增删改的同类数据,用元组装位置有含义的固定结构,比如函数多返回值、坐标、字典的复合键。因为不可变,元组可哈希、能当字典键,内存也更紧凑;但要注意嵌套了可变对象的元组并不能哈希。』追问时可以往三个方向展开:实现层(扩容机制)、哈希规则、以及 namedtuple/dataclass 这类『带名字的元组』什么时候更合适。",
-    "followups": [
-      {"q": "既然有元组,为什么还需要 namedtuple 和 dataclass?", "a": "元组靠位置取值,t[1] 可读性差。namedtuple/dataclass 给字段起名字,支持 user.age 这样的访问和默认值、类型标注。原则:纯传递的临时结构用元组,会被到处读写的结构化数据用 dataclass——AI 应用里解析 LLM 返回的结构化结果就常用 dataclass/Pydantic。"},
-      {"q": "为什么列表不能当字典的键?", "a": "字典靠键的哈希值定位桶,键还必须在整个生命周期里哈希值稳定。列表可以 append,内容一变哈希规则就不成立,字典会定位失败。Python 直接禁止,报 unhashable type。任何自定义类实例默认按对象身份(id)哈希,所以可变对象做键在语法上可行但语义上危险。"},
-      {"q": "元组真的完全不可变吗?", "a": "顶层不可变(不能换元素、增删),但元素指向的对象如果是可变的(列表、字典、自定义对象),其内容可以变。所以『含可变元素的元组』既不可哈希,也可能发生内容变化。判断题:t=(1,[2]);t[1].append(3) 合法且 t 变成 (1,[2,3])。"}
-    ],
-    "pitfalls": [
-      "认为『元组里的一切都不可变』——只有顶层不可变,嵌套的列表内容照样能改。",
-      "把单元素元组写成 (x)——这只是带括号的表达式,正确写法是 (x,)。",
-      "为了性能到处用元组:主要收益是语义清晰和可哈希,性能差异在业务代码里通常可忽略。",
-      "把元组和『常量』划等号——元组不保证元素指向的对象不被修改。"
-    ],
-    "check": {
-      "q": "t = (\"a\", [1, 2])。执行 t[1].append(3) 会发生什么?t 还能作为字典的键吗?",
-      "a": "append 合法执行,t 变为 (\"a\", [1, 2, 3])——顶层没被改动,所以不报错。但正因为内层可变,hash(t) 会抛 TypeError,它不能作字典键(而且如果它先前能哈希,内容变化也会破坏哈希稳定性,这正是 Python 禁止的原因)。",
-      "explain": "检验点:『不可变』的作用范围是顶层结构,可哈希性要求整棵结构稳定。答『直接报错』说明把两层规则混在一起了。"
-    },
-    "related": ["PY-002"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · 数据结构(list/tuple 语义)", "url": "https://docs.python.org/zh-cn/3/tutorial/datastructures.html", "kind": "official", "note": "语言核心语义,跨版本稳定;建议复核时重点看 5.3 节 Tuples and Sequences"},
-      {"name": "Python 官方文档 · 内置类型(hashable 定义)", "url": "https://docs.python.org/zh-cn/3/library/stdtypes.html", "kind": "official", "note": "hashable 的官方定义:生命周期内哈希值不变"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "语言核心行为,官方文档长期稳定描述;本题解析为独立整理,未改编任何题库原文。"}
+ {
+  "id": "PY-001",
+  "topic": "python-backend",
+  "type": "comparison",
+  "difficulty": "basic",
+  "title": "Python 里列表(list)和元组(tuple)有什么区别?什么时候用哪个?",
+  "tags": [
+   "Python",
+   "数据结构",
+   "可哈希"
+  ],
+  "prerequisites": [],
+  "answer": "列表(list)可变:可以随时增、删、改元素;元组(tuple)不可变:创建之后顶层结构不能改。选择规则很简单——内容会变的集合用列表,一组固定搭配的数据用元组。不可变还带来两个实际差别:元组可以被哈希(能当字典的键、放进集合),并且内存布局更紧凑。",
+  "plain": "把列表想成购物清单:买一样划一样,随时能加新条目——它是『会变化的同类东西的集合』。把元组想成身份证上的(姓名, 出生日期, 性别):这几项是一套固定搭配,数量和位置都有含义,不该被增删。另一个实用角度:字典的键必须『稳定』,如果键本身会变,字典就找不到它了,所以可变的列表不能当键,元组可以。比喻的局限:这个『清单 vs 搭配』的说法没有体现性能与内存差异,那要用实现层面的知识来解释(见下一节)。",
+  "deep": "从三个层面拆:\n1) 语义层面。列表表达『同类元素的集合』,元素含义由位置无关地决定;元组表达『异构数据的结构』,位置本身携带含义,比如 (name, age, city) 的第 0 位永远是名字。函数返回多个值时返回的其实就是元组,因为『这几个值是一组』。\n2) 实现层面。list 底层是一块会自动扩容的指针数组,为了支持 append 会预留额外空间;tuple 长度固定,一次性分配,没有扩容开销,相同内容下占内存更少,创建也更快。但注意:两者存的都是『对象的引用』,差别主要在容器本身,不是元素。\n3) 哈希层面。可哈希(hashable)要求对象生命周期内哈希值不变。list 会变,所以 unhashable,放进 dict 键或 set 会报 TypeError;tuple 顶层不可变所以可哈希——但有个重要例外:如果元组里嵌着列表,如 ([1,2], 3),它依然不可哈希,因为哈希时内容可能通过内层列表改变。『不可变』默认只保护顶层。\n适用条件与边界:需要 in-place 排序、追加、切片赋值→list;需要作为 dict 键、多返回值、函数参数 *args 的载体、常量配置→tuple。不要为了『省一点内存』刻意把该变的集合换成 tuple,语义优先。",
+  "example": "```python\n# 场景 1:函数返回一组固定数据 → 元组\ndef get_user(uid):\n    return (\"小明\", 22, \"北京\")  # 位置有含义,不该增删\nname, age, city = get_user(1)   # 解包\n\n# 场景 2:元组可哈希,能当字典的键\nprice = {(\"北京\", \"上海\"): 520, (\"北京\", \"广州\"): 880}\nprice[(\"北京\", \"上海\")]  # 520\n\n# 场景 3:列表不能当键\n# d = {[1, 2]: \"x\"}        # TypeError: unhashable type: 'list'\n\n# 场景 4:『元组不可变』只保护顶层\nt = (1, [2, 3])\n# t[1] = 9                  # TypeError,顶层不能改\nt[1].append(4)              # 但内层列表可以改 → t 变成 (1, [2, 3, 4])\n```",
+  "interview": "口述版:『列表可变、元组不可变。我会用列表装会增删改的同类数据,用元组装位置有含义的固定结构,比如函数多返回值、坐标、字典的复合键。因为不可变,元组可哈希、能当字典键,内存也更紧凑;但要注意嵌套了可变对象的元组并不能哈希。』追问时可以往三个方向展开:实现层(扩容机制)、哈希规则、以及 namedtuple/dataclass 这类『带名字的元组』什么时候更合适。",
+  "followups": [
+   {
+    "q": "既然有元组,为什么还需要 namedtuple 和 dataclass?",
+    "a": "元组靠位置取值,t[1] 可读性差。namedtuple/dataclass 给字段起名字,支持 user.age 这样的访问和默认值、类型标注。原则:纯传递的临时结构用元组,会被到处读写的结构化数据用 dataclass——AI 应用里解析 LLM 返回的结构化结果就常用 dataclass/Pydantic。"
+   },
+   {
+    "q": "为什么列表不能当字典的键?",
+    "a": "字典靠键的哈希值定位桶,键还必须在整个生命周期里哈希值稳定。列表可以 append,内容一变哈希规则就不成立,字典会定位失败。Python 直接禁止,报 unhashable type。任何自定义类实例默认按对象身份(id)哈希,所以可变对象做键在语法上可行但语义上危险。"
+   },
+   {
+    "q": "元组真的完全不可变吗?",
+    "a": "顶层不可变(不能换元素、增删),但元素指向的对象如果是可变的(列表、字典、自定义对象),其内容可以变。所以『含可变元素的元组』既不可哈希,也可能发生内容变化。判断题:t=(1,[2]);t[1].append(3) 合法且 t 变成 (1,[2,3])。"
+   }
+  ],
+  "pitfalls": [
+   "认为『元组里的一切都不可变』——只有顶层不可变,嵌套的列表内容照样能改。",
+   "把单元素元组写成 (x)——这只是带括号的表达式,正确写法是 (x,)。",
+   "为了性能到处用元组:主要收益是语义清晰和可哈希,性能差异在业务代码里通常可忽略。",
+   "把元组和『常量』划等号——元组不保证元素指向的对象不被修改。"
+  ],
+  "check": {
+   "q": "t = (\"a\", [1, 2])。执行 t[1].append(3) 会发生什么?t 还能作为字典的键吗?",
+   "a": "append 合法执行,t 变为 (\"a\", [1, 2, 3])——顶层没被改动,所以不报错。但正因为内层可变,hash(t) 会抛 TypeError,它不能作字典键(而且如果它先前能哈希,内容变化也会破坏哈希稳定性,这正是 Python 禁止的原因)。",
+   "explain": "检验点:『不可变』的作用范围是顶层结构,可哈希性要求整棵结构稳定。答『直接报错』说明把两层规则混在一起了。"
   },
-  {
-    "id": "PY-002",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "什么是生成器(generator)?为什么处理大文件和 LLM 流式输出时要用它?",
-    "tags": ["Python", "生成器", "yield", "流式"],
-    "prerequisites": ["PY-001"],
-    "answer": "函数体里出现 yield,它就变成生成器函数:调用时不立刻执行,而是返回一个生成器对象;每要一个值,执行到下一个 yield 就暂停,记住现场,下次从暂停处继续。好处是『边生产边消费』:内存占用恒定,不用先把全部结果攒成一个列表。LLM 流式输出逐 token 推给前端、大日志逐行分析,都是这个模式。",
-    "plain": "列表像先烧一大锅水全部倒进水桶,再一杯杯喝;生成器像拧开水龙头接一杯喝一杯——水厂(计算过程)不用一次把整桶水做好。两个直观好处:第一,喝到第一口特别快(首字节延迟低),这正是聊天机器人『打字机效果』的原理;第二,桶会爆(10GB 日志装内存直接 OOM),水管永远不会。比喻的局限:水龙头的水流过就没了——生成器只能从头到尾遍历一次,也不能『直接跳到第 1000 个』;要重复用,得重新生成一次。",
-    "deep": "执行模型(重要,面试常追问):\n1) 调用 gen_func() 不执行任何函数体,只返回生成器对象;\n2) 第一次 next(g)(或 for 循环第一次取值)才执行代码,直到遇到 yield,把值交出去并冻结:局部变量、执行位置都保留;\n3) 再次取值时从冻结处恢复,直到下一个 yield 或函数结束;\n4) 函数结束时抛 StopIteration,for 循环据此正常收尾。\n这就是『惰性求值 + 可暂停的函数』。生成器表达式 (x*x for x in xs) 是同样机制的简写。yield from 用于把一个可迭代对象逐个委托出去。\n与异步的关系:yield 暂停/恢复这套机制,正是 asyncio 能『挂起等待、恢复执行』的底层基石之一;异步生成器 async def + yield 产生的对象要用 async for 消费,FastAPI 流式响应就接受 async 生成器(已核验官方文档:StreamingResponse 接收 async 或普通生成器)。\n边界条件:一次性消费;需要 len()、下标、多次遍历时转 list;生成器内抛异常会沿迭代传播;用 next(g, default) 可避免 StopIteration 裸抛。",
-    "example": "```python\n# 反例:一次读入,10GB 日志直接 OOM\n# lines = open(\"app.log\").readlines()      # 全部载入内存\n\n# 生成器版:内存恒定\ndef error_lines(path):\n    with open(path, encoding=\"utf-8\") as f:\n        for line in f:                     # 文件对象本身就是惰性迭代\n            if \"ERROR\" in line:\n                yield line.strip()\n\nfor line in error_lines(\"app.log\"):\n    alert(line)                            # 来一行处理一行\n\n# LLM 流式输出:逐块 yield 给客户端\ndef stream_chat(prompt):\n    for chunk in call_llm_stream(prompt):  # 每拿到一小段就产出\n        yield f\"data: {chunk}\\n\\n\"          # SSE 格式,见 PY-004\n```",
-    "interview": "口述版:『生成器是带 yield 的函数,调用返回迭代器,每次取值执行到下一个 yield 暂停,现场被保存,下次继续。它把「计算结果」变成「按需取结果」,内存 O(1),首值快。我们做 LLM 应用时,后端就是用生成器把模型输出的 token 流逐块推给前端,实现打字机效果,同时避免长回答占内存。』追问时展开:暂停/恢复的执行模型、一次性消费的限制、async generator 与 FastAPI 的配合。",
-    "followups": [
-      {"q": "生成器和迭代器是什么关系?", "a": "迭代器是实现 __iter__ 和 __next__ 协议的对象;生成器是迭代器的一种『由函数自动生成』的便捷写法——写 yield,Python 替你实现整个迭代器协议。range、文件对象也是迭代器,但不是生成器。"},
-      {"q": "生成器能遍历两次吗?", "a": "不能,耗尽后再遍历得到空结果且不报错——这是隐蔽 bug 来源。需要多次消费就每次重新创建生成器(函数调用一次即可),或先 list() 物化(放弃省内存收益)。itertools.tee 能复制迭代器但会缓存差集,谨慎用。"},
-      {"q": "流式输出时客户端中途断开,生成器会怎样?", "a": "框架会关闭/取消生成器。注意 FastAPI 官方文档的提醒:纯同步代码段没有 await 时,异步任务无法被及时取消,生成器可能继续跑——所以异步生成器里要有 await 让出控制权,清理逻辑(关闭文件、取消上游请求)放进 try/finally。"}
-    ],
-    "pitfalls": [
-      "以为定义生成器函数时会执行函数体——调试时在 yield 前打的 print 要到第一次取值才出现。",
-      "对同一个生成器遍历两次,第二次静默为空。",
-      "在生成器里做昂贵计算却指望『惰性』省时间——惰性省的是内存和首值延迟,总量不变。",
-      "len(gen) 直接 TypeError;需要长度就说明该用列表。"
-    ],
-    "check": {
-      "q": "g = (x * x for x in range(3));print(sum(g));print(sum(g)) 输出什么?",
-      "a": "输出 14 和 0。第一次求和消费了 0+1+4=14 并耗尽生成器;第二次面对已耗尽的生成器,得到空和 0,不报错。",
-      "explain": "检验点:生成器一次性消费的特性是否真的理解。答 14 和 14 的人把生成器当成了可重复读取的容器。"
-    },
-    "related": ["PY-003", "PY-004", "LP-002"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · 生成器(yield 语义)", "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#yieldexpr", "kind": "official", "note": "语言参考,稳定语义"},
-      {"name": "FastAPI 官方文档 · StreamingResponse", "url": "https://fastapi.tiangolo.com/advanced/custom-response/", "kind": "official", "note": "2026-09-06 已核验:接收 async/普通生成器;取消与 await 的注意事项"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "yield 语义为语言核心;FastAPI 流式行为本次已实际核验官方文档。"}
-  },
-  {
-    "id": "PY-003",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "async/await 是怎么实现并发的?它和多线程有什么区别?调 LLM API 该用哪个?",
-    "tags": ["Python", "asyncio", "并发", "GIL"],
-    "prerequisites": ["PY-002"],
-    "answer": "async/await 是单线程内的协作式并发:协程运行到 await(通常是等网络响应)时主动让出控制权,事件循环趁机去跑其他协程,等 I/O 完成再切回来。它解决『等』的浪费,不解决『算』的慢。并发调用多个 LLM API、多个工具是它的主场;CPU 密集任务(解析大 PDF、跑本地模型)要交给进程池或多进程。与多线程相比:线程由操作系统抢占式调度、切换有开销且要加锁防竞争,协程由代码自愿让出、切换成本极低、单线程内没有数据竞争——但一处同步阻塞,全体卡死。",
-    "plain": "一个服务员(事件循环)照看整个大厅:某桌客人点完菜在等厨房(I/O 等待),服务员不会站在桌边干等,而是去服务别桌,菜好了再端回来。多线程是雇一堆服务员,每桌一个——人多了,工资(内存)和互相碰撞(锁)都来了。比喻的局限:服务员不能同时烧两道菜,厨房(CPU)只有一个灶台,所以『算得慢』的问题协程帮不了;另外协程这服务员是『全靠自觉』——任何一个服务员在原地傻等(time.sleep、同步 requests),整个大厅都得停摆。",
-    "deep": "机制拆解:\n1) async def 定义协程函数,调用它得到协程对象(不执行,类比 PY-002 生成器);事件循环(通常 asyncio.run 启动)负责驱动它们。\n2) await 做两件事:等待一个可等待对象;同时把控制权交还事件循环。await 处就是切换点,所以协程间『几乎不 race』——但共享外部资源(数据库、API 配额)仍要管。\n3) 并发跑一批任务:asyncio.gather(*aws) 并发运行并按传入顺序聚合结果;return_exceptions=True 把异常也放进结果列表(默认第一个异常立即上抛,官方文档已核验)。asyncio.create_task 把协程调度成后台任务,注意官方提醒:事件循环只持弱引用,要保存返回的 Task 引用,新代码推荐 TaskGroup。\n4) 限流:asyncio.Semaphore(n) 包住请求,防止 2000 个并发打爆 API 触发 429(配合 LP-004 的退避重试)。\n5) 超时:asyncio.wait_for / asyncio.timeout,超时抛 TimeoutError 并取消任务。\n6) 阻塞代码怎么办:必须调用同步 SDK(有些厂商 SDK 没有异步版)时,用 asyncio.to_thread 把它扔进线程池,别让它堵住事件循环(官方文档:to_thread 适合 I/O 型阻塞函数,受 GIL 限制对 CPU 密集无效)。\n7) 和多线程/多进程的分工:GIL 之下,线程适合『等 I/O 的同步代码』与『释放 GIL 的 C 扩展(如 numpy 的一部分操作)』;CPU 密集用 multiprocessing/进程池。FastAPI 里 async def 路由跑在事件循环,普通 def 路由自动跑在线程池——两者别混写阻塞代码。\n适用边界:高并发网络 I/O→asyncio;简单脚本并发几十个请求→线程池也够;CPU 密集→进程。",
-    "example": "```python\nimport asyncio, httpx\n\nasync def ask(client, prompt: str) -> str:\n    resp = await client.post(\"/v1/chat/completions\", json={...})\n    return resp.json()[\"choices\"][0][\"message\"][\"content\"]\n\nasync def main():\n    limits = asyncio.Semaphore(10)          # 最多 10 个并发,防 429\n    async with httpx.AsyncClient(timeout=30) as client:\n        async def guarded(p):\n            async with limits:\n                return await ask(client, p)\n        results = await asyncio.gather(     # 并发执行,按顺序返回\n            *[guarded(p) for p in prompts],\n            return_exceptions=True)         # 单个失败不炸全局\n        for p, r in zip(prompts, results):\n            print(p, \"→\", r if not isinstance(r, Exception) else f\"失败: {r}\")\n\n# 阻塞 SDK 的正确姿势:\n# result = await asyncio.to_thread(sync_sdk.complete, prompt)\n```",
-    "interview": "口述版:『asyncio 是单线程协作式并发:await 处让出控制权,事件循环调度别的协程,I/O 等待互相填空。适合 LLM 应用里「一次并发调几十个模型或工具」的场景,配合 Semaphore 限流、gather 收结果、to_thread 兜住阻塞 SDK。多线程是抢占式,有 GIL 和锁,通常在同步代码栈或调释放 GIL 的库时用;CPU 密集走多进程。我实际写过 FastAPI + httpx.AsyncClient 的并发调用层。』追问展开:gather 的异常语义、在 async 里误用同步库的后果、GIL。",
-    "followups": [
-      {"q": "在 async 函数里用了 requests 或 time.sleep,会发生什么?", "a": "事件循环被整个卡住:所有协程、包括负责响应其他用户的都停摆,服务表现为『周期性全员卡死』。修复:换异步库(httpx.AsyncClient、aioredis),或 asyncio.to_thread 包裹,或 sleep 用 asyncio.sleep。"},
-      {"q": "GIL 是什么?对 AI 后端有什么影响?", "a": "全局解释器锁:CPython 中同一时刻至多一个线程执行 Python 字节码。影响:多线程加速不了纯 Python 的 CPU 计算;但 I/O 等待时释放 GIL,所以『等网络』场景多线程也有效;调用 numpy/模型推理这类释放 GIL 的 C 代码时线程可用。asyncio 的价值恰恰是不靠多线程也能并发 I/O。"},
-      {"q": "gather 里一个任务失败了,其他任务会怎样?", "a": "默认 return_exceptions=False 时,第一个异常立即抛给 await 处,但其余任务不会被取消,仍在后台跑完(需要自己管理);想『全都要或全不要』用 TaskGroup(取消其余)或 gather(return_exceptions=True) 收集后统一处理。"}
-    ],
-    "pitfalls": [
-      "以为 async 能加速 CPU 计算——它只让『等待』重叠。",
-      "并发数不加限制——瞬时几百个请求触发 429,整体反而更慢(要 Semaphore)。",
-      "create_task 后不保存引用,任务可能被垃圾回收中途消失(官方文档明确提醒)。",
-      "把 asyncio.gather 说成『并行』——它是并发(concurrency)不是并行(parallelism),单线程内交替。"
-    ],
-    "check": {
-      "q": "协程 A、B 各自先 await 一次网络请求(各需 1 秒)再返回。用 await A; await B 串行,和 asyncio.gather(A, B) 并发,总耗时分别约多少?",
-      "a": "串行约 2 秒:等完 A 的 1 秒再等 B 的 1 秒。gather 约 1 秒:两个请求同时发出,等待重叠。",
-      "explain": "检验点:『并发=等待互相填空』。若答 gather 更省 CPU,说明没分清 I/O 等待与计算。"
-    },
-    "related": ["PY-002", "PY-004", "LP-004", "EN-002"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · Coroutines and Tasks", "url": "https://docs.python.org/3/library/asyncio-task.html", "kind": "official", "note": "2026-09-06 已核验:gather/create_task/to_thread 的准确语义"},
-      {"name": "Python 官方文档 · asyncio 概览", "url": "https://docs.python.org/3/library/asyncio.html", "kind": "official", "note": "『用 async/await 写并发代码、适合 I/O 型网络程序』的官方表述"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "gather/create_task/to_thread 语义已对 Python 官方文档逐条核验(含 return_exceptions、弱引用、GIL 表述)。"}
-  },
-  {
-    "id": "PY-004",
-    "topic": "python-backend",
-    "type": "code",
-    "difficulty": "intermediate",
-    "title": "FastAPI 里参数校验是怎么工作的?校验失败返回什么?如何实现 LLM 的流式响应?",
-    "tags": ["FastAPI", "Pydantic", "参数校验", "SSE", "流式"],
-    "prerequisites": ["PY-002", "PY-003"],
-    "answer": "FastAPI 用 Pydantic 模型声明请求体/查询参数,框架在进入业务函数前自动完成类型转换与校验;失败直接返回 422,响应体带字段级的 loc/msg/type 明细,脏数据根本到不了你的代码。流式响应用 StreamingResponse(或新版教程推荐的 Stream Data 风格/SSE 对象)包住一个生成器,边生成边发送——这是 LLM 逐 token 输出的标准做法,首字节快、内存恒定。",
-    "plain": "Pydantic 校验像机场安检:登机牌(参数)格式不对,安检口当场拦下,还会明确告诉你『液体超了 100ml』(字段级错误),而不是让你上了飞机再出事(业务代码里崩)。流式响应像外卖直播后厨:不是等一桌菜全做好一次端上(等全部 token 生成完),而是出锅一道上一道(生成一点推一点)。比喻的局限:安检只查『格式』,不查『业务合理』——temperature=999 格式合法但不合理,那是你业务代码/Pydantic 约束(gt、le)该管的事。",
-    "deep": "校验部分:\n1) 声明:函数参数里写 body: ChatRequest(ChatRequest 是 Pydantic BaseModel),Query/Path 用类型标注+约束(Annotated[int, Field(ge=1)])。\n2) Pydantic v2 校验顺序:类型解析(coerce,字符串 \"5\"→int 5 视配置)→约束(Field 的 gt/le/max_length/pattern)→自定义 validator。\n3) 失败响应:HTTP 422 Unprocessable Entity,detail 是数组,每项含 loc(如 [\"body\", \"temperature\"])、msg(人话原因)、type(错误类别,如 float_parsing)。可自定义 exception_handler(RequestValidationError) 统一改成业务格式。\n4) response_model 做出口过滤:响应超出/缺少字段也会被处理,防止内部字段泄漏。\n流式部分(依据 2026-09-06 核验的官方文档):\n1) 返回 StreamingResponse(gen()),gen 是普通或 async 生成器,产出的每个值立即作为响应体一块发出;\n2) SSE 约定:每条消息 data: {json}\\n\\n,media_type=text/event-stream,前端 EventSource 或 fetch 流式读取;\n3) 取消语义(官方 Technical Details):异步任务只有在 await 处才能被取消——纯 CPU 的生成器段无法被及时取消,所以要 await anyio.sleep(0) 之类的让出点;清理逻辑用 try/finally;\n4) 新版文档更推荐『Stream Data』风格(直接返回流对象)与专门的 SSE 教程(EventSourceResponse/ServerSentEvent),并提示用 JSON Lines 流式传输结构化数据;\n5) 生产注意:反向代理(nginx)默认可能缓冲流式响应,需关 proxy_buffering(X-Accel-Buffering: no);心跳注释行防止空闲断连;结束帧里带上用量统计。\n边界:校验只保证『形』;422 与 400 的语义差别(可解析但语义错误 vs 请求本身畸形);流式接口的错误处理要先于流开始(头信息已发出后再出错,只能改用错误帧/提前结束)。",
-    "example": "```python\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel, Field\nfrom fastapi.responses import StreamingResponse\n\napp = FastAPI()\n\nclass ChatRequest(BaseModel):\n    question: str = Field(min_length=1, max_length=2000)\n    temperature: float = Field(default=0.7, ge=0, le=2)\n\n# POST /chat 请求体 {\"temperature\": \"hot\"}\n# → 422,detail: [{\"loc\": [\"body\", \"temperature\"],\n#    \"msg\": \"Input should be a valid number...\", \"type\": \"float_parsing\"}]\n\n@app.post(\"/chat\")\nasync def chat(req: ChatRequest):\n    async def gen():\n        try:\n            async for chunk in llm_stream(req.question, req.temperature):\n                yield f\"data: {chunk}\\n\\n\"   # SSE 帧\n            yield \"data: [DONE]\\n\\n\"\n        finally:\n            await aclose_upstream()          # 客户端断开时清理\n    return StreamingResponse(gen(), media_type=\"text/event-stream\")\n```",
-    "interview": "口述版:『FastAPI 的校验是声明式的:Pydantic 模型定义请求体,框架进函数前自动校验,失败返回 422 带字段级错误,业务函数拿到的永远是干净数据。流式响应用 StreamingResponse 包生成器,配合 SSE 的 data:\\n\\n 帧格式做打字机输出;有两个坑我会主动提:一是纯同步段没有 await 时取消不了,要在生成器里留让出点;二是 nginx 缓冲会破坏流式效果。』追问展开:自定义 422 格式、校验与业务校验的分层、流式鉴权与计费。",
-    "followups": [
-      {"q": "为什么校验失败是 422 而不是 400?", "a": "语义分层:400 用于请求本身畸形(语法都解析不了),422 表示请求格式能理解但内容不符合约定(类型/约束不满足)。这是 FastAPI/Starlette 的约定;Spring 等框架常直接用 400——面试时指出『框架约定不同,关键是团队内一致』更显成熟。"},
-      {"q": "流式接口怎么做鉴权和计费?", "a": "鉴权在连接前:依赖注入校验 token,失败在流开始前返回 401(此时还能正常回错误码)。计费在流结束后:在生成器 finally 里汇总用量(token 数)写库。不要在每帧里做重逻辑。"},
-      {"q": "生成器中途抛异常,客户端会看到什么?", "a": "响应头已发出,状态码已固定 200,只能在流内发错误帧(如 data: {\"error\": ...})并提前结束;前端必须同时解析正常帧与错误帧。所以重活(检索、上游调用)尽量在 yield 第一帧之前完成。"}
-    ],
-    "pitfalls": [
-      "把所有校验都塞进业务代码 if——用不上框架自动 422,错误格式还不统一。",
-      "生成器里全是同步重活,客户端断开后服务端还在跑(取消失效,官方文档明确提醒的场景)。",
-      "忘记 media_type=\"text/event-stream\" 或漏了 \\n\\n,前端 EventSource 解析不出事件。",
-      "json.dumps 完一整段大 JSON 再 yield,还自称流式——那只是分块传输,首字节延迟没变。"
-    ],
-    "check": {
-      "q": "客户端发起 POST /chat,body 为 {\"question\": \"\"},你的 ChatRequest 要求 min_length=1。请求会进入业务函数吗?响应码和大致响应体是什么?",
-      "a": "不会进入业务函数。返回 422,detail 中 loc=[\"body\", \"question\"],type 类似 string_too_short,msg 说明最短长度 1。",
-      "explain": "检验点:校验发生在框架层、进入业务函数之前;以及能否说出错误明细的三要素 loc/msg/type。"
-    },
-    "related": ["PY-002", "PY-003", "LP-002", "LP-004"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "FastAPI 官方文档 · StreamingResponse / 自定义响应", "url": "https://fastapi.tiangolo.com/advanced/custom-response/", "kind": "official", "note": "2026-09-06 已核验:生成器参数、取消与 await、Stream Data/SSE 教程指引"},
-      {"name": "FastAPI 官方文档 · 请求体与校验", "url": "https://fastapi.tiangolo.com/tutorial/body/", "kind": "official", "note": "Pydantic 校验与 422 为框架稳定行为(本页未单独抓取,标注为稳定常识)"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "流式与取消语义已核验;422 明细字段为框架长期稳定行为,建议使用时对照所装 FastAPI 版本文档。"}
+  "related": [
+   "PY-002"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · 数据结构(list/tuple 语义)",
+    "url": "https://docs.python.org/zh-cn/3/tutorial/datastructures.html",
+    "kind": "official",
+    "note": "语言核心语义,跨版本稳定;建议复核时重点看 5.3 节 Tuples and Sequences"
+   },
+   {
+    "name": "Python 官方文档 · 内置类型(hashable 定义)",
+    "url": "https://docs.python.org/zh-cn/3/library/stdtypes.html",
+    "kind": "official",
+    "note": "hashable 的官方定义:生命周期内哈希值不变"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-06",
+   "note": "语言核心行为,官方文档长期稳定描述;本题解析为独立整理,未改编任何题库原文。"
   }
+ },
+ {
+  "id": "PY-002",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "什么是生成器(generator)?为什么处理大文件和 LLM 流式输出时要用它?",
+  "tags": [
+   "Python",
+   "生成器",
+   "yield",
+   "流式"
+  ],
+  "prerequisites": [
+   "PY-001"
+  ],
+  "answer": "函数体里出现 yield,它就变成生成器函数:调用时不立刻执行,而是返回一个生成器对象;每要一个值,执行到下一个 yield 就暂停,记住现场,下次从暂停处继续。好处是『边生产边消费』:内存占用恒定,不用先把全部结果攒成一个列表。LLM 流式输出逐 token 推给前端、大日志逐行分析,都是这个模式。",
+  "plain": "列表像先烧一大锅水全部倒进水桶,再一杯杯喝;生成器像拧开水龙头接一杯喝一杯——水厂(计算过程)不用一次把整桶水做好。两个直观好处:第一,喝到第一口特别快(首字节延迟低),这正是聊天机器人『打字机效果』的原理;第二,桶会爆(10GB 日志装内存直接 OOM),水管永远不会。比喻的局限:水龙头的水流过就没了——生成器只能从头到尾遍历一次,也不能『直接跳到第 1000 个』;要重复用,得重新生成一次。",
+  "deep": "执行模型(重要,面试常追问):\n1) 调用 gen_func() 不执行任何函数体,只返回生成器对象;\n2) 第一次 next(g)(或 for 循环第一次取值)才执行代码,直到遇到 yield,把值交出去并冻结:局部变量、执行位置都保留;\n3) 再次取值时从冻结处恢复,直到下一个 yield 或函数结束;\n4) 函数结束时抛 StopIteration,for 循环据此正常收尾。\n这就是『惰性求值 + 可暂停的函数』。生成器表达式 (x*x for x in xs) 是同样机制的简写。yield from 用于把一个可迭代对象逐个委托出去。\n与异步的关系:yield 暂停/恢复这套机制,正是 asyncio 能『挂起等待、恢复执行』的底层基石之一;异步生成器 async def + yield 产生的对象要用 async for 消费,FastAPI 流式响应就接受 async 生成器(已核验官方文档:StreamingResponse 接收 async 或普通生成器)。\n边界条件:一次性消费;需要 len()、下标、多次遍历时转 list;生成器内抛异常会沿迭代传播;用 next(g, default) 可避免 StopIteration 裸抛。",
+  "example": "```python\n# 反例:一次读入,10GB 日志直接 OOM\n# lines = open(\"app.log\").readlines()      # 全部载入内存\n\n# 生成器版:内存恒定\ndef error_lines(path):\n    with open(path, encoding=\"utf-8\") as f:\n        for line in f:                     # 文件对象本身就是惰性迭代\n            if \"ERROR\" in line:\n                yield line.strip()\n\nfor line in error_lines(\"app.log\"):\n    alert(line)                            # 来一行处理一行\n\n# LLM 流式输出:逐块 yield 给客户端\ndef stream_chat(prompt):\n    for chunk in call_llm_stream(prompt):  # 每拿到一小段就产出\n        yield f\"data: {chunk}\\n\\n\"          # SSE 格式,见 PY-004\n```",
+  "interview": "口述版:『生成器是带 yield 的函数,调用返回迭代器,每次取值执行到下一个 yield 暂停,现场被保存,下次继续。它把「计算结果」变成「按需取结果」,内存 O(1),首值快。我们做 LLM 应用时,后端就是用生成器把模型输出的 token 流逐块推给前端,实现打字机效果,同时避免长回答占内存。』追问时展开:暂停/恢复的执行模型、一次性消费的限制、async generator 与 FastAPI 的配合。",
+  "followups": [
+   {
+    "q": "生成器和迭代器是什么关系?",
+    "a": "迭代器是实现 __iter__ 和 __next__ 协议的对象;生成器是迭代器的一种『由函数自动生成』的便捷写法——写 yield,Python 替你实现整个迭代器协议。range、文件对象也是迭代器,但不是生成器。"
+   },
+   {
+    "q": "生成器能遍历两次吗?",
+    "a": "不能,耗尽后再遍历得到空结果且不报错——这是隐蔽 bug 来源。需要多次消费就每次重新创建生成器(函数调用一次即可),或先 list() 物化(放弃省内存收益)。itertools.tee 能复制迭代器但会缓存差集,谨慎用。"
+   },
+   {
+    "q": "流式输出时客户端中途断开,生成器会怎样?",
+    "a": "框架会关闭/取消生成器。注意 FastAPI 官方文档的提醒:纯同步代码段没有 await 时,异步任务无法被及时取消,生成器可能继续跑——所以异步生成器里要有 await 让出控制权,清理逻辑(关闭文件、取消上游请求)放进 try/finally。"
+   }
+  ],
+  "pitfalls": [
+   "以为定义生成器函数时会执行函数体——调试时在 yield 前打的 print 要到第一次取值才出现。",
+   "对同一个生成器遍历两次,第二次静默为空。",
+   "在生成器里做昂贵计算却指望『惰性』省时间——惰性省的是内存和首值延迟,总量不变。",
+   "len(gen) 直接 TypeError;需要长度就说明该用列表。"
+  ],
+  "check": {
+   "q": "g = (x * x for x in range(3));print(sum(g));print(sum(g)) 输出什么?",
+   "a": "输出 14 和 0。第一次求和消费了 0+1+4=14 并耗尽生成器;第二次面对已耗尽的生成器,得到空和 0,不报错。",
+   "explain": "检验点:生成器一次性消费的特性是否真的理解。答 14 和 14 的人把生成器当成了可重复读取的容器。"
+  },
+  "related": [
+   "PY-003",
+   "PY-004",
+   "LP-002"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · 生成器(yield 语义)",
+    "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#yieldexpr",
+    "kind": "official",
+    "note": "语言参考,稳定语义"
+   },
+   {
+    "name": "FastAPI 官方文档 · StreamingResponse",
+    "url": "https://fastapi.tiangolo.com/advanced/custom-response/",
+    "kind": "official",
+    "note": "2026-09-06 已核验:接收 async/普通生成器;取消与 await 的注意事项"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-06",
+   "note": "yield 语义为语言核心;FastAPI 流式行为本次已实际核验官方文档。"
+  }
+ },
+ {
+  "id": "PY-003",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "async/await 是怎么实现并发的?它和多线程有什么区别?调 LLM API 该用哪个?",
+  "tags": [
+   "Python",
+   "asyncio",
+   "并发",
+   "GIL"
+  ],
+  "prerequisites": [
+   "PY-002"
+  ],
+  "answer": "async/await 是单线程内的协作式并发:协程运行到 await(通常是等网络响应)时主动让出控制权,事件循环趁机去跑其他协程,等 I/O 完成再切回来。它解决『等』的浪费,不解决『算』的慢。并发调用多个 LLM API、多个工具是它的主场;CPU 密集任务(解析大 PDF、跑本地模型)要交给进程池或多进程。与多线程相比:线程由操作系统抢占式调度,随时可能在任意两条字节码之间被切换,所以要靠锁保护临界区;协程只在 await 处切换,不会被打断在普通语句中间——但这不等于没有竞争:跨越 await 的『读-改-写』序列照样会交错(本机实测:100 个协程各加 10 次,无锁只得到 10,加 asyncio.Lock 才是 1000)。还有一条铁律:一处同步阻塞,全体卡死。",
+  "plain": "一个服务员(事件循环)照看整个大厅:某桌客人点完菜在等厨房(I/O 等待),服务员不会站在桌边干等,而是去服务别桌,菜好了再端回来。多线程是雇一堆服务员,每桌一个——人多了,工资(内存)和互相碰撞(锁)都来了。比喻的局限:服务员不能同时烧两道菜,厨房(CPU)只有一个灶台,所以『算得慢』的问题协程帮不了;另外协程这服务员是『全靠自觉』——任何一个服务员在原地傻等(time.sleep、同步 requests),整个大厅都得停摆。",
+  "deep": "机制拆解:\n1) async def 定义协程函数,调用它得到协程对象(不执行,类比 PY-002 生成器);事件循环(通常 asyncio.run 启动)负责驱动它们。\n2) await 做两件事:等待一个可等待对象;同时把控制权交还事件循环。await 处就是切换点——协程不会被抢占在普通语句中间,但『读共享变量 → await → 写回』这种跨 await 的序列会被其他协程插进来,更新互相覆盖(见例子):临界区用 asyncio.Lock 保护。『单线程所以没竞争』是高频误区,面试里要能主动讲出反例。\n3) 并发跑一批任务:asyncio.gather(*aws) 并发运行并按传入顺序聚合结果;return_exceptions=True 把异常也放进结果列表(默认第一个异常立即上抛,官方文档已核验)。asyncio.create_task 把协程调度成后台任务,注意官方提醒:事件循环只持弱引用,要保存返回的 Task 引用,新代码推荐 TaskGroup。\n4) 限流:asyncio.Semaphore(n) 包住请求,防止 2000 个并发打爆 API 触发 429(配合 LP-004 的退避重试)。\n5) 超时:asyncio.wait_for / asyncio.timeout,超时抛 TimeoutError 并取消任务。\n6) 阻塞代码怎么办:必须调用同步 SDK(有些厂商 SDK 没有异步版)时,用 asyncio.to_thread 把它扔进线程池,别让它堵住事件循环(官方文档:to_thread 适合 I/O 型阻塞函数,受 GIL 限制对 CPU 密集无效)。\n7) 和多线程/多进程的分工:GIL 之下,线程适合『等 I/O 的同步代码』与『释放 GIL 的 C 扩展(如 numpy 的一部分操作)』;CPU 密集用 multiprocessing/进程池。FastAPI 里 async def 路由跑在事件循环,普通 def 路由自动跑在线程池——两者别混写阻塞代码。\n适用边界:高并发网络 I/O→asyncio;简单脚本并发几十个请求→线程池也够;CPU 密集→进程。",
+  "example": "```python\nimport asyncio, httpx\n\nasync def ask(client, prompt: str) -> str:\n    resp = await client.post(\"/v1/chat/completions\", json={...})\n    return resp.json()[\"choices\"][0][\"message\"][\"content\"]\n\nasync def main():\n    limits = asyncio.Semaphore(10)          # 最多 10 个并发,防 429\n    async with httpx.AsyncClient(timeout=30) as client:\n        async def guarded(p):\n            async with limits:\n                return await ask(client, p)\n        results = await asyncio.gather(     # 并发执行,按顺序返回\n            *[guarded(p) for p in prompts],\n            return_exceptions=True)         # 单个失败不炸全局\n        for p, r in zip(prompts, results):\n            print(p, \"→\", r if not isinstance(r, Exception) else f\"失败: {r}\")\n\n# 阻塞 SDK 的正确姿势:\n# result = await asyncio.to_thread(sync_sdk.complete, prompt)\n```\n\n反例:单线程也有竞争(已在本机 Python 3.13 运行,结果如下):\n```python\ncounter = 0\nasync def worker():\n    global counter\n    for _ in range(10):\n        v = counter               # 读\n        await asyncio.sleep(0)    # 让出:100 个协程都读到同一个值\n        counter = v + 1           # 写回:基于过期值,更新丢失\n\nasyncio.run(asyncio.gather(*[worker() for _ in range(100)]))\nprint(counter)   # 无锁输出 10(期望 1000,丢了 990 次更新)\n# 把『读-改-写』包进 async with asyncio.Lock() 后:输出 1000\n```",
+  "interview": "口述版:『asyncio 是单线程协作式并发:await 处让出控制权,事件循环调度别的协程,I/O 等待互相填空。适合 LLM 应用里「一次并发调几十个模型或工具」的场景,配合 Semaphore 限流、gather 收结果、to_thread 兜住阻塞 SDK。多线程是抢占式,有 GIL 和锁,通常在同步代码栈或调释放 GIL 的库时用;CPU 密集走多进程。另外我会主动提一句:单线程不等于没竞争,跨 await 的读改写要用 asyncio.Lock——这点很多人答错。』追问展开:gather 的异常语义、在 async 里误用同步库的后果、GIL。项目经验的说法:如果你真的写过 FastAPI + httpx.AsyncClient 的并发调用层,就讲你自己的设计(限流怎么定的、失败怎么兜);没写过就诚实说『这是我的练手计划,设计思路如上』——不要把没做过说成做过。",
+  "followups": [
+   {
+    "q": "在 async 函数里用了 requests 或 time.sleep,会发生什么?",
+    "a": "事件循环被整个卡住:所有协程、包括负责响应其他用户的都停摆,服务表现为『周期性全员卡死』。修复:换异步库(httpx.AsyncClient、aioredis),或 asyncio.to_thread 包裹,或 sleep 用 asyncio.sleep。"
+   },
+   {
+    "q": "GIL 是什么?对 AI 后端有什么影响?",
+    "a": "全局解释器锁:CPython 中同一时刻至多一个线程执行 Python 字节码。影响:多线程加速不了纯 Python 的 CPU 计算;但 I/O 等待时释放 GIL,所以『等网络』场景多线程也有效;调用 numpy/模型推理这类释放 GIL 的 C 代码时线程可用。asyncio 的价值恰恰是不靠多线程也能并发 I/O。"
+   },
+   {
+    "q": "gather 里一个任务失败了,其他任务会怎样?",
+    "a": "默认 return_exceptions=False 时,第一个异常立即抛给 await 处,但其余任务不会被取消,仍在后台跑完(需要自己管理);想『全都要或全不要』用 TaskGroup(取消其余)或 gather(return_exceptions=True) 收集后统一处理。"
+   }
+  ],
+  "pitfalls": [
+   "以为 async 能加速 CPU 计算——它只让『等待』重叠。",
+   "以为单线程就没有数据竞争——跨 await 的『读-改-写』照样丢更新(实测 1000 次自增只剩 10 次),临界区要用 asyncio.Lock。",
+   "并发数不加限制——瞬时几百个请求触发 429,整体反而更慢(要 Semaphore)。",
+   "create_task 后不保存引用,任务可能被垃圾回收中途消失(官方文档明确提醒)。",
+   "把 asyncio.gather 说成『并行』——它是并发(concurrency)不是并行(parallelism),单线程内交替。"
+  ],
+  "check": {
+   "q": "两个问题:①协程 A、B 各自先 await 一次网络请求(各需 1 秒)再返回,await A; await B 和 asyncio.gather(A, B) 总耗时分别约多少?②counter = 0,100 个协程各自「读 counter → await sleep(0) → 写 counter+1」执行 10 次,最终 counter 一定是 1000 吗?",
+   "a": "①串行约 2 秒,gather 约 1 秒(等待重叠)。②不一定是 1000——所有协程可能在 await 处读到同一个旧值,写回时互相覆盖(本机实测无锁结果是 10)。要精确累加,把读-改-写放进 async with asyncio.Lock():",
+   "explain": "检验点:『并发=等待互相填空』与『协作式调度仍有临界区』。若认为单线程必然无竞争,说明对 await 的切换点语义理解不到位。"
+  },
+  "related": [
+   "PY-002",
+   "PY-004",
+   "LP-004",
+   "EN-002"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · Coroutines and Tasks",
+    "url": "https://docs.python.org/3/library/asyncio-task.html",
+    "kind": "official",
+    "note": "2026-09-06 已核验:gather/create_task/to_thread 的准确语义"
+   },
+   {
+    "name": "Python 官方文档 · asyncio 概览",
+    "url": "https://docs.python.org/3/library/asyncio.html",
+    "kind": "official",
+    "note": "『用 async/await 写并发代码、适合 I/O 型网络程序』的官方表述"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-07",
+   "note": "gather/create_task/to_thread 语义已对 Python 官方文档核验;『跨 await 竞争』反例与 Lock 对照已在本机 Python 3.13 实际运行(无锁计数 10/1000,加锁 1000/1000)。"
+  }
+ },
+ {
+  "id": "PY-004",
+  "topic": "python-backend",
+  "type": "code",
+  "difficulty": "intermediate",
+  "title": "FastAPI 里参数校验是怎么工作的?校验失败返回什么?如何实现 LLM 的流式响应?",
+  "tags": [
+   "FastAPI",
+   "Pydantic",
+   "参数校验",
+   "SSE",
+   "流式"
+  ],
+  "prerequisites": [
+   "PY-002",
+   "PY-003"
+  ],
+  "answer": "FastAPI 用 Pydantic 模型声明请求体/查询参数,框架在进入业务函数前自动完成类型转换与校验;失败直接返回 422,响应体带字段级的 loc/msg/type 明细,脏数据根本到不了你的代码。流式响应用 StreamingResponse(或新版教程推荐的 Stream Data 风格/SSE 对象)包住一个生成器,边生成边发送——这是 LLM 逐 token 输出的标准做法,首字节快、内存恒定。",
+  "plain": "Pydantic 校验像机场安检:登机牌(参数)格式不对,安检口当场拦下,还会明确告诉你『液体超了 100ml』(字段级错误),而不是让你上了飞机再出事(业务代码里崩)。流式响应像外卖直播后厨:不是等一桌菜全做好一次端上(等全部 token 生成完),而是出锅一道上一道(生成一点推一点)。比喻的局限:安检只查『格式』,不查『业务合理』——temperature=999 格式合法但不合理,那是你业务代码/Pydantic 约束(gt、le)该管的事。",
+  "deep": "校验部分:\n1) 声明:函数参数里写 body: ChatRequest(ChatRequest 是 Pydantic BaseModel),Query/Path 用类型标注+约束(Annotated[int, Field(ge=1)])。\n2) Pydantic v2 的校验顺序按 validator 模式决定(本机 2.10.4 运行验证):mode='before' 的自定义校验器最先跑(拿到原始输入,可先做归一化)→ 核心校验(类型解析 coerce + Field 约束 gt/le/max_length/pattern)→ mode='after' 的自定义校验器(拿到通过核心校验的值;核心校验失败时 after 不执行);mode='wrap' 则包裹整个流程,前后都能插手。笼统说『类型→约束→自定义』只覆盖了默认 after 的情况。\n3) 失败响应:HTTP 422 Unprocessable Entity,detail 是数组,每项含 loc(如 [\"body\", \"temperature\"])、msg(人话原因)、type(错误类别,如 float_parsing)。可自定义 exception_handler(RequestValidationError) 统一改成业务格式。\n4) response_model 做出口过滤:响应超出/缺少字段也会被处理,防止内部字段泄漏。\n流式部分(依据 2026-09-06 核验的官方文档):\n1) 返回 StreamingResponse(gen()),gen 是普通或 async 生成器,产出的每个值立即作为响应体一块发出;\n2) SSE 约定:每条消息 data: {json}\\n\\n,media_type=text/event-stream,前端 EventSource 或 fetch 流式读取;\n3) 取消语义(官方 Technical Details):异步任务只有在 await 处才能被取消——纯 CPU 的生成器段无法被及时取消,所以要 await anyio.sleep(0) 之类的让出点;清理逻辑用 try/finally;\n4) 新版文档更推荐『Stream Data』风格(直接返回流对象)与专门的 SSE 教程(EventSourceResponse/ServerSentEvent),并提示用 JSON Lines 流式传输结构化数据;\n5) 生产注意:反向代理(nginx)默认可能缓冲流式响应,需关 proxy_buffering(X-Accel-Buffering: no);心跳注释行防止空闲断连;结束帧里带上用量统计。\n边界:校验只保证『形』;422 与 400 的语义差别(可解析但语义错误 vs 请求本身畸形);流式接口的错误处理要先于流开始(头信息已发出后再出错,只能改用错误帧/提前结束)。",
+  "example": "```python\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel, Field\nfrom fastapi.responses import StreamingResponse\n\napp = FastAPI()\n\nclass ChatRequest(BaseModel):\n    question: str = Field(min_length=1, max_length=2000)\n    temperature: float = Field(default=0.7, ge=0, le=2)\n\n# POST /chat 请求体 {\"temperature\": \"hot\"}\n# → 422,detail: [{\"loc\": [\"body\", \"temperature\"],\n#    \"msg\": \"Input should be a valid number...\", \"type\": \"float_parsing\"}]\n\n@app.post(\"/chat\")\nasync def chat(req: ChatRequest):\n    async def gen():\n        try:\n            async for chunk in llm_stream(req.question, req.temperature):\n                yield f\"data: {chunk}\\n\\n\"   # SSE 帧\n            yield \"data: [DONE]\\n\\n\"\n        finally:\n            await aclose_upstream()          # 客户端断开时清理\n    return StreamingResponse(gen(), media_type=\"text/event-stream\")\n```",
+  "interview": "口述版:『FastAPI 的校验是声明式的:Pydantic 模型定义请求体,框架进函数前自动校验,失败返回 422 带字段级错误,业务函数拿到的永远是干净数据。流式响应用 StreamingResponse 包生成器,配合 SSE 的 data:\\n\\n 帧格式做打字机输出;有两个坑我会主动提:一是纯同步段没有 await 时取消不了,要在生成器里留让出点;二是 nginx 缓冲会破坏流式效果。』追问展开:自定义 422 格式、校验与业务校验的分层、流式鉴权与计费。",
+  "followups": [
+   {
+    "q": "为什么校验失败是 422 而不是 400?",
+    "a": "语义分层:400 用于请求本身畸形(语法都解析不了),422 表示请求格式能理解但内容不符合约定(类型/约束不满足)。这是 FastAPI/Starlette 的约定;Spring 等框架常直接用 400——面试时指出『框架约定不同,关键是团队内一致』更显成熟。"
+   },
+   {
+    "q": "流式接口怎么做鉴权和计费?",
+    "a": "鉴权在连接前:依赖注入校验 token,失败在流开始前返回 401(此时还能正常回错误码)。计费在流结束后:在生成器 finally 里汇总用量(token 数)写库。不要在每帧里做重逻辑。"
+   },
+   {
+    "q": "生成器中途抛异常,客户端会看到什么?",
+    "a": "响应头已发出,状态码已固定 200,只能在流内发错误帧(如 data: {\"error\": ...})并提前结束;前端必须同时解析正常帧与错误帧。所以重活(检索、上游调用)尽量在 yield 第一帧之前完成。"
+   }
+  ],
+  "pitfalls": [
+   "把所有校验都塞进业务代码 if——用不上框架自动 422,错误格式还不统一。",
+   "生成器里全是同步重活,客户端断开后服务端还在跑(取消失效,官方文档明确提醒的场景)。",
+   "忘记 media_type=\"text/event-stream\" 或漏了 \\n\\n,前端 EventSource 解析不出事件。",
+   "json.dumps 完一整段大 JSON 再 yield,还自称流式——那只是分块传输,首字节延迟没变。"
+  ],
+  "check": {
+   "q": "客户端发起 POST /chat,body 为 {\"question\": \"\"},你的 ChatRequest 要求 min_length=1。请求会进入业务函数吗?响应码和大致响应体是什么?",
+   "a": "不会进入业务函数。返回 422,detail 中 loc=[\"body\", \"question\"],type 类似 string_too_short,msg 说明最短长度 1。",
+   "explain": "检验点:校验发生在框架层、进入业务函数之前;以及能否说出错误明细的三要素 loc/msg/type。"
+  },
+  "related": [
+   "PY-002",
+   "PY-003",
+   "LP-002",
+   "LP-004"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "FastAPI 官方文档 · StreamingResponse / 自定义响应",
+    "url": "https://fastapi.tiangolo.com/advanced/custom-response/",
+    "kind": "official",
+    "note": "2026-09-06 已核验:生成器参数、取消与 await、Stream Data/SSE 教程指引"
+   },
+   {
+    "name": "FastAPI 官方文档 · 请求体与校验",
+    "url": "https://fastapi.tiangolo.com/tutorial/body/",
+    "kind": "official",
+    "note": "Pydantic 校验与 422 为框架稳定行为(本页未单独抓取,标注为稳定常识)"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-07",
+   "note": "流式与取消语义已核验;Pydantic 校验器执行顺序(before→核心→after,核心失败时 after 不执行)已在本机 pydantic 2.10.4 运行验证;422 明细字段为框架长期稳定行为,使用时对照所装 FastAPI 版本文档。"
+  }
+ }
 ]

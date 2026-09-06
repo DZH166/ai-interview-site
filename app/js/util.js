@@ -78,6 +78,21 @@ function openFileText(accept) {
   });
 }
 
+/* 选择文件但不读取内容(返回 Promise<File>),用于二进制文件(如 PDF)按需打开 */
+function openFileAny(accept) {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    if (accept) input.accept = accept;
+    input.onchange = () => {
+      const f = input.files && input.files[0];
+      if (!f) { reject(new Error('未选择文件')); return; }
+      resolve(f);
+    };
+    input.click();
+  });
+}
+
 /* 解析 hash 路由: #/study/PY-001 -> {view:'study', parts:['PY-001'], query:{}} */
 function parseHash() {
   let h = location.hash || '#/home';

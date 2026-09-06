@@ -61,14 +61,29 @@ def main():
                                             separators=(",", ":")) + ";\n")
     out = ROOT / "app" / "data.js"
     out.write_text(js, encoding="utf-8", newline="\n")
-    # Service Worker 缓存版本:按 data.js 内容哈希盖章,数据一变缓存即失效重建。
-    # 统一 LF 写入,保证 Windows/Linux 构建产物逐字节一致(CI 可复现校验依赖这一点)。
+    # Service Worker 缓存版本:对整个 app shell(数据+JS+CSS+图标)内容哈希盖章。
+    # 任何被 SW 预缓存的文件变化都会生成新缓存名,用户下次访问即拿到新版,
+    # 杜绝「改了 JS 但 SW 一直发旧缓存」。统一 LF 写入保证跨平台一致。
     import hashlib
-    stamp = hashlib.md5(out.read_bytes()).hexdigest()[:12]
+    # 注意:不含 sw.js 自身(自引用会导致两次构建互相追尾、产物不可复现)
+    shell_files = ["app/data.js", "app/index.html", "app/manifest.webmanifest",
+                   "app/css/style.css",
+                   "app/js/util.js", "app/js/store.js", "app/js/markdown.js",
+                   "app/js/search.js", "app/js/common.js", "app/js/views-practice.js",
+                   "app/js/views-knowledge.js", "app/js/views-review.js", "app/js/app.js"]
+    h = hashlib.md5()
+    for rel in shell_files:
+        p = ROOT / rel
+        if p.exists():
+            # 归一化 CRLF→LF 后再哈希:工作树换行符差异(Windows autocrlf)
+            # 不影响盖章,保证与 Linux CI 的构建产物逐字节一致
+            h.update(rel.replace('/', '_').encode("utf-8"))
+            h.update(p.read_bytes().replace(b"\r\n", b"\n"))
+    stamp = h.hexdigest()[:12]
     sw = ROOT / "app" / "sw.js"
     sw.write_text(
         re.sub(r"const CACHE_VERSION = '[^']*';",
-               f"const CACHE_VERSION = 'bank-{stamp}';",
+               f"const CACHE_VERSION = 'shell-{stamp}';",
                sw.read_text(encoding="utf-8")),
         encoding="utf-8", newline="\n")
     # 统计

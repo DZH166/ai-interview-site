@@ -1,149 +1,292 @@
 [
-  {
-    "id": "LP-001",
-    "topic": "llm-prompt",
-    "type": "concept",
-    "difficulty": "basic",
-    "title": "temperature 和 top_p 到底在控制什么?什么任务该调高、什么任务该调低?",
-    "tags": ["LLM API", "采样参数", "temperature", "top_p"],
-    "prerequisites": ["FD-001"],
-    "answer": "模型每生成一个 token,都先给所有候选 token 打出一个概率分布。temperature 调整这个分布的『平缓程度』:越低越接近『永远选概率最高的』,越高越敢于选冷门词。top_p(核采样)是先按概率从高到低累计,只保留累计达到 p 的那一小撮候选再抽。它们控制的是『表达的随机性』,不能增加模型『知道什么』。抽取、分类、代码、SQL 用低温;创意命名、头脑风暴适度调高。",
-    "plain": "把模型想成一个考试的学生:temperature 是『胆子』旋钮——0 就是每次都写最有把握的答案,稳但刻板;调高了就开始发挥,偶尔惊艳也偶尔跑偏。top_p 则是『只从前 90% 靠谱的选项里发挥』,先划定一个稳妥圈再抽签。比喻的局限:旋钮只是重新分配『选谁』的概率,并不会让模型变聪明或变笨;低温不能修复『知识里根本没有』的问题,高温也不代表『更有创造力』的思考过程。",
-    "deep": "机制:模型输出 logits(每个候选 token 的原始分数),除以 temperature 后过 softmax 得到抽样分布。T→0 时分布退化为 argmax(贪心);T 增大,高分词与低分词的差距被拉平,冷门 token 被抽中的概率上升。top_p(nucleus sampling)在 softmax 之后按概率降序截断,候选数量是动态的(对比 top_k 是固定前 k 个)。两者都设置时通常只调一个,官方 API 文档一贯建议避免同时大动(具体表述随版本,标注为平台惯例)。取值经验:结构化抽取/分类/SQL 0~0.3;常规问答 0.3~0.7;创意写作 0.7~1.2;OpenAI 经典区间是 0~2,不少平台是 0~1,以所用平台文档为准。版本相关注意:部分推理型模型(如 o 系列早期版本)不接受或忽略 temperature;低温也不保证严格可复现——服务端浮点实现、批处理调度都可能引入轻微抖动,要复现得配合 seed(平台支持时)并固定模型版本号。",
-    "example": "同一个 prompt『给一家主打鲜果茶的奶茶店起名』:\n- temperature=0.2:两次运行大概率都是『鲜果集』这类最平庸但稳妥的名字。\n- temperature=1.1:可能得到『莓有烦恼』『一颗橙意』这类发散的名字,也可能得到『液体阳光有限公司』这类跑偏的。\n而『从这段客服记录里抽取订单号和金额』这类任务,temperature 应设 0~0.3:抽错字段的代价远大于『措辞缺乏创意』。\n```python\nresp = client.chat.completions.create(\n    model=MODEL,\n    temperature=0,        # 抽取任务:稳定优先\n    messages=[...],\n)\n```",
-    "interview": "口述版:『temperature 控制采样分布的尖锐程度,低=贪心、稳定可预期,高=更多低概率 token 被选中;top_p 是按累计概率动态截断候选。工程上我会按任务定:抽取和代码低温,创意任务适度调高,一般不同时大调两个参数。另外我会主动说明:调低温度只能减少「表达发散」,不能解决模型知识本身的问题。』追问展开:为什么 T=0 仍可能不完全可复现、penalty 类参数、推理模型的参数限制。",
-    "followups": [
-      {"q": "为什么 temperature=0 有时输出仍然不完全一样?", "a": "服务端可能做批处理调度、浮点求和顺序差异、MoE 专家路由等非确定性;各平台程度不同。要尽量可复现:固定模型版本号、用平台支持的 seed 参数、同平台同区域端点,并把『可复现』当成概率性目标而非绝对承诺。"},
-      {"q": "frequency_penalty / presence_penalty 是干嘛的?", "a": "都是对『已经出现过的 token』的 logits 惩罚:presence 惩罚只要出现过就加罚(鼓励聊新话题),frequency 按出现次数加罚(抑制复读)。典型用途是缓解长文重复。注意它们同样只是表达层的调节,和 temperature 一样不改变模型知识。"},
-      {"q": "低温能减少幻觉吗?", "a": "只能减少『发散型跑偏』,不能解决事实性错误——模型自信地输出错误事实时,贪心解码一样会选那个错误但高概率的 token。减少幻觉要靠 RAG、允许拒答、引用核验(见 FD-002)。把『调低温度=减少幻觉』当成万能药是常见误区。"}
-    ],
-    "pitfalls": [
-      "把 temperature 当『准确率旋钮』——它不提升正确性,只改变采样随机性。",
-      "同时大幅调整 temperature 和 top_p,导致行为难解释、难复现。",
-      "在需要创意的场景用 0,然后抱怨『回答千篇一律』。",
-      "以为 temperature 影响输出 token 数量或计费方式——都不影响。"
-    ],
-    "check": {
-      "q": "判断:『把 temperature 从 1 调到 0,模型会更聪明,回答质量必然提升。』哪里错了?",
-      "a": "错在两点:temperature 不改变模型能力(知识、推理),只改变采样策略;质量也未必提升——创作类任务低温会刻板重复,某些任务高温反而更好。正确说法是:按任务对『稳定性 vs 多样性』的需求来选值。",
-      "explain": "检验点:是否把『采样参数』和『模型能力』分开。这正是面试官想听的边界意识。"
-    },
-    "related": ["LP-002", "LP-003", "FD-002"],
-    "doc_refs": ["doc-llm-1"],
-    "sources": [
-      {"name": "OpenAI 官方文档 · Text Generation(temperature/top_p/penalties)", "url": "https://developers.openai.com/api/docs/guides/text-generation", "kind": "official", "note": "本次会话未逐句抓取;参数语义属平台公开稳定行为,标注待复核"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "采样机制解释基于 softmax/温度缩放的公开教科书知识独立撰写"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "机制解释为公开稳定知识;各平台取值范围、推理模型是否接受 temperature 属版本相关,使用时以所用平台文档为准。"}
+ {
+  "id": "LP-001",
+  "topic": "llm-prompt",
+  "type": "concept",
+  "difficulty": "basic",
+  "title": "temperature 和 top_p 到底在控制什么?什么任务该调高、什么任务该调低?",
+  "tags": [
+   "LLM API",
+   "采样参数",
+   "temperature",
+   "top_p"
+  ],
+  "prerequisites": [
+   "FD-001"
+  ],
+  "answer": "模型每生成一个 token,都先给所有候选 token 打出一个概率分布。temperature 调整这个分布的『平缓程度』:越低越接近『永远选概率最高的』,越高越敢于选冷门词。top_p(核采样)是先按概率从高到低累计,只保留累计达到 p 的那一小撮候选再抽。它们控制的是『表达的随机性』,不能增加模型『知道什么』。抽取、分类、代码、SQL 用低温;创意命名、头脑风暴适度调高。",
+  "plain": "把模型想成一个考试的学生:temperature 是『胆子』旋钮——0 就是每次都写最有把握的答案,稳但刻板;调高了就开始发挥,偶尔惊艳也偶尔跑偏。top_p 则是『只从前 90% 靠谱的选项里发挥』,先划定一个稳妥圈再抽签。比喻的局限:旋钮只是重新分配『选谁』的概率,并不会让模型变聪明或变笨;低温不能修复『知识里根本没有』的问题,高温也不代表『更有创造力』的思考过程。",
+  "deep": "机制:模型输出 logits(每个候选 token 的原始分数),除以 temperature 后过 softmax 得到抽样分布。T→0 时分布退化为 argmax(贪心);T 增大,高分词与低分词的差距被拉平,冷门 token 被抽中的概率上升。top_p(nucleus sampling)在 softmax 之后按概率降序截断,候选数量是动态的(对比 top_k 是固定前 k 个)。两者都设置时通常只调一个,官方 API 文档一贯建议避免同时大动(具体表述随版本,标注为平台惯例)。取值经验:结构化抽取/分类/SQL 0~0.3;常规问答 0.3~0.7;创意写作 0.7~1.2;OpenAI 经典区间是 0~2,不少平台是 0~1,以所用平台文档为准。版本相关注意:部分推理型模型(如 o 系列早期版本)不接受或忽略 temperature;低温也不保证严格可复现——服务端浮点实现、批处理调度都可能引入轻微抖动,要复现得配合 seed(平台支持时)并固定模型版本号。",
+  "example": "同一个 prompt『给一家主打鲜果茶的奶茶店起名』:\n- temperature=0.2:两次运行大概率都是『鲜果集』这类最平庸但稳妥的名字。\n- temperature=1.1:可能得到『莓有烦恼』『一颗橙意』这类发散的名字,也可能得到『液体阳光有限公司』这类跑偏的。\n而『从这段客服记录里抽取订单号和金额』这类任务,temperature 应设 0~0.3:抽错字段的代价远大于『措辞缺乏创意』。\n```python\nresp = client.chat.completions.create(\n    model=MODEL,\n    temperature=0,        # 抽取任务:稳定优先\n    messages=[...],\n)\n```",
+  "interview": "口述版:『temperature 控制采样分布的尖锐程度,低=贪心、稳定可预期,高=更多低概率 token 被选中;top_p 是按累计概率动态截断候选。工程上我会按任务定:抽取和代码低温,创意任务适度调高,一般不同时大调两个参数。另外我会主动说明:调低温度只能减少「表达发散」,不能解决模型知识本身的问题。』追问展开:为什么 T=0 仍可能不完全可复现、penalty 类参数、推理模型的参数限制。",
+  "followups": [
+   {
+    "q": "为什么 temperature=0 有时输出仍然不完全一样?",
+    "a": "服务端可能做批处理调度、浮点求和顺序差异、MoE 专家路由等非确定性;各平台程度不同。要尽量可复现:固定模型版本号、用平台支持的 seed 参数、同平台同区域端点,并把『可复现』当成概率性目标而非绝对承诺。"
+   },
+   {
+    "q": "frequency_penalty / presence_penalty 是干嘛的?",
+    "a": "都是对『已经出现过的 token』的 logits 惩罚:presence 惩罚只要出现过就加罚(鼓励聊新话题),frequency 按出现次数加罚(抑制复读)。典型用途是缓解长文重复。注意它们同样只是表达层的调节,和 temperature 一样不改变模型知识。"
+   },
+   {
+    "q": "低温能减少幻觉吗?",
+    "a": "只能减少『发散型跑偏』,不能解决事实性错误——模型自信地输出错误事实时,贪心解码一样会选那个错误但高概率的 token。减少幻觉要靠 RAG、允许拒答、引用核验(见 FD-002)。把『调低温度=减少幻觉』当成万能药是常见误区。"
+   }
+  ],
+  "pitfalls": [
+   "把 temperature 当『准确率旋钮』——它不提升正确性,只改变采样随机性。",
+   "同时大幅调整 temperature 和 top_p,导致行为难解释、难复现。",
+   "在需要创意的场景用 0,然后抱怨『回答千篇一律』。",
+   "以为 temperature 影响输出 token 数量或计费方式——都不影响。"
+  ],
+  "check": {
+   "q": "判断:『把 temperature 从 1 调到 0,模型会更聪明,回答质量必然提升。』哪里错了?",
+   "a": "错在两点:temperature 不改变模型能力(知识、推理),只改变采样策略;质量也未必提升——创作类任务低温会刻板重复,某些任务高温反而更好。正确说法是:按任务对『稳定性 vs 多样性』的需求来选值。",
+   "explain": "检验点:是否把『采样参数』和『模型能力』分开。这正是面试官想听的边界意识。"
   },
-  {
-    "id": "LP-002",
-    "topic": "llm-prompt",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "什么是上下文窗口?模型会『记住』之前的对话吗?对话历史太长怎么管理?",
-    "tags": ["上下文窗口", "Token", "多轮对话", "记忆"],
-    "prerequisites": ["FD-001"],
-    "answer": "上下文窗口是模型一次请求能处理的全部 token 额度——系统提示、全部历史消息、检索到的资料、用户问题和待生成的回答都在里面,输入和输出共享这个窗口。模型本身完全无状态:『多轮对话的记忆』是应用在每次请求时把历史重新拼进请求实现的。窗口不够用时按成本排序做管理:截断最旧轮次、把旧内容压缩成摘要、或者把历史放外存(向量库)按需检索注入。",
-    "plain": "把上下文窗口想成一块固定大小的白板:模型每一轮都要『看着白板上现有的一切』来接话。白板不是模型自带的记忆——是你每一轮重新把该写的东西抄上去。写满了只有三个办法:擦掉最旧的(截断)、把旧对话浓缩成几行摘要(压缩)、把不常用的搬进档案柜要用再取(检索式记忆)。比喻的局限:白板让人以为『写上去就一定被用上』,实际上注意力对超长内容会『看丢中间部分』,而且窗口内所有内容都按 token 计费。",
-    "deep": "关键事实逐条拆:\n1) 无状态:HTTP API 每次调用独立,messages 数组由客户端维护并全量重传。所以『模型忘了我上一句』几乎都是应用层没传,而不是模型失忆。\n2) 预算分配:窗口 = system + 历史 + 检索内容 + 本轮输入 + 输出预留(max_tokens 从同一窗口里扣)。8K 窗口、历史 7.5K、max_tokens=1K → 直接超限报错或需裁剪。\n3) 计费与延迟都随 token 线性上涨,所以『历史管理』本质是成本/质量问题。\n4) 管理策略按开销递增:\n   a. 滑动窗口:保留 system + 最近 N 轮。简单可靠,但丢失早期约束(如用户第一句『我对花生过敏』)。\n   b. 摘要压缩:把旧轮次交给模型总结成要点,替换原文。注意摘要会丢数字/专名等硬信息,关键约束要白名单保留。\n   c. 检索式记忆:历史/知识存向量库,按当前问题检索相关片段注入。适合长期记忆,但引入检索失败风险。\n   d. 工具结果瘦身:大 JSON 结果只回传关键字段或摘要,防止一轮就把窗口吃满。\n5) 长上下文的『有效利用』问题:窗口大小 ≠ 有效注意力长度,超长上下文中部信息利用率下降(lost in the middle 现象,多项公开研究报道过);评估长上下文能力要用大海捞针类测试,不能只看标称窗口。\n6) 与 KV Cache 的关系:多轮对话中前缀不变,服务端缓存前缀的注意力中间结果(KV Cache)可显著降延迟降费——所以『稳定内容放前、易变内容放后』是通用优化(平台 prompt caching 机制,版本相关)。",
-    "example": "客服机器人第 30 轮,messages 已 40K token,窗口 32K:\n```\n[system 客服规则(不变,放最前)]           # 保留\n[第 1~25 轮 → 交给模型压成 200 字摘要]     # 压缩\n[用户第 1 轮『花生过敏』→ 提为独立约束行]  # 白名单保留硬约束\n[第 26~30 轮原文]                          # 保留\n[本轮检索到的 3 段订单资料]                # 按需注入\n[本轮用户输入]                             # 保留\n→ 输出预留 2K\n```\n流程:先裁 → 后压 → 再检索,最后拼装,并在拼装后用 tokenizer 精确计数,超限就继续压。",
-    "interview": "口述版:『上下文窗口是单次请求的 token 总额度,输入输出共享。模型无状态,多轮记忆是应用层每次重传 messages 实现的。历史超长时我会分层处理:system 和关键约束(过敏、身份)永远保留;旧轮次摘要压缩;大工具结果瘦身;需要长期记忆就上向量库检索注入。另外我会注意稳定前缀放在最前,好让服务端的 prompt cache 命中。』追问展开:窗口与参数量的区别(高频追问)、KV Cache、长上下文有效利用率怎么测。",
-    "followups": [
-      {"q": "上下文窗口和模型参数量有什么区别?(高频考点)", "a": "窗口是『一次能读进多少内容』的运行时额度,随请求变化,按 token 计费;参数量是训练后固化的权重规模(如 7B/70B),决定模型能力上限,推理时固定不变,与这次对话多长无关。类比:参数量=这个学生脑子的容量,窗口=这次考试桌面上允许摊开的资料页数。"},
-      {"q": "多轮对话为什么第二次请求比第一次便宜/快(同一平台)?", "a": "前缀命中 prompt caching:前 N 轮内容完全相同,服务端复用其 KV Cache,前缀部分计费打折、延迟降低。所以 system 提示、知识库背景等稳定内容应放前面,易变的用户输入放后面。"},
-      {"q": "摘要压缩会不会丢关键信息?怎么防?", "a": "会。摘要是又一次『有损生成』。防护:关键硬约束(数字、日期、人名、身份、过敏原)不进摘要,单独作为常驻约束行;摘要后跑一遍『要点回填校验』;重要状态改存结构化存储而不是靠摘要。"}
-    ],
-    "pitfalls": [
-      "把 max_tokens 当成上下文窗口大小——max_tokens 只是输出预留。",
-      "以为模型『记得』上一轮——它只记得你这次传的;记忆丢了先查应用层 messages 拼装。",
-      "历史里原样回传巨大的工具 JSON,一轮吃掉半个窗口。",
-      "只看标称窗口不做压力测试——超长上下文的有效利用率往往低于标称。"
-    ],
-    "check": {
-      "q": "窗口 8K。当前 messages 合计 7.2K token,max_tokens 设 1500。会发生什么?三种处理方式?",
-      "a": "输入 7.2K + 输出预留 1.5K = 8.7K > 8K,超限:要么 API 报错,要么你必须先裁剪。处理:a) 截断/压缩最旧轮次;b) 调小 max_tokens(如果输出确实不需要那么长);c) 把部分历史改为摘要或检索式注入。",
-      "explain": "检验点:『输入输出共享窗口』这个约束。只盯着 max_tokens 或只盯着历史长度的人都漏了共享这一半。"
-    },
-    "related": ["PY-002", "LP-001", "RG-001", "FD-001"],
-    "doc_refs": ["doc-llm-1"],
-    "sources": [
-      {"name": "OpenAI 官方文档 · Text Generation(消息与上下文管理)", "url": "https://developers.openai.com/api/docs/guides/text-generation", "kind": "official", "note": "无状态请求、窗口共享等属平台稳定行为;具体窗口大小与缓存机制版本相关,待逐项复核"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "lost in the middle 与大海捞针测试依据多项公开研究,表述为通用结论"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "无状态与窗口机制为各平台一致的基础行为;窗口大小、prompt caching 细节随平台/版本变化,使用时查所用平台文档。"}
-  },
-  {
-    "id": "LP-003",
-    "topic": "llm-prompt",
-    "type": "code",
-    "difficulty": "intermediate",
-    "title": "怎么让模型稳定输出机器可用的 JSON?提示词约束、JSON mode 和结构化输出差在哪?",
-    "tags": ["结构化输出", "JSON", "Pydantic", "函数调用"],
-    "prerequisites": ["LP-001"],
-    "answer": "按可靠度从低到高三档:①提示词里给 schema 和示例——靠模型自觉,最弱;②JSON mode——保证输出是合法 JSON,但不保证字段符合你的预期;③结构化输出/带 strict 的函数调用——按 JSON Schema 约束解码,枚举值、必填字段都受强制。无论哪一档,服务端都必须再用 Pydantic 校验一次并准备重试,因为官方文档明确说:即使结构化输出『仍可能包含内容错误』——schema 对了,内容不一定对。",
-    "plain": "让模型交作业:①口头叮嘱『按这个格式写』=提示词约束,他可能忘记;②发一张空白答题卡『随便填但必须交卡』=JSON mode,格式有了内容可能跑偏;③发一张带格子的表格,每格限定类型,写不进去就交不了=结构化输出。比喻的局限:表格保证的是『格子都在、类型合法』,不保证格子里的内容是真的——地址栏可以一本正经地填一个不存在的地址。",
-    "deep": "原理与分层(OpenAI 文档 2026-09-06 已核验):\n1) 提示词约束:schema 写进 prompt + few-shot 示例。任何模型可用,但遵循率取决于模型与 schema 复杂度,失败模式包括markdown 包裹、字段改名、枚举拼错。\n2) JSON mode(格式 type: json_object):只约束『输出是合法 JSON』,不约束 schema。解决『半截 JSON/带 markdown 』问题,不解决字段问题。\n3) Structured Outputs(format: json_schema + strict:true)或工具定义中的 strict:约束解码——生成阶段每一步只允许产出符合 schema 的 token,所以『枚举字段不会出现枚举外的值、必填字段一定在』(官方文档:确保遵循你提供的 JSON Schema)。注意官方列出的限制:部分 schema 关键字不支持;首次使用某 schema 有额外处理延迟;极少数情况(安全拒答、达到 token 上限)仍可能不返回合法结果,用 refusal 字段识别拒答。\n4) 工具调用路径:把『抽取』定义成一个工具(tools),模型返回的 arguments 就是 JSON 字符串,天然用于信息抽取,与结构化输出同源(strict 同样适用)。\n服务端闭环(面试重点):Pydantic 定义模型 → SDK 生成 schema → 调用 → model_validate 解析 → ValidationError 时把错误信息连同原输出回喂重试(2~3 次)→ 仍失败降级(默认值/人工/换提示)。这个闭环能兜住所有档次的失败。",
-    "example": "```python\nfrom pydantic import BaseModel\nfrom openai import OpenAI\nclient = OpenAI()\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float\n    channel: str          # 期望枚举,用 Literal[\"alipay\", \"wechat\"] 更稳\n\ndef extract(text: str) -> Order:\n    last_err = None\n    for _ in range(3):                      # 失败带错误重试\n        resp = client.chat.completions.create(\n            model=MODEL,\n            messages=[\n                {\"role\": \"system\", \"content\": \"从文本抽取订单字段\"},\n                {\"role\": \"user\", \"content\": text + (f\"\\n上次错误:{last_err}\" if last_err else \"\")},\n            ],\n            response_format={               # 结构化输出(strict)\n                \"type\": \"json_schema\",\n                \"json_schema\": {\"name\": \"order\", \"strict\": True,\n                                 \"schema\": Order.model_json_schema()},\n            },\n        )\n        try:\n            return Order.model_validate_json(\n                resp.choices[0].message.content)   # 服务端二次校验\n        except Exception as e:\n            last_err = str(e)               # 把校验错误喂回去\n    raise ValueError(\"结构化抽取三次失败\")\n```",
-    "interview": "口述版:『我会分三档说:提示词约束最弱;JSON mode 保证合法 JSON 不保证 schema;结构化输出用 JSON Schema 约束解码,strict 模式下枚举和必填都是强制的。但我会强调官方文档自己都写了「结构化输出仍可能有内容错误」,所以我的服务端一定有 Pydantic 校验加带错误回喂的重试闭环,三次失败就降级。schema 设计上尽量扁平,别用平台不支持的关键字。』追问展开:schema 太深的后果、refusal 处理、不支持 strict 的模型怎么办。",
-    "followups": [
-      {"q": "schema 很复杂、嵌套很深会怎样?", "a": "约束解码的搜索空间变大:首个请求延迟更高,生成更慢,极端情况质量下降(模型被迫在受限候选里选择)。实践:schema 扁平化、用扁平枚举代替深层 if-else 结构、把一个大抽取拆成两次简单调用。"},
-      {"q": "模型在结构化输出里『拒答』怎么处理?", "a": "OpenAI 用独立的 refusal 字段承载拒答, content 可能为空——解析时要先查 refusal 再 validate。业务上把拒答当成有效结果(转人工/换话术),不要当成异常无限重试。"},
-      {"q": "用的模型不支持 strict 结构化输出怎么办?", "a": "降级组合拳:JSON mode + 明确 schema 的提示词 + 2~3 个 few-shot 输出示例 + Pydantic 宽松解析(alias、默认值)+ 带错误回喂的重试。同时低温(0~0.3)显著提高遵循率。"}
-    ],
-    "pitfalls": [
-      "以为 JSON mode 能保证字段正确——它只保证『是 JSON』。",
-      "服务端不做二次校验,直接 json.loads 后用——schema 错误内容照样进库。",
-      "重试时只重发原请求——要把校验错误信息附上,模型才有机会修正。",
-      "枚举值和业务代码两处维护不一致——枚举以 Pydantic/单一来源生成。"
-    ],
-    "check": {
-      "q": "结构化输出(strict)能保证:①输出是合法 JSON?②字段符合 schema?③字段内容事实正确?分别回答能/不能并说明。",
-      "a": "①能(它包含 JSON 合法性约束);②能——strict 模式按 schema 约束解码;③不能——官方文档明说 Structured Outputs can still contain mistakes,事实正确性要靠业务校验、溯源和评估。",
-      "explain": "检验点:『格式保证』和『内容正确』的分界线。三问三答是这道题的核心得分点。"
-    },
-    "related": ["LP-001", "LP-004", "AG-002"],
-    "doc_refs": ["doc-llm-1"],
-    "sources": [
-      {"name": "OpenAI 官方文档 · Structured Outputs", "url": "https://developers.openai.com/api/docs/guides/structured-outputs", "kind": "official", "note": "2026-09-06 已核验:json_schema/strict 语义、与 JSON mode 对比、refusal、限制条款"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "三档区别、strict 语义、限制与 refusal 均已对官方文档核验;代码示例未在本机运行,字段名以所用 SDK 版本为准。"}
-  },
-  {
-    "id": "LP-004",
-    "topic": "llm-prompt",
-    "type": "scenario",
-    "difficulty": "intermediate",
-    "title": "线上调用 LLM API 突然大量 429,你的错误处理和重试策略该怎么设计?",
-    "tags": ["错误处理", "重试", "限流", "指数退避", "可靠性"],
-    "prerequisites": ["PY-003"],
-    "answer": "先把错误分类,再决定动作:429(限流)→ 指数退避加随机抖动地重试,优先遵守响应头 Retry-After;超时和 5xx → 少量重试且必须设超时;400/401/403 → 程序错误,重试无意义,应该告警修代码。重试必须有次数上限并保证幂等,高并发下还要在客户端做并发限制/排队削峰,重试风暴本身就会制造新的 429。",
-    "plain": "像打客服热线:听到『坐席忙』(429)就等一会儿再打,而且越忙等得越久——这就是指数退避;『您拨打的号码不存在』(400)重拨一万次也没用,得改号码。『抖动』是防『全公司所有人都在整点同一秒重拨』——如果大家同时重试,永远占线,所以要各自加一点随机延迟错开。比喻的局限:真实系统里你还要问『为什么占线』——是不是自己并发太高触发了配额,那治本要靠限流排队,而不是一直礼貌地重拨。",
-    "deep": "逐类拆解:\n1) 429 Too Many Requests:触发方可能是 RPM/TPM 配额或突发。处理顺序:读 Retry-After(有就照办)→ 指数退避 delay = min(cap, base * 2^attempt) + uniform(0, jitter);attempt 上限 3~5;同时全局并发用信号量/令牌桶控制,把 429 率压下来。SDK(OpenAI/Azure 等)通常内置自动重试,自研层要做的是并发控制与降级。\n2) 超时:连接超时、首字节超时、总时长超时要分开设;流式接口中途断开属于部分成功,重试会重算整个回答(成本翻倍),前端要提示。幂等:生成类请求重试会产生重复计费/重复消息,业务层用请求 ID 去重。\n3) 5xx/网络错误:可重试,同样的退避;连续失败达到阈值触发熔断——一段时间内直接快速失败,避免雪崩,并降级到备用模型/缓存/兜底文案。\n4) 4xx(400 参数错、401 认证、403 权限、422):不重试,立即告警并记录完整请求(脱敏),这是代码或配置 bug。\n5) 降级链设计:主模型→备用模型(提示词需适配)→缓存答案→固定话术。每一级都要记录降级原因用于事后统计。\n6) 可观测性:429 率、重试率、熔断次数、P50/P95/P99 延迟、每次成本——这些指标是容量规划和配额申请的依据。",
-    "example": "```python\nimport random, time, httpx\n\ndef call_llm(payload, max_retry=4):\n    for attempt in range(max_retry):\n        try:\n            r = httpx.post(URL, json=payload, timeout=(5, 60))\n            if r.status_code == 429:\n                wait = float(r.headers.get(\"retry-after\", 0))\n                wait = max(wait, min(30, 2 ** attempt) + random.uniform(0, 1))\n                time.sleep(wait)          # 优先 Retry-After,退避+抖动兜底\n                continue\n            if r.status_code >= 500:\n                time.sleep(min(10, 2 ** attempt) + random.random())\n                continue\n            if r.status_code >= 400:      # 400/401/403:重试无意义\n                raise RuntimeError(f\"非瞬时错误 {r.status_code}: {r.text[:200]}\")\n            return r.json()\n        except httpx.TimeoutException:\n            if attempt == max_retry - 1:\n                raise\n            time.sleep(min(10, 2 ** attempt))\n    raise RuntimeError(\"重试次数耗尽\")      # 上层接降级:备用模型/缓存\n```",
-    "interview": "口述版:『我会按「能不能靠重试解决」给错误分类:429、超时、5xx 是瞬时问题,退避重试但要抖动、设上限、守 Retry-After;4xx 是程序问题,重试只会烧钱,要告警。系统层面我会加并发控制把 429 压在源头,配熔断和降级链——主模型挂了走备用模型或缓存。重试请求我会做幂等去重,防止重复计费。』追问展开:流式中途断开怎么处理、多模型降级设计、429 率监控与容量规划。",
-    "followups": [
-      {"q": "流式响应生成到一半断了,怎么办?", "a": "先区分:已发出的部分对用户可见。策略:a) 前端展示已收内容并给『继续生成』按钮,后端按上下文续写;b) 整段重试但要计费去重;c) 有平台支持流式重连/续传(版本相关)。关键是别把半截回答当完整回答入库。"},
-      {"q": "怎么做多模型降级?", "a": "抽象统一网关层:模型名、参数、返回格式适配;健康探测与熔断;按『主→备→缓存→兜底话术』顺序切换,切换要带原因标记。注意提示词在不同模型间表现不同,降级模型要有自己的提示词版本和评估,不是换个名字就行。"},
-      {"q": "为什么重试要加『抖动』?", "a": "没有抖动时,所有超时请求会在同一时刻重试,形成同步重试风暴,把瞬时故障变成持续拒绝服务。加随机延迟把重试在时间上摊开,这是分布式系统的标准做法(thundering herd 问题)。"}
-    ],
-    "pitfalls": [
-      "对 400/401 也无脑重试,白白烧钱还掩盖 bug。",
-      "重试没有上限或没有总超时,用户端等到天荒地老。",
-      "忽略 Retry-After,用自己拍脑袋的间隔,反而更容易再次 429。",
-      "只在单请求层面处理,没有全局并发控制——429 是配额问题,单请求重试救不了全局。"
-    ],
-    "check": {
-      "q": "你收到 429,响应头带 Retry-After: 30。你的退避公式算出 5 秒。应该等几秒?",
-      "a": "以 Retry-After 为准,等约 30 秒(可以再加一点抖动)。服务器明确告诉你何时再来,照办是协议礼仪,也能显著降低再次被拒的概率。",
-      "explain": "检验点:优先级——显式服务器指令 > 本地退避公式。答 5 秒说明没理解 Retry-After 的地位。"
-    },
-    "related": ["PY-003", "LP-003", "EN-001", "EN-002"],
-    "doc_refs": ["doc-llm-1"],
-    "sources": [
-      {"name": "OpenAI 官方文档 · 错误码与速率限制", "url": "https://developers.openai.com/api/docs/error-codes", "kind": "official", "note": "错误码语义本次未逐页抓取,属平台公开稳定信息;退避与抖动为业界通行做法"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "指数退避/抖动/熔断依据分布式系统通行实践独立撰写"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "错误分类与退避策略为稳定工程实践;各家 SDK 重试默认值、配额维度随版本变化,面试时建议声明以所用平台为准。代码示例未运行,仅为模式演示。"}
+  "related": [
+   "LP-002",
+   "LP-003",
+   "FD-002"
+  ],
+  "doc_refs": [
+   "doc-llm-1"
+  ],
+  "sources": [
+   {
+    "name": "OpenAI 官方文档 · Text Generation(temperature/top_p/penalties)",
+    "url": "https://developers.openai.com/api/docs/guides/text-generation",
+    "kind": "official",
+    "note": "本次会话未逐句抓取;参数语义属平台公开稳定行为,标注待复核"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "采样机制解释基于 softmax/温度缩放的公开教科书知识独立撰写"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "机制解释为公开稳定知识;各平台取值范围、推理模型是否接受 temperature 属版本相关,使用时以所用平台文档为准。"
   }
+ },
+ {
+  "id": "LP-002",
+  "topic": "llm-prompt",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "什么是上下文窗口?模型会『记住』之前的对话吗?对话历史太长怎么管理?",
+  "tags": [
+   "上下文窗口",
+   "Token",
+   "多轮对话",
+   "记忆"
+  ],
+  "prerequisites": [
+   "FD-001"
+  ],
+  "answer": "上下文窗口是模型一次请求能处理的全部 token 额度——系统提示、全部历史消息、检索到的资料、用户问题和待生成的回答都在里面,输入和输出共享这个窗口。模型本身完全无状态:『多轮对话的记忆』是应用在每次请求时把历史重新拼进请求实现的。窗口不够用时按成本排序做管理:截断最旧轮次、把旧内容压缩成摘要、或者把历史放外存(向量库)按需检索注入。",
+  "plain": "把上下文窗口想成一块固定大小的白板:模型每一轮都要『看着白板上现有的一切』来接话。白板不是模型自带的记忆——是你每一轮重新把该写的东西抄上去。写满了只有三个办法:擦掉最旧的(截断)、把旧对话浓缩成几行摘要(压缩)、把不常用的搬进档案柜要用再取(检索式记忆)。比喻的局限:白板让人以为『写上去就一定被用上』,实际上注意力对超长内容会『看丢中间部分』,而且窗口内所有内容都按 token 计费。",
+  "deep": "关键事实逐条拆:\n1) 无状态:HTTP API 每次调用独立,messages 数组由客户端维护并全量重传。所以『模型忘了我上一句』几乎都是应用层没传,而不是模型失忆。\n2) 预算分配:窗口 = system + 历史 + 检索内容 + 本轮输入 + 输出预留(max_tokens 从同一窗口里扣)。8K 窗口、历史 7.5K、max_tokens=1K → 直接超限报错或需裁剪。\n3) 计费与延迟都随 token 线性上涨,所以『历史管理』本质是成本/质量问题。\n4) 管理策略按开销递增:\n   a. 滑动窗口:保留 system + 最近 N 轮。简单可靠,但丢失早期约束(如用户第一句『我对花生过敏』)。\n   b. 摘要压缩:把旧轮次交给模型总结成要点,替换原文。注意摘要会丢数字/专名等硬信息,关键约束要白名单保留。\n   c. 检索式记忆:历史/知识存向量库,按当前问题检索相关片段注入。适合长期记忆,但引入检索失败风险。\n   d. 工具结果瘦身:大 JSON 结果只回传关键字段或摘要,防止一轮就把窗口吃满。\n5) 长上下文的『有效利用』问题:窗口大小 ≠ 有效注意力长度,超长上下文中部信息利用率下降(lost in the middle 现象,多项公开研究报道过);评估长上下文能力要用大海捞针类测试,不能只看标称窗口。\n6) 与 KV Cache 的关系:多轮对话中前缀不变,服务端缓存前缀的注意力中间结果(KV Cache)可显著降延迟降费——所以『稳定内容放前、易变内容放后』是通用优化(平台 prompt caching 机制,版本相关)。",
+  "example": "客服机器人第 30 轮,messages 已 40K token,窗口 32K:\n```\n[system 客服规则(不变,放最前)]           # 保留\n[第 1~25 轮 → 交给模型压成 200 字摘要]     # 压缩\n[用户第 1 轮『花生过敏』→ 提为独立约束行]  # 白名单保留硬约束\n[第 26~30 轮原文]                          # 保留\n[本轮检索到的 3 段订单资料]                # 按需注入\n[本轮用户输入]                             # 保留\n→ 输出预留 2K\n```\n流程:先裁 → 后压 → 再检索,最后拼装,并在拼装后用 tokenizer 精确计数,超限就继续压。",
+  "interview": "口述版:『上下文窗口是单次请求的 token 总额度,输入输出共享。模型无状态,多轮记忆是应用层每次重传 messages 实现的。历史超长时我会分层处理:system 和关键约束(过敏、身份)永远保留;旧轮次摘要压缩;大工具结果瘦身;需要长期记忆就上向量库检索注入。另外我会注意稳定前缀放在最前,好让服务端的 prompt cache 命中。』追问展开:窗口与参数量的区别(高频追问)、KV Cache、长上下文有效利用率怎么测。",
+  "followups": [
+   {
+    "q": "上下文窗口和模型参数量有什么区别?(高频考点)",
+    "a": "窗口是『一次能读进多少内容』的运行时额度,随请求变化,按 token 计费;参数量是训练后固化的权重规模(如 7B/70B),决定模型能力上限,推理时固定不变,与这次对话多长无关。类比:参数量=这个学生脑子的容量,窗口=这次考试桌面上允许摊开的资料页数。"
+   },
+   {
+    "q": "多轮对话为什么第二次请求比第一次便宜/快(同一平台)?",
+    "a": "前缀命中 prompt caching:前 N 轮内容完全相同,服务端复用其 KV Cache,前缀部分计费打折、延迟降低。所以 system 提示、知识库背景等稳定内容应放前面,易变的用户输入放后面。"
+   },
+   {
+    "q": "摘要压缩会不会丢关键信息?怎么防?",
+    "a": "会。摘要是又一次『有损生成』。防护:关键硬约束(数字、日期、人名、身份、过敏原)不进摘要,单独作为常驻约束行;摘要后跑一遍『要点回填校验』;重要状态改存结构化存储而不是靠摘要。"
+   }
+  ],
+  "pitfalls": [
+   "把 max_tokens 当成上下文窗口大小——max_tokens 只是输出预留。",
+   "以为模型『记得』上一轮——它只记得你这次传的;记忆丢了先查应用层 messages 拼装。",
+   "历史里原样回传巨大的工具 JSON,一轮吃掉半个窗口。",
+   "只看标称窗口不做压力测试——超长上下文的有效利用率往往低于标称。"
+  ],
+  "check": {
+   "q": "窗口 8K。当前 messages 合计 7.2K token,max_tokens 设 1500。会发生什么?三种处理方式?",
+   "a": "输入 7.2K + 输出预留 1.5K = 8.7K > 8K,超限:要么 API 报错,要么你必须先裁剪。处理:a) 截断/压缩最旧轮次;b) 调小 max_tokens(如果输出确实不需要那么长);c) 把部分历史改为摘要或检索式注入。",
+   "explain": "检验点:『输入输出共享窗口』这个约束。只盯着 max_tokens 或只盯着历史长度的人都漏了共享这一半。"
+  },
+  "related": [
+   "PY-002",
+   "LP-001",
+   "RG-001",
+   "FD-001"
+  ],
+  "doc_refs": [
+   "doc-llm-1"
+  ],
+  "sources": [
+   {
+    "name": "OpenAI 官方文档 · Text Generation(消息与上下文管理)",
+    "url": "https://developers.openai.com/api/docs/guides/text-generation",
+    "kind": "official",
+    "note": "无状态请求、窗口共享等属平台稳定行为;具体窗口大小与缓存机制版本相关,待逐项复核"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "lost in the middle 与大海捞针测试依据多项公开研究,表述为通用结论"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "无状态与窗口机制为各平台一致的基础行为;窗口大小、prompt caching 细节随平台/版本变化,使用时查所用平台文档。"
+  }
+ },
+ {
+  "id": "LP-003",
+  "topic": "llm-prompt",
+  "type": "code",
+  "difficulty": "intermediate",
+  "title": "怎么让模型稳定输出机器可用的 JSON?提示词约束、JSON mode 和结构化输出差在哪?",
+  "tags": [
+   "结构化输出",
+   "JSON",
+   "Pydantic",
+   "函数调用"
+  ],
+  "prerequisites": [
+   "LP-001"
+  ],
+  "answer": "按可靠度从低到高三档:①提示词里给 schema 和示例——靠模型自觉,最弱;②JSON mode——保证输出是合法 JSON,但不保证字段符合你的预期;③结构化输出/带 strict 的函数调用——按 JSON Schema 约束解码,枚举值、必填字段都受强制。无论哪一档,服务端都必须再用 Pydantic 校验一次并准备重试,因为官方文档明确说:即使结构化输出『仍可能包含内容错误』——schema 对了,内容不一定对。",
+  "plain": "让模型交作业:①口头叮嘱『按这个格式写』=提示词约束,他可能忘记;②发一张空白答题卡『随便填但必须交卡』=JSON mode,格式有了内容可能跑偏;③发一张带格子的表格,每格限定类型,写不进去就交不了=结构化输出。比喻的局限:表格保证的是『格子都在、类型合法』,不保证格子里的内容是真的——地址栏可以一本正经地填一个不存在的地址。",
+  "deep": "原理与分层(OpenAI 官方文档已核验):\n1) 提示词约束:schema 写进 prompt + few-shot 示例。任何模型可用,但遵循率取决于模型与 schema 复杂度,失败模式包括 markdown 包裹、字段改名、枚举拼错。\n2) JSON mode(格式 type: json_object):只约束『输出是合法 JSON』,不约束 schema。解决『半截 JSON/带 markdown』问题,不解决字段问题。\n3) Structured Outputs(json_schema + strict:true)或工具定义中的 strict:约束解码——生成阶段每一步只允许产出符合 schema 的 token,所以『枚举字段不会出现枚举外的值、必填字段一定在』(官方文档:确保遵循你提供的 JSON Schema)。注意官方列出的限制:部分 schema 关键字不支持;strict 要求所有对象 additionalProperties:false 且全部字段 required(本机实测:pydantic 的 model_json_schema() 不自动补 additionalProperties——要用官方 SDK 的 parse() helper 或手动补全);首次使用某 schema 有额外处理延迟。\n4) 四类失败分开处理(面试重点):①安全拒答——message.refusal 字段识别;②截断——finish_reason==length(max_tokens 不够);③schema/API 错误——请求层异常(不支持的关键字等);④业务校验失败——schema 合法但内容不对(金额为负等),服务端二次校验兜住。\n5) 服务端闭环:Pydantic 定义模型 → SDK helper 生成合规 schema → 调用 → 分类处理上述四类失败 → ValidationError 时把错误信息回喂重试(2~3 次)→ 仍失败降级(默认值/人工/换提示)。",
+  "example": "```python\nfrom typing import Literal\nfrom pydantic import BaseModel, ValidationError\nfrom openai import OpenAI\nclient = OpenAI()\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float\n    channel: Literal[\"alipay\", \"wechat\"]   # 枚举用 Literal,strict 下受强制\n\ndef extract(text: str) -> Order:\n    last_err = None\n    for _ in range(3):                      # 失败带错误重试\n        try:\n            # parse() 是官方 SDK helper:自动把 Pydantic 模型转成符合\n            # strict 要求的 schema(补 additionalProperties:false 等)。\n            # 注意:直接用 Order.model_json_schema() 是不行的——\n            # 本机 pydantic 2.10.4 实测它不带 additionalProperties:false,\n            # strict 会拒绝。不用 helper 时必须手动补全 schema。\n            resp = client.chat.completions.parse(\n                model=MODEL,\n                messages=[\n                    {\"role\": \"system\", \"content\": \"从文本抽取订单字段\"},\n                    {\"role\": \"user\", \"content\": text + (f\"\\n上次错误:{last_err}\" if last_err else \"\")},\n                ],\n                response_format=Order,\n            )\n            msg = resp.choices[0].message\n            refusal = getattr(msg, \"refusal\", None)\n            if refusal:                              # ①安全拒答:单独处理\n                raise ValueError(f\"模型拒答:{refusal}\")\n            if resp.choices[0].finish_reason == \"length\":   # ②截断\n                raise ValueError(\"输出被 max_tokens 截断\")\n            return msg.parsed                        # SDK 已解析并通过校验\n        except ValidationError as e:                 # ③schema 校验失败:回喂重试\n            last_err = str(e)\n        except ValueError as e:                      # 拒答/截断:业务分类处理\n            last_err = str(e)\n        except Exception as e:                       # ④API/schema 错误:另类告警\n            last_err = f\"API 错误:{e}\"\n    raise ValueError(\"结构化抽取三次失败\")\n```\n说明:此示例依赖付费 API,未真实调用;SDK 未安装时按所装版本对照官方文档。拒答/截断/校验失败/API 错误四类失败分开分类处理,是结构化输出工程化的关键。",
+  "interview": "口述版:『我会分三档说:提示词约束最弱;JSON mode 保证合法 JSON 不保证 schema;结构化输出用 JSON Schema 约束解码,strict 模式下枚举和必填都是强制的。但我会强调官方文档自己都写了「结构化输出仍可能有内容错误」,所以我的服务端一定有 Pydantic 校验加带错误回喂的重试闭环,三次失败就降级。schema 设计上尽量扁平,别用平台不支持的关键字。』追问展开:schema 太深的后果、refusal 处理、不支持 strict 的模型怎么办。",
+  "followups": [
+   {
+    "q": "schema 很复杂、嵌套很深会怎样?",
+    "a": "约束解码的搜索空间变大:首个请求延迟更高,生成更慢,极端情况质量下降(模型被迫在受限候选里选择)。实践:schema 扁平化、用扁平枚举代替深层 if-else 结构、把一个大抽取拆成两次简单调用。"
+   },
+   {
+    "q": "模型在结构化输出里『拒答』怎么处理?",
+    "a": "OpenAI 用独立的 refusal 字段承载拒答, content 可能为空——解析时要先查 refusal 再 validate。业务上把拒答当成有效结果(转人工/换话术),不要当成异常无限重试。"
+   },
+   {
+    "q": "用的模型不支持 strict 结构化输出怎么办?",
+    "a": "降级组合拳:JSON mode + 明确 schema 的提示词 + 2~3 个 few-shot 输出示例 + Pydantic 宽松解析(alias、默认值)+ 带错误回喂的重试。同时低温(0~0.3)显著提高遵循率。"
+   }
+  ],
+  "pitfalls": [
+   "以为 JSON mode 能保证字段正确——它只保证『是 JSON』。",
+   "把 model_json_schema() 的产物直接丢给 strict:true——缺少 additionalProperties:false 会被 API 拒绝(本机 pydantic 2.10.4 实测不自动带),要用 SDK 的 parse() helper 或手动补全。",
+   "服务端不做二次校验,直接 json.loads 后用——schema 合法但内容错误照样进库;拒答(refusal)与截断(finish_reason)也不分类处理。",
+   "重试时只重发原请求——要把校验错误信息附上,模型才有机会修正。",
+   "枚举值和业务代码两处维护不一致——枚举以 Pydantic/单一来源生成。"
+  ],
+  "check": {
+   "q": "两个问题:①strict 模式下,Pydantic 的 model_json_schema() 输出能直接当 json_schema 用吗?②模型返回了 message.refusal 非空,这说明 schema 哪里写错了?",
+   "a": "①不能直接用——strict 要求每个对象 additionalProperties:false 且字段全部 required,pydantic 的 schema 生成器默认不带 additionalProperties(本机实测),要用官方 SDK 的 parse() helper 或手动补全。②refusal 非空不是 schema 错——它是安全拒答信号,和校验失败、截断、API 错误是四类不同的失败,要分开处理(拒答不该回喂重试,该转人工或改提示)。",
+   "explain": "检验点:strict 的额外 schema 要求与四类失败的分类处理;把拒答当校验失败反复重试是常见工程事故。"
+  },
+  "related": [
+   "LP-001",
+   "LP-004",
+   "AG-002"
+  ],
+  "doc_refs": [
+   "doc-llm-1"
+  ],
+  "sources": [
+   {
+    "name": "OpenAI 官方文档 · Structured Outputs",
+    "url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+    "kind": "official",
+    "note": "2026-09-06 已核验:json_schema/strict 语义、与 JSON mode 对比、refusal、限制条款"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-07",
+   "note": "三档区别、strict 语义与限制、refusal/截断语义已对 OpenAI 官方文档核验;『model_json_schema 不带 additionalProperties』『校验器顺序』已在本机 pydantic 2.10.4 运行验证;代码示例未真实调用付费 API(SDK helper 写法以所装版本文档为准)。"
+  }
+ },
+ {
+  "id": "LP-004",
+  "topic": "llm-prompt",
+  "type": "scenario",
+  "difficulty": "intermediate",
+  "title": "线上调用 LLM API 突然大量 429,你的错误处理和重试策略该怎么设计?",
+  "tags": [
+   "错误处理",
+   "重试",
+   "限流",
+   "指数退避",
+   "可靠性"
+  ],
+  "prerequisites": [
+   "PY-003"
+  ],
+  "answer": "先把错误分类,再决定动作:429(限流)→ 指数退避加随机抖动地重试,优先遵守响应头 Retry-After;超时和 5xx → 少量重试且必须设超时;400/401/403 → 程序错误,重试无意义,应该告警修代码。重试必须有次数上限并保证幂等,高并发下还要在客户端做并发限制/排队削峰,重试风暴本身就会制造新的 429。",
+  "plain": "像打客服热线:听到『坐席忙』(429)就等一会儿再打,而且越忙等得越久——这就是指数退避;『您拨打的号码不存在』(400)重拨一万次也没用,得改号码。『抖动』是防『全公司所有人都在整点同一秒重拨』——如果大家同时重试,永远占线,所以要各自加一点随机延迟错开。比喻的局限:真实系统里你还要问『为什么占线』——是不是自己并发太高触发了配额,那治本要靠限流排队,而不是一直礼貌地重拨。",
+  "deep": "逐类拆解:\n1) 429 Too Many Requests:触发方可能是 RPM/TPM 配额或突发。处理顺序:读 Retry-After(有就照办)→ 指数退避 delay = min(cap, base * 2^attempt) + uniform(0, jitter);attempt 上限 3~5;同时全局并发用信号量/令牌桶控制,把 429 率压下来。SDK(OpenAI/Azure 等)通常内置自动重试,自研层要做的是并发控制与降级。\n2) 超时:连接超时、首字节超时、总时长超时要分开设;流式接口中途断开属于部分成功,重试会重算整个回答(成本翻倍),前端要提示。幂等:生成类请求重试会产生重复计费/重复消息,业务层用请求 ID 去重。\n3) 5xx/网络错误:可重试,同样的退避;连续失败达到阈值触发熔断——一段时间内直接快速失败,避免雪崩,并降级到备用模型/缓存/兜底文案。\n4) 4xx(400 参数错、401 认证、403 权限、422):不重试,立即告警并记录完整请求(脱敏),这是代码或配置 bug。\n5) 降级链设计:主模型→备用模型(提示词需适配)→缓存答案→固定话术。每一级都要记录降级原因用于事后统计。\n6) 可观测性:429 率、重试率、熔断次数、P50/P95/P99 延迟、每次成本——这些指标是容量规划和配额申请的依据。",
+  "example": "```python\nimport random, time, httpx\n\ndef call_llm(payload, max_retry=4):\n    for attempt in range(max_retry):\n        try:\n            r = httpx.post(URL, json=payload, timeout=(5, 60))\n            if r.status_code == 429:\n                wait = float(r.headers.get(\"retry-after\", 0))\n                wait = max(wait, min(30, 2 ** attempt) + random.uniform(0, 1))\n                time.sleep(wait)          # 优先 Retry-After,退避+抖动兜底\n                continue\n            if r.status_code >= 500:\n                time.sleep(min(10, 2 ** attempt) + random.random())\n                continue\n            if r.status_code >= 400:      # 400/401/403:重试无意义\n                raise RuntimeError(f\"非瞬时错误 {r.status_code}: {r.text[:200]}\")\n            return r.json()\n        except httpx.TimeoutException:\n            if attempt == max_retry - 1:\n                raise\n            time.sleep(min(10, 2 ** attempt))\n    raise RuntimeError(\"重试次数耗尽\")      # 上层接降级:备用模型/缓存\n```",
+  "interview": "口述版:『我会按「能不能靠重试解决」给错误分类:429、超时、5xx 是瞬时问题,退避重试但要抖动、设上限、守 Retry-After;4xx 是程序问题,重试只会烧钱,要告警。系统层面我会加并发控制把 429 压在源头,配熔断和降级链——主模型挂了走备用模型或缓存。重试请求我会做幂等去重,防止重复计费。』追问展开:流式中途断开怎么处理、多模型降级设计、429 率监控与容量规划。",
+  "followups": [
+   {
+    "q": "流式响应生成到一半断了,怎么办?",
+    "a": "先区分:已发出的部分对用户可见。策略:a) 前端展示已收内容并给『继续生成』按钮,后端按上下文续写;b) 整段重试但要计费去重;c) 有平台支持流式重连/续传(版本相关)。关键是别把半截回答当完整回答入库。"
+   },
+   {
+    "q": "怎么做多模型降级?",
+    "a": "抽象统一网关层:模型名、参数、返回格式适配;健康探测与熔断;按『主→备→缓存→兜底话术』顺序切换,切换要带原因标记。注意提示词在不同模型间表现不同,降级模型要有自己的提示词版本和评估,不是换个名字就行。"
+   },
+   {
+    "q": "为什么重试要加『抖动』?",
+    "a": "没有抖动时,所有超时请求会在同一时刻重试,形成同步重试风暴,把瞬时故障变成持续拒绝服务。加随机延迟把重试在时间上摊开,这是分布式系统的标准做法(thundering herd 问题)。"
+   }
+  ],
+  "pitfalls": [
+   "对 400/401 也无脑重试,白白烧钱还掩盖 bug。",
+   "重试没有上限或没有总超时,用户端等到天荒地老。",
+   "忽略 Retry-After,用自己拍脑袋的间隔,反而更容易再次 429。",
+   "只在单请求层面处理,没有全局并发控制——429 是配额问题,单请求重试救不了全局。"
+  ],
+  "check": {
+   "q": "你收到 429,响应头带 Retry-After: 30。你的退避公式算出 5 秒。应该等几秒?",
+   "a": "以 Retry-After 为准,等约 30 秒(可以再加一点抖动)。服务器明确告诉你何时再来,照办是协议礼仪,也能显著降低再次被拒的概率。",
+   "explain": "检验点:优先级——显式服务器指令 > 本地退避公式。答 5 秒说明没理解 Retry-After 的地位。"
+  },
+  "related": [
+   "PY-003",
+   "LP-003",
+   "EN-001",
+   "EN-002"
+  ],
+  "doc_refs": [
+   "doc-llm-1"
+  ],
+  "sources": [
+   {
+    "name": "OpenAI 官方文档 · 错误码与速率限制",
+    "url": "https://developers.openai.com/api/docs/error-codes",
+    "kind": "official",
+    "note": "错误码语义本次未逐页抓取,属平台公开稳定信息;退避与抖动为业界通行做法"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "指数退避/抖动/熔断依据分布式系统通行实践独立撰写"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "错误分类与退避策略为稳定工程实践;各家 SDK 重试默认值、配额维度随版本变化,面试时建议声明以所用平台为准。代码示例未运行,仅为模式演示。"
+  }
+ }
 ]

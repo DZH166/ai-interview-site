@@ -1,298 +1,591 @@
 [
-  {
-    "id": "PY-013",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "Pydantic 的校验器有哪些层次?field_validator 和 model_validator 什么时候用哪个?",
-    "tags": ["Pydantic", "参数校验", "数据校验"],
-    "prerequisites": ["PY-004"],
-    "answer": "Pydantic 校验分三层:①类型与约束声明(字段类型+Field 的 gt/le/pattern 等)——声明式,优先用,零代码;②field_validator——单字段的业务校验与归一化(去空格、格式转换、值域判断,依赖单个字段);③model_validator——跨字段校验(结束时间>开始时间、二选一字段必填其一)与整体归一化。选择原则:能用声明解决的不用 validator,能单字段的不用 model 级——层次越深,报错信息越难定位、复用性越差。v2 的关键变化:validator 装饰器带模式(mode='before'/'after')区分原始输入与类型化之后,序列化与校验分离( serialization 与 validation 是两套配置)。",
-    "plain": "Pydantic 校验像海关的三道岗:第一道自动安检门(类型与约束,机器自动查);第二道人工核对单件行李(field_validator:这一项特殊要求);第三道整体放行审查(model_validator:几项合起来对不对——回程日期不能早于出发日期)。能在第一道解决就别排到第三道——越靠后,旅客越难知道『到底哪一项不合格』。比喻局限:v2 里校验与序列化是分开的两套流程(读进来查一道,写出去还有一道),海关比喻没有这个对称性。",
-    "deep": "1) 声明层:Field(ge=0, max_length=100, pattern=...);Annotated 类型复用(PositiveInt = Annotated[int, Field(gt=0)])——团队级类型字典,一致性来源;constr/conset 等快捷方式。\n2) field_validator:mode='before' 处理原始输入(如 '1,2,3' 字符串拆成列表——在类型解析前);mode='after' 处理类型化后的业务规则;@classmethod 装饰、info 参数拿上下文;错误抛 ValueError(框架转成 422 明细)。\n3) model_validator:mode='before'(整体原始 dict,少用)与 mode='after'(类型化实例,常用,跨字段规则);dataclass/TypedDict 场景的差异。\n4) v2 核心概念:校验(validation,入站)与序列化(serialization,出站)分离——field_serializer 控制输出格式(如日期输出格式),dump 时的排除(exclude)防敏感字段泄漏(响应模型,PY-004 的 response_model 呼应);model_config 控制行为(extra='forbid' 拒绝未知字段——API 严格性的关键开关)。\n5) 工程纪律:模型即文档(字段名+描述+示例生成 OpenAPI);校验错误信息面向调用者(人话+字段定位);业务校验与格式校验分层(格式进 Pydantic,业务进 service 层——查数据库的校验别塞进模型)。",
-    "example": "```python\nfrom pydantic import BaseModel, Field, field_validator, model_validator\n\nclass Booking(BaseModel):\n    model_config = {\"extra\": \"forbid\"}          # 未知字段直接拒\n    guest: str = Field(min_length=1)\n    check_in: date\n    check_out: date\n    room_type: Literal[\"standard\", \"suite\"]\n    promo_code: str | None = None\n\n    @field_validator(\"guest\", mode=\"before\")\n    @classmethod\ndef strip(cls, v): return v.strip()\n\n    @model_validator(mode=\"after\")\n    def check_dates(self):\n        if self.check_out <= self.check_in:\n            raise ValueError(\"check_out 必须晚于 check_in\")\n        return self\n```",
-    "interview": "口述版:『Pydantic 校验三层:声明式约束优先(零代码、报错自动定位),field_validator 做单字段归一化与业务校验(before/after 模式区分原始输入与类型化后),model_validator 做跨字段规则。v2 的两个要点我会主动提:校验与序列化分离(出站格式与防泄漏单独配置),extra=forbid 拒绝未知字段。纪律是:格式校验进模型,查库的业务校验进 service 层——模型保持纯净可复用。』追问展开:before/after 的选择、extra 配置的取舍、校验错误信息设计。",
-    "followups": [
-      {"q": "extra='forbid' 还是 'ignore'?", "a": "对外 API 推荐 forbid:未知字段往往是拼写错误或版本不匹配,静默忽略会掩盖 bug,还能防『客户端传敏感字段猜测服务端结构』;内部 DTO 或需要向前兼容的存储模型用 ignore。默认值是 ignore——显式配置体现 API 严格性的态度。"},
-      {"q": "为什么查数据库的业务校验不放进 Pydantic 模型?", "a": "模型要『纯』:只做结构正确性(可离线测试、可复用于多场景);依赖外部状态(库存、唯一性)的校验放 service 层——它们需要事务与并发控制,且失败语义是业务错误(409)不是格式错误(422)。混在一起会让模型测试变慢且耦合数据库。"},
-      {"q": "field_validator 的 before 模式典型用途?", "a": "输入归一化:'1,2,3'→[1,2,3]、空串→None、大小写统一——在类型解析前把『人类输入』洗成『可解析形态』。after 模式则是业务规则(值域、格式语义)。分不清时问:这个错误是『解析不了』(before)还是『解析了但不合规』(after)?"}
-    ],
-    "pitfalls": [
-      "所有校验堆进 model_validator,报错定位差、复用性差。",
-      "忘记 extra 配置,客户端拼错字段名静默丢失(『我明明传了 coupon_id』)。",
-      "校验器里做 IO(查库/调接口),模型实例化变慢且不可测。",
-      "v1/v2 语法混用(v2 的 validator 必须配 @classmethod),报错难懂。"
-    ],
-    "check": {
-      "q": "需求:优惠券字段 promo_code 只有当 room_type='suite' 时才允许填写。校验器怎么写?",
-      "a": "model_validator(mode='after')——这是跨字段条件校验(promo_code 的合法性依赖 room_type),单字段 validator 拿不到完整上下文。校验逻辑:if self.room_type != 'suite' and self.promo_code: raise ValueError('promo_code 仅适用于 suite 房型')。错误信息里说明『哪个字段的组合条件』,方便调用者修正。",
-      "explain": "检验点:跨字段条件选 model_validator 的判断,以及错误信息面向调用者的设计。"
-    },
-    "related": ["PY-004", "PY-010", "LP-003"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Pydantic v2 官方文档(validators)", "url": "https://docs.pydantic.dev/latest/concepts/validators/", "kind": "official-docs", "note": "库语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "分层纪律为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "分层纪律为独立整理;v2 具体 API 以官方文档为准。"}
+ {
+  "id": "PY-013",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "Pydantic 的校验器有哪些层次?field_validator 和 model_validator 什么时候用哪个?",
+  "tags": [
+   "Pydantic",
+   "参数校验",
+   "数据校验"
+  ],
+  "prerequisites": [
+   "PY-004"
+  ],
+  "answer": "Pydantic 校验分三层:①类型与约束声明(字段类型+Field 的 gt/le/pattern 等)——声明式,优先用,零代码;②field_validator——单字段的业务校验与归一化(去空格、格式转换、值域判断,依赖单个字段);③model_validator——跨字段校验(结束时间>开始时间、二选一字段必填其一)与整体归一化。选择原则:能用声明解决的不用 validator,能单字段的不用 model 级——层次越深,报错信息越难定位、复用性越差。v2 的关键变化:validator 装饰器带模式(mode='before'/'after')区分原始输入与类型化之后,序列化与校验分离( serialization 与 validation 是两套配置)。",
+  "plain": "Pydantic 校验像海关的三道岗:第一道自动安检门(类型与约束,机器自动查);第二道人工核对单件行李(field_validator:这一项特殊要求);第三道整体放行审查(model_validator:几项合起来对不对——回程日期不能早于出发日期)。能在第一道解决就别排到第三道——越靠后,旅客越难知道『到底哪一项不合格』。比喻局限:v2 里校验与序列化是分开的两套流程(读进来查一道,写出去还有一道),海关比喻没有这个对称性。",
+  "deep": "1) 声明层:Field(ge=0, max_length=100, pattern=...);Annotated 类型复用(PositiveInt = Annotated[int, Field(gt=0)])——团队级类型字典,一致性来源;constr/conset 等快捷方式。\n2) field_validator:mode='before' 处理原始输入(如 '1,2,3' 字符串拆成列表——在类型解析前);mode='after' 处理类型化后的业务规则;@classmethod 装饰、info 参数拿上下文;错误抛 ValueError(框架转成 422 明细)。\n3) model_validator:mode='before'(整体原始 dict,少用)与 mode='after'(类型化实例,常用,跨字段规则);dataclass/TypedDict 场景的差异。\n4) v2 核心概念:校验(validation,入站)与序列化(serialization,出站)分离——field_serializer 控制输出格式(如日期输出格式),dump 时的排除(exclude)防敏感字段泄漏(响应模型,PY-004 的 response_model 呼应);model_config 控制行为(extra='forbid' 拒绝未知字段——API 严格性的关键开关)。\n5) 工程纪律:模型即文档(字段名+描述+示例生成 OpenAPI);校验错误信息面向调用者(人话+字段定位);业务校验与格式校验分层(格式进 Pydantic,业务进 service 层——查数据库的校验别塞进模型)。",
+  "example": "```python\nfrom pydantic import BaseModel, Field, field_validator, model_validator\n\nclass Booking(BaseModel):\n    model_config = {\"extra\": \"forbid\"}          # 未知字段直接拒\n    guest: str = Field(min_length=1)\n    check_in: date\n    check_out: date\n    room_type: Literal[\"standard\", \"suite\"]\n    promo_code: str | None = None\n\n    @field_validator(\"guest\", mode=\"before\")\n    @classmethod\ndef strip(cls, v): return v.strip()\n\n    @model_validator(mode=\"after\")\n    def check_dates(self):\n        if self.check_out <= self.check_in:\n            raise ValueError(\"check_out 必须晚于 check_in\")\n        return self\n```",
+  "interview": "口述版:『Pydantic 校验三层:声明式约束优先(零代码、报错自动定位),field_validator 做单字段归一化与业务校验(before/after 模式区分原始输入与类型化后),model_validator 做跨字段规则。v2 的两个要点我会主动提:校验与序列化分离(出站格式与防泄漏单独配置),extra=forbid 拒绝未知字段。纪律是:格式校验进模型,查库的业务校验进 service 层——模型保持纯净可复用。』追问展开:before/after 的选择、extra 配置的取舍、校验错误信息设计。",
+  "followups": [
+   {
+    "q": "extra='forbid' 还是 'ignore'?",
+    "a": "对外 API 推荐 forbid:未知字段往往是拼写错误或版本不匹配,静默忽略会掩盖 bug,还能防『客户端传敏感字段猜测服务端结构』;内部 DTO 或需要向前兼容的存储模型用 ignore。默认值是 ignore——显式配置体现 API 严格性的态度。"
+   },
+   {
+    "q": "为什么查数据库的业务校验不放进 Pydantic 模型?",
+    "a": "模型要『纯』:只做结构正确性(可离线测试、可复用于多场景);依赖外部状态(库存、唯一性)的校验放 service 层——它们需要事务与并发控制,且失败语义是业务错误(409)不是格式错误(422)。混在一起会让模型测试变慢且耦合数据库。"
+   },
+   {
+    "q": "field_validator 的 before 模式典型用途?",
+    "a": "输入归一化:'1,2,3'→[1,2,3]、空串→None、大小写统一——在类型解析前把『人类输入』洗成『可解析形态』。after 模式则是业务规则(值域、格式语义)。分不清时问:这个错误是『解析不了』(before)还是『解析了但不合规』(after)?"
+   }
+  ],
+  "pitfalls": [
+   "所有校验堆进 model_validator,报错定位差、复用性差。",
+   "忘记 extra 配置,客户端拼错字段名静默丢失(『我明明传了 coupon_id』)。",
+   "校验器里做 IO(查库/调接口),模型实例化变慢且不可测。",
+   "v1/v2 语法混用(v2 的 validator 必须配 @classmethod),报错难懂。"
+  ],
+  "check": {
+   "q": "需求:优惠券字段 promo_code 只有当 room_type='suite' 时才允许填写。校验器怎么写?",
+   "a": "model_validator(mode='after')——这是跨字段条件校验(promo_code 的合法性依赖 room_type),单字段 validator 拿不到完整上下文。校验逻辑:if self.room_type != 'suite' and self.promo_code: raise ValueError('promo_code 仅适用于 suite 房型')。错误信息里说明『哪个字段的组合条件』,方便调用者修正。",
+   "explain": "检验点:跨字段条件选 model_validator 的判断,以及错误信息面向调用者的设计。"
   },
-  {
-    "id": "PY-014",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "FastAPI 的中间件(middleware)和依赖注入(Depends)都能做横切逻辑,怎么选?",
-    "tags": ["FastAPI", "中间件", "横切逻辑"],
-    "prerequisites": ["PY-006", "PY-004"],
-    "answer": "选择的分界是『信息与作用域』:中间件工作在 HTTP 层(请求/响应对象),能看到原始报文但不知道路由与用户语义——适合 trace_id 注入、访问日志、全局限流、CORS、响应头;依赖注入工作在路由上下文(能拿到路径参数、Pydantic 模型、用户身份)——适合鉴权、租户上下文、按接口的配额、资源会话管理。经验法则:与『HTTP 报文』相关的横切用中间件,与『业务语义/当前用户』相关的用依赖;两者组合常见(trace_id 在中间件生成,业务层从 contextvars 读取)。",
-    "plain": "中间件像大楼的统一门禁闸机:所有人都要过,只看『有没有卡』(报文层),不知道你上几楼干什么;依赖注入像每层楼的前台:知道你是谁、来干什么(路由语义),能按访客目的给不同的引导。给全楼装监控(访问日志)找物业(中间件),给 8 楼财务室限制进入找 8 楼前台(依赖注入)。比喻局限:中间件其实能改写请求/响应(不只是看),这个能力比喻没体现。",
-    "deep": "1) 中间件能力与典型用法:@app.middleware('http') 或 BaseHTTPMiddleware;调用链是洋葱模型(进入→前置逻辑→call_next→后置逻辑);典型:trace_id 生成并写 contextvars(PY-009 的日志串联基础)、请求/响应日志(脱敏)、全局限流与黑名单、统一响应头(X-Request-ID、安全头)、耗时统计。注意:中间件抛异常要自己转响应(还没进 FastAPI 的异常处理链)。\n2) 依赖注入的横切用法(PY-006 延伸):get_current_user 依赖被多个路由引用——鉴权语义集中;带参数的依赖工厂(Depends(get_quota(limit=100)))做接口级配额;依赖链(用户→权限→资源)由框架解析与缓存(同请求内单次执行)。\n3) 组合模式(生产常见):中间件生成 trace_id + 注入 contextvars → 依赖与业务从 contextvars 读取(日志/审计自动携带);中间件做粗粒度限流(全局 QPS),依赖做细粒度配额(按用户/接口);中间件统一错误日志,依赖抛的业务异常由 FastAPI 异常处理器转响应。\n4) 性能与陷阱:中间件作用于所有请求(静态资源、健康检查也会过——要排除);BaseHTTPMiddleware 有额外的开销与流式响应的兼容性坑(流式响应在旧版中间件实现下缓冲问题——流式接口要实测,LP-005);中间件顺序敏感(注册顺序=执行顺序的外层在前)。\n5) 决策清单:需要改写报文/作用于全量请求/与路由无关→中间件;需要路由参数/用户身份/依赖缓存/异常体系→依赖注入;既要报文又要语义→中间件放信息,依赖取信息。",
-    "example": "```python\n# 中间件:trace_id 注入(全量、报文层)\n@app.middleware(\"http\")\nasync def trace_middleware(request, call_next):\n    tid = request.headers.get(\"x-request-id\") or gen_id()\n    ctx.trace_id.set(tid)\n    resp = await call_next(request)\n    resp.headers[\"x-request-id\"] = tid\n    return resp\n\n# 依赖:接口级配额(语义层,知道当前用户)\ndef quota(user = Depends(get_current_user)):\n    if exceed(user, \"llm_calls\"):\n        raise HTTPException(429, \"配额耗尽\")\n    return user\n```",
-    "interview": "口述版:『我的分界:HTTP 报文层、全量作用的横切(日志/trace/限流/CORS)走中间件;业务语义层、需要路由与用户信息的横切(鉴权/配额/租户上下文)走依赖注入。经典组合:中间件生成 trace_id 写 contextvars,依赖与业务层自动携带。两个坑:中间件作用于包括健康检查的全部请求要排除;流式接口在 BaseHTTPMiddleware 下有兼容性坑,要实测。』追问展开:洋葱模型、异常处理链的位置、流式兼容性问题。",
-    "followups": [
-      {"q": "中间件里抛 HTTPException 会怎样?", "a": "不会被 FastAPI 的异常处理器捕获(异常处理器在路由层生效)——客户端收到 500 裸错误。正确做法:中间件里直接构造并返回 JSONResponse(自己处理错误格式),或把逻辑下沉到依赖/异常处理器。这是中间件与路由层异常体系边界不清的典型坑。"},
-      {"q": "trace_id 为什么用 contextvars 而不是全局变量?", "a": "并发下全局变量会被请求互相覆盖(contextvars 是协程/任务本地的,每个请求独立上下文,PY-003 的并发语义);日志与业务代码从 contextvars 读取即可拿到当前请求的 trace_id,不用层层传参。这是『隐式上下文』的标准实现。"},
-      {"q": "流式接口在中间件下的兼容坑?", "a": "BaseHTTPMiddleware 会缓冲响应(call_next 等待完整响应体)——流式变成伪流式(首字节延迟=全部生成时间)。解法:升级框架版本(新版已修复)或对流式路由豁免该中间件/改用纯 ASGI 中间件。排查信号:SSE 接口在加了日志中间件后变成『憋到最后一起出』。"}
-    ],
-    "pitfalls": [
-      "中间件里做业务鉴权(拿不到路由语义,错误信息也差)。",
-      "全局中间件未排除 /health 与静态资源,监控数据被污染。",
-      "中间件顺序随意(日志中间件在 trace 注入之后,拿不到 trace_id)。",
-      "在中间件里 catch 所有异常返回 500,绕过了统一的业务异常处理。"
-    ],
-    "check": {
-      "q": "需求:『记录每个请求的耗时与状态码,并把 trace_id 写进日志』。用中间件还是依赖?字段从哪来?",
-      "a": "中间件(报文层、全量、无需路由语义):call_next 前后计时,状态码从响应取;trace_id 在该中间件(或更外层的中间件)生成并 set 进 contextvars,响应头返回。注意:耗时段要包住 call_next(只算应用处理);健康检查路径排除。若还需要『哪个用户耗了多少 LLM token』,那是语义信息,在依赖/业务层记(取自 get_current_user)——两类信息两个层。",
-      "explain": "检验点:按『报文层 vs 语义层』拆需求,并意识到一次横切可能跨两层。"
-    },
-    "related": ["PY-006", "PY-009", "PY-004", "LP-005"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "FastAPI 官方文档 · Middleware", "url": "https://fastapi.tiangolo.com/tutorial/middleware/", "kind": "official-docs", "note": "框架语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "选择分界与组合模式为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "框架语义以官方文档为准;选型分界为独立整理。"}
-  },
-  {
-    "id": "PY-015",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "FastAPI 的 lifespan 是什么?数据库连接池和 LLM 客户端为什么要在里面初始化?",
-    "tags": ["FastAPI", "lifespan", "资源管理"],
-    "prerequisites": ["PY-008", "PY-014"],
-    "answer": "lifespan 是应用级生命周期的统一入口(yield 前启动、yield 后清理):数据库引擎/连接池、HTTP 客户端(PY-008 的单例)、Redis 连接、后台任务调度器在这里创建与关闭。原因:①连接复用——每请求新建客户端/连接 = 反复握手与句柄浪费;②生命周期对齐——资源随应用生灭,优雅停机时正确关闭(不丢在途请求);③依赖注入友好——lifespan 创建的资源挂到 app.state,路由通过 Depends 取用。旧式的 @app.on_event 已废弃,统一用 lifespan。",
-    "plain": "lifespan 像商店的『开门/打烊流程』:开门时把收银机、冷柜、Wi-Fi 全部打开(连接池/客户端初始化),打烊时按顺序关好(优雅停机),而不是每来一位顾客临时开一次收银机、走一位就关一次。打烊时还要『等最后一位顾客结完账』(在途请求处理完)再落闸。比喻局限:lifespan 只管『进程级』资源——每请求级的资源(如本次请求的 DB 会话)由依赖注入管理,两级别搞混。",
-    "deep": "1) lifespan 结构:\n```python\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    app.state.http = httpx.AsyncClient(...)      # 启动:连接池/客户端\n    app.state.db = create_engine(...)\n    scheduler.start()\n    yield                                         # 应用运行中\n    await app.state.http.aclose()                 # 关闭:逆序清理\n    scheduler.shutdown()\napp = FastAPI(lifespan=lifespan)\n```\n2) 资源分层:进程级(lifespan 管:连接池/客户端/调度器)vs 请求级(依赖注入管:每请求的 DB 会话/用户上下文)。判据:资源的生命周期跟谁——跨请求复用→lifespan;每请求独立→Depends(yield 型)。\n3) 优雅停机:SIGTERM→FastAPI 停止接新请求→在途请求完成→lifespan yield 后清理(关闭连接、刷缓冲);K8s 的 terminationGracePeriodSeconds 要覆盖最长的在途请求(流式请求尤其长,LP-005);后台任务要支持取消与状态持久化(AG-005 检查点)。\n4) 启动失败的语义:lifespan 里初始化失败(连不上数据库)→应用启动失败→编排层重启——这是『fail fast』(PY-010):启动期暴露配置问题好过运行期 500。\n5) 测试影响:单测用 lifespan 的测试客户端(TestClient with lifespan)或直接注入 mock 资源——资源创建逻辑集中在 lifespan 也让测试替身更容易(一处替换)。",
-    "example": "```python\n# 请求级资源通过 Depends 消费 lifespan 创建的池\nasync def get_http(request: Request) -> httpx.AsyncClient:\n    return request.app.state.http\n\n@app.post(\"/chat\")\nasync def chat(req: ChatRequest, client = Depends(get_http)):\n    ...  # 复用连接池,不再每请求新建\n```",
-    "interview": "口述版:『lifespan 是进程级资源的统一入口:启动建连接池/HTTP 客户端/调度器,关闭逆序清理。为什么放里面——连接复用、生命周期对齐、优雅停机(在途请求完成再关)。资源分层判据:跨请求复用进 lifespan,每请求独立进 Depends。三个我会主动提的点:启动失败 fail fast 是好事;优雅停机要覆盖流式请求的长尾时长;资源集中在 lifespan 让测试替身更容易。』追问展开:优雅停机与 K8s 的配合、多 worker 下的资源、资源分层判据。",
-    "followups": [
-      {"q": "K8s 滚动更新时,优雅停机的完整链路?", "a": "①Pod 收到 SIGTERM→readiness 探针置失败(摘出 Service 端点);②FastAPI 停止接新请求,在途请求继续(流式的可能几十秒);③lifespan 清理连接;④超时(terminationGracePeriod)强杀。关键配置:grace period > 最大在途请求时长,preStop sleep 让端点摘除传播——链路任何一环短了都会出现 502。"},
-      {"q": "多 worker(uvicorn --workers 4)时连接池怎么算?", "a": "每个 worker 进程独立的应用实例,各自的连接池——总连接数=每 worker 池大小×worker 数,别把数据库连接数打爆(池大小×worker ≤ 数据库 max_connections 余量)。资源是进程级的,跨 worker 不共享——这也是为什么重型资源(本地模型)要用独立推理服务而不是塞进多 worker 应用。"},
-      {"q": "后台任务在 lifespan 里怎么处理停机?", "a": "调度器/消费者要有取消机制(asyncio task cancel 或队列消费者 stop 信号),停止前把任务状态持久化(AG-005 检查点)以便重启续跑;正在执行的单个任务可以选择『跑完再停』(宽限期内)或『立即中断』(可恢复设计)——策略按任务幂等性定(AG-003)。"}
-    ],
-    "pitfalls": [
-      "模块顶层创建客户端(import 时建连接),测试与多进程下行为诡异。",
-      "每请求新建 AsyncClient,握手开销与句柄泄漏(PY-008)。",
-      "关闭顺序错误(先关数据库再停用它的后台任务)。",
-      "grace period 小于流式请求时长,滚动更新时大面积 502。"
-    ],
-    "check": {
-      "q": "LLM 客户端(httpx.AsyncClient)应该放在 lifespan 还是模块级全局变量?两者实际差别?",
-      "a": "功能上都能做到单例,但 lifespan 更优:①生命周期显式——随应用 aclose,优雅停机时连接正确释放(模块级的要靠 atexit/进程退出,不可靠);②测试友好——测试可用不同 lifespan 或注入 mock;③依赖注入清晰——从 app.state 取而不是 import 全局。模块级全局在简单脚本可以,服务生产代码用 lifespan(PY-008 的『应用生命周期单例』落到 FastAPI 的正确位置)。",
-      "explain": "检验点:知道两者都能跑,但能说清生命周期显式化带来的停机正确性与可测性。"
-    },
-    "related": ["PY-008", "PY-014", "PY-010", "LP-005"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "FastAPI 官方文档 · Lifespan Events", "url": "https://fastapi.tiangolo.com/advanced/events/", "kind": "official-docs", "note": "框架语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "资源分层与停机链路为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "lifespan 语义为框架稳定行为;停机链路为独立整理。"}
-  },
-  {
-    "id": "PY-016",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "异步 SQLAlchemy 会话怎么用?会话生命周期和连接池怎么配?",
-    "tags": ["SQLAlchemy", "数据库", "连接池"],
-    "prerequisites": ["PY-015", "PY-003"],
-    "answer": "异步 SQLAlchemy(create_async_engine + async_sessionmaker)的核心纪律:①会话每请求一个——FastAPI 里用 yield 型依赖创建/提交/关闭,绝不全局共享(会话不线程/协程安全);②连接池在引擎上配——pool_size(常驻)+max_overflow(突发上限)+pool_recycle(防数据库端断连,如 3600 小于数据库 wait_timeout)+pool_pre_ping(取连接前探活);③事务边界明确——默认显式 commit(或 begin 块),读写分离场景只读查询可用只读连接;④长事务是敌人——LLM 调用等慢操作绝不放进数据库事务里(连接被占住,池耗尽)。",
-    "plain": "连接池像食堂餐盘:常备一摞(pool_size),高峰再临时加(max_overflow),盘子用坏了要换(pool_recycle),拿之前先检查有没有裂缝(pre_ping)。会话像『一次取餐』:取一个盘、用完还回——不能几个人共用一个盘(会话不共享),更不能『一边占着餐盘一边打电话聊半小时』(事务里做慢操作),后面全队等着。比喻局限:async 会话与事件循环的交互(事务里的 await 要小心)是餐盘比喻装不下的。",
-    "deep": "1) 会话生命周期(FastAPI 模式):\n```python\nasync def get_db():\n    async with SessionLocal() as session:   # 每请求一个会话\n        yield session                        # 路由内使用\n        # 退出时自动关闭(可在此 commit/rollback)\n```\n请求级会话+yield 依赖:提交策略(自动 commit 成功路径/显式 commit)团队统一;异常回滚语义要测试(半途 422/500 时不留半截写入)。\n2) 连接池参数:pool_size=稳态并发,max_overflow=峰值缓冲,整体上限=两者之和;pool_timeout(等连接的超时,默认 30s——耗尽时 500 的根源);pool_recycle 要小于数据库/中间件的空闲断连时间(MySQL wait_timeout 常见 8h,云上代理更短);pool_pre_ping 有轻微开销但换稳定性(断连自动重试)。\n3) 异步陷阱:①事务里 await LLM 调用——连接被独占整个 LLM 时长,并发一高池耗尽;正确姿势:先读库→释放连接→调 LLM→再开短事务写结果(状态机拆分);②懒加载关系(async 下 lazy load 报错,用 selectinload/joinedload 显式加载);③并发用同一 session(一个 session 同时跑两个查询)——每任务独立会话(AG-017 并发编排时尤其注意)。\n4) 与迁移的配合:alembic 管理schema版本,迁移与代码同版本发布(EN-005 的可回滚迁移:先加列后删列)。\n5) 监控:池耗尽(pool_timeout 异常)与慢查询是两大告警源;池利用率=active/total 进大盘(EN-002)。",
-    "example": "```python\nengine = create_async_engine(\n    DATABASE_URL,\n    pool_size=10, max_overflow=20,\n    pool_recycle=1800, pool_pre_ping=True, pool_timeout=15)\nSessionLocal = async_sessionmaker(engine, expire_on_commit=False)\n\n# 错误示范:事务里调 LLM(连接占 30s)\n# async with session.begin():\n#     order = await get_order(...)\n#     text = await call_llm(order)        # ← 连接被占 30 秒!\n\n# 正确:拆开——读(短事务)→调 LLM(无连接)→写(短事务)\n```",
-    "interview": "口述版:『异步 SQLAlchemy 三条纪律:会话每请求一个(yield 依赖管理生命周期,不全局共享);连接池四参数(pool_size/max_overflow/recycle 防断连/pre_ping 探活);事务里绝不放慢操作——LLM 调用拆出事务,先读后调再写,连接占用毫秒级。异步特有的坑:懒加载关系要显式 eager load、并发任务不能共享会话。监控盯池耗尽与慢查询两个告警源。』追问展开:expire_on_commit 的取舍、pool_timeout 耗尽的表象、读写分离。",
-    "followups": [
-      {"q": "expire_on_commit=False 是什么取舍?", "a": "commit 后 ORM 对象属性是否过期(下次访问触发新查询)。异步下过期触发隐式 IO(坏);置 False 后 commit 即可用对象属性——代价是 commit 后数据库侧的变化不会自动反映(要重新查询)。API 场景默认 False+按需重查。"},
-      {"q": "pool_timeout 耗尽在用户侧是什么表象?", "a": "大量请求等 15~30s 后 500/超时,表现为『整站数据库相关接口同时变慢再雪崩』——通常是慢查询占住连接或事务里做慢操作导致。排查:看数据库侧 active 连接与长事务(show processlist / pg_stat_activity),定位占住连接的语句;代码侧找『事务里的慢操作』(十有八九是外部调用进了事务)。"},
-      {"q": "读写分离怎么落?", "a": "引擎分主从:写走主库引擎,读走从库引擎(两个 session 工厂);注意复制延迟——写后立读(如创建订单后马上展示)要强制走主库(session 粘性或路由标记)。RAG 场景常见误区:向量检索走从库但文档刚更新,检索到旧数据——与 RG-014 的版本问题叠加。"}
-    ],
-    "pitfalls": [
-      "事务里调用 LLM/外部 API,连接占住数秒到数十秒,池耗尽雪崩。",
-      "全局共享一个 session,并发请求互相污染事务。",
-      "pool_recycle 大于数据库空闲断连时间,拿到死连接报错(pre_ping 没开)。",
-      "async 下隐式懒加载,运行时 MissingGreenlet 报错。"
-    ],
-    "check": {
-      "q": "接口偶发『TimeoutError: QueuePool limit』。最可能的三个原因与排查顺序?",
-      "a": "①事务里做慢操作(LLM/外部调用)——查代码里 session.begin 范围内有无 await 外部调用;②慢查询占住连接——数据库侧看长事务与慢 SQL;③池容量不足(流量增长后 pool_size+max_overflow 偏小)——对比池利用率监控与流量曲线。顺序:先代码审查(最常见),再看数据库侧,最后调池——调池是最后手段,池大了只是把问题往后推。",
-      "explain": "检验点:池耗尽的第一怀疑对象是『连接被占太久』而不是『池太小』。"
-    },
-    "related": ["PY-003", "PY-015", "EN-002", "AG-017"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "SQLAlchemy 官方文档(async/连接池)", "url": "https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html", "kind": "official-docs", "note": "库语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "纪律与陷阱为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "SQLAlchemy 具体参数以官方文档为准;事务纪律为独立整理。"}
-  },
-  {
-    "id": "PY-017",
-    "topic": "python-backend",
-    "type": "concept",
-    "difficulty": "basic",
-    "title": "Redis 在 AI 后端里最常用的五种用法是什么?各自要注意什么?",
-    "tags": ["Redis", "缓存", "AI 后端"],
-    "prerequisites": ["PY-003"],
-    "answer": "五种高频用法:①会话热窗口缓存(多轮对话最近 N 条,LP-007——TTL+可从 DB 重建);②分布式锁(任务去重/并发互斥——必须带过期时间与持有者标识,防死锁与误删);③限流计数器(按用户/租户的 RPM 令牌桶——原子操作 INCR+EXPIRE 或 Lua);④缓存旁路(cache-aside,热点检索结果/嵌入——先查缓存未命中回源);⑤任务队列(轻量批量任务,LP-012)。共同注意:Redis 是易失缓存不是真相源(一切可从源重建,EN-004)、大 key 与热 key 治理、键名规范与 TTL 纪律(不给默认永久的 key)。",
-    "plain": "Redis 像『办公室的白板+取号机+公告栏』:白板记最近聊到哪(会话缓存,擦了能重写);取号机保证不重号(分布式锁);门口计数器限制人流(限流);常用资料贴墙上免得每次翻档案(缓存旁路);待办夹子放轻量任务(队列)。铁律:白板上的东西丢了不算事故(都能从档案重建)——如果你发现『白板丢了就出大事』,说明你把 Redis 当档案柜用了,这是架构错误。比喻局限:Redis 的原子操作(Lua/事务)是分布式场景的核心价值,白板比喻没体现。",
-    "deep": "1) 会话缓存(LP-007 详述):key=chat:{session_id},List 或 String(JSON),TTL 按业务(1~7 天);未命中回源 DB 并回填(缓存旁路模式);写路径先 DB 后 Redis。\n2) 分布式锁:setnx+过期+持有者标识(set lock:key value NX EX 30);释放用 Lua 校验持有者(防删他人的锁);看门狗续期(长任务锁过期前续);使用判据:能用数据库唯一约束/幂等键解决就不要锁(锁是最后的手段,AG-003 的幂等优先)。\n3) 限流:固定窗口(INCR key+EXPIRE,简单但有边界突刺)vs 滑动窗口(Lua/ZSET)vs 令牌桶;按维度分 key(user:{id}:rpm);分布式限流的精度与性能权衡;Redis 不可用时的降级策略(放行或拒绝,业务定)。\n4) 缓存旁路:读:缓存→未命中→DB→写缓存(带 TTL);写:更新 DB→失效缓存(不是更新缓存,避免并发写脏);穿透(查不存在的 key→空值缓存/布隆过滤器)、击穿(热 key 过期→互斥重建/逻辑过期)、雪崩(同时过期→TTL 加抖动)——三件套是缓存岗必背。\n5) 任务队列:LP-012 的轻量方案(数据库轮询)不够时用 Redis List/Stream;注意消息确认与重试语义(至少一次→消费端幂等,AG-003);Redis Stream 的消费组是轻量队列的甜点。\n6) 运维纪律:键名规范(业务:对象:ID,可检索可清理)、TTL 全覆盖(默认永久的 key 是事故源)、大 key 拆分(一个 key 几 MB 会阻塞单线程 Redis)、热 key(本地缓存+分片)、内存上限与淘汰策略(volatile-lru 等按场景)、持久化定位(RDB/AOF 只为重启加速,不为可靠性——可靠数据放 DB)。",
-    "example": "```python\n# 限流(固定窗口,示意)\nasync def allow(user_id, limit=100, window=60):\n    key = f\"rl:{user_id}:{int(time.time()//window)}\"\n    n = await redis.incr(key)\n    if n == 1:\n        await redis.expire(key, window)\n    return n <= limit\n\n# 分布式锁(Lua 校验持有者)\n# lock:task:{id} = holder_uuid, EX 30\n# 释放:if redis.get(key)==holder then del(key)  (Lua 原子)\n```",
-    "interview": "口述版:『Redis 五用:会话热窗口、分布式锁、限流计数、缓存旁路、轻量队列。每用都有纪律:缓存三防(穿透/击穿/雪崩)、锁要 setnx+过期+持有者校验且优先考虑幂等替代、限流按维度分 key。总铁律两条:Redis 是易失缓存不是真相源(可重建);TTL 全覆盖+键名规范——默认永久的 key 和几 MB 的大 key 都是事故源。』追问展开:三防的具体实现、锁与幂等的取舍、Redis 挂了的降级。",
-    "followups": [
-      {"q": "缓存穿透、击穿、雪崩分别怎么解?", "a": "穿透(查不存在的数据,每次都打到 DB):空值缓存(短 TTL)+布隆过滤器(海量 key 场景);击穿(热 key 过期瞬间并发回源):互斥重建(锁,单线程重建)或逻辑过期(物理不过期,值里带过期时间异步刷新);雪崩(大量 key 同时过期):TTL 加随机抖动+多级缓存。三者共同根源:缓存与 DB 的联动设计缺失。"},
-      {"q": "什么时候用分布式锁,什么时候用幂等设计?", "a": "优先幂等:任务带唯一键(AG-003),重复执行被数据库唯一约束/条件更新挡住——无锁、无死锁风险、天然分布式。锁用于『必须互斥执行且幂等难以表达』的场景(如全局配额扣减的复杂逻辑)。用了锁就要处理三件事:过期续期、持有者校验、Redis 不可用时策略——成本高,能用幂等就别用锁。"},
-      {"q": "Redis 不可用时系统怎么表现?", "a": "设计原则:降级而非瘫痪——缓存未命中回源 DB(多扛点延迟);限流降级为本地限流(单机近似)或放行+告警(业务定,宁过度限流防打爆上游);锁失效时任务可能重复执行(靠幂等兜底)。如果任何一项『Redis 挂了就真挂了』,说明把易失存储当成了依赖源(EN-004 的真相源原则)。"}
-    ],
-    "pitfalls": [
-      "把会话真相源放 Redis 无 DB 回源,Redis 重启用户全下线。",
-      "锁不带过期时间,进程崩溃后死锁(其他实例永远拿不到)。",
-      "TTL 不加抖动,大批 key 同时过期,DB 瞬间被打雪崩。",
-      "一个 key 存几 MB 大 JSON,单线程 Redis 被阻塞,全实例延迟飙升。"
-    ],
-    "check": {
-      "q": "缓存旁路模式里,『写操作时更新缓存』和『写操作时删除缓存』,哪种更对?为什么?",
-      "a": "删除(失效)更对。更新缓存有并发写脏问题:两个写请求并发,各自的『更新缓存』顺序可能与 DB 提交顺序不一致,缓存里留下旧值(脏到下次 TTL);删除则让下次读触发回源,读到的是 DB 最新值。代价是多一次回源读——用一致性换正确性,是 cache-aside 的标准选择。极端并发下的『删后又被旧值回填』问题,用延迟双删/订阅 binlog 失效等进阶手段。",
-      "explain": "检验点:cache-aside 的『失效而非更新』原则及其并发正确性理由。"
-    },
-    "related": ["PY-003", "LP-007", "LP-012", "EN-004"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Redis 官方文档(数据结构与模式)", "url": "https://redis.io/docs/latest/", "kind": "official-docs", "note": "命令语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "五用法与纪律为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "用法分类为独立整理;Redis 具体语义以官方文档为准。"}
-  },
-  {
-    "id": "PY-018",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "线上 Python 服务变慢,怎么做性能分析和热点定位?",
-    "tags": ["性能分析", "profiling", "优化"],
-    "prerequisites": ["PY-009", "EN-006"],
-    "answer": "定位流程:①先量化——延迟分位(P95/P99)与资源监控(EN-002 的观测体系)确认慢在哪(CPU/IO/等待);②采样分析——py-spy 在线采样生产进程(无侵入,看火焰图找热点函数)或 cProfile 跑基准用例;③分层定位——CPU 热点(纯计算:正则回溯、循环内重复计算、序列化)、IO 等待(数据库慢查询、外部 API、连接池耗尽)、内存(GC 压力、大对象、泄漏 tracemalloc);④验证——优化后同基准复测,警惕『优化了不痛的地方』。LLM 应用特有热点:JSON 大对象序列化、tokenizer 调用、正则清洗、重复的提示词组装。",
-    "plain": "性能定位像体检:先看报告哪项异常(监控分位),再做专项检查(py-spy 采样像 CT 扫描,无创看全身热点),而不是凭感觉吃保健品(盲目优化)。最常见的误诊:『感觉数据库慢』结果热点在 JSON 序列化;『狂加机器』结果是一个正则回溯灾难(一行代码的事)。比喻局限:生产环境的采样要在低峰做并控制采样时长,体检可没有『影响别人』的问题。",
-    "deep": "1) 工具矩阵:\n   - py-spy:生产在线采样(py-spy dump 看当前卡点/py-spy record 火焰图),无侵入——线上首选;\n   - cProfile/profile:本地基准用例的函数级统计(确定性,可复现);统计开销大不用于生产;\n   - tracemalloc/objgraph:内存泄漏(增长的对象是谁分配的);\n   - 数据库侧:慢查询日志+EXPLAIN(很多『Python 慢』其实是 SQL 慢——先看 DB 监控再归因);\n   - APM:持续化的生产 profiling(Pyroscope/持续剖析),趋势可见。\n2) 常见热点模式(背下来):\n   - 正则灾难性回溯(嵌套量词,一条消息让 CPU 100%——限流正则来源);修复:改写正则/限制输入长度;\n   - 循环内的重复计算(O(n²):每轮都 json.dumps/tokenizer 计数/查同一配置)——提到循环外/缓存;\n   - 序列化大对象(json.dumps 10MB 响应)——流式/分页/字段精简;\n   - 同步 IO 混入 async(time.sleep/requests 阻塞事件循环,PY-003——表现为整个服务周期性卡顿而非单点慢);\n   - GC 压力:大量临时对象(每请求构建大 list/dict),gc 调优或对象复用;\n   - 锁竞争:全局锁(限流器/缓存)高频争抢——分片。\n3) 流程纪律:一次只改一个变量;基准可复现(固定输入);优化前后同口径对比;小优化不污染代码可读性(先热后冷)。\n4) LLM 应用特有:JSON/提示词组装的重复计算(模板渲染缓存)、tokenizer 调用缓存(同文本重算)、检索结果的序列化(大 JSON)——与 RG-018/EN-006 的成本延迟优化衔接。",
-    "example": "```bash\n# 线上无侵入采样\npy-spy dump --pid 12345              # 当前每个线程卡在哪\npy-spy record --pid 12345 -d 60 -o flame.svg   # 60 秒火焰图\n\n# 本地基准\ncProfile -o prof.out bench.py\nsnakeviz prof.out                    # 可视化\n```",
-    "interview": "口述版:『流程三步:监控分位定位慢的类型(CPU/IO/内存)→py-spy 在线采样看火焰图(生产无侵入首选,cProfile 本地基准)→按热点模式对号入座修。我背五个常见热点:正则回溯、循环内重复计算、大 JSON 序列化、async 里混同步阻塞、GC 压力。纪律:一次改一个变量、同基准复测——以及先看数据库监控再归因 Python,很多『Python 慢』是 SQL 慢。』追问展开:py-spy 原理(采样 vs 插桩)、异步服务的 profiling、内存泄漏排查。",
-    "followups": [
-      {"q": "py-spy 为什么能无侵入采样?", "a": "它读取目标进程的内存栈(采样式而非插桩式),不需要改代码或重启——开销极低(采样间隔),生产可用。对比 cProfile 是插桩(记录每次函数调用,开销大、改变时序)——所以生产用 py-spy,本地确定性分析用 cProfile。"},
-      {"q": "async 服务的性能分析有什么特殊?", "a": "协程共享一个线程,传统按线程看的 profiler 会混在一起——要看支持 asyncio 的分析(py-spy 支持 greenlet/asyncio 栈)或按任务聚合的 APM。另一个视角:『等待分析』——事件循环被谁阻塞(同步调用混入),py-spy dump 常见抓到卡在 requests/time.sleep 的现场。"},
-      {"q": "怎么确认是内存泄漏而不是正常增长?", "a": "tracemalloc 快照对比(两个时间点的分配差异,看哪类对象持续增长且无回收);objgraph 找引用链(谁持有它);常见泄漏源:全局容器只增不减(缓存无上限)、闭包/回调持有大对象、会话未清理。区分缓存(有 TTL/上限)与泄漏(无界增长)。"}
-    ],
-    "pitfalls": [
-      "不测量就优化,凭感觉重构(优化了不热点)。",
-      "生产环境直接跑 cProfile,开销大影响线上。",
-      "只看应用侧,忽略数据库/网络层的慢(归因错层)。",
-      "优化后不建立基准复测,无法证明改进也无法防回退。"
-    ],
-    "check": {
-      "q": "服务 P99 偶发 5 秒(平时 200ms),CPU 平常,监控无异常。py-spy dump 该看什么?",
-      "a": "偶发长尾+CPU 不高→大概率是『等待』:dump 抓现场看卡在哪——若卡在 connection pool acquire(池耗尽,PY-016)、卡在某个同步调用(事件循环被阻塞,PY-003)、或卡在外部调用无超时(PY-008)。dump 要多抓几次(偶发问题采样)或在慢请求发生时抓。CPU 型慢看火焰图,等待型慢看 dump 现场——先分型再下钻。",
-      "explain": "检验点:『偶发长尾+CPU 正常』→等待型问题→dump 抓现场的定位路径。"
-    },
-    "related": ["PY-009", "EN-006", "PY-016", "PY-003"],
-    "doc_refs": ["doc-python-1", "doc-eng-1"],
-    "sources": [
-      {"name": "py-spy 文档", "url": "https://github.com/benfred/py-spy", "kind": "official-docs", "note": "工具用法参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "定位流程与热点模式为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "工具用法以官方文档为准;流程与模式为独立整理。"}
-  },
-  {
-    "id": "PY-019",
-    "topic": "python-backend",
-    "type": "comparison",
-    "difficulty": "intermediate",
-    "title": "uvicorn/gunicorn 怎么部署 FastAPI?worker 数怎么定?",
-    "tags": ["部署", "uvicorn", "gunicorn"],
-    "prerequisites": ["PY-015", "PY-003"],
-    "answer": "部署模式:uvicorn 是 ASGI 服务器(单进程事件循环);生产用 gunicorn 作进程管理器+uvicorn worker(gunicorn -k uvicorn.workers.UvicornWorker),或 uvicorn 多进程模式——获得多进程+优雅重启+进程守护。worker 数经验公式:CPU 密集≈核数;I/O 密集(async 服务)可 2×核数甚至更高(每个 worker 是单线程事件循环,靠并发不靠线程),但受内存(每 worker 一份应用+连接池,PY-015)与下游容量约束。必须配置:优雅停机(timeout_graceful_shutdown,流式请求长尾)、超时与 keepalive、健康检查端点;多实例水平扩展交给 K8s/负载均衡,单机 worker 数不是唯一扩展手段。",
-    "plain": "部署像开分店:uvicorn 是一家店(一个事件循环);gunicorn 是『连锁经营管理公司』——帮你开 N 家分店、一家着火自动重开(进程守护)、装修升级不歇业(优雅重启)。分店数不是越多越好:每家店都要本钱(内存与连接池),而且供货商(数据库/API 配额)是共享的——分店多了供货跟不上,PY-015 的连接池数学要重算。比喻局限:async worker 内部还能并发处理大量请求(单店也能同时服务很多客人),这点和传统『一店一客』的 WSGI 不同。",
-    "deep": "1) 为什么需要多 worker:Python 单进程事件循环有 CPU 上限(一个核),多 worker 利用多核;worker 崩溃时 gunicorn 拉起新的(进程守护);滚动重启时逐个 worker 重启(平滑)。\n2) worker 数决策:\n   - 起点公式:worker = 核数(纯 CPU)~ 2×核数+1(传统 WSGI 同步);async ASGI 的瓶颈常在外部依赖(数据库/上游 API)——worker 数增加不会突破下游容量,反而乘大连接池(PY-016 的数学:池×worker≤DB 上限);\n   - 压测决定:逐步加 worker 看 P99 与下游指标,出现收益平台/下游饱和即停;\n   - 内存约束:每 worker 一份模型/缓存/连接池(PY-015),大内存应用(如载入本地嵌入模型)worker 数受内存硬限——这时应把重资源拆独立服务。\n3) 必配项:\n   - 优雅停机:timeout_graceful_shutdown(秒)要覆盖流式请求长尾(LP-005/PY-015);gunicorn 的 graceful_timeout;\n   - 超时:uvicorn 无请求超时默认——靠反向代理(nginx/网关)的读超时兜底,或应用内超时(LP-004);keepalive 与代理对齐;\n   - 进程健康:心跳/健康检查端点(EN-005 的探针);worker 泄漏检测(内存趋势,PY-018)配合定期重启(max_requests 类机制)作为兜底;\n   - 日志:access log 与应用日志分开,多 worker 写同一文件要轮转安全(logrotate copytruncate 或 stdout 收集)。\n4) 容器化:容器内通常 1 容器多 worker 或 1 worker 多副本(K8s 副本数管扩展)——二选一,别两层都放大多(资源超卖);CPU limit 与 worker 数对齐(CFS 配额下多 worker 争抢)。\n5) 与反向代理:nginx/网关在前(TLS/缓冲关闭 for 流式/LP-005、超时兜底、静态资源),应用专注业务;X-Accel-Buffering 关闭流式缓冲(PY-004)。",
-    "example": "```bash\n# 生产启动(gunicorn 管理 + uvicorn worker)\ngunicorn app.main:app \\\n  -k uvicorn.workers.UvicornWorker \\\n  -w 4 --timeout 120 --graceful-timeout 90 \\\n  --bind 0.0.0.0:8000\n\n# 或 uvicorn 原生多进程(简单场景)\nuvicorn app.main:app --workers 4 --timeout-graceful-shutdown 90\n```",
-    "interview": "口述版:『生产部署是 gunicorn 当进程管理器+uvicorn worker(守护/平滑重启/多核)。worker 数不是套公式——async 服务的瓶颈常在下游,worker 翻倍只会把连接池翻倍打爆数据库,要压测定,且受内存硬约束(重资源拆独立服务)。必配三项:优雅停机覆盖流式长尾、超时由代理兜底(uvicorn 默认无请求超时)、健康检查。容器里 worker 与 K8s 副本二选一扩展,别两层都放大。』追问展开:优雅停机参数与 K8s 配合、worker 泄漏兜底、流式与代理缓冲。",
-    "followups": [
-      {"q": "async 服务 worker 数为什么不能无限加?", "a": "三个约束:①下游容量——每 worker 的连接池×worker 数≤数据库 max_connections、上游 API 配额按进程分配(每 worker 独立配额计数,PY-015);②内存——每 worker 一份应用资源;③收益递减——CPU 满之前下游就饱和了。正确扩展路径:压测找到单 worker 最优并发→worker 数吃到 CPU→再往上水平加副本(EN-005 的容量规划)。"},
-      {"q": "gunicorn 的 graceful_timeout 和 uvicorn 的 timeout_graceful_shutdown 什么关系?", "a": "两层超时:uvicorn 层管『停机后等在途请求多久』;gunicorn 层管『等 worker 退出多久,超时强杀』——gunicorn 的值应大于 uvicorn 的值(外层兜底内层)。流式长尾(几分钟的 SSE)会吃满 grace period——要么延长、要么设计好中断续传(LP-005),否则滚动更新必 502。"},
-      {"q": "worker 内存持续增长怎么办?", "a": "先按 PY-018 排查泄漏(tracemalloc 定位);确认为缓慢泄漏且短期修不了,用兜底:gunicorn max_requests(处理 N 个请求后自动回收 worker,配合 jitter 防同时重启)——这是『止血』不是『治疗』,监控要标记重启事件避免误判为部署。"}
-    ],
-    "pitfalls": [
-      "uvicorn 裸奔单进程上生产,多核用不上、进程无人守护。",
-      "worker 数照抄公式 2×核+1,把数据库连接打爆(PY-016 数学)。",
-      "没配优雅停机,每次发布在途请求 502。",
-      "uvicorn 默认无请求超时,慢请求无限占用,靠网关超时才发现。"
-    ],
-    "check": {
-      "q": "8 核机器、数据库 max_connections=200、每 worker 连接池 10+20 overflow、流式请求最长 3 分钟。worker 数上限与配置要点?",
-      "a": "数据库约束:(10+20)×worker ≤ 200×0.8(留余量)→ worker ≤ 5;内存与 CPU 再校验。配置:graceful timeout ≥ 180s(覆盖流式长尾)+K8s terminationGracePeriod 同步;代理关流式缓冲;健康检查+池利用率监控。若业务需要更多并发,正确方向是加实例副本(扩连接数预算)或拆服务,而不是硬加 worker。",
-      "explain": "检验点:worker 数由『下游约束+内存+长尾超时』联合决定,并把流式长尾纳入停机配置——多约束求解而非套公式。"
-    },
-    "related": ["PY-015", "PY-016", "PY-003", "EN-005"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Uvicorn / Gunicorn 官方文档(部署)", "url": "https://www.uvicorn.org/deployment/", "kind": "official-docs", "note": "服务器配置参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "worker 决策与必配项为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "服务器参数以官方文档为准;决策框架为独立整理。"}
-  },
-  {
-    "id": "PY-020",
-    "topic": "python-backend",
-    "type": "concept",
-    "difficulty": "basic",
-    "title": "Python 类型标注和 mypy 静态检查对 AI 后端项目有什么实际价值?",
-    "tags": ["类型标注", "mypy", "工程化"],
-    "prerequisites": ["PY-013"],
-    "answer": "实际价值四条:①把一类运行时错误提前到提交前(函数签名错、None 传播、字段拼写——mypy 在 CI 拦截);②重构信心(改函数签名,所有调用点立刻标红——大重构的安全网);③文档与 IDE(签名即文档,补全与跳转准确);④生态协同(Pydantic/FastAPI 的类型驱动、dataclass、泛型容器)。LLM 应用特别受益:消息结构、工具 schema、配置对象都是『结构化数据在系统间流动』——类型注解让这些结构在编译期对齐(mypy 检查出 messages 格式错误远比线上 400 便宜)。成本:渐进式采用(strict 从新模块开始)、Pydantic 与 mypy 的插件配合、动态构造(解包 LLM 输出)需要类型断言与收窄。",
-    "plain": "类型标注像施工图纸的尺寸标注:没有图纸也能盖(动态语言自由),但改一面墙时不知道牵连哪些房间(mypy 标红所有调用点)。对 LLM 应用特别值:你的系统里到处是『结构』(消息数组、工具定义、配置),模型返回的 JSON 与你的代码之间的『接口』全靠人脑记——类型系统把这些接口写成机器可查的契约,拼错字段在 CI 就红,而不是线上 400。比喻局限:mypy 不检查运行时数据(LLM 返回的实际 JSON),那仍要 Pydantic 运行时校验——静态与动态两道岗互补。",
-    "deep": "1) 类型价值分层:\n   - 拦截:None 传播(Optional 没检查——LLM 应用最常见崩溃源:resp.choices[0].message 可能为 None)、参数顺序/类型错、字段拼写;\n   - 重构:签名变更的调用点全标红——重构从『祈祷』变『跟着红线修』;\n   - 设计:类型即接口文档(消息结构 TypedDict/Pydantic 模型定义后,mypy 强制全链路一致)。\n2) LLM 应用的类型设计:消息结构用 TypedDict/Pydantic(roles/content 的形状);工具调用解析用 Pydantic 运行时校验(动态数据)+ mypy 静态保障(代码内部传递);泛型复用(统一的 Result[T] 信封,AG-014);Literal 类型替代字符串魔法值(角色名/状态机状态——拼错即红)。\n3) 渐进式采用策略:全库 strict 一次到位是灾难(存量报警淹死人);策略:mypy 现状基线(存量豁免清单)+ 新代码 strict + 豁免只减不增;CI 门禁(类型错误阻断合并,EN-005);pre-commit 快速反馈。\n4) 与动态数据的配合(LLM 场景特有):模型返回的 JSON 是运行时才知的——『静态类型+运行时校验』两道岗:mypy 保证代码内部一致,Pydantic 保证外部输入符合类型(AG-014/LP-003);类型断言(cast)与类型收窄(isinstance 检查)用在边界处,边界内享受类型保障。\n5) 局限与诚实:mypy 不能发现逻辑错误(算法写反)、不能校验运行时数据内容;过度精确的类型(泛型套娃)降低可读性——类型是工具不是目的,复杂度要有回报。",
-    "example": "```python\nclass ChatMessage(TypedDict):\n    role: Literal[\"system\", \"user\", \"assistant\"]\n    content: str\n\ndef build_messages(history: list[ChatMessage], new: str) -> list[ChatMessage]: ...\n\nresp = client.chat.completions.create(...)\ncontent = resp.choices[0].message.content   # mypy: 可能为 None → 强制处理\nif content is None:                          # 收窄后才安全使用\n    raise UpstreamError(\"empty content\")\n```",
-    "interview": "口述版:『类型标注的价值我把四条:运行时错误提前到 CI(None 传播/拼写/签名)、重构安全网(调用点全标红)、签名即文档、与 Pydantic/FastAPI 生态协同。LLM 应用特别受益的是结构化数据的全链路对齐——消息结构、工具 schema 用 Literal 和 TypedDict 定死。策略是渐进式:存量豁免只减不增,新代码 strict。诚实说边界:mypy 不查运行时数据内容——静态与 Pydantic 动态校验是两道互补的岗。』追问展开:渐进式采用实操、与 Pydantic 的配合、LLM 动态输出的类型处理。",
-    "followups": [
-      {"q": "渐进式 mypy 怎么落地不翻车?", "a": "三步:①基线:当前所有错误生成豁免清单(或用 mypy 的 baseline 方式);②门禁:CI 检查『错误数不得增加』——新代码必须干净,存量不动;③清理:改到哪清到哪,豁免清单只减不增(趋势指标)。避免一开始就全库 strict——几千个报警让人直接放弃类型检查。"},
-      {"q": "LLM 返回的动态 JSON 在类型系统里怎么处理?", "a": "边界处两道岗:运行时 Pydantic 校验(external data → 类型化对象,失败抛业务异常重试,LP-003);类型化对象在代码内部流动时享受 mypy 静态保障。边界外(模型输出原文)保持 str/Any 并显式标注『未验证』——让类型系统帮你标记『哪里是已验证区域、哪里是荒野』,收窄函数(isinstance/校验)是跨界点。"},
-      {"q": "Literal 类型在 AI 后端有什么妙用?", "a": "枚举值 everywhere:消息 role、Agent 状态机状态、任务类型、错误码——拼错即红、补全直达;配合 match 语句(Python 3.10+)穷尽检查(漏处理一个状态 mypy 报警)——状态机代码的完备性由类型系统保证(AG-005 的任务状态机落地)。"}
-    ],
-    "pitfalls": [
-      "全库 mypy strict 一次到位,报警洪水后彻底放弃类型检查。",
-      "类型断言(cast)滥用,把『我说是对的就是对的』当类型安全。",
-      "只给 Pydantic 模型标类型,业务函数签名裸奔——类型价值损失大半。",
-      "认为有类型就不用运行时校验——静态类型不检查 LLM 实际返回的内容(PY-013 的闭环仍必需)。"
-    ],
-    "check": {
-      "q": "mypy 通过但线上仍然因为 messages 里混入了 dict 而崩溃。为什么静态检查没拦住?怎么补?",
-      "a": "mypy 只保证『代码内部声明的类型一致』——如果 messages 的来源是运行时构造(用户输入组装、外部 API 返回、LLM 输出解析),静态检查看不见运行时的真实数据。补法:边界处加运行时校验(入参用 Pydantic 模型收窄,messages 列表统一走 build_messages 这类类型化构造器,禁止裸 dict 拼装)——静态+动态两道岗各司其职,‘裸 dict 流动’是类型纪律的漏洞。",
-      "explain": "检验点:静态检查的边界(不查运行时数据)与两道岗互补的设计。"
-    },
-    "related": ["PY-013", "PY-004", "AG-014", "LP-003"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "mypy 官方文档", "url": "https://mypy.readthedocs.io/", "kind": "official-docs", "note": "工具语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "价值分析与采用策略为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "工具语义以官方文档为准;价值分析为独立整理。"}
+  "related": [
+   "PY-004",
+   "PY-010",
+   "LP-003"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Pydantic v2 官方文档(validators)",
+    "url": "https://docs.pydantic.dev/latest/concepts/validators/",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "分层纪律为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "分层纪律为独立整理;v2 具体 API 以官方文档为准。"
   }
+ },
+ {
+  "id": "PY-014",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "FastAPI 的中间件(middleware)和依赖注入(Depends)都能做横切逻辑,怎么选?",
+  "tags": [
+   "FastAPI",
+   "中间件",
+   "横切逻辑"
+  ],
+  "prerequisites": [
+   "PY-006",
+   "PY-004"
+  ],
+  "answer": "选择的分界是『信息与作用域』:中间件工作在 HTTP 层(请求/响应对象),能看到原始报文但不知道路由与用户语义——适合 trace_id 注入、访问日志、全局限流、CORS、响应头;依赖注入工作在路由上下文(能拿到路径参数、Pydantic 模型、用户身份)——适合鉴权、租户上下文、按接口的配额、资源会话管理。经验法则:与『HTTP 报文』相关的横切用中间件,与『业务语义/当前用户』相关的用依赖;两者组合常见(trace_id 在中间件生成,业务层从 contextvars 读取)。",
+  "plain": "中间件像大楼的统一门禁闸机:所有人都要过,只看『有没有卡』(报文层),不知道你上几楼干什么;依赖注入像每层楼的前台:知道你是谁、来干什么(路由语义),能按访客目的给不同的引导。给全楼装监控(访问日志)找物业(中间件),给 8 楼财务室限制进入找 8 楼前台(依赖注入)。比喻局限:中间件其实能改写请求/响应(不只是看),这个能力比喻没体现。",
+  "deep": "1) 中间件能力与典型用法:@app.middleware('http') 或 BaseHTTPMiddleware;调用链是洋葱模型(进入→前置逻辑→call_next→后置逻辑);典型:trace_id 生成并写 contextvars(PY-009 的日志串联基础)、请求/响应日志(脱敏)、全局限流与黑名单、统一响应头(X-Request-ID、安全头)、耗时统计。注意:中间件抛异常要自己转响应(还没进 FastAPI 的异常处理链)。\n2) 依赖注入的横切用法(PY-006 延伸):get_current_user 依赖被多个路由引用——鉴权语义集中;带参数的依赖工厂(Depends(get_quota(limit=100)))做接口级配额;依赖链(用户→权限→资源)由框架解析与缓存(同请求内单次执行)。\n3) 组合模式(生产常见):中间件生成 trace_id + 注入 contextvars → 依赖与业务从 contextvars 读取(日志/审计自动携带);中间件做粗粒度限流(全局 QPS),依赖做细粒度配额(按用户/接口);中间件统一错误日志,依赖抛的业务异常由 FastAPI 异常处理器转响应。\n4) 性能与陷阱:中间件作用于所有请求(静态资源、健康检查也会过——要排除);BaseHTTPMiddleware 有额外的开销与流式响应的兼容性坑(流式响应在旧版中间件实现下缓冲问题——流式接口要实测,LP-005);中间件顺序敏感(注册顺序=执行顺序的外层在前)。\n5) 决策清单:需要改写报文/作用于全量请求/与路由无关→中间件;需要路由参数/用户身份/依赖缓存/异常体系→依赖注入;既要报文又要语义→中间件放信息,依赖取信息。",
+  "example": "```python\n# 中间件:trace_id 注入(全量、报文层)\n@app.middleware(\"http\")\nasync def trace_middleware(request, call_next):\n    tid = request.headers.get(\"x-request-id\") or gen_id()\n    ctx.trace_id.set(tid)\n    resp = await call_next(request)\n    resp.headers[\"x-request-id\"] = tid\n    return resp\n\n# 依赖:接口级配额(语义层,知道当前用户)\ndef quota(user = Depends(get_current_user)):\n    if exceed(user, \"llm_calls\"):\n        raise HTTPException(429, \"配额耗尽\")\n    return user\n```",
+  "interview": "口述版:『我的分界:HTTP 报文层、全量作用的横切(日志/trace/限流/CORS)走中间件;业务语义层、需要路由与用户信息的横切(鉴权/配额/租户上下文)走依赖注入。经典组合:中间件生成 trace_id 写 contextvars,依赖与业务层自动携带。两个坑:中间件作用于包括健康检查的全部请求要排除;流式接口在 BaseHTTPMiddleware 下有兼容性坑,要实测。』追问展开:洋葱模型、异常处理链的位置、流式兼容性问题。",
+  "followups": [
+   {
+    "q": "中间件里抛 HTTPException 会怎样?",
+    "a": "不会被 FastAPI 的异常处理器捕获(异常处理器在路由层生效)——客户端收到 500 裸错误。正确做法:中间件里直接构造并返回 JSONResponse(自己处理错误格式),或把逻辑下沉到依赖/异常处理器。这是中间件与路由层异常体系边界不清的典型坑。"
+   },
+   {
+    "q": "trace_id 为什么用 contextvars 而不是全局变量?",
+    "a": "并发下全局变量会被请求互相覆盖(contextvars 是协程/任务本地的,每个请求独立上下文,PY-003 的并发语义);日志与业务代码从 contextvars 读取即可拿到当前请求的 trace_id,不用层层传参。这是『隐式上下文』的标准实现。"
+   },
+   {
+    "q": "流式接口在中间件下的兼容坑?",
+    "a": "BaseHTTPMiddleware 会缓冲响应(call_next 等待完整响应体)——流式变成伪流式(首字节延迟=全部生成时间)。解法:升级框架版本(新版已修复)或对流式路由豁免该中间件/改用纯 ASGI 中间件。排查信号:SSE 接口在加了日志中间件后变成『憋到最后一起出』。"
+   }
+  ],
+  "pitfalls": [
+   "中间件里做业务鉴权(拿不到路由语义,错误信息也差)。",
+   "全局中间件未排除 /health 与静态资源,监控数据被污染。",
+   "中间件顺序随意(日志中间件在 trace 注入之后,拿不到 trace_id)。",
+   "在中间件里 catch 所有异常返回 500,绕过了统一的业务异常处理。"
+  ],
+  "check": {
+   "q": "需求:『记录每个请求的耗时与状态码,并把 trace_id 写进日志』。用中间件还是依赖?字段从哪来?",
+   "a": "中间件(报文层、全量、无需路由语义):call_next 前后计时,状态码从响应取;trace_id 在该中间件(或更外层的中间件)生成并 set 进 contextvars,响应头返回。注意:耗时段要包住 call_next(只算应用处理);健康检查路径排除。若还需要『哪个用户耗了多少 LLM token』,那是语义信息,在依赖/业务层记(取自 get_current_user)——两类信息两个层。",
+   "explain": "检验点:按『报文层 vs 语义层』拆需求,并意识到一次横切可能跨两层。"
+  },
+  "related": [
+   "PY-006",
+   "PY-009",
+   "PY-004",
+   "LP-005"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "FastAPI 官方文档 · Middleware",
+    "url": "https://fastapi.tiangolo.com/tutorial/middleware/",
+    "kind": "official-docs",
+    "note": "框架语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "选择分界与组合模式为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "框架语义以官方文档为准;选型分界为独立整理。"
+  }
+ },
+ {
+  "id": "PY-015",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "FastAPI 的 lifespan 是什么?数据库连接池和 LLM 客户端为什么要在里面初始化?",
+  "tags": [
+   "FastAPI",
+   "lifespan",
+   "资源管理"
+  ],
+  "prerequisites": [
+   "PY-008",
+   "PY-014"
+  ],
+  "answer": "lifespan 是应用级生命周期的统一入口(yield 前启动、yield 后清理):数据库引擎/连接池、HTTP 客户端(PY-008 的单例)、Redis 连接、后台任务调度器在这里创建与关闭。原因:①连接复用——每请求新建客户端/连接 = 反复握手与句柄浪费;②生命周期对齐——资源随应用生灭,优雅停机时正确关闭(不丢在途请求);③依赖注入友好——lifespan 创建的资源挂到 app.state,路由通过 Depends 取用。旧式的 @app.on_event 已废弃,统一用 lifespan。",
+  "plain": "lifespan 像商店的『开门/打烊流程』:开门时把收银机、冷柜、Wi-Fi 全部打开(连接池/客户端初始化),打烊时按顺序关好(优雅停机),而不是每来一位顾客临时开一次收银机、走一位就关一次。打烊时还要『等最后一位顾客结完账』(在途请求处理完)再落闸。比喻局限:lifespan 只管『进程级』资源——每请求级的资源(如本次请求的 DB 会话)由依赖注入管理,两级别搞混。",
+  "deep": "1) lifespan 结构:\n```python\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    app.state.http = httpx.AsyncClient(...)      # 启动:连接池/客户端\n    app.state.db = create_engine(...)\n    scheduler.start()\n    yield                                         # 应用运行中\n    await app.state.http.aclose()                 # 关闭:逆序清理\n    scheduler.shutdown()\napp = FastAPI(lifespan=lifespan)\n```\n2) 资源分层:进程级(lifespan 管:连接池/客户端/调度器)vs 请求级(依赖注入管:每请求的 DB 会话/用户上下文)。判据:资源的生命周期跟谁——跨请求复用→lifespan;每请求独立→Depends(yield 型)。\n3) 优雅停机:SIGTERM→FastAPI 停止接新请求→在途请求完成→lifespan yield 后清理(关闭连接、刷缓冲);K8s 的 terminationGracePeriodSeconds 要覆盖最长的在途请求(流式请求尤其长,LP-005);后台任务要支持取消与状态持久化(AG-005 检查点)。\n4) 启动失败的语义:lifespan 里初始化失败(连不上数据库)→应用启动失败→编排层重启——这是『fail fast』(PY-010):启动期暴露配置问题好过运行期 500。\n5) 测试影响:单测用 lifespan 的测试客户端(TestClient with lifespan)或直接注入 mock 资源——资源创建逻辑集中在 lifespan 也让测试替身更容易(一处替换)。",
+  "example": "```python\n# 请求级资源通过 Depends 消费 lifespan 创建的池\nasync def get_http(request: Request) -> httpx.AsyncClient:\n    return request.app.state.http\n\n@app.post(\"/chat\")\nasync def chat(req: ChatRequest, client = Depends(get_http)):\n    ...  # 复用连接池,不再每请求新建\n```",
+  "interview": "口述版:『lifespan 是进程级资源的统一入口:启动建连接池/HTTP 客户端/调度器,关闭逆序清理。为什么放里面——连接复用、生命周期对齐、优雅停机(在途请求完成再关)。资源分层判据:跨请求复用进 lifespan,每请求独立进 Depends。三个我会主动提的点:启动失败 fail fast 是好事;优雅停机要覆盖流式请求的长尾时长;资源集中在 lifespan 让测试替身更容易。』追问展开:优雅停机与 K8s 的配合、多 worker 下的资源、资源分层判据。",
+  "followups": [
+   {
+    "q": "K8s 滚动更新时,优雅停机的完整链路?",
+    "a": "①Pod 收到 SIGTERM→readiness 探针置失败(摘出 Service 端点);②FastAPI 停止接新请求,在途请求继续(流式的可能几十秒);③lifespan 清理连接;④超时(terminationGracePeriod)强杀。关键配置:grace period > 最大在途请求时长,preStop sleep 让端点摘除传播——链路任何一环短了都会出现 502。"
+   },
+   {
+    "q": "多 worker(uvicorn --workers 4)时连接池怎么算?",
+    "a": "每个 worker 进程独立的应用实例,各自的连接池——总连接数=每 worker 池大小×worker 数,别把数据库连接数打爆(池大小×worker ≤ 数据库 max_connections 余量)。资源是进程级的,跨 worker 不共享——这也是为什么重型资源(本地模型)要用独立推理服务而不是塞进多 worker 应用。"
+   },
+   {
+    "q": "后台任务在 lifespan 里怎么处理停机?",
+    "a": "调度器/消费者要有取消机制(asyncio task cancel 或队列消费者 stop 信号),停止前把任务状态持久化(AG-005 检查点)以便重启续跑;正在执行的单个任务可以选择『跑完再停』(宽限期内)或『立即中断』(可恢复设计)——策略按任务幂等性定(AG-003)。"
+   }
+  ],
+  "pitfalls": [
+   "模块顶层创建客户端(import 时建连接),测试与多进程下行为诡异。",
+   "每请求新建 AsyncClient,握手开销与句柄泄漏(PY-008)。",
+   "关闭顺序错误(先关数据库再停用它的后台任务)。",
+   "grace period 小于流式请求时长,滚动更新时大面积 502。"
+  ],
+  "check": {
+   "q": "LLM 客户端(httpx.AsyncClient)应该放在 lifespan 还是模块级全局变量?两者实际差别?",
+   "a": "功能上都能做到单例,但 lifespan 更优:①生命周期显式——随应用 aclose,优雅停机时连接正确释放(模块级的要靠 atexit/进程退出,不可靠);②测试友好——测试可用不同 lifespan 或注入 mock;③依赖注入清晰——从 app.state 取而不是 import 全局。模块级全局在简单脚本可以,服务生产代码用 lifespan(PY-008 的『应用生命周期单例』落到 FastAPI 的正确位置)。",
+   "explain": "检验点:知道两者都能跑,但能说清生命周期显式化带来的停机正确性与可测性。"
+  },
+  "related": [
+   "PY-008",
+   "PY-014",
+   "PY-010",
+   "LP-005"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "FastAPI 官方文档 · Lifespan Events",
+    "url": "https://fastapi.tiangolo.com/advanced/events/",
+    "kind": "official-docs",
+    "note": "框架语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "资源分层与停机链路为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "lifespan 语义为框架稳定行为;停机链路为独立整理。"
+  }
+ },
+ {
+  "id": "PY-016",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "异步 SQLAlchemy 会话怎么用?会话生命周期和连接池怎么配?",
+  "tags": [
+   "SQLAlchemy",
+   "数据库",
+   "连接池"
+  ],
+  "prerequisites": [
+   "PY-015",
+   "PY-003"
+  ],
+  "answer": "异步 SQLAlchemy(create_async_engine + async_sessionmaker)的核心纪律:①会话每请求一个——FastAPI 里用 yield 型依赖创建/提交/关闭,绝不全局共享(会话不线程/协程安全);②连接池在引擎上配——pool_size(常驻)+max_overflow(突发上限)+pool_recycle(防数据库端断连,如 3600 小于数据库 wait_timeout)+pool_pre_ping(取连接前探活);③事务边界明确——默认显式 commit(或 begin 块),读写分离场景只读查询可用只读连接;④长事务是敌人——LLM 调用等慢操作绝不放进数据库事务里(连接被占住,池耗尽)。",
+  "plain": "连接池像食堂餐盘:常备一摞(pool_size),高峰再临时加(max_overflow),盘子用坏了要换(pool_recycle),拿之前先检查有没有裂缝(pre_ping)。会话像『一次取餐』:取一个盘、用完还回——不能几个人共用一个盘(会话不共享),更不能『一边占着餐盘一边打电话聊半小时』(事务里做慢操作),后面全队等着。比喻局限:async 会话与事件循环的交互(事务里的 await 要小心)是餐盘比喻装不下的。",
+  "deep": "1) 会话生命周期(FastAPI 模式):\n```python\nasync def get_db():\n    async with SessionLocal() as session:   # 每请求一个会话\n        yield session                        # 路由内使用\n        # 退出时自动关闭(可在此 commit/rollback)\n```\n请求级会话+yield 依赖:提交策略(自动 commit 成功路径/显式 commit)团队统一;异常回滚语义要测试(半途 422/500 时不留半截写入)。\n2) 连接池参数:pool_size=稳态并发,max_overflow=峰值缓冲,整体上限=两者之和;pool_timeout(等连接的超时,默认 30s——耗尽时 500 的根源);pool_recycle 要小于数据库/中间件的空闲断连时间(MySQL wait_timeout 常见 8h,云上代理更短);pool_pre_ping 有轻微开销但换稳定性(断连自动重试)。\n3) 异步陷阱:①事务里 await LLM 调用——连接被独占整个 LLM 时长,并发一高池耗尽;正确姿势:先读库→释放连接→调 LLM→再开短事务写结果(状态机拆分);②懒加载关系(async 下 lazy load 报错,用 selectinload/joinedload 显式加载);③并发用同一 session(一个 session 同时跑两个查询)——每任务独立会话(AG-017 并发编排时尤其注意)。\n4) 与迁移的配合:alembic 管理schema版本,迁移与代码同版本发布(EN-005 的可回滚迁移:先加列后删列)。\n5) 监控:池耗尽(pool_timeout 异常)与慢查询是两大告警源;池利用率=active/total 进大盘(EN-002)。",
+  "example": "```python\nengine = create_async_engine(\n    DATABASE_URL,\n    pool_size=10, max_overflow=20,\n    pool_recycle=1800, pool_pre_ping=True, pool_timeout=15)\nSessionLocal = async_sessionmaker(engine, expire_on_commit=False)\n\n# 错误示范:事务里调 LLM(连接占 30s)\n# async with session.begin():\n#     order = await get_order(...)\n#     text = await call_llm(order)        # ← 连接被占 30 秒!\n\n# 正确:拆开——读(短事务)→调 LLM(无连接)→写(短事务)\n```",
+  "interview": "口述版:『异步 SQLAlchemy 三条纪律:会话每请求一个(yield 依赖管理生命周期,不全局共享);连接池四参数(pool_size/max_overflow/recycle 防断连/pre_ping 探活);事务里绝不放慢操作——LLM 调用拆出事务,先读后调再写,连接占用毫秒级。异步特有的坑:懒加载关系要显式 eager load、并发任务不能共享会话。监控盯池耗尽与慢查询两个告警源。』追问展开:expire_on_commit 的取舍、pool_timeout 耗尽的表象、读写分离。",
+  "followups": [
+   {
+    "q": "expire_on_commit=False 是什么取舍?",
+    "a": "commit 后 ORM 对象属性是否过期(下次访问触发新查询)。异步下过期触发隐式 IO(坏);置 False 后 commit 即可用对象属性——代价是 commit 后数据库侧的变化不会自动反映(要重新查询)。API 场景默认 False+按需重查。"
+   },
+   {
+    "q": "pool_timeout 耗尽在用户侧是什么表象?",
+    "a": "大量请求等 15~30s 后 500/超时,表现为『整站数据库相关接口同时变慢再雪崩』——通常是慢查询占住连接或事务里做慢操作导致。排查:看数据库侧 active 连接与长事务(show processlist / pg_stat_activity),定位占住连接的语句;代码侧找『事务里的慢操作』(十有八九是外部调用进了事务)。"
+   },
+   {
+    "q": "读写分离怎么落?",
+    "a": "引擎分主从:写走主库引擎,读走从库引擎(两个 session 工厂);注意复制延迟——写后立读(如创建订单后马上展示)要强制走主库(session 粘性或路由标记)。RAG 场景常见误区:向量检索走从库但文档刚更新,检索到旧数据——与 RG-014 的版本问题叠加。"
+   }
+  ],
+  "pitfalls": [
+   "事务里调用 LLM/外部 API,连接占住数秒到数十秒,池耗尽雪崩。",
+   "全局共享一个 session,并发请求互相污染事务。",
+   "pool_recycle 大于数据库空闲断连时间,拿到死连接报错(pre_ping 没开)。",
+   "async 下隐式懒加载,运行时 MissingGreenlet 报错。"
+  ],
+  "check": {
+   "q": "接口偶发『TimeoutError: QueuePool limit』。最可能的三个原因与排查顺序?",
+   "a": "①事务里做慢操作(LLM/外部调用)——查代码里 session.begin 范围内有无 await 外部调用;②慢查询占住连接——数据库侧看长事务与慢 SQL;③池容量不足(流量增长后 pool_size+max_overflow 偏小)——对比池利用率监控与流量曲线。顺序:先代码审查(最常见),再看数据库侧,最后调池——调池是最后手段,池大了只是把问题往后推。",
+   "explain": "检验点:池耗尽的第一怀疑对象是『连接被占太久』而不是『池太小』。"
+  },
+  "related": [
+   "PY-003",
+   "PY-015",
+   "EN-002",
+   "AG-017"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "SQLAlchemy 官方文档(async/连接池)",
+    "url": "https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "纪律与陷阱为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "SQLAlchemy 具体参数以官方文档为准;事务纪律为独立整理。"
+  }
+ },
+ {
+  "id": "PY-017",
+  "topic": "python-backend",
+  "type": "concept",
+  "difficulty": "basic",
+  "title": "Redis 在 AI 后端里最常用的五种用法是什么?各自要注意什么?",
+  "tags": [
+   "Redis",
+   "缓存",
+   "AI 后端"
+  ],
+  "prerequisites": [
+   "PY-003"
+  ],
+  "answer": "五种常用用法:①会话热窗口缓存(多轮对话最近 N 条,LP-007——TTL+可从 DB 重建);②分布式锁(任务去重/并发互斥——必须带过期时间与持有者标识,防死锁与误删);③限流计数器(按用户/租户的 RPM 令牌桶——原子操作 INCR+EXPIRE 或 Lua);④缓存旁路(cache-aside,热点检索结果/嵌入——先查缓存未命中回源);⑤任务队列(轻量批量任务,LP-012)。共同注意:Redis 是易失缓存不是真相源(一切可从源重建,EN-004)、大 key 与热 key 治理、键名规范与 TTL 纪律(不给默认永久的 key)。",
+  "plain": "Redis 像『办公室的白板+取号机+公告栏』:白板记最近聊到哪(会话缓存,擦了能重写);取号机保证不重号(分布式锁);门口计数器限制人流(限流);常用资料贴墙上免得每次翻档案(缓存旁路);待办夹子放轻量任务(队列)。铁律:白板上的东西丢了不算事故(都能从档案重建)——如果你发现『白板丢了就出大事』,说明你把 Redis 当档案柜用了,这是架构错误。比喻局限:Redis 的原子操作(Lua/事务)是分布式场景的核心价值,白板比喻没体现。",
+  "deep": "1) 会话缓存(LP-007 详述):key=chat:{session_id},List 或 String(JSON),TTL 按业务(1~7 天);未命中回源 DB 并回填(缓存旁路模式);写路径先 DB 后 Redis。\n2) 分布式锁:setnx+过期+持有者标识(set lock:key value NX EX 30);释放用 Lua 校验持有者(防删他人的锁);看门狗续期(长任务锁过期前续);使用判据:能用数据库唯一约束/幂等键解决就不要锁(锁是最后的手段,AG-003 的幂等优先)。\n3) 限流:固定窗口(INCR key+EXPIRE,简单但有边界突刺)vs 滑动窗口(Lua/ZSET)vs 令牌桶;按维度分 key(user:{id}:rpm);分布式限流的精度与性能权衡;Redis 不可用时的降级策略(放行或拒绝,业务定)。\n4) 缓存旁路:读:缓存→未命中→DB→写缓存(带 TTL);写:更新 DB→失效缓存(不是更新缓存,避免并发写脏);穿透(查不存在的 key→空值缓存/布隆过滤器)、击穿(热 key 过期→互斥重建/逻辑过期)、雪崩(同时过期→TTL 加抖动)——三件套是缓存岗必背。\n5) 任务队列:LP-012 的轻量方案(数据库轮询)不够时用 Redis List/Stream;注意消息确认与重试语义(至少一次→消费端幂等,AG-003);Redis Stream 的消费组是轻量队列的甜点。\n6) 运维纪律:键名规范(业务:对象:ID,可检索可清理)、TTL 全覆盖(默认永久的 key 是事故源)、大 key 拆分(一个 key 几 MB 会阻塞单线程 Redis)、热 key(本地缓存+分片)、内存上限与淘汰策略(volatile-lru 等按场景)、持久化定位(RDB/AOF 只为重启加速,不为可靠性——可靠数据放 DB)。",
+  "example": "```python\n# 限流(固定窗口,示意)\nasync def allow(user_id, limit=100, window=60):\n    key = f\"rl:{user_id}:{int(time.time()//window)}\"\n    n = await redis.incr(key)\n    if n == 1:\n        await redis.expire(key, window)\n    return n <= limit\n\n# 分布式锁(Lua 校验持有者)\n# lock:task:{id} = holder_uuid, EX 30\n# 释放:if redis.get(key)==holder then del(key)  (Lua 原子)\n```",
+  "interview": "口述版:『Redis 五用:会话热窗口、分布式锁、限流计数、缓存旁路、轻量队列。每用都有纪律:缓存三防(穿透/击穿/雪崩)、锁要 setnx+过期+持有者校验且优先考虑幂等替代、限流按维度分 key。总铁律两条:Redis 是易失缓存不是真相源(可重建);TTL 全覆盖+键名规范——默认永久的 key 和几 MB 的大 key 都是事故源。』追问展开:三防的具体实现、锁与幂等的取舍、Redis 挂了的降级。",
+  "followups": [
+   {
+    "q": "缓存穿透、击穿、雪崩分别怎么解?",
+    "a": "穿透(查不存在的数据,每次都打到 DB):空值缓存(短 TTL)+布隆过滤器(海量 key 场景);击穿(热 key 过期瞬间并发回源):互斥重建(锁,单线程重建)或逻辑过期(物理不过期,值里带过期时间异步刷新);雪崩(大量 key 同时过期):TTL 加随机抖动+多级缓存。三者共同根源:缓存与 DB 的联动设计缺失。"
+   },
+   {
+    "q": "什么时候用分布式锁,什么时候用幂等设计?",
+    "a": "优先幂等:任务带唯一键(AG-003),重复执行被数据库唯一约束/条件更新挡住——无锁、无死锁风险、天然分布式。锁用于『必须互斥执行且幂等难以表达』的场景(如全局配额扣减的复杂逻辑)。用了锁就要处理三件事:过期续期、持有者校验、Redis 不可用时策略——成本高,能用幂等就别用锁。"
+   },
+   {
+    "q": "Redis 不可用时系统怎么表现?",
+    "a": "设计原则:降级而非瘫痪——缓存未命中回源 DB(多扛点延迟);限流降级为本地限流(单机近似)或放行+告警(业务定,宁过度限流防打爆上游);锁失效时任务可能重复执行(靠幂等兜底)。如果任何一项『Redis 挂了就真挂了』,说明把易失存储当成了依赖源(EN-004 的真相源原则)。"
+   }
+  ],
+  "pitfalls": [
+   "把会话真相源放 Redis 无 DB 回源,Redis 重启用户全下线。",
+   "锁不带过期时间,进程崩溃后死锁(其他实例永远拿不到)。",
+   "TTL 不加抖动,大批 key 同时过期,DB 瞬间被打雪崩。",
+   "一个 key 存几 MB 大 JSON,单线程 Redis 被阻塞,全实例延迟飙升。"
+  ],
+  "check": {
+   "q": "缓存旁路模式里,『写操作时更新缓存』和『写操作时删除缓存』,哪种更对?为什么?",
+   "a": "删除(失效)更对。更新缓存有并发写脏问题:两个写请求并发,各自的『更新缓存』顺序可能与 DB 提交顺序不一致,缓存里留下旧值(脏到下次 TTL);删除则让下次读触发回源,读到的是 DB 最新值。代价是多一次回源读——用一致性换正确性,是 cache-aside 的标准选择。极端并发下的『删后又被旧值回填』问题,用延迟双删/订阅 binlog 失效等进阶手段。",
+   "explain": "检验点:cache-aside 的『失效而非更新』原则及其并发正确性理由。"
+  },
+  "related": [
+   "PY-003",
+   "LP-007",
+   "LP-012",
+   "EN-004"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Redis 官方文档(数据结构与模式)",
+    "url": "https://redis.io/docs/latest/",
+    "kind": "official-docs",
+    "note": "命令语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "五用法与纪律为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "用法分类为独立整理;Redis 具体语义以官方文档为准。"
+  }
+ },
+ {
+  "id": "PY-018",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "线上 Python 服务变慢,怎么做性能分析和热点定位?",
+  "tags": [
+   "性能分析",
+   "profiling",
+   "优化"
+  ],
+  "prerequisites": [
+   "PY-009",
+   "EN-006"
+  ],
+  "answer": "定位流程:①先量化——延迟分位(P95/P99)与资源监控(EN-002 的观测体系)确认慢在哪(CPU/IO/等待);②采样分析——py-spy 在线采样生产进程(无侵入,看火焰图找热点函数)或 cProfile 跑基准用例;③分层定位——CPU 热点(纯计算:正则回溯、循环内重复计算、序列化)、IO 等待(数据库慢查询、外部 API、连接池耗尽)、内存(GC 压力、大对象、泄漏 tracemalloc);④验证——优化后同基准复测,警惕『优化了不痛的地方』。LLM 应用特有热点:JSON 大对象序列化、tokenizer 调用、正则清洗、重复的提示词组装。",
+  "plain": "性能定位像体检:先看报告哪项异常(监控分位),再做专项检查(py-spy 采样像 CT 扫描,无创看全身热点),而不是凭感觉吃保健品(盲目优化)。最常见的误诊:『感觉数据库慢』结果热点在 JSON 序列化;『狂加机器』结果是一个正则回溯灾难(一行代码的事)。比喻局限:生产环境的采样要在低峰做并控制采样时长,体检可没有『影响别人』的问题。",
+  "deep": "1) 工具矩阵:\n   - py-spy:生产在线采样(py-spy dump 看当前卡点/py-spy record 火焰图),无侵入——线上首选;\n   - cProfile/profile:本地基准用例的函数级统计(确定性,可复现);统计开销大不用于生产;\n   - tracemalloc/objgraph:内存泄漏(增长的对象是谁分配的);\n   - 数据库侧:慢查询日志+EXPLAIN(很多『Python 慢』其实是 SQL 慢——先看 DB 监控再归因);\n   - APM:持续化的生产 profiling(Pyroscope/持续剖析),趋势可见。\n2) 常见热点模式(背下来):\n   - 正则灾难性回溯(嵌套量词,一条消息让 CPU 100%——限流正则来源);修复:改写正则/限制输入长度;\n   - 循环内的重复计算(O(n²):每轮都 json.dumps/tokenizer 计数/查同一配置)——提到循环外/缓存;\n   - 序列化大对象(json.dumps 10MB 响应)——流式/分页/字段精简;\n   - 同步 IO 混入 async(time.sleep/requests 阻塞事件循环,PY-003——表现为整个服务周期性卡顿而非单点慢);\n   - GC 压力:大量临时对象(每请求构建大 list/dict),gc 调优或对象复用;\n   - 锁竞争:全局锁(限流器/缓存)高频争抢——分片。\n3) 流程纪律:一次只改一个变量;基准可复现(固定输入);优化前后同口径对比;小优化不污染代码可读性(先热后冷)。\n4) LLM 应用特有:JSON/提示词组装的重复计算(模板渲染缓存)、tokenizer 调用缓存(同文本重算)、检索结果的序列化(大 JSON)——与 RG-018/EN-006 的成本延迟优化衔接。",
+  "example": "```bash\n# 线上无侵入采样\npy-spy dump --pid 12345              # 当前每个线程卡在哪\npy-spy record --pid 12345 -d 60 -o flame.svg   # 60 秒火焰图\n\n# 本地基准\ncProfile -o prof.out bench.py\nsnakeviz prof.out                    # 可视化\n```",
+  "interview": "口述版:『流程三步:监控分位定位慢的类型(CPU/IO/内存)→py-spy 在线采样看火焰图(生产无侵入首选,cProfile 本地基准)→按热点模式对号入座修。我背五个常见热点:正则回溯、循环内重复计算、大 JSON 序列化、async 里混同步阻塞、GC 压力。纪律:一次改一个变量、同基准复测——以及先看数据库监控再归因 Python,很多『Python 慢』是 SQL 慢。』追问展开:py-spy 原理(采样 vs 插桩)、异步服务的 profiling、内存泄漏排查。",
+  "followups": [
+   {
+    "q": "py-spy 为什么能无侵入采样?",
+    "a": "它读取目标进程的内存栈(采样式而非插桩式),不需要改代码或重启——开销极低(采样间隔),生产可用。对比 cProfile 是插桩(记录每次函数调用,开销大、改变时序)——所以生产用 py-spy,本地确定性分析用 cProfile。"
+   },
+   {
+    "q": "async 服务的性能分析有什么特殊?",
+    "a": "协程共享一个线程,传统按线程看的 profiler 会混在一起——要看支持 asyncio 的分析(py-spy 支持 greenlet/asyncio 栈)或按任务聚合的 APM。另一个视角:『等待分析』——事件循环被谁阻塞(同步调用混入),py-spy dump 常见抓到卡在 requests/time.sleep 的现场。"
+   },
+   {
+    "q": "怎么确认是内存泄漏而不是正常增长?",
+    "a": "tracemalloc 快照对比(两个时间点的分配差异,看哪类对象持续增长且无回收);objgraph 找引用链(谁持有它);常见泄漏源:全局容器只增不减(缓存无上限)、闭包/回调持有大对象、会话未清理。区分缓存(有 TTL/上限)与泄漏(无界增长)。"
+   }
+  ],
+  "pitfalls": [
+   "不测量就优化,凭感觉重构(优化了不热点)。",
+   "生产环境直接跑 cProfile,开销大影响线上。",
+   "只看应用侧,忽略数据库/网络层的慢(归因错层)。",
+   "优化后不建立基准复测,无法证明改进也无法防回退。"
+  ],
+  "check": {
+   "q": "服务 P99 偶发 5 秒(平时 200ms),CPU 平常,监控无异常。py-spy dump 该看什么?",
+   "a": "偶发长尾+CPU 不高→大概率是『等待』:dump 抓现场看卡在哪——若卡在 connection pool acquire(池耗尽,PY-016)、卡在某个同步调用(事件循环被阻塞,PY-003)、或卡在外部调用无超时(PY-008)。dump 要多抓几次(偶发问题采样)或在慢请求发生时抓。CPU 型慢看火焰图,等待型慢看 dump 现场——先分型再下钻。",
+   "explain": "检验点:『偶发长尾+CPU 正常』→等待型问题→dump 抓现场的定位路径。"
+  },
+  "related": [
+   "PY-009",
+   "EN-006",
+   "PY-016",
+   "PY-003"
+  ],
+  "doc_refs": [
+   "doc-python-1",
+   "doc-eng-1"
+  ],
+  "sources": [
+   {
+    "name": "py-spy 文档",
+    "url": "https://github.com/benfred/py-spy",
+    "kind": "official-docs",
+    "note": "工具用法参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "定位流程与热点模式为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "工具用法以官方文档为准;流程与模式为独立整理。"
+  }
+ },
+ {
+  "id": "PY-019",
+  "topic": "python-backend",
+  "type": "comparison",
+  "difficulty": "intermediate",
+  "title": "uvicorn/gunicorn 怎么部署 FastAPI?worker 数怎么定?",
+  "tags": [
+   "部署",
+   "uvicorn",
+   "gunicorn"
+  ],
+  "prerequisites": [
+   "PY-015",
+   "PY-003"
+  ],
+  "answer": "部署模式:uvicorn 是 ASGI 服务器(单进程事件循环);生产用 gunicorn 作进程管理器+uvicorn worker(gunicorn -k uvicorn.workers.UvicornWorker),或 uvicorn 多进程模式——获得多进程+优雅重启+进程守护。worker 数经验公式:CPU 密集≈核数;I/O 密集(async 服务)可 2×核数甚至更高(每个 worker 是单线程事件循环,靠并发不靠线程),但受内存(每 worker 一份应用+连接池,PY-015)与下游容量约束。必须配置:优雅停机(timeout_graceful_shutdown,流式请求长尾)、超时与 keepalive、健康检查端点;多实例水平扩展交给 K8s/负载均衡,单机 worker 数不是唯一扩展手段。",
+  "plain": "部署像开分店:uvicorn 是一家店(一个事件循环);gunicorn 是『连锁经营管理公司』——帮你开 N 家分店、一家着火自动重开(进程守护)、装修升级不歇业(优雅重启)。分店数不是越多越好:每家店都要本钱(内存与连接池),而且供货商(数据库/API 配额)是共享的——分店多了供货跟不上,PY-015 的连接池数学要重算。比喻局限:async worker 内部还能并发处理大量请求(单店也能同时服务很多客人),这点和传统『一店一客』的 WSGI 不同。",
+  "deep": "1) 为什么需要多 worker:Python 单进程事件循环有 CPU 上限(一个核),多 worker 利用多核;worker 崩溃时 gunicorn 拉起新的(进程守护);滚动重启时逐个 worker 重启(平滑)。\n2) worker 数决策:\n   - 起点公式:worker = 核数(纯 CPU)~ 2×核数+1(传统 WSGI 同步);async ASGI 的瓶颈常在外部依赖(数据库/上游 API)——worker 数增加不会突破下游容量,反而乘大连接池(PY-016 的数学:池×worker≤DB 上限);\n   - 压测决定:逐步加 worker 看 P99 与下游指标,出现收益平台/下游饱和即停;\n   - 内存约束:每 worker 一份模型/缓存/连接池(PY-015),大内存应用(如载入本地嵌入模型)worker 数受内存硬限——这时应把重资源拆独立服务。\n3) 必配项:\n   - 优雅停机:timeout_graceful_shutdown(秒)要覆盖流式请求长尾(LP-005/PY-015);gunicorn 的 graceful_timeout;\n   - 超时:uvicorn 无请求超时默认——靠反向代理(nginx/网关)的读超时兜底,或应用内超时(LP-004);keepalive 与代理对齐;\n   - 进程健康:心跳/健康检查端点(EN-005 的探针);worker 泄漏检测(内存趋势,PY-018)配合定期重启(max_requests 类机制)作为兜底;\n   - 日志:access log 与应用日志分开,多 worker 写同一文件要轮转安全(logrotate copytruncate 或 stdout 收集)。\n4) 容器化:容器内通常 1 容器多 worker 或 1 worker 多副本(K8s 副本数管扩展)——二选一,别两层都放大多(资源超卖);CPU limit 与 worker 数对齐(CFS 配额下多 worker 争抢)。\n5) 与反向代理:nginx/网关在前(TLS/缓冲关闭 for 流式/LP-005、超时兜底、静态资源),应用专注业务;X-Accel-Buffering 关闭流式缓冲(PY-004)。",
+  "example": "```bash\n# 生产启动(gunicorn 管理 + uvicorn worker)\ngunicorn app.main:app \\\n  -k uvicorn.workers.UvicornWorker \\\n  -w 4 --timeout 120 --graceful-timeout 90 \\\n  --bind 0.0.0.0:8000\n\n# 或 uvicorn 原生多进程(简单场景)\nuvicorn app.main:app --workers 4 --timeout-graceful-shutdown 90\n```",
+  "interview": "口述版:『生产部署是 gunicorn 当进程管理器+uvicorn worker(守护/平滑重启/多核)。worker 数不是套公式——async 服务的瓶颈常在下游,worker 翻倍只会把连接池翻倍打爆数据库,要压测定,且受内存硬约束(重资源拆独立服务)。必配三项:优雅停机覆盖流式长尾、超时由代理兜底(uvicorn 默认无请求超时)、健康检查。容器里 worker 与 K8s 副本二选一扩展,别两层都放大。』追问展开:优雅停机参数与 K8s 配合、worker 泄漏兜底、流式与代理缓冲。",
+  "followups": [
+   {
+    "q": "async 服务 worker 数为什么不能无限加?",
+    "a": "三个约束:①下游容量——每 worker 的连接池×worker 数≤数据库 max_connections、上游 API 配额按进程分配(每 worker 独立配额计数,PY-015);②内存——每 worker 一份应用资源;③收益递减——CPU 满之前下游就饱和了。正确扩展路径:压测找到单 worker 最优并发→worker 数吃到 CPU→再往上水平加副本(EN-005 的容量规划)。"
+   },
+   {
+    "q": "gunicorn 的 graceful_timeout 和 uvicorn 的 timeout_graceful_shutdown 什么关系?",
+    "a": "两层超时:uvicorn 层管『停机后等在途请求多久』;gunicorn 层管『等 worker 退出多久,超时强杀』——gunicorn 的值应大于 uvicorn 的值(外层兜底内层)。流式长尾(几分钟的 SSE)会吃满 grace period——要么延长、要么设计好中断续传(LP-005),否则滚动更新必 502。"
+   },
+   {
+    "q": "worker 内存持续增长怎么办?",
+    "a": "先按 PY-018 排查泄漏(tracemalloc 定位);确认为缓慢泄漏且短期修不了,用兜底:gunicorn max_requests(处理 N 个请求后自动回收 worker,配合 jitter 防同时重启)——这是『止血』不是『治疗』,监控要标记重启事件避免误判为部署。"
+   }
+  ],
+  "pitfalls": [
+   "uvicorn 裸奔单进程上生产,多核用不上、进程无人守护。",
+   "worker 数照抄公式 2×核+1,把数据库连接打爆(PY-016 数学)。",
+   "没配优雅停机,每次发布在途请求 502。",
+   "uvicorn 默认无请求超时,慢请求无限占用,靠网关超时才发现。"
+  ],
+  "check": {
+   "q": "8 核机器、数据库 max_connections=200、每 worker 连接池 10+20 overflow、流式请求最长 3 分钟。worker 数上限与配置要点?",
+   "a": "数据库约束:(10+20)×worker ≤ 200×0.8(留余量)→ worker ≤ 5;内存与 CPU 再校验。配置:graceful timeout ≥ 180s(覆盖流式长尾)+K8s terminationGracePeriod 同步;代理关流式缓冲;健康检查+池利用率监控。若业务需要更多并发,正确方向是加实例副本(扩连接数预算)或拆服务,而不是硬加 worker。",
+   "explain": "检验点:worker 数由『下游约束+内存+长尾超时』联合决定,并把流式长尾纳入停机配置——多约束求解而非套公式。"
+  },
+  "related": [
+   "PY-015",
+   "PY-016",
+   "PY-003",
+   "EN-005"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Uvicorn / Gunicorn 官方文档(部署)",
+    "url": "https://www.uvicorn.org/deployment/",
+    "kind": "official-docs",
+    "note": "服务器配置参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "worker 决策与必配项为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "服务器参数以官方文档为准;决策框架为独立整理。"
+  }
+ },
+ {
+  "id": "PY-020",
+  "topic": "python-backend",
+  "type": "concept",
+  "difficulty": "basic",
+  "title": "Python 类型标注和 mypy 静态检查对 AI 后端项目有什么实际价值?",
+  "tags": [
+   "类型标注",
+   "mypy",
+   "工程化"
+  ],
+  "prerequisites": [
+   "PY-013"
+  ],
+  "answer": "实际价值四条:①把一类运行时错误提前到提交前(函数签名错、None 传播、字段拼写——mypy 在 CI 拦截);②重构信心(改函数签名,所有调用点立刻标红——大重构的安全网);③文档与 IDE(签名即文档,补全与跳转准确);④生态协同(Pydantic/FastAPI 的类型驱动、dataclass、泛型容器)。LLM 应用特别受益:消息结构、工具 schema、配置对象都是『结构化数据在系统间流动』——类型注解让这些结构在编译期对齐(mypy 检查出 messages 格式错误远比线上 400 便宜)。成本:渐进式采用(strict 从新模块开始)、Pydantic 与 mypy 的插件配合、动态构造(解包 LLM 输出)需要类型断言与收窄。",
+  "plain": "类型标注像施工图纸的尺寸标注:没有图纸也能盖(动态语言自由),但改一面墙时不知道牵连哪些房间(mypy 标红所有调用点)。对 LLM 应用特别值:你的系统里到处是『结构』(消息数组、工具定义、配置),模型返回的 JSON 与你的代码之间的『接口』全靠人脑记——类型系统把这些接口写成机器可查的契约,拼错字段在 CI 就红,而不是线上 400。比喻局限:mypy 不检查运行时数据(LLM 返回的实际 JSON),那仍要 Pydantic 运行时校验——静态与动态两道岗互补。",
+  "deep": "1) 类型价值分层:\n   - 拦截:None 传播(Optional 没检查——LLM 应用最常见崩溃源:resp.choices[0].message 可能为 None)、参数顺序/类型错、字段拼写;\n   - 重构:签名变更的调用点全标红——重构从『祈祷』变『跟着红线修』;\n   - 设计:类型即接口文档(消息结构 TypedDict/Pydantic 模型定义后,mypy 强制全链路一致)。\n2) LLM 应用的类型设计:消息结构用 TypedDict/Pydantic(roles/content 的形状);工具调用解析用 Pydantic 运行时校验(动态数据)+ mypy 静态保障(代码内部传递);泛型复用(统一的 Result[T] 信封,AG-014);Literal 类型替代字符串魔法值(角色名/状态机状态——拼错即红)。\n3) 渐进式采用策略:全库 strict 一次到位是灾难(存量报警淹死人);策略:mypy 现状基线(存量豁免清单)+ 新代码 strict + 豁免只减不增;CI 门禁(类型错误阻断合并,EN-005);pre-commit 快速反馈。\n4) 与动态数据的配合(LLM 场景特有):模型返回的 JSON 是运行时才知的——『静态类型+运行时校验』两道岗:mypy 保证代码内部一致,Pydantic 保证外部输入符合类型(AG-014/LP-003);类型断言(cast)与类型收窄(isinstance 检查)用在边界处,边界内享受类型保障。\n5) 局限与诚实:mypy 不能发现逻辑错误(算法写反)、不能校验运行时数据内容;过度精确的类型(泛型套娃)降低可读性——类型是工具不是目的,复杂度要有回报。",
+  "example": "```python\nclass ChatMessage(TypedDict):\n    role: Literal[\"system\", \"user\", \"assistant\"]\n    content: str\n\ndef build_messages(history: list[ChatMessage], new: str) -> list[ChatMessage]: ...\n\nresp = client.chat.completions.create(...)\ncontent = resp.choices[0].message.content   # mypy: 可能为 None → 强制处理\nif content is None:                          # 收窄后才安全使用\n    raise UpstreamError(\"empty content\")\n```",
+  "interview": "口述版:『类型标注的价值我把四条:运行时错误提前到 CI(None 传播/拼写/签名)、重构安全网(调用点全标红)、签名即文档、与 Pydantic/FastAPI 生态协同。LLM 应用特别受益的是结构化数据的全链路对齐——消息结构、工具 schema 用 Literal 和 TypedDict 定死。策略是渐进式:存量豁免只减不增,新代码 strict。诚实说边界:mypy 不查运行时数据内容——静态与 Pydantic 动态校验是两道互补的岗。』追问展开:渐进式采用实操、与 Pydantic 的配合、LLM 动态输出的类型处理。",
+  "followups": [
+   {
+    "q": "渐进式 mypy 怎么落地不翻车?",
+    "a": "三步:①基线:当前所有错误生成豁免清单(或用 mypy 的 baseline 方式);②门禁:CI 检查『错误数不得增加』——新代码必须干净,存量不动;③清理:改到哪清到哪,豁免清单只减不增(趋势指标)。避免一开始就全库 strict——几千个报警让人直接放弃类型检查。"
+   },
+   {
+    "q": "LLM 返回的动态 JSON 在类型系统里怎么处理?",
+    "a": "边界处两道岗:运行时 Pydantic 校验(external data → 类型化对象,失败抛业务异常重试,LP-003);类型化对象在代码内部流动时享受 mypy 静态保障。边界外(模型输出原文)保持 str/Any 并显式标注『未验证』——让类型系统帮你标记『哪里是已验证区域、哪里是荒野』,收窄函数(isinstance/校验)是跨界点。"
+   },
+   {
+    "q": "Literal 类型在 AI 后端有什么妙用?",
+    "a": "枚举值 everywhere:消息 role、Agent 状态机状态、任务类型、错误码——拼错即红、补全直达;配合 match 语句(Python 3.10+)穷尽检查(漏处理一个状态 mypy 报警)——状态机代码的完备性由类型系统保证(AG-005 的任务状态机落地)。"
+   }
+  ],
+  "pitfalls": [
+   "全库 mypy strict 一次到位,报警洪水后彻底放弃类型检查。",
+   "类型断言(cast)滥用,把『我说是对的就是对的』当类型安全。",
+   "只给 Pydantic 模型标类型,业务函数签名裸奔——类型价值损失大半。",
+   "认为有类型就不用运行时校验——静态类型不检查 LLM 实际返回的内容(PY-013 的闭环仍必需)。"
+  ],
+  "check": {
+   "q": "mypy 通过但线上仍然因为 messages 里混入了 dict 而崩溃。为什么静态检查没拦住?怎么补?",
+   "a": "mypy 只保证『代码内部声明的类型一致』——如果 messages 的来源是运行时构造(用户输入组装、外部 API 返回、LLM 输出解析),静态检查看不见运行时的真实数据。补法:边界处加运行时校验(入参用 Pydantic 模型收窄,messages 列表统一走 build_messages 这类类型化构造器,禁止裸 dict 拼装)——静态+动态两道岗各司其职,‘裸 dict 流动’是类型纪律的漏洞。",
+   "explain": "检验点:静态检查的边界(不查运行时数据)与两道岗互补的设计。"
+  },
+  "related": [
+   "PY-013",
+   "PY-004",
+   "AG-014",
+   "LP-003"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "mypy 官方文档",
+    "url": "https://mypy.readthedocs.io/",
+    "kind": "official-docs",
+    "note": "工具语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "价值分析与采用策略为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "工具语义以官方文档为准;价值分析为独立整理。"
+  }
+ }
 ]

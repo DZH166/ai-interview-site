@@ -18,8 +18,10 @@ const BrowseView = (() => {
       if (f.topic && q.topic !== f.topic) return false;
       if (f.diff && q.difficulty !== f.diff) return false;
       if (f.type && q.type !== f.type) return false;
+      const st = (Store.rec(q.id).status || '');
+      if (f.status === '__none') { if (st !== '') return false; }
+      else if (f.status && st !== f.status) return false;
       const r = Store.rec(q.id);
-      if (f.status && (r.status || '') !== f.status) return false;
       if (f.fav && !r.fav) return false;
       if (kw) {
         const hay = (q.title + ' ' + q.answer + ' ' + (q.tags || []).join(' ') + ' ' + q.id).toLowerCase();
@@ -31,6 +33,18 @@ const BrowseView = (() => {
 
   function render(root) {
     const f = filters();
+    /* 消费路由参数:首页专题导航链接形如 #/browse?t=python-backend */
+    const routeQuery = parseHash().query;
+    if (routeQuery.t && routeQuery.t !== f.topic) {
+      f.topic = routeQuery.t;
+      saveFilters(f);
+      history.replaceState(null, '', '#/browse'); /* 清理参数,避免刷新重复应用 */
+    }
+    if (routeQuery.qid && Data.question(routeQuery.qid)) {
+      f.qid = routeQuery.qid;
+      saveFilters(f);
+      history.replaceState(null, '', '#/browse');
+    }
     const ids = apply(f);
     NavCtx.set(ids);
     const topics = (window.APP_DATA.topics || []);
@@ -47,6 +61,7 @@ const BrowseView = (() => {
           ${Object.entries(Data.TYPES).map(([k, v]) => `<option value="${k}" ${f.type === k ? 'selected' : ''}>${v}</option>`).join('')}
         </select>
         <select id="f-status" class="input"><option value="">全部状态</option>
+          <option value="__none" ${f.status === '__none' ? 'selected' : ''}>未练习</option>
           ${Store.STATUS.filter(s => s.id).map(s => `<option value="${s.id}" ${f.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
         </select>
         <label class="chk"><input type="checkbox" id="f-fav" ${f.fav ? 'checked' : ''}> 只看收藏</label>
@@ -139,7 +154,7 @@ const BrowseView = (() => {
       const r = Store.rec(qid);
       const ck = batchMode ? `<input type="checkbox" class="q-ck" data-qid="${qid}">` : '';
       return `
-        <div class="q-item ${f.qid === qid ? 'active' : ''}" data-qid="${qid}">
+        <div class="q-item ${f.qid === qid ? 'active' : ''}" data-qid="${qid}" role="button" tabindex="0" aria-label="打开题目 ${esc(q.title)}">
           ${ck}<div class="q-item-body">
           <div class="q-item-title">${esc(q.title)}</div>
           <div class="q-item-meta">
@@ -155,6 +170,11 @@ const BrowseView = (() => {
     $$('.q-item', list).forEach(item => {
       item.addEventListener('click', () => {
         select(root, filters(), item.dataset.qid);
+      });
+      item.addEventListener('keydown', e => {
+        /* 复选框等交互子元素不拦截 */
+        if (e.target !== item) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(root, filters(), item.dataset.qid); }
       });
     });
   }
@@ -204,6 +224,16 @@ const BrowseView = (() => {
         $('.q-sec-arrow', sec).textContent = sec.classList.contains('open') ? '−' : '+';
       });
     });
+    /* 理解检查:浏览详情与完整学习页共用同一交互 */
+    $$('#q-detail [data-reveal-check]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sec = btn.closest('.q-sec');
+        const box = sec && $('.chk-a', sec);
+        if (!box) return;
+        box.classList.toggle('hidden');
+        btn.textContent = box.classList.contains('hidden') ? '查看答案' : '收起答案';
+      });
+    });
     $$('#q-detail [data-status]', root).forEach(b => {
       b.addEventListener('click', () => {
         Store.setStatus(DetailQid, b.dataset.status);
@@ -229,6 +259,65 @@ const BrowseView = (() => {
 /* ---------- 学习模式 ---------- */
 const StudyView = (() => {
   let currentQid = '';
+  let activeKeyHandler = null;
+
+  /* 快捷键只在焦点不在任何交互控件上时生效 */
+  function isInteractiveTarget(t) {
+    return !!(t && t.closest && t.closest('button, a, input, textarea, select, [contenteditable="true"], summary'));
+  }
+  function setKeyHandler(handler) {
+    if (activeKeyHandler) document.removeEventListener('keydown', activeKeyHandler);
+    activeKeyHandler = handler;
+    if (handler) document.addEventListener('keydown', handler);
+  }
+  /* 路由离开学习页时清理全局监听(App.route 调用) */
+  function cleanup() { setKeyHandler(null); }
+
+  /* pagehide 兜底:输入框里尚未过防抖的笔记立即写入记录(防「打完字马上关页」丢失) */
+  function flushNote() {
+    const ta = $('#note-area');
+    if (!ta || !currentQid) return;
+    if ((Store.rec(currentQid).note || '') !== ta.value) {
+      Store.setNote(currentQid, ta.value);
+      Store.saveNow();
+      Search.build(currentCtx()); /* 绕过了防抖路径,索引需手动重建 */
+    }
+  }
+
+  /* 搜索/锚点定位:展开对应区块并滚动(检查题同时揭示答案;笔记滚动到输入框)。
+     通过搜索明确打开命中内容属于有意揭示,与默认折叠不冲突。 */
+  function revealAnchor(root, anchor) {
+    if (!anchor) return;
+    setTimeout(() => {
+      if (anchor === 'note') {
+        const nb = $('.q-note-box', root);
+        if (nb) { scrollFlash(root, nb); }
+        return;
+      }
+      /* 'top'(题名/标签命中)无需定位,页面默认就在顶部 */
+      if (anchor === 'top') return;
+      const sec = root.querySelector(`.q-sec[data-sec="${CSS.escape(anchor)}"]`);
+      if (!sec) return;
+      sec.classList.add('open');
+      const arrow = $('.q-sec-arrow', sec);
+      if (arrow) arrow.textContent = '−';
+      if (anchor === 'check') {
+        const a = $('.chk-a', sec);
+        const btn = $('[data-reveal-check]', sec);
+        if (a) a.classList.remove('hidden');
+        if (btn) btn.textContent = '收起答案';
+      }
+      scrollFlash(root, sec);
+    }, 80);
+  }
+
+  function scrollFlash(root, el) {
+    /* instant:绕过 CSS scroll-behavior:smooth,保证定位后位置读取与高亮即时生效 */
+    const y = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 80);
+    window.scrollTo({ top: y, behavior: 'instant' });
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1600);
+  }
 
   function checkHtml(q) {
     const c = q.check || {};
@@ -239,7 +328,7 @@ const StudyView = (() => {
       ${c.explain ? `<div class="chk-explain">检验点:${QRender.mdHtml(c.explain)}</div>` : ''}</div>`;
   }
 
-  function render(root, qid) {
+  function render(root, qid, anchor) {
     const q = Data.question(qid);
     if (!q) { root.innerHTML = '<div class="empty">未找到题目:' + esc(qid) + '</div>'; return; }
     currentQid = qid;
@@ -277,6 +366,7 @@ const StudyView = (() => {
         </div>
       </div>`;
     wire(root, qid);
+    revealAnchor(root, anchor);
   }
 
   function wire(root, qid) {
@@ -317,17 +407,15 @@ const StudyView = (() => {
     $$('[data-nav]', root).forEach(b => {
       b.addEventListener('click', () => { if (b.dataset.nav) go('#/study/' + b.dataset.nav); });
     });
-    /* 键盘快捷键:← 上一题 → 下一题 */
-    root._keyHandler = (e) => {
-      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    /* 键盘快捷键:← 上一题 → 下一题,空格展开全部。
+       焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。 */
+    setKeyHandler((e) => {
+      if (isInteractiveTarget(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'ArrowLeft') { const b = $('[data-nav]', root); if (b && !b.disabled) b.click(); }
       if (e.key === 'ArrowRight') { const btns = $$('[data-nav]', root); if (btns.length > 1 && !btns[1].disabled) btns[1].click(); }
-      if (e.key === ' ') { e.preventDefault(); $('#expand-all', root) ? $('#expand-all', root).click() : 0; }
-    };
-    document.addEventListener('keydown', root._keyHandler);
-    // 清理旧 handler
-    if (root._oldKeyHandler) document.removeEventListener('keydown', root._oldKeyHandler);
-    root._oldKeyHandler = root._keyHandler;
+      if (e.key === ' ') { e.preventDefault(); const b = $('#expand-all', root); if (b) b.click(); }
+    });
   }
 
   function currentCtx() {
@@ -339,27 +427,82 @@ const StudyView = (() => {
     };
   }
 
-  return { render, checkHtml, currentCtx };
+  return { render, checkHtml, currentCtx, cleanup, flushNote };
 })();
 
-/* ---------- 自测与模拟面试 ---------- */
+/* ---------- 自测与模拟面试 ----------
+   会话状态(含未写完的回答草稿)实时落盘 Store.data.mock.draft:
+   切题/对照/复盘/翻页即保存,刷新或离开后可从配置页恢复继续;完成或放弃才清除。 */
 const MockView = (() => {
-  let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}} */
+  let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}, directed, label} */
+
+  function draftLoad() { return (Store.data.mock && Store.data.mock.draft) || null; }
+  function draftSave() {
+    if (!state) return;
+    Store.data.mock.draft = {
+      config: state.config, items: state.items, idx: state.idx,
+      answers: state.answers, directed: !!state.directed,
+      label: state.label || '', savedAt: Date.now()
+    };
+    Store.saveNow(); /* 同步写,刷新/关闭不丢草稿 */
+  }
+  function draftClear() {
+    if (Store.data.mock && Store.data.mock.draft) { Store.data.mock.draft = null; Store.save(); }
+  }
+
+  /* pagehide 兜底:输入框里尚未过防抖的自答回答立即写入草稿 */
+  function flushDraft() {
+    const ta = $('#m-self');
+    if (!ta || !state) return;
+    const q = Data.question(state.items[state.idx].qid || state.items[state.idx].id);
+    if (!q) return;
+    const ans = state.answers[q.id] || {};
+    if ((ans.self || '') !== ta.value) {
+      state.answers[q.id] = Object.assign(ans, { self: ta.value });
+      draftSave();
+    }
+  }
 
   function render(root, parts) {
-    if (parts && parts[0] === 'run' && state) { renderRun(root); return; }
+    if (parts && parts[0] === 'run') {
+      if (!state) {
+        const d = draftLoad();
+        if (d && Array.isArray(d.items) && d.items.length) {
+          state = {
+            config: d.config || { topics: [], diffs: [], count: d.items.length },
+            items: d.items, idx: Math.min(d.idx || 0, d.items.length - 1),
+            answers: d.answers || {}, directed: !!d.directed, label: d.label || ''
+          };
+        }
+      }
+      if (state) { renderRun(root); return; }
+      renderConfig(root); return;
+    }
     if (parts && parts[0] === 'done' && state) { renderDone(root); return; }
     renderConfig(root);
   }
 
   function renderConfig(root) {
+    const draft = draftLoad();
+    const hasDraft = draft && Array.isArray(draft.items) && draft.items.length;
     const topics = (window.APP_DATA.topics || []);
     const counts = {};
     Data.allQuestions().forEach(q => { counts[q.topic] = (counts[q.topic] || 0) + 1; });
     root.innerHTML = `
+      ${hasDraft ? `
+      <div class="card mock-resume" style="margin-bottom:14px;border-color:var(--warn)">
+        <b>⏸ 上次未完成的${draft.directed ? esc(draft.label || '定向复习') : '自测'}</b>
+        <span class="muted" style="margin-left:8px;font-size:13px">
+          共 ${draft.items.length} 题 · 进行到第 ${Math.min((draft.idx || 0) + 1, draft.items.length)} 题 · 草稿保存于 ${fmtTime(draft.savedAt)}
+        </span>
+        <div style="margin-top:8px">
+          <button class="btn btn-primary btn-small" id="m-resume">继续上次${draft.directed ? '复习' : '自测'}</button>
+          <button class="btn btn-small" id="m-discard">放弃草稿</button>
+        </div>
+      </div>` : ''}
       <div class="card mock-config">
         <h2>自测 / 模拟面试</h2>
-        <p class="muted">参考答案默认隐藏:先在输入框写下你的回答,再对照参考要点并自我复盘。抽题会优先选择你最近没有练过的题。</p>
+        <p class="muted">参考答案默认隐藏:先在输入框写下你的回答,再对照参考要点并自我复盘。抽题会优先选择你最近没有练过的题。未完成的轮次会自动保存草稿,刷新后可继续。</p>
         <div class="form-row">
           <label>专题(可多选)</label>
           <div class="chk-group" id="m-topics">
@@ -381,15 +524,41 @@ const MockView = (() => {
         </div>
         <button class="btn btn-primary" id="m-start">开始练习</button>
       </div>`;
+    if (hasDraft) {
+      $('#m-resume', root).addEventListener('click', () => go('#/mock/run'));
+      $('#m-discard', root).addEventListener('click', () => {
+        draftClear();
+        state = null;
+        toast('已放弃未完成的草稿');
+        renderConfig(root);
+      });
+    }
     $('#m-start').addEventListener('click', () => {
       const selTopics = $$('#m-topics input:checked').map(i => i.value);
       const selDiffs = $$('#m-diffs input:checked').map(i => i.value);
       const count = parseInt($('#m-count').value, 10);
       const pool = Data.allQuestions().filter(q => selTopics.includes(q.topic) && selDiffs.includes(q.difficulty));
       if (!pool.length) { toast('没有符合条件的题目,请放宽筛选', 'err'); return; }
-      state = { config: { topics: selTopics, diffs: selDiffs, count }, items: sample(pool, Math.min(count, pool.length)), idx: 0, answers: {} };
+      state = {
+        config: { topics: selTopics, diffs: selDiffs, count },
+        items: sample(pool, Math.min(count, pool.length)).map(q => ({ qid: q.id })),
+        idx: 0, answers: {}, directed: false, label: ''
+      };
+      draftSave();
       go('#/mock/run');
     });
+  }
+
+  /* 定向复习入口(今日复习/错题本重做等):只包含给定队列的普通自测会话 */
+  function startDirected(qids, label) {
+    if (!qids || !qids.length) { toast('队列为空', 'err'); return; }
+    state = {
+      config: { topics: [], diffs: [], count: qids.length, label: label || '定向复习' },
+      items: qids.map(id => ({ qid: id })),
+      idx: 0, answers: {}, directed: true, label: label || '定向复习'
+    };
+    draftSave();
+    go('#/mock/run');
   }
 
   function sample(pool, n) {
@@ -402,12 +571,13 @@ const MockView = (() => {
 
   function renderRun(root) {
     const q = Data.question(state.items[state.idx].qid || state.items[state.idx].id);
+    if (!q) { toast('题目不存在,跳过', 'err'); state.idx++; if (state.idx >= state.items.length) finish(root); else renderRun(root); return; }
     const qid = q.id;
     const ans = state.answers[qid] || { self: '', revealed: false, mark: '' };
     root.innerHTML = `
       <div class="card mock-run">
         <div class="mock-progress">
-          <span>第 ${state.idx + 1} / ${state.items.length} 题</span>
+          <span>第 ${state.idx + 1} / ${state.items.length} 题${state.directed ? ` · ${esc(state.label || '定向复习')}` : ''}</span>
           <div class="progress"><div class="progress-in" style="width:${(state.idx / state.items.length) * 100}%"></div></div>
           <button class="btn btn-small" id="m-quit">结束本轮</button>
         </div>
@@ -443,32 +613,35 @@ const MockView = (() => {
     const selfBox = $('#m-self');
     selfBox.addEventListener('input', debounce(() => {
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { self: selfBox.value });
+      draftSave(); /* 草稿即写,刷新不丢 */
     }, 200));
 
     const revealBtn = $('#m-reveal');
     if (revealBtn) revealBtn.addEventListener('click', () => {
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { revealed: true, self: selfBox.value });
       Store.markPracticed(qid, 'mock');
+      draftSave();
       renderRun(root);
     });
     $$('[data-mark]', root).forEach(b => b.addEventListener('click', () => {
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { mark: b.dataset.mark });
       Store.setStatus(qid, b.dataset.mark);
+      draftSave();
       renderRun(root);
     }));
     const prev = $('#m-prev');
-    if (prev) prev.addEventListener('click', () => { state.idx--; renderRun(root); });
+    if (prev) prev.addEventListener('click', () => { state.idx--; draftSave(); renderRun(root); });
     const next = $('#m-next');
-    if (next) next.addEventListener('click', () => { state.idx++; renderRun(root); });
+    if (next) next.addEventListener('click', () => { state.idx++; draftSave(); renderRun(root); });
     const finishBtn = $('#m-finish');
-    if (finishBtn) finishBtn.addEventListener('click', finish);
+    if (finishBtn) finishBtn.addEventListener('click', () => finish(root));
     const quitBtn = $('#m-quit');
-    if (quitBtn) quitBtn.addEventListener('click', finish);
+    if (quitBtn) quitBtn.addEventListener('click', () => finish(root));
   }
 
-  function finish() {
-    const answered = Object.keys(state.answers).length;
-    if (!answered) { toast('本轮还没有作答,继续加油'); }
+  function finish(root) {
+    const answered = Object.keys(state.answers).filter(k => (state.answers[k].self || '').trim() || state.answers[k].revealed).length;
+    if (!answered) { toast('本轮还没有作答,已按原样记录'); }
     const round = {
       ts: Date.now(),
       config: state.config,
@@ -481,6 +654,7 @@ const MockView = (() => {
     };
     Store.data.mock.rounds.unshift(round);
     Store.data.mock.rounds = Store.data.mock.rounds.slice(0, 50);
+    draftClear(); /* 本轮已完成,清除草稿 */
     Store.save();
     state.round = round;
     go('#/mock/done');
@@ -490,10 +664,11 @@ const MockView = (() => {
     const round = state.round;
     if (!round) { renderConfig(root); return; }
     const revealed = round.items.filter(i => i.revealed);
+    const weak = round.items.filter(i => i.mark === 'weak');
     root.innerHTML = `
       <div class="card">
         <h2>本轮完成</h2>
-        <p class="muted">${fmtTime(round.ts)} · 共 ${round.items.length} 题 · 对照参考要点 ${revealed.length} 题</p>
+        <p class="muted">${fmtTime(round.ts)} · 共 ${round.items.length} 题 · 对照参考要点 ${revealed.length} 题${weak.length ? ` · 标记还不熟 ${weak.length} 题(已进入错题本与今日复习)` : ''}</p>
         <div class="round-list">
           ${round.items.map((it, i) => `
             <div class="round-item">
@@ -515,5 +690,5 @@ const MockView = (() => {
     $('#m-again').addEventListener('click', () => { state = null; go('#/mock'); });
   }
 
-  return { render };
+  return { render, startDirected, flushDraft };
 })();

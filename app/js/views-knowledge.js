@@ -29,7 +29,7 @@ const DocsView = (() => {
         </div>
         <div class="cat-actions">
           <button class="btn btn-small" id="doc-import">导入 MD / TXT / JSON</button>
-          <div class="cat-hint muted">PDF 暂不支持自动解析,会保留文件条目并明确提示。</div>
+          <div class="cat-hint muted">PDF 暂不做自动解析:只记住文件名,需要时可重新选择原文件打开。</div>
         </div>
       </div>`;
   }
@@ -63,8 +63,9 @@ const DocsView = (() => {
         modal('删除导入资料?', `<p>将删除「${esc((Data.doc(id) || {}).title || id)}」,不影响内置章节与题目记录。</p>`, [
           { label: '取消' },
           { label: '删除', danger: true, onClick: () => {
-              Store.userDocsSave(Data.allUserDocs().filter(d => d.id !== id));
-              Data.userDocs = Store.userDocsLoad();
+              const next = Data.allUserDocs().filter(d => d.id !== id);
+              if (!Store.userDocsSave(next)) { toast('删除失败:本地存储写入未成功', 'err'); return false; }
+              Data.reloadUserDocs(); /* 同步数据层闭包,目录/索引立即更新 */
               rebuildSearch();
               toast('已删除');
               App.route();
@@ -105,7 +106,7 @@ const DocsView = (() => {
         <div class="doc-cards">${Data.allUserDocs().map(d => `
           <a class="doc-card" href="#/docs/${d.id}">
             <div class="doc-card-title">${d.parsed === false ? '📄(未解析)' : '📝'} ${esc(d.title)}</div>
-            <div class="doc-card-sum">${esc(d.note || (d.parsed === false ? 'PDF 无法可靠解析,保留原文件入口' : ''))}</div>
+            <div class="doc-card-sum">${esc(d.note || (d.parsed === false ? 'PDF 未解析;打开后可重新选择原文件' : ''))}</div>
             <div class="doc-card-meta muted">${fmtTime(d.ts)} 导入</div>
           </a>`).join('')}</div></div>` : ''}`;
     const btn = $('#resume-read', main);
@@ -133,7 +134,8 @@ const DocsView = (() => {
           </div>
           <h1>${esc(d.title)}</h1>
           ${d.summary ? `<p class="doc-summary muted">${esc(d.summary)}</p>` : ''}
-          ${d.parsed === false ? `<div class="notice warn">该文件类型(PDF)暂无法在本地可靠解析文字,未建立索引。你可以保留此条目作为原文件入口,用本地阅读器打开;如需检索,请另存为 Markdown / TXT 后重新导入。</div>` : ''}
+          ${d.parsed === false ? `<div class="notice warn">该文件类型(PDF)未做自动解析,本站只记住了文件名,未建立索引(不会出现在正文搜索里)。需要查看内容时,点下面的按钮重新选择这份 PDF,会用本机阅读器打开;如需检索,请另存为 Markdown / TXT 后重新导入。</div>
+          <div style="margin:10px 0"><button class="btn btn-small" id="pdf-open">选择原 PDF 打开</button></div>` : ''}
         </div>
         <div class="doc-body-wrap">
           ${secList.length ? `
@@ -143,40 +145,52 @@ const DocsView = (() => {
               ${secList.map(s => `<a class="toc-l${s.level}" href="javascript:void(0)" data-toc="${s.id}">${esc(s.text)}</a>`).join('')}
             </div>
           </details>` : ''}
-          <article class="doc-content" id="doc-content">${Markdown.render(d.md || d.text || '', { anchorPrefix: `doc-${d.id}-` })}</article>
+          <article class="doc-content" id="doc-content">${d.parsed === false ? '' : Markdown.render(d.md || d.text || '', { anchorPrefix: `doc-${d.id}-` })}</article>
         </div>
         <div class="doc-nav">
           ${prevDoc ? `<a class="btn btn-small" href="#/docs/${prevDoc.id}">← ${esc(prevDoc.title)}</a>` : '<span></span>'}
           ${nextDoc ? `<a class="btn btn-small" href="#/docs/${nextDoc.id}">${esc(nextDoc.title)} →</a>` : '<span></span>'}
         </div>
       </div>`;
+    /* 未解析 PDF:运行时选择原文件,以 object URL 打开(本地完成,不上传) */
+    const pdfBtn = $('#pdf-open', main);
+    if (pdfBtn) pdfBtn.addEventListener('click', () => {
+      openFileAny('.pdf').then(f => {
+        const url = URL.createObjectURL(f);
+        const w = window.open(url, '_blank');
+        if (!w) toast('浏览器拦截了新窗口,请允许弹出窗口后重试', 'err');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }).catch(() => {});
+    });
     /* 页内目录跳转 */
     $$('[data-toc]', main).forEach(a => {
       a.addEventListener('click', () => {
         jumpToSection(d.id, a.dataset.toc);
       });
     });
-    /* 阅读位置:滚动记录 */
-    const viewEl = $('#view');
-    viewEl.onscroll = debounce(() => {
+    /* 阅读位置:实际滚动发生在 window(#view 未做内部滚动容器),统一监听 window。
+       每次渲染先移除旧监听,路由切换不残留。 */
+    if (DocsView._onScroll) window.removeEventListener('scroll', DocsView._onScroll);
+    DocsView._onScroll = debounce(() => {
       const cur = currentSection(d);
-      Store.data.ui.docPos = { docId: d.id, secId: cur, y: viewEl.scrollTop };
+      Store.data.ui.docPos = { docId: d.id, secId: cur, y: window.scrollY };
       Store.save();
       /* 更新阅读进度条 */
       const bar = document.getElementById('reading-bar');
       if (bar) {
-        const total = viewEl.scrollHeight - viewEl.clientHeight;
-        bar.style.width = total > 0 ? Math.min(100, (viewEl.scrollTop / total) * 100) + '%' : '0%';
+        const total = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.width = total > 0 ? Math.min(100, (window.scrollY / total) * 100) + '%' : '0%';
       }
     }, 100);
+    window.addEventListener('scroll', DocsView._onScroll, { passive: true });
     /* 恢复位置或跳转到指定小节 */
     const qs = parseHash().query;
     if (qs.s) {
       setTimeout(() => jumpToSection(d.id, qs.s), 60);
     } else {
       const pos = Store.data.ui.docPos;
-      if (pos && pos.docId === d.id && pos.y > 0 && !qs.s) {
-        setTimeout(() => { viewEl.scrollTop = pos.y; }, 30);
+      if (pos && pos.docId === d.id && pos.y > 0) {
+        setTimeout(() => { window.scrollTo({ top: pos.y, behavior: 'instant' }); }, 30);
       }
     }
   }
@@ -184,35 +198,40 @@ const DocsView = (() => {
   function currentSection(d) {
     const prefix = `doc-${d.id}-sec-`;
     const headings = $$(`[id^="${prefix}"]`);
-    const viewEl = $('#view');
     let cur = '';
     headings.forEach(h => {
       if (h.getBoundingClientRect().top < 120) cur = h.id.replace(prefix, '');
     });
-    return cur;
+    return cur; /* 裸编号,如 '5' */
   }
 
+  /* secId 统一归一化:剥离可能带的 'sec-' 前缀后拼接,兼容 TOC(sec-N)/
+     搜索锚点(sec-N)/阅读位置(裸编号)三种来源。
+     scrollTo 用 instant:CSS 的 scroll-behavior:smooth 会把滚动变成异步动画,
+     导致随后的 scrollY 读取与 docPos 保存拿到 0。 */
   function jumpToSection(docId, secId) {
-    const el = document.getElementById(`doc-${docId}-sec-${secId}`);
+    const bare = String(secId || '').replace(/^sec-/, '');
+    const el = document.getElementById(`doc-${docId}-sec-${bare}`);
     if (!el) return;
-    const viewEl = $('#view');
-    viewEl.scrollTop = el.getBoundingClientRect().top + viewEl.scrollTop - 70;
+    const y = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 70);
+    window.scrollTo({ top: y, behavior: 'instant' });
     el.classList.add('flash');
     setTimeout(() => el.classList.remove('flash'), 1600);
-    Store.data.ui.docPos = { docId, secId, y: viewEl.scrollTop };
+    Store.data.ui.docPos = { docId, secId: bare, y: window.scrollY };
     Store.save();
   }
 
   function importDoc() {
-    return openFileText('.md,.markdown,.txt,.json,.pdf').then(({ name, text, file }) => {
+    return openFileText('.md,.markdown,.txt,.json,.pdf').then(({ name, text }) => {
       const ext = (name.split('.').pop() || '').toLowerCase();
       const id = 'udoc-' + Date.now();
       const arr = Data.allUserDocs();
       if (ext === 'pdf') {
-        arr.unshift({ id, title: name, text: '', ts: Date.now(), kind: 'pdf', parsed: false, note: 'PDF 未解析(保留原文件入口)' });
-        Store.userDocsSave(arr);
-        Data.userDocs = Store.userDocsLoad();
-        toast('PDF 无法可靠解析,已保留文件条目(未建索引)');
+        /* 诚实降级:PDF 不解析、不索引,只记住文件名;需要时可重新选择原文件打开 */
+        arr.unshift({ id, title: name, text: '', ts: Date.now(), kind: 'pdf', parsed: false, note: 'PDF 未解析;打开条目后可重新选择原文件' });
+        if (!Store.userDocsSave(arr)) return false;
+        Data.reloadUserDocs();
+        toast('PDF 未做解析,已记住文件名(未建索引)');
         return true;
       }
       let content = text;
@@ -227,7 +246,7 @@ const DocsView = (() => {
       }
       arr.unshift({ id, title: name.replace(/\.[^.]+$/, ''), text: content, ts: Date.now(), kind: ext, parsed: true });
       if (!Store.userDocsSave(arr)) return false;
-      Data.userDocs = Store.userDocsLoad();
+      Data.reloadUserDocs();
       rebuildSearch();
       toast('导入成功,已建立索引');
       return true;
@@ -293,16 +312,22 @@ const SearchView = (() => {
       const u = r.unit;
       let href, title;
       if (u.kind === 'q' || u.kind === 'note') {
-        href = `#/study/${u.qid}`;
+        /* 带上命中的区块锚点:学习页会按需展开并定位到该层级(检查题同时揭示答案) */
+        const a = u.anchor && u.anchor !== 'top' ? `?a=${encodeURIComponent(u.anchor)}` : '';
+        href = `#/study/${u.qid}${a}`;
         title = Data.question(u.qid) ? Data.question(u.qid).title : u.qid;
+      } else if (u.anchor) {
+        href = `#/docs/${u.docId}?s=${encodeURIComponent(u.anchor)}`;
+        const d = Data.doc(u.docId);
+        title = d ? d.title : u.docId;
       } else {
-        href = `#/docs/${u.docId}?s=${u.anchor}`;
+        href = `#/docs/${u.docId}`;
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
       const fieldLabel = { title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节' }[u.field] || u.field;
       return `
-        <div class="search-item" data-href="${esc(href)}">
+        <a class="search-item" href="${esc(href)}">
           <div class="si-head">
             <span class="badge b-topic">${kindName[u.kind] || u.kind}</span>
             <span class="badge b-tag">${esc(fieldLabel)}</span>
@@ -310,13 +335,8 @@ const SearchView = (() => {
             <span class="si-title">${esc(title)}</span>
           </div>
           <div class="si-snippet">${r.snippet}</div>
-        </div>`;
+        </a>`;
     }).join('');
-    $$('.search-item', box).forEach(item => {
-      item.addEventListener('click', () => {
-        go(item.dataset.href);
-      });
-    });
   }
 
   return { render };
@@ -405,12 +425,6 @@ const HomeView = (() => {
         </div>
       </div>`;
     $('#h-random').addEventListener('click', () => { if (randomQid) go('#/study/' + randomQid); });
-    const q = parseHash().query;
-    if (q.t) {
-      const f = Object.assign({}, BrowseView.filters(), { topic: q.t });
-      Store.data.ui.browse = f; Store.save();
-      go('#/browse');
-    }
   }
 
   function getTodayReviewCount() {

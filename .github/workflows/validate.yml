@@ -22,6 +22,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: JS 语法检查(node --check 逐文件)
+        run: |
+          fail=0
+          for f in app/js/*.js; do
+            node --check "$f" || fail=1
+          done
+          exit $fail
+
+      - name: 行为测试(Markdown/搜索/Store 迁移/计算例题)
+        run: node tests/behavior-tests.js
+
       - name: 校验题库(10 要素完整性 / 引号纪律 / ID 唯一)
         run: python tools/validate_bank.py
 

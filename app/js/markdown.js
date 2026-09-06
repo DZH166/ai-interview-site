@@ -38,6 +38,45 @@ const Markdown = (() => {
     });
     let secCursor = 0;
 
+    /* 从 lines[i] 起解析一个列表块,返回 HTML 并推进 i。
+       规则:同缩进的列表行是同级项;更深缩进的连续列表行是上一项的子列表;
+       缩进 ≥2 的非列表行是续行(并入当前项);空行/标题/代码/引用结束列表。 */
+    function renderListBlock() {
+      const items = [];
+      while (i < lines.length) {
+        const l = lines[i];
+        if (!l.trim()) break;
+        if (/^(#{1,6}\s|```|>)/.test(l)) break;
+        const m = l.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+        if (m) {
+          items.push({ indent: m[1].length, ordered: /^\d/.test(m[2]), content: [m[3]] });
+          i++;
+          continue;
+        }
+        if (items.length && /^\s{2,}\S/.test(l)) {
+          items[items.length - 1].content.push(l.trim());
+          i++;
+          continue;
+        }
+        break;
+      }
+      function renderRange(start, end) {
+        const tag = items[start].ordered ? 'ol' : 'ul';
+        let out = `<${tag}>`;
+        let k = start;
+        while (k < end) {
+          const it = items[k];
+          let j = k + 1;
+          while (j < end && items[j].indent > it.indent) j++;
+          const childHtml = j > k + 1 ? renderRange(k + 1, j) : '';
+          out += `<li>${it.content.map(c => inline(c)).join('<br>')}${childHtml}</li>`;
+          k = j;
+        }
+        return out + `</${tag}>`;
+      }
+      return items.length ? renderRange(0, items.length) : '';
+    }
+
     while (i < lines.length) {
       const line = lines[i];
       /* 代码块 */
@@ -83,32 +122,9 @@ const Markdown = (() => {
         html.push(`<blockquote>${render(buf.join('\n'))}</blockquote>`);
         continue;
       }
-      /* 列表(含一层嵌套) */
-      if (/^\s*([-*]|\d+\.)\s+/.test(line)) {
-        const ordered = /^\s*\d+\./.test(line);
-        const items = [];
-        while (i < lines.length && /^\s*([-*]|\d+\.)\s+/.test(lines[i])) {
-          const cur = lines[i];
-          const indent = (cur.match(/^(\s*)/) || ['', ''])[1].length;
-          let content = cur.replace(/^\s*([-*]|\d+\.)\s+/, '');
-          i++;
-          /* 收集续行与子项 */
-          while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|```|>)/.test(lines[i]) &&
-                 (/^\s*([-*]|\d+\.)\s+/.test(lines[i]) || /^\s{2,}\S/.test(lines[i]))) {
-            if (/^\s*([-*]|\d+\.)\s+/.test(lines[i]) && indent === 0 &&
-                (lines[i].match(/^(\s*)/) || ['', ''])[1].length >= 2) {
-              content += '\n' + lines[i].replace(/^\s*([-*]|\d+\.)\s+/, '• ');
-            } else if (!/^\s*([-*]|\d+\.)\s+/.test(lines[i])) {
-              content += ' ' + lines[i].trim();
-            } else {
-              content += '\n' + lines[i].replace(/^\s*([-*]|\d+\.)\s+/, '• ');
-            }
-            i++;
-          }
-          items.push(content.replace(/\n/g, '<br>'));
-        }
-        const tag = ordered ? 'ol' : 'ul';
-        html.push(`<${tag}>${items.map(x => `<li>${inline(x)}</li>`).join('')}</${tag}>`);
+      /* 列表:支持有序/无序、多层嵌套与续行;同级各项各自成 <li> */
+      if (/^(\s*)([-*+]|\d+[.)])\s+/.test(line)) {
+        html.push(renderListBlock());
         continue;
       }
       /* 分隔线 */

@@ -10,7 +10,7 @@ Python 在 AI 应用开发里的角色很明确:**把模型能力包装成稳定
 
 ## 先把容器选对
 
-列表(list)与元组(tuple)的区别是入门必考题,但它的价值不是背结论,而是建立"**可变性决定语义**"的思维:内容会变的集合用列表,位置携带含义的固定结构用元组。元组可哈希所以能当字典键,这个因果链要能自己讲出来。扩展一步:namedtuple/dataclass 解决"按位置取值可读性差"的问题,而 Pydantic 是 dataclass 的"校验加强版"——这是 FastAPI 的基石。
+列表(list)与元组(tuple)的区别是入门必考题,但它的价值不是背结论,而是建立"**可变性决定语义**"的思维:内容会变的集合用列表,位置携带含义的固定结构用元组。元组『元素全部可哈希』时才能当字典键——(1, 2) 可以,([1], 2) 不行(列表不可哈希会拖垮整个元组,本机实测 TypeError),这个因果链要能自己讲出来。扩展一步:namedtuple/dataclass 解决"按位置取值可读性差"的问题,而 Pydantic 是 dataclass 的"校验加强版"——这是 FastAPI 的基石。
 
 → 对应练习:[PY-001](#/study/PY-001)
 
@@ -44,3 +44,29 @@ FastAPI 的两个卖点正好对应两道高频题:
 ## 学到什么程度算够
 
 实习/校招应用岗的及格线:能讲清生成器与异步的执行模型、能在 FastAPI 里写出带校验的流式接口、知道 GIL 与线程/进程的分工边界。更深的(事件循环实现、ASGI 规范)属于加分项,别在基础不牢时去啃。
+## 基础必学练习组(22 题)
+
+以下是本专题**基础难度**的题目,按建议学习顺序排列(先概念后应用)。每题都有直接答案、大白话与理解检查;第一次学习建议先自己想再看答案。进阶与高级题目请按需在练习页按难度筛选。
+
+1. [PY-023](#/study/PY-023) 重试库(tenacity)怎么用?比手写重试循环好在哪、坑在哪?
+2. [PY-026](#/study/PY-026) 列表分页用 offset 还是游标(cursor)?深分页的性能问题怎么解?
+3. [PY-028](#/study/PY-028) LLM 后端项目的代码分层怎么组织?router/service/repository 的边界怎么划?
+4. [PY-031](#/study/PY-031) Python 的装饰器参数校验和运行时类型检查(Runtime Validation)在边界层怎么做?
+5. [PY-032](#/study/PY-032) Python 的上下文管理变量(contextvars)是什么?为什么 FastAPI 的日志要靠它?
+6. [PY-033](#/study/PY-033) Python 的可变默认参数陷阱:default mutable argument 为什么危险?正确写法?
+7. [PY-036](#/study/PY-036) 怎么组织 Python 项目的环境配置与多环境差异(dev/staging/prod)?
+8. [PY-005](#/study/PY-005) Python 的异常处理怎么写才算规范?AI 后端里 try/except 常见 misuse 有哪些?
+9. [PY-039](#/study/PY-039) Python 的函数签名设计:参数太多时怎么重构?kwargs 的使用边界?
+10. [PY-040](#/study/PY-040) Python 的模块循环依赖怎么避免?架构上的 import 纪律?
+11. [PY-041](#/study/PY-041) Python 的字符串格式化:f-string、format、% 的选择与 f-string 的陷阱?
+12. [PY-042](#/study/PY-042) Python 的 deepcopy 与引用语义:什么时候会踩『改了一个全变了』?
+13. [PY-043](#/study/PY-043) Python 的鸭子类型实践:什么时候该显式检查类型(type/isinstance)?
+14. [PY-044](#/study/PY-044) Python 的切片(slicing)与不可变序列的操作要点?常见错误?
+15. [PY-009](#/study/PY-009) 生产环境的日志应该怎么打?LLM 应用的日志和普通服务有什么不同?
+16. [PY-010](#/study/PY-010) API 密钥和配置应该怎么管理?为什么不能硬编码在代码里?
+17. [PY-011](#/study/PY-011) pytest 单元测试怎么写?fixture、mock 什么时候用?
+18. [PY-012](#/study/PY-012) 上下文管理器和 with 语句是什么?__enter__/__exit__ 怎么工作?
+19. [PY-017](#/study/PY-017) Redis 在 AI 后端里最常用的五种用法是什么?各自要注意什么?
+20. [PY-020](#/study/PY-020) Python 类型标注和 mypy 静态检查对 AI 后端项目有什么实际价值?
+21. [PY-001](#/study/PY-001) Python 里列表(list)和元组(tuple)有什么区别?什么时候用哪个?
+22. [PY-002](#/study/PY-002) 什么是生成器(generator)?为什么处理大文件和 LLM 流式输出时要用它?

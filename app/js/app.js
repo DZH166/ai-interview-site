@@ -12,11 +12,13 @@ const App = (() => {
   function route() {
     const { view, parts, query } = parseHash();
     const root = $('#view');
+    if (StudyView.cleanup) StudyView.cleanup(); /* 离开旧视图时清理全局键盘监听 */
     const fn = routes[view] || HomeView;
     try {
       if (view === 'study') {
-        NavCtx.set(null);
-        fn.render(root, parts[0]);
+        /* 不清 NavCtx:保留浏览页筛选上下文,上一题/下一题仍按当前筛选走;
+           直接打开学习页时由 NavCtx.neighbors 回退全量 */
+        fn.render(root, parts[0], query.a);
       } else if (view === 'docs') {
         fn.render(root, parts);
       } else if (view === 'search') {
@@ -37,18 +39,18 @@ const App = (() => {
     });
     const anchor = query.a || pendingAnchor;
     pendingAnchor = '';
-    if (anchor) {
+    if (anchor && view !== 'study') { /* study 的锚点在 StudyView 内展开定位 */
       setTimeout(() => {
         const el = document.getElementById(anchor);
         if (el) {
-          const viewEl = $('#view');
-          viewEl.scrollTop = el.getBoundingClientRect().top + viewEl.scrollTop - 80;
+          const y = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 80);
+          window.scrollTo({ top: y, behavior: 'instant' });
           el.classList.add('flash');
           setTimeout(() => el.classList.remove('flash'), 1600);
         }
       }, 80);
-    } else if (view !== 'docs') {
-      $('#view').scrollTop = 0;
+    } else if (view !== 'docs' && !(view === 'study' && query.a)) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
     document.title = 'AI 面试学习站';
   }
@@ -90,6 +92,15 @@ const App = (() => {
     });
 
     window.addEventListener('hashchange', route);
+
+    /* 页面隐藏/关闭兜底:输入框未过防抖的内容(笔记/自测草稿)与记录状态立刻落盘 */
+    const flush = () => {
+      try { if (StudyView.flushNote) StudyView.flushNote(); } catch (e) {}
+      try { if (MockView.flushDraft) MockView.flushDraft(); } catch (e) {}
+      if (Store.saveNow) Store.saveNow();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 
     if (!location.hash && Store.data.ui.lastHash) {
       location.replace(Store.data.ui.lastHash);

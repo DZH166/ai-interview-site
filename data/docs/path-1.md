@@ -46,3 +46,19 @@ summary: 以六周为参考的学习路线:每周的目标、题目范围和自�
 ## 状态管理建议
 
 每学完一题就手动标状态:讲不顺 → 还不熟;能讲清 → 基本掌握;过两周还能讲清 → 保持;面试前把"待复习"清空。
+## 附录:基础必学清单(52 题,2026-09 全库版)
+
+全部 306 题中**基础难度**的 52 题是校招/实习备考的最小必学集;时间紧张时先吃透这 52 题,再按目标岗位补充进阶专题。
+
+**Python 与 AI 后端基础(22 题)**:[PY-023](#/study/PY-023) [PY-026](#/study/PY-026) [PY-028](#/study/PY-028) [PY-031](#/study/PY-031) [PY-032](#/study/PY-032) [PY-033](#/study/PY-033) [PY-036](#/study/PY-036) [PY-005](#/study/PY-005) [PY-039](#/study/PY-039) [PY-040](#/study/PY-040) [PY-041](#/study/PY-041) [PY-042](#/study/PY-042) [PY-043](#/study/PY-043) [PY-044](#/study/PY-044) [PY-009](#/study/PY-009) [PY-010](#/study/PY-010) [PY-011](#/study/PY-011) [PY-012](#/study/PY-012) [PY-017](#/study/PY-017) [PY-020](#/study/PY-020) [PY-001](#/study/PY-001) [PY-002](#/study/PY-002)
+
+**大模型调用与提示词(10 题)**:[LP-029](#/study/LP-029) [LP-032](#/study/LP-032) [LP-034](#/study/LP-034) [LP-036](#/study/LP-036) [LP-038](#/study/LP-038) [LP-043](#/study/LP-043) [LP-044](#/study/LP-044) [LP-010](#/study/LP-010) [LP-011](#/study/LP-011) [LP-001](#/study/LP-001)
+
+**RAG 与检索(4 题)**:[RG-059](#/study/RG-059) [RG-067](#/study/RG-067) [RG-020](#/study/RG-020) [RG-001](#/study/RG-001)
+
+**Agent 与工具调用(4 题)**:[AG-001](#/study/AG-001) [AG-056](#/study/AG-056) [AG-058](#/study/AG-058) [AG-029](#/study/AG-029)
+
+**工程实践与项目面试(5 题)**:[EN-033](#/study/EN-033) [EN-036](#/study/EN-036) [EN-040](#/study/EN-040) [EN-041](#/study/EN-041) [EN-042](#/study/EN-042)
+
+**AI 基础原理(7 题)**:[FD-017](#/study/FD-017) [FD-024](#/study/FD-024) [FD-025](#/study/FD-025) [FD-027](#/study/FD-027) [FD-012](#/study/FD-012) [FD-015](#/study/FD-015) [FD-016](#/study/FD-016)
+

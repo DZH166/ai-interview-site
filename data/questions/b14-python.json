@@ -1,293 +1,569 @@
 [
-  {
-    "id": "PY-021",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "生成器的进阶用法:yield from 委托、close/throw 与双向通信分别怎么用?",
-    "tags": ["Python", "生成器进阶", "yield from"],
-    "prerequisites": ["PY-002"],
-    "answer": "生成器的进阶能力三层:①yield from iterable——把子可迭代对象委托出去(自动转发 yield 与异常),是组合生成器的标准方式(也是 asyncio 早期协程的基石);②双向通信——send(value) 向生成器内部传值(yield 表达式的返回值),生成器变成『可交互的协程』;③外部控制——close() 触发 GeneratorExit(优雅清理)、throw() 向生成器内部注入异常(调用方强制其处理)。AI 场景映射:流式管道的逐级组合用 yield from;带中途取消的流式消费用 close(清理逻辑放 finally,呼应 LP-005);send 的『向管道中途注入控制信号』用于进度/节流控制。",
-    "plain": "基础生成器是『单向水龙头』(只出水);进阶能力:yield from 像『水龙头串联』(总闸下面接分闸,水与故障都自动传递);send 像『水管还能往回打水』——不只是出水,还能在出水间隙接收指令(『下一批要慢一点』);close 像『关总闸时给个通知』——管道里的残余水要放干净(finally 清理)。比喻局限:yield from 的自动异常转发与 return 值传递(子生成器的 return 成为委托表达式的值)是管道比喻没有的语义。",
-    "deep": "1) yield from 的语义完整版:委托迭代(值转发)+双向(send/throw 透传到子生成器)+子生成器 return 值作为表达式结果。组合管道:\n```python\ndef inner():\n    yield 1\n    return \"done\"\ndef outer():\n    result = yield from inner()   # 值转发 + 结果接收\n    yield f\"inner said: {result}\"\n```\n2) 双向通信:yield 表达式有值——g = gen();next(g) 启动;g.send(\"msg\") 时,gen 内 yield 处返回 \"msg\"。典型模式:消费者-生产者一体(处理管道的节流控制:主循环 send 背压信号)。注意:必须先 next() 启动到第一个 yield 才能 send(否则 TypeError)。\n3) close/throw 的语义:close() 在挂起点抛 GeneratorExit——生成器应清理并退出(再 yield 会 RuntimeError);throw(Exc) 在挂起点抛指定异常(生成器可捕获处理或传播)——用于调用方强制注入超时/取消信号。清理模式:try/finally 包 yield(LP-005 流式的取消清理同构)。\n4) 与 async 的谱系:这些原语是 asyncio 协程的前身与底层(async/await 是 yield from 的语法化);理解它们就能理解『协程 = 可暂停可恢复可双向通信的函数』的本质(PY-003)。\n5) 实用判断:现代代码优先 async/await(异步场景)与简单生成器(单向流);send/throw 的手写双向协程较少见——但理解它们是读懂框架源码(asyncio/starlette 内部)的钥匙,面试里也是『生成器理解深度』的试金石。",
-    "example": "```python\ndef stream_processor(source):\n    total = 0\n    try:\n        for chunk in source:\n            total += len(chunk)\n            cmd = yield chunk.upper()    # 双向:处理并等待指令\n            if cmd == \"pause\":\n                yield \"__PAUSED__\"      # 响应背压指令\n    finally:\n        print(f\"流结束,共 {total} 字符\")  # close() 也会触发\n\ng = stream_processor([\"ab\", \"cd\"])\nprint(next(g))          # \"AB\"\nprint(g.send(None))     # \"CD\"\nprint(g.send(\"pause\"))  # \"__PAUSED__\"\ng.close()               # 触发 finally → 清理日志\n```",
-    "interview": "口述版:『生成器进阶三层:yield from 做管道组合(值与异常自动透传,子生成器 return 成委托结果);send 做双向通信(流式管道的背压/节流控制);close/throw 做外部控制——close 抛 GeneratorExit 触发 finally 清理,throw 注入取消/超时。这三层正是 asyncio 协程的底层语义——理解它们就读得懂框架源码。实用上单向流用基础生成器,异步场景用 async/await,双向协程多出现在框架内部。』追问展开:GeneratorExit 的处理纪律、yield from 与 async/await 的谱系、双向通信的实用场景。",
-    "followups": [
-      {"q": "GeneratorExit 的处理纪律?", "a": "close() 时在挂起点抛 GeneratorExit:生成器应清理并正常退出;若在 finally 里再次 yield 会抛 RuntimeError(『ignored GeneratorExit』);不要捕获 GeneratorExit 后继续产出——它表达『调用方不要了』。清理资源(finally)+ 不挣扎,是唯一的正确姿势(与 LP-005 流式取消一致)。"},
-      {"q": "yield from 和 async/await 的关系?", "a": "历史谱系:yield from(PEP 380)实现了协程委托,asyncio 早期用 @coroutine 生成器实现协程;async/await(PEP 492)是专用语法(类型区分、语义清晰),底层仍基于同样的暂停/恢复机制。理解 yield from 的转发语义,await 的语义就自然懂——这是『读得懂 asyncio 源码』的门槛知识。"},
-      {"q": "什么时候真的需要 send 双向?", "a": "少见但真实:流式管道的动态控制(消费方向生产方发节流/变更指令)、协程式状态机(每轮交互式推进)、框架内部(调度器与协程的通信)。业务代码里如果发现复杂 send 协议,通常 async 队列/事件更清晰——双向生成器更多是『理解工具』而非日常工具。"}
-    ],
-    "pitfalls": [
-      "未启动就 send(next 之前),TypeError;启动后忘了 send(None) 与 next 的等价性。",
-      "close 后还在 yield,RuntimeError;finally 里做重活,关闭被阻塞。",
-      "yield from 的子生成器 return 值被忽略(不知道委托表达式有结果)。",
-      "把手写双向协程用在业务里,可读性崩塌(async 队列更清晰)。"
-    ],
-    "check": {
-      "q": "g = gen();g.send(\"x\") 第一次就调用,会发生什么?正确启动方式?",
-      "a": "TypeError:can't send non-None value to a just-started generator——生成器还没执行到第一个 yield,没有『挂起点』接收值。正确:先 next(g)(或 g.send(None))让函数体执行到第一个 yield,之后才能 send。这是双向生成器的经典坑:『先启动,后对话』。",
-      "explain": "检验点:双向生成器的生命周期(启动→对话→关闭)顺序意识。"
-    },
-    "related": ["PY-002", "PY-003", "LP-005"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · 生成器(yield from/send/close)", "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#generator-methods", "kind": "official", "note": "语言核心语义,长期稳定"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "语言核心语义 verified;示例为演示。"}
+ {
+  "id": "PY-021",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "生成器的进阶用法:yield from 委托、close/throw 与双向通信分别怎么用?",
+  "tags": [
+   "Python",
+   "生成器进阶",
+   "yield from"
+  ],
+  "prerequisites": [
+   "PY-002"
+  ],
+  "answer": "生成器的进阶能力三层:①yield from iterable——把子可迭代对象委托出去(自动转发 yield 与异常),是组合生成器的标准方式(也是 asyncio 早期协程的基石);②双向通信——send(value) 向生成器内部传值(yield 表达式的返回值),生成器变成『可交互的协程』;③外部控制——close() 触发 GeneratorExit(优雅清理)、throw() 向生成器内部注入异常(调用方强制其处理)。AI 场景映射:流式管道的逐级组合用 yield from;带中途取消的流式消费用 close(清理逻辑放 finally,呼应 LP-005);send 的『向管道中途注入控制信号』用于进度/节流控制。",
+  "plain": "基础生成器是『单向水龙头』(只出水);进阶能力:yield from 像『水龙头串联』(总闸下面接分闸,水与故障都自动传递);send 像『水管还能往回打水』——不只是出水,还能在出水间隙接收指令(『下一批要慢一点』);close 像『关总闸时给个通知』——管道里的残余水要放干净(finally 清理)。比喻局限:yield from 的自动异常转发与 return 值传递(子生成器的 return 成为委托表达式的值)是管道比喻没有的语义。",
+  "deep": "1) yield from 的语义完整版:委托迭代(值转发)+双向(send/throw 透传到子生成器)+子生成器 return 值作为表达式结果。组合管道:\n```python\ndef inner():\n    yield 1\n    return \"done\"\ndef outer():\n    result = yield from inner()   # 值转发 + 结果接收\n    yield f\"inner said: {result}\"\n```\n2) 双向通信:yield 表达式有值——g = gen();next(g) 启动;g.send(\"msg\") 时,gen 内 yield 处返回 \"msg\"。典型模式:消费者-生产者一体(处理管道的节流控制:主循环 send 背压信号)。注意:必须先 next() 启动到第一个 yield 才能 send(否则 TypeError)。\n3) close/throw 的语义:close() 在挂起点抛 GeneratorExit——生成器应清理并退出(再 yield 会 RuntimeError);throw(Exc) 在挂起点抛指定异常(生成器可捕获处理或传播)——用于调用方强制注入超时/取消信号。清理模式:try/finally 包 yield(LP-005 流式的取消清理同构)。\n4) 与 async 的谱系:这些原语是 asyncio 协程的前身与底层(async/await 是 yield from 的语法化);理解它们就能理解『协程 = 可暂停可恢复可双向通信的函数』的本质(PY-003)。\n5) 实用判断:现代代码优先 async/await(异步场景)与简单生成器(单向流);send/throw 的手写双向协程较少见——但理解它们是读懂框架源码(asyncio/starlette 内部)的钥匙,面试里也是『生成器理解深度』的试金石。",
+  "example": "```python\ndef stream_processor(source):\n    total = 0\n    try:\n        for chunk in source:\n            total += len(chunk)\n            cmd = yield chunk.upper()    # 双向:处理并等待指令\n            if cmd == \"pause\":\n                yield \"__PAUSED__\"      # 响应背压指令\n    finally:\n        print(f\"流结束,共 {total} 字符\")  # close() 也会触发\n\ng = stream_processor([\"ab\", \"cd\"])\nprint(next(g))          # \"AB\"\nprint(g.send(None))     # \"CD\"\nprint(g.send(\"pause\"))  # \"__PAUSED__\"\ng.close()               # 触发 finally → 清理日志\n```",
+  "interview": "口述版:『生成器进阶三层:yield from 做管道组合(值与异常自动透传,子生成器 return 成委托结果);send 做双向通信(流式管道的背压/节流控制);close/throw 做外部控制——close 抛 GeneratorExit 触发 finally 清理,throw 注入取消/超时。这三层正是 asyncio 协程的底层语义——理解它们就读得懂框架源码。实用上单向流用基础生成器,异步场景用 async/await,双向协程多出现在框架内部。』追问展开:GeneratorExit 的处理纪律、yield from 与 async/await 的谱系、双向通信的实用场景。",
+  "followups": [
+   {
+    "q": "GeneratorExit 的处理纪律?",
+    "a": "close() 时在挂起点抛 GeneratorExit:生成器应清理并正常退出;若在 finally 里再次 yield 会抛 RuntimeError(『ignored GeneratorExit』);不要捕获 GeneratorExit 后继续产出——它表达『调用方不要了』。清理资源(finally)+ 不挣扎,是唯一的正确姿势(与 LP-005 流式取消一致)。"
+   },
+   {
+    "q": "yield from 和 async/await 的关系?",
+    "a": "历史谱系:yield from(PEP 380)实现了协程委托,asyncio 早期用 @coroutine 生成器实现协程;async/await(PEP 492)是专用语法(类型区分、语义清晰),底层仍基于同样的暂停/恢复机制。理解 yield from 的转发语义,await 的语义就自然懂——这是『读得懂 asyncio 源码』的门槛知识。"
+   },
+   {
+    "q": "什么时候真的需要 send 双向?",
+    "a": "少见但真实:流式管道的动态控制(消费方向生产方发节流/变更指令)、协程式状态机(每轮交互式推进)、框架内部(调度器与协程的通信)。业务代码里如果发现复杂 send 协议,通常 async 队列/事件更清晰——双向生成器更多是『理解工具』而非日常工具。"
+   }
+  ],
+  "pitfalls": [
+   "未启动就 send(next 之前),TypeError;启动后忘了 send(None) 与 next 的等价性。",
+   "close 后还在 yield,RuntimeError;finally 里做重活,关闭被阻塞。",
+   "yield from 的子生成器 return 值被忽略(不知道委托表达式有结果)。",
+   "把手写双向协程用在业务里,可读性崩塌(async 队列更清晰)。"
+  ],
+  "check": {
+   "q": "g = gen();g.send(\"x\") 第一次就调用,会发生什么?正确启动方式?",
+   "a": "TypeError:can't send non-None value to a just-started generator——生成器还没执行到第一个 yield,没有『挂起点』接收值。正确:先 next(g)(或 g.send(None))让函数体执行到第一个 yield,之后才能 send。这是双向生成器的经典坑:『先启动,后对话』。",
+   "explain": "检验点:双向生成器的生命周期(启动→对话→关闭)顺序意识。"
   },
-  {
-    "id": "PY-022",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "asyncio 的任务编排原语怎么选?gather、TaskGroup、as_completed、Queue 各自的场景?",
-    "tags": ["asyncio", "任务编排", "并发"],
-    "prerequisites": ["PY-003"],
-    "answer": "四个原语的分工:①gather——已知一批协程、要全部结果、顺序对应输入(简单聚合);return_exceptions=True 收集失败不中断;②TaskGroup(3.11+)——结构化并发:任一子任务失败自动取消其余并抛异常组(『全要或全不要』语义,作用域内任务必然完成或取消,无泄漏);③as_completed——完成一个处理一个(流式消费结果,不等全批,如并发检索先到先用);④Queue——生产者消费者解耦(多 worker 消费、动态任务流、背压控制)。选择信号:结果依赖关系(DAG 用分层 gather/TaskGroup)、失败语义(聚合 vs fail-fast)、完成顺序是否重要。3.11+ 优先 TaskGroup(结构化并发消除任务泄漏)。",
-    "plain": "并发任务的管理方式像带团旅游:gather=『全体集合再走』(名单固定,收齐所有人的票);TaskGroup=『纪律版全体集合』——有人走丢全团原地等(取消其他),保证没人被落下(结构化);as_completed=『谁先到景点谁先玩』(不排队等全团);Queue=『食堂打饭』——窗口(消费者)与人流(生产者)解耦,人多就多开窗口。选错的表现:用 gather 做『谁先到谁先用』(白等最慢的),用 TaskGroup 做『部分失败可接受』(一人丢全团取消,过于严格)。比喻局限:TaskGroup 的『结构化』还有作用域保证(离开代码块时任务必然结束)——这是防任务泄漏的硬保证,旅游比喻没有。",
-    "deep": "1) gather vs TaskGroup 的语义差异(面试高频):\n   - gather(return_exceptions=True):全部跑完,结果含异常——适合『尽力而为的聚合』;\n   - gather 默认:第一个异常抛出,但其余任务继续跑(孤儿任务!结果被丢弃仍在消耗资源)——最危险的默认;\n   - TaskGroup:第一个异常(或取消)→取消其余→抛 ExceptionGroup——无孤儿、作用域保证;\n   迁移建议:默认语义的聚合用 gather(return_exceptions=True) 或 TaskGroup+收集,裸 gather 逐步消灭。\n2) as_completed:提交一批,迭代完成顺序的 future——首个可用结果即可启动下游(流式聚合,RG-040 的多路检索先到先融合);注意超时与取消的配合(慢任务的处理策略)。\n3) Queue 模式:生产者-消费者解耦(worker 池:queue + N 个 consumer task);join/task_done 的完成计数;maxsize 背压(生产快于消费时阻塞生产者——天然的削峰);与信号量的分工:Semaphore 管『同时进行数』,Queue 管『任务流与解耦』(批量任务管道用 Queue,一次性并发用 gather)。\n4) 取消的传播与清理:TaskGroup 的取消会传播到子任务的 await 点(finally 清理执行);shield 保护关键段(不可中断的原子操作);取消是协作式的(PY-003)——长计算段要让出。\n5) 超时组合:asyncio.timeout(3.11 上下文管理器)/wait_for 包裹各原语;分层超时(单任务超时<整组超时,LP-004 的预算思想)。",
-    "example": "```python\n# 多路检索:先到先用(as_completed)\nasync def hybrid_search(q):\n    tasks = [dense_search(q), bm25_search(q), graph_search(q)]\n    results = []\n    for coro in asyncio.as_completed(tasks, timeout=2.0):\n        results.append(await coro)     # 先完成先融合\n    return merge(results)\n\n# 结构化并发(TaskGroup)\nasync def enrich_all(items):\n    async with asyncio.TaskGroup() as tg:\n        results = [tg.create_task(enrich(i)) for i in items]\n    return [r.result() for r in results]   # 全成功才到这里\n```",
-    "interview": "口述版:『四原语按三个信号选:结果依赖(固定批次 gather/TaskGroup,动态流 Queue)、失败语义(聚合 return_exceptions vs fail-fast TaskGroup)、完成顺序敏感(as_completed 先到先用)。我会重点讲 gather 默认语义的坑——第一个异常抛出但其余任务变孤儿继续跑,3.11+ 的 TaskGroup 用结构化并发消灭这个问题。Queue 与 Semaphore 的分工:队列管任务流解耦,信号量管同时数。』追问展开:孤儿任务的危害、TaskGroup 的异常组处理、Queue 背压。",
-    "followups": [
-      {"q": "裸 gather 的『孤儿任务』危害?", "a": "gather 默认第一个异常立即上抛,但未完成的任务不会被取消——它们继续在后台跑(消耗配额/连接/费用),结果被丢弃。危害:成本泄漏(调 LLM 的孤儿任务继续计费)+资源占用。修复:gather(return_exceptions=True)(收全)+手动取消,或迁移 TaskGroup(自动取消)。这正是 3.11 引入 TaskGroup 的动机。"},
-      {"q": "TaskGroup 的 ExceptionGroup 怎么处理?", "a": "取分组异常:eg.exceptions 遍历(可能多个子任务同时失败);判断类型用 except* 语法(3.11+:按异常类型分别捕获);业务上通常记日志全部子异常+按首个根因分类。语法新但思路老:聚合错误信息保留全部根因(PY-005 的异常链思想的并发版)。"},
-      {"q": "Queue 的背压怎么起作用?", "a": "maxsize 限制队列长度:满时 put 阻塞——生产者被迫减速,上游压力传导(而不是无限堆积到内存爆炸)。这是『推回压』的标准实现:下游容量决定上游速率(LP-012 批处理的削峰、AG-033 的任务排队都复用)。无界队列是内存事故的常见根源。"}
-    ],
-    "pitfalls": [
-      "裸 gather 默认语义的孤儿任务(成本泄漏)。",
-      "gather 用作流式消费(应该 as_completed),整体延迟被最慢者绑架。",
-      "Queue 无 maxsize,生产快于消费时内存无界增长。",
-      "3.11 前后 API 混用认知(uvicorn 老文档的 on_event vs lifespan 式混乱)。"
-    ],
-    "check": {
-      "q": "需求:并发调 3 个搜索源,任何一个 2 秒内没返回就跳过它用另外两个的结果。原语组合怎么写?",
-      "a": "as_completed(timeout=2.0) 的变体:迭代完成的任务,超时后未完成的任务取消(asyncio.timeout 包整体+对剩余任务 cancel)。注意 as_completed 的 timeout 到期抛 TimeoutError——捕获后对剩余任务逐个 cancel(或 wait_for 的两个阶段:第一阶段 2s 收快者,第二段取消慢者)。这题考『部分结果+超时取消』的组合——gather 做不到(要么全等要么全弃),as_completed/wait 才是对的原语。",
-      "explain": "检验点:『部分结果+超时』需求与 as_completed/wait 的匹配——gather 的聚合思维解决不了。"
-    },
-    "related": ["PY-003", "PY-005", "AG-017", "LP-004"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · Coroutines and Tasks(3.11 TaskGroup)", "url": "https://docs.python.org/3/library/asyncio-task.html", "kind": "official", "note": "2026-09-06 已核验 gather/create_task/to_thread;TaskGroup 语义同源"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "原语选型为独立整理"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "gather/TaskGroup 语义已核验;示例为演示。"}
-  },
-  {
-    "id": "PY-023",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "重试库(tenacity)怎么用?比手写重试循环好在哪、坑在哪?",
-    "tags": ["tenacity", "重试", "工程化"],
-    "prerequisites": ["LP-004", "PY-005"],
-    "answer": "tenacity 把重试策略声明化:装饰器声明 retry 条件(哪个异常)、等待策略(指数退避 wait_exponential+jitter)、停止条件(stop_after_attempt/stop_after_delay)、以及钩子(before/sleep/retry 回调——打日志与指标)。比手写好在:策略与业务解耦(改重试策略不动业务代码)、组合性(条件×等待×停止正交配置)、内置细节(抖动、Retry-After 支持 via wait_server)。坑:①默认行为危险(不配置就对所有异常无限重试——必须显式 stop);②同步装饰器包 async 函数的问题(用 AsyncRetrying/async 装饰);③重试里的非幂等副作用(装饰器掩盖了『这个函数不该重试』的业务判断);④可观测性靠钩子(不配钩子=重试静默发生)。",
-    "plain": "重试库像『把口头交代的规矩写成制度牌』:手写循环=每次口头交代『失败了等 2 秒再试,最多 3 次』——每次交代口径可能不一样,没人监督;tenacity=门口挂制度牌『失败→指数退避 2/4/8 秒→最多 3 次→每次都上报』——统一、可审计、可调整。坑:制度牌默认写的是『永远重试』(不配 stop 就是无限)——挂制度牌必须自己写清『最多几次』。比喻局限:tenacity 的声明式组合(条件与策略正交)和 async 支持,是『制度牌』比喻装不下的工程细节。",
-    "deep": "1) 核心配置四件套:\n```python\nfrom tenacity import retry, stop_after_attempt, wait_exponential,\n                     retry_if_exception_type, before_sleep_log\n\n@retry(\n    retry=retry_if_exception_type(TransientError),   # 只重试瞬时错误\n    wait=wait_exponential(multiplier=1, max=30) + wait_random(0, 2),  # 退避+抖动\n    stop=stop_after_attempt(4),                        # 上限\n    before_sleep=before_sleep_log(logger, logging.WARNING))  # 可观测\n```\n2) 策略与业务解耦的价值:重试策略是『基础设施参数』(随上游健康度调整)——集中配置(不同上游不同策略)而非散在各调用点;运行时可调(配置中心下发,EN-005)。\n3) async 的正确姿势:@retry 装饰 async def 时 tenacity 会正确等待(新版支持);显式 AsyncRetrying 用于动态策略;与 asyncio.wait_for 组合(重试预算内每次也有超时,LP-004)。\n4) 坑的系统性治理:\n   - 无 stop 默认无限重试——lint/评审 checklist 强制 stop;\n   - 重试放大(上游一次故障被 N 层重试放大成风暴——每层都重试,LP-004 的抖动与全局预算治理);\n   - 非幂等操作的装饰器误用(评审:重试函数必须幂等或有幂等键,AG-003);\n   - 静默重试(无日志无指标——重试率不可见,EN-002);\n   - 与熔断的配合(重试是单请求策略,熔断是系统策略——连续失败该熔断而不是继续重试,LP-004/EN-009)。\n5) 何时不用库:简单的一次性脚本(try/except + sleep 更直白);需要『带状态的复杂重试编排』(多步工作流的重试——那是状态机/工作流引擎的事,AG-030)。",
-    "example": "见 deep 的四件套配置;另附 Retry-After 支持:\n```python\nfrom tenacity import retry, wait_exponential_jitter, Retrying\n\ndef custom_wait(retry_state):\n    r = retry_state.outcome.exception()\n    ra = getattr(r, \"retry_after\", None)   # 上游 Retry-After 优先\n    return max(ra or 0, 2 ** retry_state.attempt_number)\n```",
-    "interview": "口述版:『tenacity 的价值是重试策略声明化:条件(只重瞬时错误)×等待(指数+抖动)×停止(次数/时长)×钩子(日志指标)正交组合,策略集中配置随上游健康调整。四个坑我会主动列:默认无限重试必须显式 stop、async 的正确姿势、非幂等操作的误用(重试函数必须幂等)、静默重试(钩子必配)。体系认知:重试库管单请求策略,熔断管系统策略,两者互补。』追问展开:Retry-After 的集成、重试风暴的多层放大、与熔断的配合。",
-    "followups": [
-      {"q": "多层调用的重试放大怎么防?", "a": "重试只在最靠近故障的一层(直接调上游的服务层),上层不再重试(失败直接透传或降级)——每层都重试=指数放大(N 层各 3 次=3^N 次请求)。纪律:重试策略集中在『出网边界层』,内部调用不做重试(或只做透传性重试);全局预算兜底(LP-004)。"},
-      {"q": "怎么让重试『可见』?", "a": "三个钩子:before_sleep(即将第 N 次重试,等待多久——WARNING 级日志)、retry(重试结果成功——INFO)、指标(重试次数计数器按上游维度)。重试率是上游健康度的先行指标(429 率的前奏),必须进监控大盘(EN-002)。"},
-      {"q": "tenacity 和熔断器怎么配合?", "a": "分工:tenacity 管『单次调用的瞬时故障重试』(策略内有限次);熔断器管『系统级的持续故障』(连续失败率超阈值→打开,快速失败一段时间,EN-009)。层次:熔断器包住重试装饰器(熔断判断的是『含重试的调用』的失败率)——重试耗尽才算一次失败计入熔断统计,避免重试掩盖故障信号。"}
-    ],
-    "pitfalls": [
-      "不配 stop 参数——默认无限重试(十连击打爆上游)。",
-      "对非幂等操作(下单/扣款)挂重试装饰器,重复执行事故(AG-003)。",
-      "重试无日志无指标,上游已经 50% 失败率了没人知道。",
-      "每层调用各自重试,故障被指数放大成风暴。"
-    ],
-    "check": {
-      "q": "评审发现:@retry() 裸装饰在一个调 LLM 的非幂等函数上(没有其他配置)。列出问题与修正?",
-      "a": "三连问题:①无 stop——失败即无限重试,LLM 按次计费=无限烧钱;②无 retry 条件——所有异常(包括 401 参数错误)都重试,白烧;③非幂等——该函数可能产生副作用(计费/写库),重复执行是业务事故。修正:限定 retry_if_exception_type(TransientError)、stop_after_attempt(4)、指数退避+抖动、before_sleep 日志;并确认函数幂等化(幂等键)或去掉重试改为上游幂等。这是一道『评审素养』题:裸 @retry 是生产事故的标准配方。",
-      "explain": "检验点:裸 @retry 的三重危险识别与修正清单。"
-    },
-    "related": ["LP-004", "PY-005", "PY-008", "EN-009"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "tenacity 文档", "url": "https://tenacity.readthedocs.io/", "kind": "official-docs", "note": "库语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "纪律与坑为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "库 API 以官方文档为准;纪律为独立整理。"}
-  },
-  {
-    "id": "PY-024",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "FastAPI 应用的后台任务与定时调度怎么设计?BackgroundTasks、arq/APScheduler 怎么选?",
-    "tags": ["后台任务", "调度", "FastAPI"],
-    "prerequisites": ["PY-015", "PY-003"],
-    "answer": "三级方案按任务特征选:①BackgroundTasks(FastAPI 内建)——响应后同进程执行的轻量收尾(发通知/写审计日志),进程死任务丢(不可靠,只做可丢的事);②任务队列(arq/Celery/dramatiq+Redis)——可靠异步任务(重试/持久化/独立 worker 进程),LLM 批处理/重生成/文档入库用这级(LP-012);③定时调度(APScheduler/cron+队列)——周期任务(夜间评测/索引重建/报表)。设计纪律:任务幂等(至少一次投递,AG-003)、任务参数序列化(不传对象传 ID)、任务可观测(状态/重试/耗时入盘)、优雅停机(在途任务收尾或断点续跑,PY-015)。反模式:用 BackgroundTasks 做关键业务(发版即丢)、在请求进程里跑长任务(占 worker)、定时任务无锁多实例重复执行(PY-017 分布式锁)。",
-    "plain": "三级方案像餐厅的三个后厨通道:BackgroundTasks=出餐口顺手擦桌子(快、顺手、但打烊就没人擦了——可丢);任务队列=正式外卖订单系统(有单据、可重试、独立厨房,打烊了订单还在系统里明天接着做);定时调度=每日例行的备菜计划(每天凌晨自动切菜腌肉)。选错的表现:把外卖订单写在下餐垫纸上(BackgroundTasks 做关键业务,一打扫就没了);或者让前厅服务员自己炖 3 小时的汤(请求进程跑长任务,客人全堵在门口)。比喻局限:多实例部署时『定时任务只跑一份』需要分布式锁——餐厅单店没有这个问题,连锁店才有(PY-017)。",
-    "deep": "1) BackgroundTasks 的边界:同进程内 await/执行,响应返回后开始;适用:轻、快(<秒级)、可丢(审计日志/统计打点/清缓存);不适用:LLM 调用(慢且贵且必须成功)、需要重试的业务、跨进程可见的任务。误用的根源是『顺手』——它语法太方便,需要纪律约束(评审 checklist:BackgroundTasks 里的任务丢失了有影响吗?有→升级队列)。\n2) 任务队列(arq 为 async 优选):\n   - 特性:任务函数+参数序列化到 Redis→独立 worker 进程消费→重试/超时/结果存储;\n   - 与 LP-012 的批处理关系:arq 管单任务异步化(重生成/文档处理),平台级批处理 API 管海量任务——量级不同;\n   - 队列选择:arq(async 原生轻量)、Celery(生态全但重)、dramatiq(中间态)——按团队与规模;\n   - 任务设计(AG-003 的落点):任务 ID 幂等、参数只传 ID(对象重新查库——参数里的状态可能过期)、重试策略显式(PY-023)、死信处理(重试耗尽进死信队列人工处理)。\n3) 定时调度:APScheduler(进程内,多实例需分布式锁)/平台级(云调度器+HTTP 触发——更稳)/cron+管理命令(最朴素)。多实例部署的定时任务:分布式锁(PY-017)或单实例专用部署(调度与业务分离)——重复执行的任务(发重复通知)是经典事故。\n4) 可观测与运维:任务状态机(排队/执行/成功/失败/重试,AG-030 复用)、队列深度与执行时长监控(堆积告警)、失败任务的重放工具(运维界面或命令)、任务版本(代码升级后排队中的旧任务兼容性——参数 schema 演进)。\n5) 与 lifespan 的整合:worker 独立进程(不与 API 混部——资源隔离,PY-019)/lifespan 启动调度器关闭时优雅停止(PY-015)。",
-    "example": "```python\n# arq 任务(独立 worker 进程)\nasync def reindex_document(ctx, doc_id: str):\n    doc = await load(doc_id)               # 参数传 ID,不传对象\n    chunks = await parse_and_chunk(doc)\n    await upsert_index(doc.id, chunks)     # 幂等 upsert\n\nclass WorkerSettings:\n    functions = [reindex_document]\n    max_retries = 3\n    job_timeout = 600\n\n# API 侧入队\n@app.post(\"/docs/{doc_id}/reindex\")\nasync def reindex(doc_id: str):\n    await queue.enqueue_job(\"reindex_document\", doc_id, _id=f\"reindex:{doc_id}\")\n    return {\"queued\": True}                # _id 幂等:重复提交去重\n```",
-    "interview": "口述版:『后台任务三级:BackgroundTasks 只做可丢的轻收尾(发版即丢,纪律是评审时问「任务丢了有影响吗」);可靠异步上任务队列(arq 异步原生,任务幂等+参数传 ID+重试显式+死信队列);定时调度多实例必须分布式锁或专用实例(重复执行的经典事故)。LLM 应用的映射:批处理/文档入库/重生成走队列,审计打点走 BackgroundTasks,夜间评测/索引重建走调度。运维三件:队列深度监控、失败重放工具、任务版本兼容。』追问展开:任务参数序列化的原则、死信队列、与批处理 API 的分工。",
-    "followups": [
-      {"q": "任务参数为什么传 ID 不传对象?", "a": "参数要序列化排队(对象可能不可序列化);排队期间的陈旧性:排队 10 分钟后执行,10 分钟前的对象快照可能是旧状态——传 ID 让任务执行时重新查库(最新状态),配合幂等处理状态已变的情况(对象已删除→任务安全退出)。这是『任务与请求的时间解耦』的基本功。"},
-      {"q": "死信队列怎么设计?", "a": "重试耗尽的任务不静默丢弃→进死信队列(独立存储:原参数+错误历史+尝试次数);死信的处理:告警+运维界面重放(修复后手动/自动重投)+定期分析死信模式(系统性问题的信号,EN-013)。没有死信机制的任务系统,失败任务等于黑洞(用户等待无下文)。"},
-      {"q": "定时任务和批处理 API 怎么分工?", "a": "定时调度管『编排触发』(每天 2 点启动夜间评测),批处理 API 管『LLM 调用本身』(LP-012,五折+不占在线配额)——调度器把任务提交给批处理 API,结果回收也是调度任务。分工口诀:调度管『什么时候做』,队列管『怎么可靠地做』,批处理 API 管『怎么便宜地对 LLM 做』。"}
-    ],
-    "pitfalls": [
-      "BackgroundTasks 里调 LLM/写关键数据,发布重启任务蒸发。",
-      "多实例部署的定时任务无锁,每个实例都执行一遍(重复通知×N)。",
-      "任务参数传大对象快照,执行时状态已过期。",
-      "队列无深度监控,积压 10 万任务无人发现(用户等待无下文)。"
-    ],
-    "check": {
-      "q": "需求:用户上传文档后『异步解析入库』。任务执行到一半服务发布重启。你的设计怎么保证文档最终入库?",
-      "a": "①任务入队持久化(arq 的 job 在 Redis,重启不丢);②任务幂等(reindex_document 按 doc_id upsert,重复执行安全——AG-003);③执行一半崩溃:重试机制从头重跑(解析入库设计为幂等整体操作)或检查点续跑(大文档分块+进度记录,AG-005);④重启后 worker 自动恢复消费(lifespan/独立 worker 进程的自动重启,PY-019);⑤死信兜底:重试耗尽进死信告警人工。链路核心:持久化队列+幂等任务+重试——三者齐了,『最终入库』才成立(至少一次投递+幂等消费=恰好一次效果,AG-003 的公式)。",
-      "explain": "检验点:『至少一次投递+幂等消费』的可靠性公式在文档入库场景的完整落地。"
-    },
-    "related": ["PY-015", "PY-017", "LP-012", "AG-003", "PY-019"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "arq 文档 / FastAPI BackgroundTasks 文档", "url": "https://arq-docs.helpmanual.io/", "kind": "official-docs", "note": "库语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "三级方案与纪律为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "库 API 以官方文档为准;方案分级为独立整理。"}
-  },
-  {
-    "id": "PY-025",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "接口的幂等性(idempotency)怎么设计?幂等键的标准实现是什么?",
-    "tags": ["幂等", "接口设计", "可靠性"],
-    "prerequisites": ["AG-003", "PY-017"],
-    "answer": "幂等=同一操作执行多次与执行一次效果相同。标准实现:①客户端生成幂等键(唯一业务 ID:请求 UUID 或业务自然键如 order_id)随请求携带;②服务端存储——幂等表(键+请求指纹+响应+状态)与业务操作同事务;③处理逻辑——首次:执行业务并记录响应;重复:发现同键→两种语义(a)返回缓存的首次响应(查询类安全)(b)返回 409/进行中状态(写操作防重复提交),取决于操作语义;④指纹校验——同键不同参数=客户端 bug,拒绝并告警。适用判断:所有写操作与收费操作默认要求幂等;读操作天然幂等可豁免。与重试的关系:重试的前提就是幂等(LP-004/PY-023),没有幂等键的重试是赌博。",
-    "plain": "幂等像『带取件码的快递柜』:投递员重投(网络重试),凭同一个取件码只会放进同一个柜子——不会因为投了三次就出现三个包裹。没取件码的重投=用户收到三个包裹(重复扣款/重复下单)。实现三件套:取件码(客户端生成)、登记本(服务端记『这个码处理过了,结果是什么』)、核对(同码不同内容=有人捣乱,拒绝)。比喻局限:『返回首次响应』的语义要按操作类型区分——支付类重复请求应该返回『已在处理』而不是『再付一次成功』。",
-    "deep": "1) 幂等表设计:\n```sql\nCREATE TABLE idempotency (\n  key VARCHAR PRIMARY KEY,\n  request_fingerprint VARCHAR,   -- 请求体 hash(防同键不同参)\n  status VARCHAR,                -- processing | done | failed\n  response JSON,\n  created_at TIMESTAMP\n);\n-- 业务操作与幂等记录同事务(原子性)\n```\n2) 处理流程:\n```\n收到请求(key):\n  ① 查幂等表:\n     - 不存在 → 插入(status=processing)→ 执行业务 → 更新响应 → 返回\n     - 存在且 done → 校验指纹 → 返回缓存响应(或 409,按语义)\n     - 存在且 processing → 返回 409/425(Too Early,处理中,请稍后查询)\n  ② 并发同键:唯一约束挡住第二个(插入冲突)→ 第二个等待或返回进行中\n```\n3) 语义选择(设计决策):支付类→重复请求返回首次结果或『处理中』(绝不再执行);发送类(邮件)→返回首次结果(重复发送是事故);查询类→天然幂等直接执行。语义混乱的事故:『重复请求返回新结果』的支付接口——重试变成双倍扣款。\n4) 过期与清理:幂等记录保留期(24~72h 覆盖重试窗口)+清理任务(过期删除);保留期内重复请求才防得住——太短的保留期等于没防。\n5) 分布式细节:幂等表的并发(唯一约束+插入冲突处理);跨服务的幂等传递(网关透传 Idempotency-Key 头到下游,AG-021 的溯源);与消息队列的消费幂等(消息至少一次投递→消费端按消息 ID 幂等,AG-003 的公式);前端配合:用户操作时生成 key(提交前),重试按钮复用同 key,新操作新 key。",
-    "example": "```python\n@app.post(\"/payments\")\nasync def create_payment(req: PaymentRequest,\n                         idem_key: str = Header(...)):\n    fp = hash_request(req)\n    async with db.transaction():\n        existing = await db.fetch_one(\n            \"SELECT * FROM idempotency WHERE key=:k FOR UPDATE\", k=idem_key)\n        if existing:\n            if existing.fingerprint != fp:\n                raise HTTPException(422, \"幂等键复用但请求不同\")\n            if existing.status == \"done\":\n                return existing.response          # 返回首次响应\n            raise HTTPException(425, \"处理中\")\n        await db.execute(\"INSERT INTO idempotency...\", status=\"processing\")\n    result = await charge(req)                    # 业务执行(事务外,失败标记 failed)\n    await db.execute(\"UPDATE idempotency SET response=:r, status='done'\", r=result)\n    return result\n```",
-    "interview": "口述版:『幂等三件套:客户端幂等键、服务端幂等表(键+指纹+响应+状态,与业务同事务)、语义决策(重复请求返回首次结果/处理中/409——按操作类型,支付类绝不再执行)。两个易漏点:同键不同参数要拒绝(指纹校验,客户端 bug 的探针)、幂等记录保留期覆盖重试窗口。与重试的关系:重试的前提是幂等——没有幂等键的重试是赌博(LP-004/PY-023 的前提)。』追问展开:processing 状态的处理、指纹计算、与消息队列消费幂等的统一。",
-    "followups": [
-      {"q": "processing 状态的重复请求返回什么?", "a": "425 Too Early 或 409+Retry-After:告诉客户端『首次请求正在处理,请稍后用同键查询』——绝不能再次执行业务。客户端处理:轮询查询接口(用同键)直到 done。这个中间态是幂等设计里最容易忽略的(很多人只设计了 done 的缓存,忘了 processing 的并发窗口)。"},
-      {"q": "请求指纹怎么算?", "a": "对请求体的规范化序列化(字段排序后 JSON dump)做 hash——同语义请求(字段顺序不同)应同指纹。作用:同键不同内容的请求=客户端 bug 或攻击(复用别人的键),拒绝并告警。指纹让幂等键从『防重复』升级为『防错乱』。"},
-      {"q": "消息队列的消费幂等怎么做?", "a": "消息至少一次投递(MQ 保证)→消费端按 message_id/业务键查幂等表(同接口幂等);或用数据库唯一约束(业务自然键)让重复消费在写入时自然失败。公式:至少一次投递+幂等消费=恰好一次效果(AG-003/AG-017 的公式,在数据层的落地)。"}
-    ],
-    "pitfalls": [
-      "重试由客户端/网关做,但接口无幂等键——重复扣款/重复下单。",
-      "幂等表与业务操作不同事务,崩溃后出现『扣了款没记录幂等』的窗口。",
-      "processing 状态直接重执行(并发窗口的双执行)。",
-      "幂等记录保留 1 小时,而客户端的重试窗口是 24 小时(防了个寂寞)。"
-    ],
-    "check": {
-      "q": "网关对超时请求自动重试(LLM 上游超时,指数退避 3 次)。你的 LLM 调用接口需要什么配合才安全?",
-      "a": "LLM 生成是『非幂等的付费操作』:重试=重复计费+重复内容。配合:①网关重试必须携带 Idempotency-Key(网关生成并透传);②服务端按键做幂等(同键返回首次结果或进行中状态);③更精细:区分可安全重试的失败(上游 429/连接失败——请求未达模型,不产生费用)与不可重试的(已开始生成的超时——半途失败,重试=重跑;流式的部分结果要处理)。要点:『超时』不等于『没执行』——付费操作的重试必须以幂等与状态查询为前提,不能拿网络层语义赌业务结果。",
-      "explain": "检验点:『超时≠未执行』的认知——LLM 付费操作重试的前提设计,这是 LP-004 重试策略在业务层的闭环。"
-    },
-    "related": ["AG-003", "LP-004", "PY-017", "PY-023", "AG-021"],
-    "doc_refs": ["doc-python-1", "doc-agent-1"],
-    "sources": [
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "为独立整理(幂等键为业界标准模式,如 Stripe Idempotency-Key)"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "为独立整理;代码为模式演示未运行(已标注)。"}
-  },
-  {
-    "id": "PY-026",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "列表分页用 offset 还是游标(cursor)?深分页的性能问题怎么解?",
-    "tags": ["分页", "游标", "数据库"],
-    "prerequisites": ["PY-016"],
-    "answer": "两种分页:①offset/limit——跳过 N 条取 M 条:实现简单、可跳页,但深分页性能塌方(OFFSET 100000 要扫描并丢弃 10 万条)+数据变动时页错位(插入/删除导致重复或漏读);②游标(cursor/keyset)——按稳定排序列(时间戳+ID 复合)取『上一页最后一条之后』的 M 条:性能恒定(索引直达)、无页错位,但只能顺序翻页(不能跳页)。决策:用户翻页(浅、需跳页)→offset 可接受;无限滚动/导出/同步(API 场景,深)→游标必选。LLM 应用的高频场景(会话历史加载、批量任务列表)都是游标场景。深分页的额外手段:延迟关联(先查 ID 再回表)、游标+缓存。",
-    "plain": "翻书找内容:offset 像『第 5 万页?从第一页开始数 5 万页』(数的过程全是浪费,而且有人中途插了页你数到的内容就错了);游标像『书签』——上次看到哪,夹个书签,下次从书签继续(又快又稳,但不能『直接翻到第 500 页』)。API 场景(导出十万条、加载聊天记录)全是『从书签继续』的场景;人类翻页(搜索结果的第 3 页)才需要 offset。比喻局限:复合游标(时间戳+ID 处理同刻多条)是工程细节,书签比喻装不下——同秒多条记录时仅按时间戳游标会漏读。",
-    "deep": "1) offset 的问题量化:LIMIT 20 OFFSET 100000——数据库要读 100020 行丢前 10 万(无索引捷径);页越深越慢(O(n));页漂移:读第 2 页时有新插入,offset 错位(看到重复或漏读)——对『导出/同步』是正确性问题不只是性能。\n2) 游标实现:\n```sql\n-- 第一页\nSELECT * FROM messages WHERE session_id=:s\nORDER BY created_at DESC, id DESC LIMIT 20;\n-- 下一页(游标=上一页最后一条的 created_at+id)\nSELECT * FROM messages WHERE session_id=:s\n  AND (created_at, id) < (:last_ts, :last_id)\nORDER BY created_at DESC, id DESC LIMIT 20;\n```\n复合排序键(唯一性!):created_at 重复时用 id 决胜——漏读的根源就是排序列不唯一;行构造比较((a,b) < (x,y))的索引利用要确认(复合索引 (session_id, created_at, id))。\n3) 游标编码:对外不暴露原始值(编码/加密 base64,防止客户端篡改跳页探测)——既是安全也是稳定;游标含排序方向与过滤上下文(条件变了游标失效——返回错误提示重新分页)。\n4) 混合需求:『跳页+深分页』都要的场景(管理后台):offset 到一定深度切换游标,或用『页码→游标』的映射表(预计算页边界);或接受深分页的延迟(管理后台低频)。\n5) LLM 场景映射:会话历史加载(LP-007):游标(无限上翻);批量导出(LP-012):游标+幂等续跑;评测结果浏览:offset(浅+需跳页);向量检索的分页(特殊性:top-k 之后没有『第 2 页』——要么加大 k 要么重查询,检索分页与 DB 分页是两个体系)。",
-    "example": "```python\n# 游标编码\nimport base64, json\ndef encode_cursor(row):\n    return base64.urlsafe_b64encode(json.dumps(\n        {\"ts\": row.created_at.isoformat(), \"id\": row.id}).encode())\n# API: GET /messages?session=1&cursor=eyJ0cyI6...&limit=20\n# 响应: {\"items\": [...], \"next_cursor\": \"...\"}  (null = 末页)\n```",
-    "interview": "口述版:『offset 两个死穴:深分页扫描浪费(O(n))与页漂移(数据变动时的重复/漏读——导出场景是正确性问题)。游标(时间戳+ID 复合键,唯一性!)性能恒定无错位,代价是不能跳页。决策:API/导出/无限滚动=游标,人类浅翻页=offset 可接受。LLM 应用的会话历史与批量任务列表都是游标场景;向量检索的分页是另一个体系(top-k 无第二页,加大 k 或重查询)。』追问展开:复合游标的唯一性、游标的安全编码、向量检索的分页。",
-    "followups": [
-      {"q": "游标排序列为什么必须加 ID 决胜?", "a": "时间戳不唯一:同一秒/毫秒多条记录时,仅按时间戳游标会跳过(或重复)同刻记录——keyset 分页的正确性前提是排序键全序唯一。(created_at, id) 复合解决。这是游标分页最经典的正确性 bug,评测方法:并发写入环境下导出两次对比完整性。"},
-      {"q": "游标要不要加密/编码?", "a": "裸游标(offset=100023、时间戳+ID)泄露数据规模与结构(竞对可以遍历探测);base64 编码+签名(HMAC 防篡改)是基本卫生;签名还防『客户端伪造游标越权翻页』(配合权限过滤,RG-015)。成本极低,默认做。"},
-      {"q": "向量检索怎么『分页』?", "a": "向量检索没有天然全序(相似度不是唯一键),『第 2 页』语义模糊——三种处理:加大 k 客户端自行分页(k=50 取前 20 展示,滚到底再要);游标式(基于分数+ID 的 keyset,向量库支持有限);或重查询(带排除集)。更本质的问题:相似度检索的『翻页』体验是否成立(第 2 页的相关性显著下降)——产品上常以『换个问法』替代翻页(RG-035 的澄清思想)。"}
-    ],
-    "pitfalls": [
-      "导出接口用 offset 深分页,10 万条导出越来越慢最后超时。",
-      "游标只用时间戳不决胜,同秒记录漏读(导出少数据,静默错误)。",
-      "游标裸传,客户端篡改遍历数据(安全+性能)。",
-      "数据变更时页漂移没有处理(导出重复/漏读,对账发现)。"
-    ],
-    "check": {
-      "q": "产品要求『聊天记录无限上滚加载』+『支持导出全部历史』。你的分页方案?",
-      "a": "两者都用游标(时间戳+ID 复合,索引 (session_id, created_at, id)):上滚加载=游标向前翻;导出=游标流式导出(分批+幂等续跑,PY-024 的任务化)。不支持跳页——需要跳页的场景(管理后台搜某条)走搜索而非分页(RG-040 的检索思维:找内容用检索不用遍历)。附加:导出的幂等键(PY-025)+游标签名。方案一致性:两种需求一个分页原语,复杂度收敛。",
-      "explain": "检验点:多需求统一到游标原语,并知道『跳页』需求用检索替代而非 offset 硬扛。"
-    },
-    "related": ["PY-016", "PY-024", "LP-007", "RG-040"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "为独立整理(keyset 分页为数据库通行实践)"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "为独立整理;SQL 为演示。"}
-  },
-  {
-    "id": "PY-027",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "日志脱敏(masking)在代码层怎么实现?怎么做到『全量脱敏且不漏』?",
-    "tags": ["日志", "脱敏", "隐私"],
-    "prerequisites": ["PY-009", "EN-012"],
-    "answer": "脱敏的四层防线:①入口最小化——敏感数据进来就打标(结构化字段级:phone/email/id_card 的 Pydantic 模型字段类型标注),下游默认不可见明文;②序列化拦截——日志 formatter 层统一脱敏(自定义 JSON formatter 遍历字段按类型/键名掩码)+正则兜底(消息文本里的手机号/身份证模式替换)——这是兜底网,不依赖每个开发者自觉;③框架级过滤——记录器对特定 logger/字段的强制掩码(黑名单字段:password/token/secret 永不出现在日志);④测试与审计——脱敏单测(构造含 PII 的对象断言日志输出已掩码)+定期审计(线上日志抽样 PII 扫描)。关键认知:靠『开发者记得不打敏感信息』的约定必然失败——脱敏必须在基础设施层强制(管道默认安全)。",
-    "plain": "日志脱敏像『文件碎纸机的自动模式』:不能指望每个员工记得『这份文件要碎』(开发者自觉),要装一台『所有废纸自动过碎纸机』的管道(formatter 层强制)——敏感格式的纸(正则模式:手机号/身份证)进去自动变碎片。四层防线=入口贴标签(字段打标)、碎纸机(formatter)、保险柜黑名单(token 永不进日志)、抽检(审计)。比喻局限:LLM 日志的难点是『非结构化对话』——用户聊天里自然语言地提到手机号,需要 NER/正则扫文本,不只是字段掩码。",
-    "deep": "1) 字段级打标(Pydantic 层):\n```python\nclass SensitiveStr(str): ...          # 标注类型\nMaskedEmail = Annotated[str, Mask(\"email\")]\nclass User(BaseModel):\n    phone: MaskedPhone\n    email: MaskedEmail\n# 日志序列化时按标注掩码(138****5678)——数据自带脱敏指令\n```\n2) formatter 层强制:\n```python\nclass MaskingFormatter(logging.Formatter):\n    PATTERNS = [(r\"1[3-9]\\d{9}\", \"手机号\"), (r\"\\d{17}[\\dXx]\", \"身份证\")]\n    def format(self, record):\n        msg = super().format(record)\n        for pat, _ in self.PATTERNS:\n            msg = re.sub(pat, lambda m: mask(m.group()), msg)\n        return msg\n```\n——正则兜底覆盖『非结构化文本』(用户消息里的 PII,PY-009 的 NER 增强);性能:正则成本可观测(高频路径的脱敏开销,EN-006),热路径可预编译+限长。\n3) 黑名单强制:字段名黑名单(password/token/secret/api_key)——formatter 见名即掩(★★★);异常信息脱敏(异常里可能带 SQL/请求头——repr 过滤);第三方库的日志(请求库可能打 header——配置其 logger 级别或覆写)。\n4) LLM 特有:对话内容的分级(PY-027/EN-002:全量脱敏 vs 采样保留 vs hash 替代)——对话是自由文本,正则+NER 组合;prompt/completion 的存储策略(EN-002 分级);评测集的脱敏一致性(EN-012 的可逆脱敏用于分析场景)。\n5) 审计闭环:线上日志抽样跑 PII 扫描器(周任务:正则+NER 扫最近日志,命中率报告)——漏网模式补充进规则(EN-013 飞轮);漏报的根因分析(新格式?绕过点?)→防线升级。『默认安全』的验证方式就是攻击自己的日志(红队思维)。",
-    "example": "```python\n# formatter 兜底 + 字段标注双防\n@dataclass\nclass CallLog:\n    user: MaskedPhone        # 字段级:序列化自动掩码\n    query: str               # 自由文本:formatter 正则兜底\n\nlog.info(\"llm_call\", extra={\"log\": asdict(call)})\n# 输出:{\"user\": \"138****5678\", \"query\": \"我的手机号是138****5678...\"}\n#                          ↑ 字段标注     ↑ 正则兜底(双保险)\n```",
-    "interview": "口述版:『脱敏四层防线:入口字段打标(类型级脱敏指令)、formatter 强制(正则兜底扫非结构化文本)、黑名单字段(password/token 见名即掩)、审计闭环(线上日志抽样跑 PII 扫描,漏网模式补规则)。核心立场:脱敏必须在基础设施层强制——靠开发者自觉的方案必然漏。LLM 特有:对话自由文本要正则+NER 组合,性能开销可观测。验证方式:攻击自己的日志(构造含 PII 的请求看输出)。』追问展开:formatter 性能、NER 与正则的分工、第三方库日志治理。",
-    "followups": [
-      {"q": "formatter 正则脱敏的性能开销?", "a": "每条日志跑多组正则:开销可控但要管理——预编译模式、限长(超长消息只扫前 N KB)、高频路径降级(全量正则→字段标注优先)、异步日志(脱敏在写线程)。度量:脱敏耗时进性能监控(PY-018),P99 增幅 <1ms 量级为佳。安全与性能的平衡点:分级(错误日志全扫,高频 INFO 采样扫)。"},
-      {"q": "NER 和正则怎么分工?", "a": "正则:格式固定的强模式(手机号/身份证/银行卡/邮箱)——快、准、零成本;NER(模型):自然语言里的弱模式(人名/地址/病史描述)——覆盖正则盲区但有小概率误判。组合:正则必拦(高置信)+NER 标记(中置信,按场景决定掩或保留)。LLM 对话日志的 PII 大头在自然语言里——NER 层是必须的(L-P009 的输出侧同理)。"},
-      {"q": "第三方库把 header 打进日志怎么办?", "a": "三招:配置其 logger 级别(WARNING 以上,DEBUG 详情不落);覆写其 formatter/过滤其记录(库日志过我们的脱敏 formatter——统一出口);源头替换(给 HTTP 库配自定义 log 工具或禁用 debug)。审计发现来源是关键(PII 扫描器标出泄漏点)——知道谁在漏才能治。"}
-    ],
-    "pitfalls": [
-      "脱敏靠 code review 约定(『别打手机号』),三个月后必然出现明文。",
-      "只掩字段不打文本,用户消息里的自然语言 PII 全裸(『我手机号 138...』)。",
-      "异常堆栈带 SQL/参数入日志,绕过所有字段级防线。",
-      "脱敏规则从不更新(新 PII 格式/新业务字段漏网),无审计闭环。"
-    ],
-    "check": {
-      "q": "PII 审计发现:错误日志里出现用户手机号明文,但你们有 formatter 脱敏。可能的绕过路径?",
-      "a": "排查顺序:①该日志走了独立的 logger(新模块自己建了 logger,没挂脱敏 formatter——多 logger 是常见漏点);②输出通道绕过(该日志直接写文件/stdout,没走 logging 管道——print 旧习或第三方库);③正则盲区(新手机号格式/带分隔符写法 138-1234-5678——模式库更新);④脱敏前的异常路径(异常在 formatter 之前被 print,或堆栈字符串拼接绕过 record)。修复按根因:统一 logger 获取(工厂模式强制挂 formatter)+模式库更新+审计覆盖所有输出通道。",
-      "explain": "检验点:脱敏绕过的四种路径(独立 logger/绕过管道/正则盲区/异常路径)——知道绕过路径才能设计『默认安全』。"
-    },
-    "related": ["PY-009", "EN-012", "LP-009", "EN-002"],
-    "doc_refs": ["doc-python-1", "doc-eng-1"],
-    "sources": [
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "为独立整理的四层防线"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "为独立整理;代码为模式演示未运行(已标注)。"}
-  },
-  {
-    "id": "PY-028",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "LLM 后端项目的代码分层怎么组织?router/service/repository 的边界怎么划?",
-    "tags": ["项目结构", "分层", "工程化"],
-    "prerequisites": ["PY-004", "PY-016"],
-    "answer": "推荐分层:router(FastAPI 路由:参数解析、依赖注入、响应序列化——薄)→service(业务编排:调用 LLM 客户端/检索/工具、事务边界、业务校验——厚)→repository(数据访问:SQL/缓存封装)/infra(外部客户端:LLM/向量库/Redis 的适配器)→core(配置/模型/日志)。边界纪律:router 不写业务(service 化的动机:同一业务被 webhook/CLI/定时任务复用)、service 不碰 HTTP 对象(可脱离 FastAPI 测试)、infra 可替换(接口抽象,LLM 供应商切换不动 service)。LLM 应用的特有层:prompt 模块(LP-021 版本管理)、agent/pipeline 编排层(AG-013)、domain 模型(Pydantic 实体)。",
-    "plain": "分层像餐厅的组织:前台(router)只管接单传菜(参数与响应),厨房(service)管怎么做菜(业务编排),采购部(repository/infra)管进货(数据与外部依赖),店规(core)是制度和原料标准。反例:前台直接颠勺(路由里写业务)——接单的手忙脚乱还没法复制流程;厨房直接跑菜市场采购(service 里写 SQL)——换个供应商全厨房翻桌。LLM 应用的『厨房』特别厚(LLM/检索/工具编排),所以分层纪律比普通 CRUD 更重要。比喻局限:LLM 应用多一层『菜谱管理』(提示词版本化,LP-021)——这是传统餐厅没有的职能。",
-    "deep": "1) 目录结构(示例):\n```\napp/\n  api/           # router:路由+依赖+schema 引用(薄)\n  services/      # 业务编排:chat_service/doc_service(厚)\n  repositories/  # 数据访问:SQL/Redis 封装\n  infra/         # 外部适配器:llm_client/vector_store/tools\n  prompts/       # 提示词与组装器(LP-021/022)\n  pipelines/     # Agent/工作流编排(AG-013)\n  domain/        # 领域模型(Pydantic 实体与枚举)\n  core/          # 配置(PY-010)/日志(PY-009)/异常(PY-005)\n```\n2) 各层纪律:\n   - router:≤10 行原则(解析→调 service→返回);不 import infra;\n   - service:业务编排与事务边界;依赖通过构造注入(接口而非实现——测试替身,PY-011);不 import fastapi(可脱离框架测试/复用);\n   - repository:只管持久化语义(方法名是业务语言 find_active 不是 SELECT 复杂 SQL 的暴露);\n   - infra:外部世界的适配器(供应商 SDK/HTTP)——LLM 网关(EN-014)的落点;接口抽象(Protocol)隔离。\n3) 依赖方向:router→service→repository/infra→core,单向;domain 被所有层引用但不依赖任何层(纯模型)——依赖倒置的朴素应用;循环依赖=分层失败的信号(用事件/回调解)。\n4) LLM 应用的特有边界:LLM 客户端的抽象(infra 接口:chat/embed/stream——EN-014 网关或直接 SDK 都在 infra 后面)、pipeline 层(agent 循环/编排,AG-013)在 service 之上或之内、prompt 组装器(LP-022)作为独立模块被 pipeline 调用;\n5) 测试映射(PY-011):router→集成测试(TestClient);service→单测(mock repository/infra);infra→契约测试(真实 API 冒烟,AG-009);分层即测试策略——这是分层最大的实际回报。",
-    "example": "```python\n# service 层(可脱离 FastAPI 测试)\nclass ChatService:\n    def __init__(self, llm: LLMClient, retriever: Retriever,\n                 repo: ConversationRepo):\n        self.llm, self.retriever, self.repo = llm, retriever, repo\n\n    async def chat(self, session_id: str, msg: str) -> ChatResult:\n        history = await self.repo.recent(session_id)\n        evidence = await self.retriever.search(msg)\n        ...  # 业务编排:组装/调用/后处理(LP-022/024)\n\n# router(薄)\n@router.post(\"/chat\")\nasync def chat(req: ChatRequest, svc = Depends(get_chat_service)):\n    return await svc.chat(req.session_id, req.message)\n```",
-    "interview": "口述版:『我的分层:router 薄(≤10 行,解析+调 service)、service 厚(业务编排+事务,不 import FastAPI——可脱离框架测试与复用)、repository/infra 数据与外部适配、core 配置日志。LLM 应用的特有三层:prompts(版本化,LP-021)、pipelines(Agent 编排,AG-013)、infra 的 LLM 抽象(供应商切换不动 service,EN-014)。分层最大的回报是测试映射:每层有自然的测试策略(PY-011)。纪律判据:router 不写业务、service 不碰 HTTP、infra 面向接口。』追问展开:service 的事务边界、LLM 抽象接口的设计、循环依赖的解法。",
-    "followups": [
-      {"q": "service 层的事务边界怎么定?", "a": "一个业务操作=一个事务边界(方法级):service 方法内管事务(开始/提交/回滚),repository 不自己 commit(被动参与 service 的事务);慢操作(LLM 调用)出事务(PY-016);跨聚合的操作用领域事件/最终一致(PY-025 幂等)而非大事务。事务边界混乱的症状:repository 里 commit(每个数据操作各自为政,业务一致性无法保证)。"},
-      {"q": "LLM 客户端的抽象接口怎么设计?", "a": "Protocol 定义:chat(messages, params) -> Completion、stream(...) -> AsyncIterator、embed(texts) -> vectors——面向能力不面向供应商;返回内部模型(Completion 信封,AG-014),不泄漏 SDK 类型;参数用内部枚举(供应商差异在 adapter 收敛);EN-014 网关是这个接口的服务化形态。测试:接口的 fake 实现(单测)+真实冒烟(契约,AG-009)。"},
-      {"q": "出现循环依赖(service↔service)怎么解?", "a": "三解:提取公共部分到第三个 service/domain(共享下沉);事件解耦(A 完成后发事件,B 订阅——异步解耦,PY-024);依赖倒置(A 依赖 B 的接口,B 实现接口——控制反转)。循环依赖的根因常是职责划分不清(两个 service 互相需要对方的功能=它们可能是一个领域)——先复审边界再动手解技术。"}
-    ],
-    "pitfalls": [
-      "router 里写业务(拼接提示词/调 LLM)——不可复用不可测(PY-011 的测试映射失效)。",
-      "service 直接 import httpx 调上游——绕过 infra 抽象,供应商切换翻遍代码。",
-      "domain 模型依赖框架(Pydantic 模型里调库)——纯模型被污染。",
-      "分层是目录游戏(文件分了层但依赖乱飞)——用 import-linter 类工具强制依赖方向。"
-    ],
-    "check": {
-      "q": "新需求:同样的『文档问答』能力要通过 CLI 工具和定时任务复用。分层设计怎么支持?",
-      "a": "核心逻辑在 service 层(不依赖 FastAPI——这是分层纪律的回报时刻):CLI 与定时任务(PY-024)直接实例化 ChatService(注入同样的 infra 依赖)调用同一方法;router 只是 HTTP 形态的入口之一。如果当初业务写在 router 里,现在要复制或重构——这个场景就是『router 薄、service 厚』纪律的论证:同一个能力,HTTP/CLI/批处理三个形态免费获得。",
-      "explain": "检验点:用『能力复用』场景论证分层的实际回报——分层不是教条,是复用与测试的基础设施。"
-    },
-    "related": ["PY-004", "PY-011", "PY-016", "LP-021", "EN-014"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "为独立整理(经典分层在 LLM 应用的展开)"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "为独立整理;目录为演示。"}
+  "related": [
+   "PY-002",
+   "PY-003",
+   "LP-005"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · 生成器(yield from/send/close)",
+    "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#generator-methods",
+    "kind": "official",
+    "note": "语言核心语义,长期稳定"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-06",
+   "note": "语言核心语义 verified;示例为演示。"
   }
+ },
+ {
+  "id": "PY-022",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "asyncio 的任务编排原语怎么选?gather、TaskGroup、as_completed、Queue 各自的场景?",
+  "tags": [
+   "asyncio",
+   "任务编排",
+   "并发"
+  ],
+  "prerequisites": [
+   "PY-003"
+  ],
+  "answer": "四个原语的分工:①gather——已知一批协程、要全部结果、顺序对应输入(简单聚合);return_exceptions=True 收集失败不中断;②TaskGroup(3.11+)——结构化并发:任一子任务以非取消异常失败时自动取消其余并抛异常组(『全要或全不要』,作用域内任务必然完成或取消,无泄漏);注意:单个子任务自己以 CancelledError 结束不算失败,不会触发兄弟取消;③as_completed——完成一个处理一个(流式消费结果,不等全批,如并发检索先到先用);④Queue——生产者消费者解耦(多 worker 消费、动态任务流、背压控制)。选择信号:结果依赖关系(DAG 用分层 gather/TaskGroup)、失败语义(聚合 vs fail-fast)、完成顺序是否重要。3.11+ 优先 TaskGroup(结构化并发消除任务泄漏)。",
+  "plain": "并发任务的管理方式像带团旅游:gather=『全体集合再走』(名单固定,收齐所有人的票);TaskGroup=『纪律版全体集合』——有人走丢全团原地等(取消其他),保证没人被落下(结构化);as_completed=『谁先到景点谁先玩』(不排队等全团);Queue=『食堂打饭』——窗口(消费者)与人流(生产者)解耦,人多就多开窗口。选错的表现:用 gather 做『谁先到谁先用』(白等最慢的),用 TaskGroup 做『部分失败可接受』(一人丢全团取消,过于严格)。比喻局限:TaskGroup 的『结构化』还有作用域保证(离开代码块时任务必然结束)——这是防任务泄漏的硬保证,旅游比喻没有。",
+  "deep": "1) gather vs TaskGroup 的语义差异(面试高频):\n   - gather(return_exceptions=True):全部跑完,结果含异常——适合『尽力而为的聚合』;\n   - gather 默认:第一个异常抛出,但其余任务继续跑(孤儿任务!结果被丢弃仍在消耗资源)——最危险的默认;\n   - TaskGroup 的精确规则(三种场景已在本机 Python 3.13 运行验证):\n     a. 子任务抛普通异常(非 CancelledError)→ 取消兄弟任务 → await 处抛 ExceptionGroup(实测:子任务 b 抛 ValueError,兄弟 c 被取消,t_c.cancelled()==True);\n     b. 单个子任务以 CancelledError 结束(如它内部主动取消自己)→ 不算失败、不取消兄弟,整组正常完成(实测:无异常上抛,其余任务照常 done);\n     c. 父任务/组被取消 → 取消沿作用域传播到所有子任务,CancelledError 抛给父(实测如此);\n   迁移建议:默认语义的聚合用 gather(return_exceptions=True) 或 TaskGroup+收集,裸 gather 逐步消灭。\n2) as_completed:提交一批,迭代完成顺序的 future——首个可用结果即可启动下游(流式聚合,RG-040 的多路检索先到先融合);注意超时与取消的配合(慢任务的处理策略)。\n3) Queue 模式:生产者-消费者解耦(worker 池:queue + N 个 consumer task);join/task_done 的完成计数;maxsize 背压(生产快于消费时阻塞生产者——天然的削峰);与信号量的分工:Semaphore 管『同时进行数』,Queue 管『任务流与解耦』(批量任务管道用 Queue,一次性并发用 gather)。\n4) 取消的传播与清理:TaskGroup 的取消会传播到子任务的 await 点(finally 清理执行);shield 保护关键段(不可中断的原子操作);取消是协作式的(PY-003)——长计算段要让出。\n5) 超时组合:asyncio.timeout(3.11 上下文管理器)/wait_for 包裹各原语;分层超时(单任务超时<整组超时,LP-004 的预算思想)。",
+  "example": "```python\n# 多路检索:先到先用(as_completed)\nasync def hybrid_search(q):\n    tasks = [dense_search(q), bm25_search(q), graph_search(q)]\n    results = []\n    for coro in asyncio.as_completed(tasks, timeout=2.0):\n        results.append(await coro)     # 先完成先融合\n    return merge(results)\n\n# 结构化并发(TaskGroup)\nasync def enrich_all(items):\n    async with asyncio.TaskGroup() as tg:\n        results = [tg.create_task(enrich(i)) for i in items]\n    return [r.result() for r in results]   # 全成功才到这里\n```",
+  "interview": "口述版:『四原语按三个信号选:结果依赖(固定批次 gather/TaskGroup,动态流 Queue)、失败语义(聚合 return_exceptions vs fail-fast TaskGroup)、完成顺序敏感(as_completed 先到先用)。我会重点讲 gather 默认语义的坑——第一个异常抛出但其余任务变孤儿继续跑,3.11+ 的 TaskGroup 用结构化并发消灭这个问题。Queue 与 Semaphore 的分工:队列管任务流解耦,信号量管同时数。』追问展开:孤儿任务的危害、TaskGroup 的异常组处理、Queue 背压。",
+  "followups": [
+   {
+    "q": "裸 gather 的『孤儿任务』危害?",
+    "a": "gather 默认第一个异常立即上抛,但未完成的任务不会被取消——它们继续在后台跑(消耗配额/连接/费用),结果被丢弃。危害:成本泄漏(调 LLM 的孤儿任务继续计费)+资源占用。修复:gather(return_exceptions=True)(收全)+手动取消,或迁移 TaskGroup(自动取消)。这正是 3.11 引入 TaskGroup 的动机。"
+   },
+   {
+    "q": "TaskGroup 的 ExceptionGroup 怎么处理?",
+    "a": "取分组异常:eg.exceptions 遍历(可能多个子任务同时失败);判断类型用 except* 语法(3.11+:按异常类型分别捕获);业务上通常记日志全部子异常+按首个根因分类。语法新但思路老:聚合错误信息保留全部根因(PY-005 的异常链思想的并发版)。"
+   },
+   {
+    "q": "Queue 的背压怎么起作用?",
+    "a": "maxsize 限制队列长度:满时 put 阻塞——生产者被迫减速,上游压力传导(而不是无限堆积到内存爆炸)。这是『推回压』的标准实现:下游容量决定上游速率(LP-012 批处理的削峰、AG-033 的任务排队都复用)。无界队列是内存事故的常见根源。"
+   },
+   {
+    "q": "TaskGroup 里某个子任务自己 raise CancelledError,整组会失败吗?",
+    "a": "不会(本机 Python 3.13 实测):单个子任务以 CancelledError 结束不算失败,兄弟任务照常完成,await TaskGroup 也不抛异常。这个语义可以用来表达『这个子任务自愿放弃,但整组继续』;它与『子任务抛普通异常→取消兄弟+抛异常组』的 fail-fast 规则是两回事。注意区分:父任务取消整组时,CancelledError 会正常向外传播。"
+   }
+  ],
+  "pitfalls": [
+   "裸 gather 默认语义的孤儿任务(成本泄漏)。",
+   "gather 用作流式消费(应该 as_completed),整体延迟被最慢者绑架。",
+   "Queue 无 maxsize,生产快于消费时内存无界增长。",
+   "3.11 前后 API 混用认知(uvicorn 老文档的 on_event vs lifespan 式混乱)。"
+  ],
+  "check": {
+   "q": "需求:并发调 3 个搜索源,任何一个 2 秒内没返回就跳过它用另外两个的结果。原语组合怎么写?",
+   "a": "as_completed(timeout=2.0) 的变体:迭代完成的任务,超时后未完成的任务取消(asyncio.timeout 包整体+对剩余任务 cancel)。注意 as_completed 的 timeout 到期抛 TimeoutError——捕获后对剩余任务逐个 cancel(或 wait_for 的两个阶段:第一阶段 2s 收快者,第二段取消慢者)。这题考『部分结果+超时取消』的组合——gather 做不到(要么全等要么全弃),as_completed/wait 才是对的原语。",
+   "explain": "检验点:『部分结果+超时』需求与 as_completed/wait 的匹配——gather 的聚合思维解决不了。"
+  },
+  "related": [
+   "PY-003",
+   "PY-005",
+   "AG-017",
+   "LP-004"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · Coroutines and Tasks(3.11 TaskGroup)",
+    "url": "https://docs.python.org/3/library/asyncio-task.html",
+    "kind": "official",
+    "note": "2026-09-06 已核验 gather/create_task/to_thread;TaskGroup 语义同源"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "原语选型为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-07",
+   "note": "gather/TaskGroup 语义已核验;TaskGroup 三场景(子任务普通失败/单子任务自取消/父取消)已在本机 Python 3.13 运行验证;示例为演示。"
+  }
+ },
+ {
+  "id": "PY-023",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "重试库(tenacity)怎么用?比手写重试循环好在哪、坑在哪?",
+  "tags": [
+   "tenacity",
+   "重试",
+   "工程化"
+  ],
+  "prerequisites": [
+   "LP-004",
+   "PY-005"
+  ],
+  "answer": "tenacity 把重试策略声明化:装饰器声明 retry 条件(哪个异常)、等待策略(指数退避 wait_exponential+jitter)、停止条件(stop_after_attempt/stop_after_delay)、以及钩子(before/sleep/retry 回调——打日志与指标)。比手写好在:策略与业务解耦(改重试策略不动业务代码)、组合性(条件×等待×停止正交配置)、内置细节(抖动、Retry-After 支持 via wait_server)。坑:①默认行为危险(不配置就对所有异常无限重试——必须显式 stop);②同步装饰器包 async 函数的问题(用 AsyncRetrying/async 装饰);③重试里的非幂等副作用(装饰器掩盖了『这个函数不该重试』的业务判断);④可观测性靠钩子(不配钩子=重试静默发生)。",
+  "plain": "重试库像『把口头交代的规矩写成制度牌』:手写循环=每次口头交代『失败了等 2 秒再试,最多 3 次』——每次交代口径可能不一样,没人监督;tenacity=门口挂制度牌『失败→指数退避 2/4/8 秒→最多 3 次→每次都上报』——统一、可审计、可调整。坑:制度牌默认写的是『永远重试』(不配 stop 就是无限)——挂制度牌必须自己写清『最多几次』。比喻局限:tenacity 的声明式组合(条件与策略正交)和 async 支持,是『制度牌』比喻装不下的工程细节。",
+  "deep": "1) 核心配置四件套:\n```python\nfrom tenacity import retry, stop_after_attempt, wait_exponential,\n                     retry_if_exception_type, before_sleep_log\n\n@retry(\n    retry=retry_if_exception_type(TransientError),   # 只重试瞬时错误\n    wait=wait_exponential(multiplier=1, max=30) + wait_random(0, 2),  # 退避+抖动\n    stop=stop_after_attempt(4),                        # 上限\n    before_sleep=before_sleep_log(logger, logging.WARNING))  # 可观测\n```\n2) 策略与业务解耦的价值:重试策略是『基础设施参数』(随上游健康度调整)——集中配置(不同上游不同策略)而非散在各调用点;运行时可调(配置中心下发,EN-005)。\n3) async 的正确姿势:@retry 装饰 async def 时 tenacity 会正确等待(新版支持);显式 AsyncRetrying 用于动态策略;与 asyncio.wait_for 组合(重试预算内每次也有超时,LP-004)。\n4) 坑的系统性治理:\n   - 无 stop 默认无限重试——lint/评审 checklist 强制 stop;\n   - 重试放大(上游一次故障被 N 层重试放大成风暴——每层都重试,LP-004 的抖动与全局预算治理);\n   - 非幂等操作的装饰器误用(评审:重试函数必须幂等或有幂等键,AG-003);\n   - 静默重试(无日志无指标——重试率不可见,EN-002);\n   - 与熔断的配合(重试是单请求策略,熔断是系统策略——连续失败该熔断而不是继续重试,LP-004/EN-009)。\n5) 何时不用库:简单的一次性脚本(try/except + sleep 更直白);需要『带状态的复杂重试编排』(多步工作流的重试——那是状态机/工作流引擎的事,AG-030)。",
+  "example": "见 deep 的四件套配置;另附 Retry-After 支持:\n```python\nfrom tenacity import retry, wait_exponential_jitter, Retrying\n\ndef custom_wait(retry_state):\n    r = retry_state.outcome.exception()\n    ra = getattr(r, \"retry_after\", None)   # 上游 Retry-After 优先\n    return max(ra or 0, 2 ** retry_state.attempt_number)\n```",
+  "interview": "口述版:『tenacity 的价值是重试策略声明化:条件(只重瞬时错误)×等待(指数+抖动)×停止(次数/时长)×钩子(日志指标)正交组合,策略集中配置随上游健康调整。四个坑我会主动列:默认无限重试必须显式 stop、async 的正确姿势、非幂等操作的误用(重试函数必须幂等)、静默重试(钩子必配)。体系认知:重试库管单请求策略,熔断管系统策略,两者互补。』追问展开:Retry-After 的集成、重试风暴的多层放大、与熔断的配合。",
+  "followups": [
+   {
+    "q": "多层调用的重试放大怎么防?",
+    "a": "重试只在最靠近故障的一层(直接调上游的服务层),上层不再重试(失败直接透传或降级)——每层都重试=指数放大(N 层各 3 次=3^N 次请求)。纪律:重试策略集中在『出网边界层』,内部调用不做重试(或只做透传性重试);全局预算兜底(LP-004)。"
+   },
+   {
+    "q": "怎么让重试『可见』?",
+    "a": "三个钩子:before_sleep(即将第 N 次重试,等待多久——WARNING 级日志)、retry(重试结果成功——INFO)、指标(重试次数计数器按上游维度)。重试率是上游健康度的先行指标(429 率的前奏),必须进监控大盘(EN-002)。"
+   },
+   {
+    "q": "tenacity 和熔断器怎么配合?",
+    "a": "分工:tenacity 管『单次调用的瞬时故障重试』(策略内有限次);熔断器管『系统级的持续故障』(连续失败率超阈值→打开,快速失败一段时间,EN-009)。层次:熔断器包住重试装饰器(熔断判断的是『含重试的调用』的失败率)——重试耗尽才算一次失败计入熔断统计,避免重试掩盖故障信号。"
+   }
+  ],
+  "pitfalls": [
+   "不配 stop 参数——默认无限重试(十连击打爆上游)。",
+   "对非幂等操作(下单/扣款)挂重试装饰器,重复执行事故(AG-003)。",
+   "重试无日志无指标,上游已经 50% 失败率了没人知道。",
+   "每层调用各自重试,故障被指数放大成风暴。"
+  ],
+  "check": {
+   "q": "评审发现:@retry() 裸装饰在一个调 LLM 的非幂等函数上(没有其他配置)。列出问题与修正?",
+   "a": "三连问题:①无 stop——失败即无限重试,LLM 按次计费=无限烧钱;②无 retry 条件——所有异常(包括 401 参数错误)都重试,白烧;③非幂等——该函数可能产生副作用(计费/写库),重复执行是业务事故。修正:限定 retry_if_exception_type(TransientError)、stop_after_attempt(4)、指数退避+抖动、before_sleep 日志;并确认函数幂等化(幂等键)或去掉重试改为上游幂等。这是一道『评审素养』题:裸 @retry 是生产事故的标准配方。",
+   "explain": "检验点:裸 @retry 的三重危险识别与修正清单。"
+  },
+  "related": [
+   "LP-004",
+   "PY-005",
+   "PY-008",
+   "EN-009"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "tenacity 文档",
+    "url": "https://tenacity.readthedocs.io/",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "纪律与坑为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "库 API 以官方文档为准;纪律为独立整理。"
+  }
+ },
+ {
+  "id": "PY-024",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "FastAPI 应用的后台任务与定时调度怎么设计?BackgroundTasks、arq/APScheduler 怎么选?",
+  "tags": [
+   "后台任务",
+   "调度",
+   "FastAPI"
+  ],
+  "prerequisites": [
+   "PY-015",
+   "PY-003"
+  ],
+  "answer": "三级方案按任务特征选:①BackgroundTasks(FastAPI 内建)——响应后同进程执行的轻量收尾(发通知/写审计日志),进程死任务丢(不可靠,只做可丢的事);②任务队列(arq/Celery/dramatiq+Redis)——可靠异步任务(重试/持久化/独立 worker 进程),LLM 批处理/重生成/文档入库用这级(LP-012);③定时调度(APScheduler/cron+队列)——周期任务(夜间评测/索引重建/报表)。设计纪律:任务幂等(至少一次投递,AG-003)、任务参数序列化(不传对象传 ID)、任务可观测(状态/重试/耗时入盘)、优雅停机(在途任务收尾或断点续跑,PY-015)。反模式:用 BackgroundTasks 做关键业务(发版即丢)、在请求进程里跑长任务(占 worker)、定时任务无锁多实例重复执行(PY-017 分布式锁)。",
+  "plain": "三级方案像餐厅的三个后厨通道:BackgroundTasks=出餐口顺手擦桌子(快、顺手、但打烊就没人擦了——可丢);任务队列=正式外卖订单系统(有单据、可重试、独立厨房,打烊了订单还在系统里明天接着做);定时调度=每日例行的备菜计划(每天凌晨自动切菜腌肉)。选错的表现:把外卖订单写在下餐垫纸上(BackgroundTasks 做关键业务,一打扫就没了);或者让前厅服务员自己炖 3 小时的汤(请求进程跑长任务,客人全堵在门口)。比喻局限:多实例部署时『定时任务只跑一份』需要分布式锁——餐厅单店没有这个问题,连锁店才有(PY-017)。",
+  "deep": "1) BackgroundTasks 的边界:同进程内 await/执行,响应返回后开始;适用:轻、快(<秒级)、可丢(审计日志/统计打点/清缓存);不适用:LLM 调用(慢且贵且必须成功)、需要重试的业务、跨进程可见的任务。误用的根源是『顺手』——它语法太方便,需要纪律约束(评审 checklist:BackgroundTasks 里的任务丢失了有影响吗?有→升级队列)。\n2) 任务队列(arq 为 async 优选):\n   - 特性:任务函数+参数序列化到 Redis→独立 worker 进程消费→重试/超时/结果存储;\n   - 与 LP-012 的批处理关系:arq 管单任务异步化(重生成/文档处理),平台级批处理 API 管海量任务——量级不同;\n   - 队列选择:arq(async 原生轻量)、Celery(生态全但重)、dramatiq(中间态)——按团队与规模;\n   - 任务设计(AG-003 的落点):任务 ID 幂等、参数只传 ID(对象重新查库——参数里的状态可能过期)、重试策略显式(PY-023)、死信处理(重试耗尽进死信队列人工处理)。\n3) 定时调度:APScheduler(进程内,多实例需分布式锁)/平台级(云调度器+HTTP 触发——更稳)/cron+管理命令(最朴素)。多实例部署的定时任务:分布式锁(PY-017)或单实例专用部署(调度与业务分离)——重复执行的任务(发重复通知)是经典事故。\n4) 可观测与运维:任务状态机(排队/执行/成功/失败/重试,AG-030 复用)、队列深度与执行时长监控(堆积告警)、失败任务的重放工具(运维界面或命令)、任务版本(代码升级后排队中的旧任务兼容性——参数 schema 演进)。\n5) 与 lifespan 的整合:worker 独立进程(不与 API 混部——资源隔离,PY-019)/lifespan 启动调度器关闭时优雅停止(PY-015)。",
+  "example": "```python\n# arq 任务(独立 worker 进程)\nasync def reindex_document(ctx, doc_id: str):\n    doc = await load(doc_id)               # 参数传 ID,不传对象\n    chunks = await parse_and_chunk(doc)\n    await upsert_index(doc.id, chunks)     # 幂等 upsert\n\nclass WorkerSettings:\n    functions = [reindex_document]\n    max_retries = 3\n    job_timeout = 600\n\n# API 侧入队\n@app.post(\"/docs/{doc_id}/reindex\")\nasync def reindex(doc_id: str):\n    await queue.enqueue_job(\"reindex_document\", doc_id, _id=f\"reindex:{doc_id}\")\n    return {\"queued\": True}                # _id 幂等:重复提交去重\n```",
+  "interview": "口述版:『后台任务三级:BackgroundTasks 只做可丢的轻收尾(发版即丢,纪律是评审时问「任务丢了有影响吗」);可靠异步上任务队列(arq 异步原生,任务幂等+参数传 ID+重试显式+死信队列);定时调度多实例必须分布式锁或专用实例(重复执行的经典事故)。LLM 应用的映射:批处理/文档入库/重生成走队列,审计打点走 BackgroundTasks,夜间评测/索引重建走调度。运维三件:队列深度监控、失败重放工具、任务版本兼容。』追问展开:任务参数序列化的原则、死信队列、与批处理 API 的分工。",
+  "followups": [
+   {
+    "q": "任务参数为什么传 ID 不传对象?",
+    "a": "参数要序列化排队(对象可能不可序列化);排队期间的陈旧性:排队 10 分钟后执行,10 分钟前的对象快照可能是旧状态——传 ID 让任务执行时重新查库(最新状态),配合幂等处理状态已变的情况(对象已删除→任务安全退出)。这是『任务与请求的时间解耦』的基本功。"
+   },
+   {
+    "q": "死信队列怎么设计?",
+    "a": "重试耗尽的任务不静默丢弃→进死信队列(独立存储:原参数+错误历史+尝试次数);死信的处理:告警+运维界面重放(修复后手动/自动重投)+定期分析死信模式(系统性问题的信号,EN-013)。没有死信机制的任务系统,失败任务等于黑洞(用户等待无下文)。"
+   },
+   {
+    "q": "定时任务和批处理 API 怎么分工?",
+    "a": "定时调度管『编排触发』(每天 2 点启动夜间评测),批处理 API 管『LLM 调用本身』(LP-012,五折+不占在线配额)——调度器把任务提交给批处理 API,结果回收也是调度任务。分工口诀:调度管『什么时候做』,队列管『怎么可靠地做』,批处理 API 管『怎么便宜地对 LLM 做』。"
+   }
+  ],
+  "pitfalls": [
+   "BackgroundTasks 里调 LLM/写关键数据,发布重启任务蒸发。",
+   "多实例部署的定时任务无锁,每个实例都执行一遍(重复通知×N)。",
+   "任务参数传大对象快照,执行时状态已过期。",
+   "队列无深度监控,积压 10 万任务无人发现(用户等待无下文)。"
+  ],
+  "check": {
+   "q": "需求:用户上传文档后『异步解析入库』。任务执行到一半服务发布重启。你的设计怎么保证文档最终入库?",
+   "a": "①任务入队持久化(arq 的 job 在 Redis,重启不丢);②任务幂等(reindex_document 按 doc_id upsert,重复执行安全——AG-003);③执行一半崩溃:重试机制从头重跑(解析入库设计为幂等整体操作)或检查点续跑(大文档分块+进度记录,AG-005);④重启后 worker 自动恢复消费(lifespan/独立 worker 进程的自动重启,PY-019);⑤死信兜底:重试耗尽进死信告警人工。链路核心:持久化队列+幂等任务+重试——三者齐了,『最终入库』才成立(至少一次投递+幂等消费=恰好一次效果,AG-003 的公式)。",
+   "explain": "检验点:『至少一次投递+幂等消费』的可靠性公式在文档入库场景的完整落地。"
+  },
+  "related": [
+   "PY-015",
+   "PY-017",
+   "LP-012",
+   "AG-003",
+   "PY-019"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "arq 文档 / FastAPI BackgroundTasks 文档",
+    "url": "https://arq-docs.helpmanual.io/",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "三级方案与纪律为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "库 API 以官方文档为准;方案分级为独立整理。"
+  }
+ },
+ {
+  "id": "PY-025",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "接口的幂等性(idempotency)怎么设计?幂等键的标准实现是什么?",
+  "tags": [
+   "幂等",
+   "接口设计",
+   "可靠性"
+  ],
+  "prerequisites": [
+   "AG-003",
+   "PY-017"
+  ],
+  "answer": "幂等=同一操作执行多次与执行一次效果相同。标准实现:①客户端生成幂等键(唯一业务 ID:请求 UUID 或业务自然键如 order_id)随请求携带;②服务端存储——幂等表(键+请求指纹+响应+状态)与业务操作同事务;③处理逻辑——首次:执行业务并记录响应;重复:发现同键→两种语义(a)返回缓存的首次响应(查询类安全)(b)返回 409/进行中状态(写操作防重复提交),取决于操作语义;④指纹校验——同键不同参数=客户端 bug,拒绝并告警。适用判断:所有写操作与收费操作默认要求幂等;读操作天然幂等可豁免。与重试的关系:重试的前提就是幂等(LP-004/PY-023),没有幂等键的重试是赌博。",
+  "plain": "幂等像『带取件码的快递柜』:投递员重投(网络重试),凭同一个取件码只会放进同一个柜子——不会因为投了三次就出现三个包裹。没取件码的重投=用户收到三个包裹(重复扣款/重复下单)。实现三件套:取件码(客户端生成)、登记本(服务端记『这个码处理过了,结果是什么』)、核对(同码不同内容=有人捣乱,拒绝)。比喻局限:『返回首次响应』的语义要按操作类型区分——支付类重复请求应该返回『已在处理』而不是『再付一次成功』。",
+  "deep": "1) 幂等表设计:\n```sql\nCREATE TABLE idempotency (\n  key VARCHAR PRIMARY KEY,\n  request_fingerprint VARCHAR,   -- 请求体 hash(防同键不同参)\n  status VARCHAR,                -- processing | done | failed\n  response JSON,\n  created_at TIMESTAMP\n);\n-- 业务操作与幂等记录同事务(原子性)\n```\n2) 处理流程:\n```\n收到请求(key):\n  ① 查幂等表:\n     - 不存在 → 插入(status=processing)→ 执行业务 → 更新响应 → 返回\n     - 存在且 done → 校验指纹 → 返回缓存响应(或 409,按语义)\n     - 存在且 processing → 返回 409/425(Too Early,处理中,请稍后查询)\n  ② 并发同键:唯一约束挡住第二个(插入冲突)→ 第二个等待或返回进行中\n```\n3) 语义选择(设计决策):支付类→重复请求返回首次结果或『处理中』(绝不再执行);发送类(邮件)→返回首次结果(重复发送是事故);查询类→天然幂等直接执行。语义混乱的事故:『重复请求返回新结果』的支付接口——重试变成双倍扣款。\n4) 过期与清理:幂等记录保留期(24~72h 覆盖重试窗口)+清理任务(过期删除);保留期内重复请求才防得住——太短的保留期等于没防。\n5) 分布式细节:幂等表的并发(唯一约束+插入冲突处理);跨服务的幂等传递(网关透传 Idempotency-Key 头到下游,AG-021 的溯源);与消息队列的消费幂等(消息至少一次投递→消费端按消息 ID 幂等,AG-003 的公式);前端配合:用户操作时生成 key(提交前),重试按钮复用同 key,新操作新 key。",
+  "example": "```python\n@app.post(\"/payments\")\nasync def create_payment(req: PaymentRequest,\n                         idem_key: str = Header(...)):\n    fp = hash_request(req)\n    async with db.transaction():\n        existing = await db.fetch_one(\n            \"SELECT * FROM idempotency WHERE key=:k FOR UPDATE\", k=idem_key)\n        if existing:\n            if existing.fingerprint != fp:\n                raise HTTPException(422, \"幂等键复用但请求不同\")\n            if existing.status == \"done\":\n                return existing.response          # 返回首次响应\n            raise HTTPException(425, \"处理中\")\n        await db.execute(\"INSERT INTO idempotency...\", status=\"processing\")\n    result = await charge(req)                    # 业务执行(事务外,失败标记 failed)\n    await db.execute(\"UPDATE idempotency SET response=:r, status='done'\", r=result)\n    return result\n```",
+  "interview": "口述版:『幂等三件套:客户端幂等键、服务端幂等表(键+指纹+响应+状态,与业务同事务)、语义决策(重复请求返回首次结果/处理中/409——按操作类型,支付类绝不再执行)。两个易漏点:同键不同参数要拒绝(指纹校验,客户端 bug 的探针)、幂等记录保留期覆盖重试窗口。与重试的关系:重试的前提是幂等——没有幂等键的重试是赌博(LP-004/PY-023 的前提)。』追问展开:processing 状态的处理、指纹计算、与消息队列消费幂等的统一。",
+  "followups": [
+   {
+    "q": "processing 状态的重复请求返回什么?",
+    "a": "425 Too Early 或 409+Retry-After:告诉客户端『首次请求正在处理,请稍后用同键查询』——绝不能再次执行业务。客户端处理:轮询查询接口(用同键)直到 done。这个中间态是幂等设计里最容易忽略的(很多人只设计了 done 的缓存,忘了 processing 的并发窗口)。"
+   },
+   {
+    "q": "请求指纹怎么算?",
+    "a": "对请求体的规范化序列化(字段排序后 JSON dump)做 hash——同语义请求(字段顺序不同)应同指纹。作用:同键不同内容的请求=客户端 bug 或攻击(复用别人的键),拒绝并告警。指纹让幂等键从『防重复』升级为『防错乱』。"
+   },
+   {
+    "q": "消息队列的消费幂等怎么做?",
+    "a": "消息至少一次投递(MQ 保证)→消费端按 message_id/业务键查幂等表(同接口幂等);或用数据库唯一约束(业务自然键)让重复消费在写入时自然失败。公式:至少一次投递+幂等消费=恰好一次效果(AG-003/AG-017 的公式,在数据层的落地)。"
+   }
+  ],
+  "pitfalls": [
+   "重试由客户端/网关做,但接口无幂等键——重复扣款/重复下单。",
+   "幂等表与业务操作不同事务,崩溃后出现『扣了款没记录幂等』的窗口。",
+   "processing 状态直接重执行(并发窗口的双执行)。",
+   "幂等记录保留 1 小时,而客户端的重试窗口是 24 小时(防了个寂寞)。"
+  ],
+  "check": {
+   "q": "网关对超时请求自动重试(LLM 上游超时,指数退避 3 次)。你的 LLM 调用接口需要什么配合才安全?",
+   "a": "LLM 生成是『非幂等的付费操作』:重试=重复计费+重复内容。配合:①网关重试必须携带 Idempotency-Key(网关生成并透传);②服务端按键做幂等(同键返回首次结果或进行中状态);③更精细:区分可安全重试的失败(上游 429/连接失败——请求未达模型,不产生费用)与不可重试的(已开始生成的超时——半途失败,重试=重跑;流式的部分结果要处理)。要点:『超时』不等于『没执行』——付费操作的重试必须以幂等与状态查询为前提,不能拿网络层语义赌业务结果。",
+   "explain": "检验点:『超时≠未执行』的认知——LLM 付费操作重试的前提设计,这是 LP-004 重试策略在业务层的闭环。"
+  },
+  "related": [
+   "AG-003",
+   "LP-004",
+   "PY-017",
+   "PY-023",
+   "AG-021"
+  ],
+  "doc_refs": [
+   "doc-python-1",
+   "doc-agent-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理(幂等键为业界标准模式,如 Stripe Idempotency-Key)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+  }
+ },
+ {
+  "id": "PY-026",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "列表分页用 offset 还是游标(cursor)?深分页的性能问题怎么解?",
+  "tags": [
+   "分页",
+   "游标",
+   "数据库"
+  ],
+  "prerequisites": [
+   "PY-016"
+  ],
+  "answer": "两种分页:①offset/limit——跳过 N 条取 M 条:实现简单、可跳页,但深分页性能塌方(OFFSET 100000 要扫描并丢弃 10 万条)+数据变动时页错位(插入/删除导致重复或漏读);②游标(cursor/keyset)——按稳定排序列(时间戳+ID 复合)取『上一页最后一条之后』的 M 条:性能恒定(索引直达)、无页错位,但只能顺序翻页(不能跳页)。决策:用户翻页(浅、需跳页)→offset 可接受;无限滚动/导出/同步(API 场景,深)→游标必选。LLM 应用里常见的会话历史加载、批量任务列表都属于游标场景。深分页的额外手段:延迟关联(先查 ID 再回表)、游标+缓存。",
+  "plain": "翻书找内容:offset 像『第 5 万页?从第一页开始数 5 万页』(数的过程全是浪费,而且有人中途插了页你数到的内容就错了);游标像『书签』——上次看到哪,夹个书签,下次从书签继续(又快又稳,但不能『直接翻到第 500 页』)。API 场景(导出十万条、加载聊天记录)全是『从书签继续』的场景;人类翻页(搜索结果的第 3 页)才需要 offset。比喻局限:复合游标(时间戳+ID 处理同刻多条)是工程细节,书签比喻装不下——同秒多条记录时仅按时间戳游标会漏读。",
+  "deep": "1) offset 的问题量化:LIMIT 20 OFFSET 100000——数据库要读 100020 行丢前 10 万(无索引捷径);页越深越慢(O(n));页漂移:读第 2 页时有新插入,offset 错位(看到重复或漏读)——对『导出/同步』是正确性问题不只是性能。\n2) 游标实现:\n```sql\n-- 第一页\nSELECT * FROM messages WHERE session_id=:s\nORDER BY created_at DESC, id DESC LIMIT 20;\n-- 下一页(游标=上一页最后一条的 created_at+id)\nSELECT * FROM messages WHERE session_id=:s\n  AND (created_at, id) < (:last_ts, :last_id)\nORDER BY created_at DESC, id DESC LIMIT 20;\n```\n复合排序键(唯一性!):created_at 重复时用 id 决胜——漏读的根源就是排序列不唯一;行构造比较((a,b) < (x,y))的索引利用要确认(复合索引 (session_id, created_at, id))。\n3) 游标编码:对外不暴露原始值(编码/加密 base64,防止客户端篡改跳页探测)——既是安全也是稳定;游标含排序方向与过滤上下文(条件变了游标失效——返回错误提示重新分页)。\n4) 混合需求:『跳页+深分页』都要的场景(管理后台):offset 到一定深度切换游标,或用『页码→游标』的映射表(预计算页边界);或接受深分页的延迟(管理后台低频)。\n5) LLM 场景映射:会话历史加载(LP-007):游标(无限上翻);批量导出(LP-012):游标+幂等续跑;评测结果浏览:offset(浅+需跳页);向量检索的分页(特殊性:top-k 之后没有『第 2 页』——要么加大 k 要么重查询,检索分页与 DB 分页是两个体系)。",
+  "example": "```python\n# 游标编码\nimport base64, json\ndef encode_cursor(row):\n    return base64.urlsafe_b64encode(json.dumps(\n        {\"ts\": row.created_at.isoformat(), \"id\": row.id}).encode())\n# API: GET /messages?session=1&cursor=eyJ0cyI6...&limit=20\n# 响应: {\"items\": [...], \"next_cursor\": \"...\"}  (null = 末页)\n```",
+  "interview": "口述版:『offset 两个死穴:深分页扫描浪费(O(n))与页漂移(数据变动时的重复/漏读——导出场景是正确性问题)。游标(时间戳+ID 复合键,唯一性!)性能恒定无错位,代价是不能跳页。决策:API/导出/无限滚动=游标,人类浅翻页=offset 可接受。LLM 应用的会话历史与批量任务列表都是游标场景;向量检索的分页是另一个体系(top-k 无第二页,加大 k 或重查询)。』追问展开:复合游标的唯一性、游标的安全编码、向量检索的分页。",
+  "followups": [
+   {
+    "q": "游标排序列为什么必须加 ID 决胜?",
+    "a": "时间戳不唯一:同一秒/毫秒多条记录时,仅按时间戳游标会跳过(或重复)同刻记录——keyset 分页的正确性前提是排序键全序唯一。(created_at, id) 复合解决。这是游标分页最经典的正确性 bug,评测方法:并发写入环境下导出两次对比完整性。"
+   },
+   {
+    "q": "游标要不要加密/编码?",
+    "a": "裸游标(offset=100023、时间戳+ID)泄露数据规模与结构(竞对可以遍历探测);base64 编码+签名(HMAC 防篡改)是基本卫生;签名还防『客户端伪造游标越权翻页』(配合权限过滤,RG-015)。成本极低,默认做。"
+   },
+   {
+    "q": "向量检索怎么『分页』?",
+    "a": "向量检索没有天然全序(相似度不是唯一键),『第 2 页』语义模糊——三种处理:加大 k 客户端自行分页(k=50 取前 20 展示,滚到底再要);游标式(基于分数+ID 的 keyset,向量库支持有限);或重查询(带排除集)。更本质的问题:相似度检索的『翻页』体验是否成立(第 2 页的相关性显著下降)——产品上常以『换个问法』替代翻页(RG-035 的澄清思想)。"
+   }
+  ],
+  "pitfalls": [
+   "导出接口用 offset 深分页,10 万条导出越来越慢最后超时。",
+   "游标只用时间戳不决胜,同秒记录漏读(导出少数据,静默错误)。",
+   "游标裸传,客户端篡改遍历数据(安全+性能)。",
+   "数据变更时页漂移没有处理(导出重复/漏读,对账发现)。"
+  ],
+  "check": {
+   "q": "产品要求『聊天记录无限上滚加载』+『支持导出全部历史』。你的分页方案?",
+   "a": "两者都用游标(时间戳+ID 复合,索引 (session_id, created_at, id)):上滚加载=游标向前翻;导出=游标流式导出(分批+幂等续跑,PY-024 的任务化)。不支持跳页——需要跳页的场景(管理后台搜某条)走搜索而非分页(RG-040 的检索思维:找内容用检索不用遍历)。附加:导出的幂等键(PY-025)+游标签名。方案一致性:两种需求一个分页原语,复杂度收敛。",
+   "explain": "检验点:多需求统一到游标原语,并知道『跳页』需求用检索替代而非 offset 硬扛。"
+  },
+  "related": [
+   "PY-016",
+   "PY-024",
+   "LP-007",
+   "RG-040"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理(keyset 分页为数据库通行实践)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;SQL 为演示。"
+  }
+ },
+ {
+  "id": "PY-027",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "日志脱敏(masking)在代码层怎么实现?怎么做到『全量脱敏且不漏』?",
+  "tags": [
+   "日志",
+   "脱敏",
+   "隐私"
+  ],
+  "prerequisites": [
+   "PY-009",
+   "EN-012"
+  ],
+  "answer": "脱敏的四层防线:①入口最小化——敏感数据进来就打标(结构化字段级:phone/email/id_card 的 Pydantic 模型字段类型标注),下游默认不可见明文;②序列化拦截——日志 formatter 层统一脱敏(自定义 JSON formatter 遍历字段按类型/键名掩码)+正则兜底(消息文本里的手机号/身份证模式替换)——这是兜底网,不依赖每个开发者自觉;③框架级过滤——记录器对特定 logger/字段的强制掩码(黑名单字段:password/token/secret 永不出现在日志);④测试与审计——脱敏单测(构造含 PII 的对象断言日志输出已掩码)+定期审计(线上日志抽样 PII 扫描)。关键认知:靠『开发者记得不打敏感信息』的约定必然失败——脱敏必须在基础设施层强制(管道默认安全)。",
+  "plain": "日志脱敏像『文件碎纸机的自动模式』:不能指望每个员工记得『这份文件要碎』(开发者自觉),要装一台『所有废纸自动过碎纸机』的管道(formatter 层强制)——敏感格式的纸(正则模式:手机号/身份证)进去自动变碎片。四层防线=入口贴标签(字段打标)、碎纸机(formatter)、保险柜黑名单(token 永不进日志)、抽检(审计)。比喻局限:LLM 日志的难点是『非结构化对话』——用户聊天里自然语言地提到手机号,需要 NER/正则扫文本,不只是字段掩码。",
+  "deep": "1) 字段级打标(Pydantic 层):\n```python\nclass SensitiveStr(str): ...          # 标注类型\nMaskedEmail = Annotated[str, Mask(\"email\")]\nclass User(BaseModel):\n    phone: MaskedPhone\n    email: MaskedEmail\n# 日志序列化时按标注掩码(138****5678)——数据自带脱敏指令\n```\n2) formatter 层强制:\n```python\nclass MaskingFormatter(logging.Formatter):\n    PATTERNS = [(r\"1[3-9]\\d{9}\", \"手机号\"), (r\"\\d{17}[\\dXx]\", \"身份证\")]\n    def format(self, record):\n        msg = super().format(record)\n        for pat, _ in self.PATTERNS:\n            msg = re.sub(pat, lambda m: mask(m.group()), msg)\n        return msg\n```\n——正则兜底覆盖『非结构化文本』(用户消息里的 PII,PY-009 的 NER 增强);性能:正则成本可观测(高频路径的脱敏开销,EN-006),热路径可预编译+限长。\n3) 黑名单强制:字段名黑名单(password/token/secret/api_key)——formatter 见名即掩(★★★);异常信息脱敏(异常里可能带 SQL/请求头——repr 过滤);第三方库的日志(请求库可能打 header——配置其 logger 级别或覆写)。\n4) LLM 特有:对话内容的分级(PY-027/EN-002:全量脱敏 vs 采样保留 vs hash 替代)——对话是自由文本,正则+NER 组合;prompt/completion 的存储策略(EN-002 分级);评测集的脱敏一致性(EN-012 的可逆脱敏用于分析场景)。\n5) 审计闭环:线上日志抽样跑 PII 扫描器(周任务:正则+NER 扫最近日志,命中率报告)——漏网模式补充进规则(EN-013 飞轮);漏报的根因分析(新格式?绕过点?)→防线升级。『默认安全』的验证方式就是攻击自己的日志(红队思维)。",
+  "example": "```python\n# formatter 兜底 + 字段标注双防\n@dataclass\nclass CallLog:\n    user: MaskedPhone        # 字段级:序列化自动掩码\n    query: str               # 自由文本:formatter 正则兜底\n\nlog.info(\"llm_call\", extra={\"log\": asdict(call)})\n# 输出:{\"user\": \"138****5678\", \"query\": \"我的手机号是138****5678...\"}\n#                          ↑ 字段标注     ↑ 正则兜底(双保险)\n```",
+  "interview": "口述版:『脱敏四层防线:入口字段打标(类型级脱敏指令)、formatter 强制(正则兜底扫非结构化文本)、黑名单字段(password/token 见名即掩)、审计闭环(线上日志抽样跑 PII 扫描,漏网模式补规则)。核心立场:脱敏必须在基础设施层强制——靠开发者自觉的方案必然漏。LLM 特有:对话自由文本要正则+NER 组合,性能开销可观测。验证方式:攻击自己的日志(构造含 PII 的请求看输出)。』追问展开:formatter 性能、NER 与正则的分工、第三方库日志治理。",
+  "followups": [
+   {
+    "q": "formatter 正则脱敏的性能开销?",
+    "a": "每条日志跑多组正则:开销可控但要管理——预编译模式、限长(超长消息只扫前 N KB)、高频路径降级(全量正则→字段标注优先)、异步日志(脱敏在写线程)。度量:脱敏耗时进性能监控(PY-018),P99 增幅 <1ms 量级为佳。安全与性能的平衡点:分级(错误日志全扫,高频 INFO 采样扫)。"
+   },
+   {
+    "q": "NER 和正则怎么分工?",
+    "a": "正则:格式固定的强模式(手机号/身份证/银行卡/邮箱)——快、准、零成本;NER(模型):自然语言里的弱模式(人名/地址/病史描述)——覆盖正则盲区但有小概率误判。组合:正则必拦(高置信)+NER 标记(中置信,按场景决定掩或保留)。LLM 对话日志的 PII 大头在自然语言里——NER 层是必须的(L-P009 的输出侧同理)。"
+   },
+   {
+    "q": "第三方库把 header 打进日志怎么办?",
+    "a": "三招:配置其 logger 级别(WARNING 以上,DEBUG 详情不落);覆写其 formatter/过滤其记录(库日志过我们的脱敏 formatter——统一出口);源头替换(给 HTTP 库配自定义 log 工具或禁用 debug)。审计发现来源是关键(PII 扫描器标出泄漏点)——知道谁在漏才能治。"
+   }
+  ],
+  "pitfalls": [
+   "脱敏靠 code review 约定(『别打手机号』),三个月后必然出现明文。",
+   "只掩字段不打文本,用户消息里的自然语言 PII 全裸(『我手机号 138...』)。",
+   "异常堆栈带 SQL/参数入日志,绕过所有字段级防线。",
+   "脱敏规则从不更新(新 PII 格式/新业务字段漏网),无审计闭环。"
+  ],
+  "check": {
+   "q": "PII 审计发现:错误日志里出现用户手机号明文,但你们有 formatter 脱敏。可能的绕过路径?",
+   "a": "排查顺序:①该日志走了独立的 logger(新模块自己建了 logger,没挂脱敏 formatter——多 logger 是常见漏点);②输出通道绕过(该日志直接写文件/stdout,没走 logging 管道——print 旧习或第三方库);③正则盲区(新手机号格式/带分隔符写法 138-1234-5678——模式库更新);④脱敏前的异常路径(异常在 formatter 之前被 print,或堆栈字符串拼接绕过 record)。修复按根因:统一 logger 获取(工厂模式强制挂 formatter)+模式库更新+审计覆盖所有输出通道。",
+   "explain": "检验点:脱敏绕过的四种路径(独立 logger/绕过管道/正则盲区/异常路径)——知道绕过路径才能设计『默认安全』。"
+  },
+  "related": [
+   "PY-009",
+   "EN-012",
+   "LP-009",
+   "EN-002"
+  ],
+  "doc_refs": [
+   "doc-python-1",
+   "doc-eng-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理的四层防线"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+  }
+ },
+ {
+  "id": "PY-028",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "LLM 后端项目的代码分层怎么组织?router/service/repository 的边界怎么划?",
+  "tags": [
+   "项目结构",
+   "分层",
+   "工程化"
+  ],
+  "prerequisites": [
+   "PY-004",
+   "PY-016"
+  ],
+  "answer": "推荐分层:router(FastAPI 路由:参数解析、依赖注入、响应序列化——薄)→service(业务编排:调用 LLM 客户端/检索/工具、事务边界、业务校验——厚)→repository(数据访问:SQL/缓存封装)/infra(外部客户端:LLM/向量库/Redis 的适配器)→core(配置/模型/日志)。边界纪律:router 不写业务(service 化的动机:同一业务被 webhook/CLI/定时任务复用)、service 不碰 HTTP 对象(可脱离 FastAPI 测试)、infra 可替换(接口抽象,LLM 供应商切换不动 service)。LLM 应用的特有层:prompt 模块(LP-021 版本管理)、agent/pipeline 编排层(AG-013)、domain 模型(Pydantic 实体)。",
+  "plain": "分层像餐厅的组织:前台(router)只管接单传菜(参数与响应),厨房(service)管怎么做菜(业务编排),采购部(repository/infra)管进货(数据与外部依赖),店规(core)是制度和原料标准。反例:前台直接颠勺(路由里写业务)——接单的手忙脚乱还没法复制流程;厨房直接跑菜市场采购(service 里写 SQL)——换个供应商全厨房翻桌。LLM 应用的『厨房』特别厚(LLM/检索/工具编排),所以分层纪律比普通 CRUD 更重要。比喻局限:LLM 应用多一层『菜谱管理』(提示词版本化,LP-021)——这是传统餐厅没有的职能。",
+  "deep": "1) 目录结构(示例):\n```\napp/\n  api/           # router:路由+依赖+schema 引用(薄)\n  services/      # 业务编排:chat_service/doc_service(厚)\n  repositories/  # 数据访问:SQL/Redis 封装\n  infra/         # 外部适配器:llm_client/vector_store/tools\n  prompts/       # 提示词与组装器(LP-021/022)\n  pipelines/     # Agent/工作流编排(AG-013)\n  domain/        # 领域模型(Pydantic 实体与枚举)\n  core/          # 配置(PY-010)/日志(PY-009)/异常(PY-005)\n```\n2) 各层纪律:\n   - router:≤10 行原则(解析→调 service→返回);不 import infra;\n   - service:业务编排与事务边界;依赖通过构造注入(接口而非实现——测试替身,PY-011);不 import fastapi(可脱离框架测试/复用);\n   - repository:只管持久化语义(方法名是业务语言 find_active 不是 SELECT 复杂 SQL 的暴露);\n   - infra:外部世界的适配器(供应商 SDK/HTTP)——LLM 网关(EN-014)的落点;接口抽象(Protocol)隔离。\n3) 依赖方向:router→service→repository/infra→core,单向;domain 被所有层引用但不依赖任何层(纯模型)——依赖倒置的朴素应用;循环依赖=分层失败的信号(用事件/回调解)。\n4) LLM 应用的特有边界:LLM 客户端的抽象(infra 接口:chat/embed/stream——EN-014 网关或直接 SDK 都在 infra 后面)、pipeline 层(agent 循环/编排,AG-013)在 service 之上或之内、prompt 组装器(LP-022)作为独立模块被 pipeline 调用;\n5) 测试映射(PY-011):router→集成测试(TestClient);service→单测(mock repository/infra);infra→契约测试(真实 API 冒烟,AG-009);分层即测试策略——这是分层最大的实际回报。",
+  "example": "```python\n# service 层(可脱离 FastAPI 测试)\nclass ChatService:\n    def __init__(self, llm: LLMClient, retriever: Retriever,\n                 repo: ConversationRepo):\n        self.llm, self.retriever, self.repo = llm, retriever, repo\n\n    async def chat(self, session_id: str, msg: str) -> ChatResult:\n        history = await self.repo.recent(session_id)\n        evidence = await self.retriever.search(msg)\n        ...  # 业务编排:组装/调用/后处理(LP-022/024)\n\n# router(薄)\n@router.post(\"/chat\")\nasync def chat(req: ChatRequest, svc = Depends(get_chat_service)):\n    return await svc.chat(req.session_id, req.message)\n```",
+  "interview": "口述版:『我的分层:router 薄(≤10 行,解析+调 service)、service 厚(业务编排+事务,不 import FastAPI——可脱离框架测试与复用)、repository/infra 数据与外部适配、core 配置日志。LLM 应用的特有三层:prompts(版本化,LP-021)、pipelines(Agent 编排,AG-013)、infra 的 LLM 抽象(供应商切换不动 service,EN-014)。分层最大的回报是测试映射:每层有自然的测试策略(PY-011)。纪律判据:router 不写业务、service 不碰 HTTP、infra 面向接口。』追问展开:service 的事务边界、LLM 抽象接口的设计、循环依赖的解法。",
+  "followups": [
+   {
+    "q": "service 层的事务边界怎么定?",
+    "a": "一个业务操作=一个事务边界(方法级):service 方法内管事务(开始/提交/回滚),repository 不自己 commit(被动参与 service 的事务);慢操作(LLM 调用)出事务(PY-016);跨聚合的操作用领域事件/最终一致(PY-025 幂等)而非大事务。事务边界混乱的症状:repository 里 commit(每个数据操作各自为政,业务一致性无法保证)。"
+   },
+   {
+    "q": "LLM 客户端的抽象接口怎么设计?",
+    "a": "Protocol 定义:chat(messages, params) -> Completion、stream(...) -> AsyncIterator、embed(texts) -> vectors——面向能力不面向供应商;返回内部模型(Completion 信封,AG-014),不泄漏 SDK 类型;参数用内部枚举(供应商差异在 adapter 收敛);EN-014 网关是这个接口的服务化形态。测试:接口的 fake 实现(单测)+真实冒烟(契约,AG-009)。"
+   },
+   {
+    "q": "出现循环依赖(service↔service)怎么解?",
+    "a": "三解:提取公共部分到第三个 service/domain(共享下沉);事件解耦(A 完成后发事件,B 订阅——异步解耦,PY-024);依赖倒置(A 依赖 B 的接口,B 实现接口——控制反转)。循环依赖的根因常是职责划分不清(两个 service 互相需要对方的功能=它们可能是一个领域)——先复审边界再动手解技术。"
+   }
+  ],
+  "pitfalls": [
+   "router 里写业务(拼接提示词/调 LLM)——不可复用不可测(PY-011 的测试映射失效)。",
+   "service 直接 import httpx 调上游——绕过 infra 抽象,供应商切换翻遍代码。",
+   "domain 模型依赖框架(Pydantic 模型里调库)——纯模型被污染。",
+   "分层是目录游戏(文件分了层但依赖乱飞)——用 import-linter 类工具强制依赖方向。"
+  ],
+  "check": {
+   "q": "新需求:同样的『文档问答』能力要通过 CLI 工具和定时任务复用。分层设计怎么支持?",
+   "a": "核心逻辑在 service 层(不依赖 FastAPI——这是分层纪律的回报时刻):CLI 与定时任务(PY-024)直接实例化 ChatService(注入同样的 infra 依赖)调用同一方法;router 只是 HTTP 形态的入口之一。如果当初业务写在 router 里,现在要复制或重构——这个场景就是『router 薄、service 厚』纪律的论证:同一个能力,HTTP/CLI/批处理三个形态免费获得。",
+   "explain": "检验点:用『能力复用』场景论证分层的实际回报——分层不是教条,是复用与测试的基础设施。"
+  },
+  "related": [
+   "PY-004",
+   "PY-011",
+   "PY-016",
+   "LP-021",
+   "EN-014"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理(经典分层在 LLM 应用的展开)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;目录为演示。"
+  }
+ }
 ]

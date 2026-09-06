@@ -110,3 +110,13 @@ FastAPI 流式与取消/Python asyncio-task/OpenAI function-calling 与 structur
 - [x] CI:.github/workflows/validate.yml —— push/PR 自动跑 validate_bank + dedup_check + fix_quotes 幂等 + build 可复现(data.js/sw.js 无 diff)
 - [x] 纠错渠道:.github/ISSUE_TEMPLATE/question-feedback.yml(题号/类型/描述/出处)+ config.yml
 - [ ] 后续:PWA 安装与离线冒烟验证(线上);统计图表;Anki 导出
+
+## 修复轮(2026-09-07,基于审查 0498044;未提交未推送,等用户验收)
+
+- 触发:用户提交详细审查报告(A 复习/B 检索/C 导入与记录/D 交互/E 内容/F 验证交付)
+- 完成度:报告全部条目已处理;额外发现并修复 4 个新问题(smooth-scroll 异步动画、SW 缓存版本只盖 data.js、Data.init 不可重入、笔记/草稿防抖丢输入)
+- 内容:11 题修订全部带运行证据(TaskGroup 三场景/协程竞争/except* 分区/Pydantic 顺序/元组哈希/KV 与 TPM 复算);RG-064 改写为漂移监控新情境(RG-055 吸收 CI 门禁);184 题 verified 诚实降级 partial(54/252/0)
+- 新工具:tests/behavior-tests.js(38 断言,CI 已接入);tools/_patch_content_1~3.py 修订脚本留档
+- 验证:validate/dedup 0 错 0 警;node --check 全过;浏览器回归 A~G 七组(见 delivery/功能测试记录.md);390px iframe 移动端全过;8765 真实数据完好
+- 交付物:delivery/修改说明.md、功能测试记录.md、修复任务清单.md、内容核查记录.md(重写)、RG-055-RG-064合并与迁移映射.json
+- 下一步(等验收后):推送部署;252 题来源补齐(基础优先);进阶章节练习组

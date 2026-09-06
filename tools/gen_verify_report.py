@@ -23,7 +23,7 @@ for f in sorted((ROOT / "data" / "questions").glob("*.json")):
 order = {tid: i for i, tid in enumerate(topics)}
 rows.sort(key=lambda r: (order.get(r[0], 99), r[1]))
 
-lines = ["# 核查状态明细(自动生成于 2026-09-06,tools/gen_verify_report.py)", "",
+lines = [f"# 核查状态明细(自动生成于 {__import__('datetime').date.today()},tools/gen_verify_report.py)", "",
          f"共 {len(rows)} 题。状态定义见《内容核查记录.md》:已核查=结论对照一手来源或官方长期稳定语义;部分核查=核心机制稳定、具体数值/版本相关已标注。", ""]
 cur = None
 for r in rows:

@@ -1,296 +1,579 @@
 [
-  {
-    "id": "PY-029",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "Python 的 dataclass 和 Pydantic 模型怎么选?什么场景用 TypedDict?",
-    "tags": ["Python", "数据建模", "工程化"],
-    "prerequisites": ["PY-013", "PY-020"],
-    "answer": "三者按校验需求分:①Pydantic 模型——边界数据(外部输入:API 请求/LLM 返回/配置文件):需要运行时校验与转换;②dataclass——内部数据的结构化承载(业务对象在代码内传递):类型标注给 mypy 与 IDE,不需要运行时开销;③TypedDict——描述『已有 dict 的形状』(兼容 JSON 结构/框架接口,如 messages 数组):不能实例化只是类型声明。选型口诀:边界用 Pydantic(不可信数据),内部用 dataclass(可信数据),接口适配用 TypedDict(描述外部 dict)。反模式:内部纯数据用 Pydantic(无谓的校验开销)、边界数据用 dataclass(校验缺失)。",
-    "plain": "三种容器像三种包装:Pydantic=带安检的快递箱(进出边界都要查,不可信的 Outside 数据用);dataclass=家里整理箱(内部搬运,自己人的东西不用每次安检);TypedDict=货架标签(描述『这个格子里放什么形状的东西』——它本身不是容器,是说明书)。错误用法:家人拿快递箱装自己的书(内部用 Pydantic,每次开箱安检浪费);外面寄来的包裹不安检直接放冰箱(边界用 dataclass,危险)。比喻局限:Pydantic 模型也可以当纯类型用(不校验),dataclass 也能加校验(自己写)——区别在『默认行为与生态意图』。",
-    "deep": "1) 技术差异:\n   - Pydantic:运行时校验+类型转换('5'→5)+序列化+schema 生成;实例化有开销(校验成本);\n   - dataclass(标准库):生成 __init__/__repr__ 等,无校验;slots/frozen 配置;轻量;\n   - TypedDict:纯类型层面(mypy 检查),运行时就是普通 dict;total=False 可选键。\n2) LLM 应用的典型分布:\n   - 边界:API 请求/响应(PY-004)、LLM 返回解析(LP-003)、配置(PY-010)→Pydantic;\n   - 内部:组装器的片段(PY-022 Segment)、服务层的中间结果、领域实体→dataclass(或 Pydantic 若要序列化);\n   - 适配:messages 数组(PY-020 的 ChatMessage)、OpenAI SDK 的参数结构→TypedDict(mypy 检查 dict 字面量)。\n3) 转换边界:Pydantic 模型在校验后可以 .to_dataclass()(内部传递用轻量结构)——但增加转换代码;务实做法:单一 Pydantic 模型贯穿(简单项目),或边界 Pydantic+内部 dataclass(性能敏感/大型项目)。判断:内部数据的实例化频率(每请求数百次→dataclass 的开销差可见)。\n4) 性能差异:Pydantic v2(Rust 核心)校验已经很快,但仍是 dataclass 的数倍(大数据量批量实例化可测出);dataclass(slots=True)的内存与访问速度最优;\n5) 演进路径:原型期全 Pydantic(校验兜住一切);性能热点出现→热点路径换 dataclass(PY-018 的 profiling 驱动);外部结构→TypedDict 标注(不改运行时)。",
-    "example": "```python\nfrom dataclasses import dataclass\nfrom typing import TypedDict\nfrom pydantic import BaseModel\n\n# 边界:LLM 返回解析(不可信 → 校验)\nclass LLMExtract(BaseModel):\n    order_id: str\n    amount: float\n\n# 内部:组装器片段(可信 → 轻量)\n@dataclass(slots=True)\nclass Segment:\n    kind: str\n    priority: int\n    content: str\n\n# 适配:messages 数组形状(描述 dict)\nclass ChatMessage(TypedDict):\n    role: str\n    content: str\n```",
-    "interview": "口述版:『三选一口诀:边界数据用 Pydantic(不可信,要校验转换)、内部数据用 dataclass(可信,轻量)、外部 dict 形状用 TypedDict(纯类型标注)。LLM 应用典型分布:LLM 返回解析/API 边界/配置是 Pydantic;组装器片段/内部实体是 dataclass;messages 数组是 TypedDict。演进策略:原型全 Pydantic,热点换 dataclass(PY-018 的 profiling 驱动)。核心是『信任边界』意识:数据从哪来决定用什么容器。』追问展开:v2 性能、slots 的作用、三者混用的边界转换。",
-    "followups": [
-      {"q": "Pydantic v2 为什么快?还有哪些场景会慢?", "a": "v2 核心用 Rust(pydantic-core)重写,校验与序列化在 Rust 层——比 v1(Python)快 5~50×。仍慢的场景:超大模型(数百字段)的单次实例化、深度嵌套的海量实例(批量转换)——热点 profiling 确认后再优化(换 dataclass 或延迟校验)。"},
-      {"q": "dataclass 的 slots=True 和 frozen=True 什么时候用?", "a": "slots:实例不再有 __dict__,内存省 30~50%、属性访问更快——大量实例(批量处理)用;副作用:不能动态加属性。frozen:不可变(创建后不能改)——可哈希(能进 set/dict key)、线程安全语义;内部常量配置/值对象用 frozen。两者可组合。"},
-      {"q": "TypedDict 能做运行时校验吗?", "a": "不能——它是纯类型声明(mypy 静态检查用),运行时就是普通 dict(塞什么都行)。需要运行时校验的 dict 用 Pydantic(或 typing 的运行时检查库,但不推荐)。分工:静态保证结构一致性用 TypedDict,运行时保证用 Pydantic——PY-020 的『两道岗』在容器选型上的体现。"}
-    ],
-    "pitfalls": [
-      "边界数据(LLM 返回)用 dataclass/TypedDict——没有运行时校验,脏数据直进业务。",
-      "批量热路径用 Pydantic 反复实例化,profiling 发现校验是热点。",
-      "TypedDict 当运行时容器用(isinstance 检查会失败——它就是 dict)。",
-      "内部简单数据也定义 Pydantic 模型+全字段校验,代码与开销双重冗余。"
-    ],
-    "check": {
-      "q": "函数 A 接收『从 LLM 返回解析后的订单』,函数 B 接收『内部生成的分页参数』。分别用什么容器?",
-      "a": "A 用 Pydantic 模型:LLM 返回是边界数据(不可信),解析后必须运行时校验(LP-003 的闭环)——OrderExtract(BaseModel)。B 用 dataclass(slots):内部分页参数是自己构造的可信数据,轻量即可——PageParams(dataclass)。判据:数据从可信边界外还是内部来,决定校验需求与容器选择。",
-      "explain": "检验点:按『信任边界』选容器的判断,而不是『统一用一种』的教条。"
-    },
-    "related": ["PY-013", "PY-020", "PY-022", "LP-003"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · dataclasses / typing.TypedDict", "url": "https://docs.python.org/zh-cn/3/library/dataclasses.html", "kind": "official", "note": "语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "选型口诀为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "容器语义为官方稳定知识;选型口诀为独立整理。"}
+ {
+  "id": "PY-029",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "Python 的 dataclass 和 Pydantic 模型怎么选?什么场景用 TypedDict?",
+  "tags": [
+   "Python",
+   "数据建模",
+   "工程化"
+  ],
+  "prerequisites": [
+   "PY-013",
+   "PY-020"
+  ],
+  "answer": "三者按校验需求分:①Pydantic 模型——边界数据(外部输入:API 请求/LLM 返回/配置文件):需要运行时校验与转换;②dataclass——内部数据的结构化承载(业务对象在代码内传递):类型标注给 mypy 与 IDE,不需要运行时开销;③TypedDict——描述『已有 dict 的形状』(兼容 JSON 结构/框架接口,如 messages 数组):不能实例化只是类型声明。选型口诀:边界用 Pydantic(不可信数据),内部用 dataclass(可信数据),接口适配用 TypedDict(描述外部 dict)。反模式:内部纯数据用 Pydantic(无谓的校验开销)、边界数据用 dataclass(校验缺失)。",
+  "plain": "三种容器像三种包装:Pydantic=带安检的快递箱(进出边界都要查,不可信的 Outside 数据用);dataclass=家里整理箱(内部搬运,自己人的东西不用每次安检);TypedDict=货架标签(描述『这个格子里放什么形状的东西』——它本身不是容器,是说明书)。错误用法:家人拿快递箱装自己的书(内部用 Pydantic,每次开箱安检浪费);外面寄来的包裹不安检直接放冰箱(边界用 dataclass,危险)。比喻局限:Pydantic 模型也可以当纯类型用(不校验),dataclass 也能加校验(自己写)——区别在『默认行为与生态意图』。",
+  "deep": "1) 技术差异:\n   - Pydantic:运行时校验+类型转换('5'→5)+序列化+schema 生成;实例化有开销(校验成本);\n   - dataclass(标准库):生成 __init__/__repr__ 等,无校验;slots/frozen 配置;轻量;\n   - TypedDict:纯类型层面(mypy 检查),运行时就是普通 dict;total=False 可选键。\n2) LLM 应用的典型分布:\n   - 边界:API 请求/响应(PY-004)、LLM 返回解析(LP-003)、配置(PY-010)→Pydantic;\n   - 内部:组装器的片段(PY-022 Segment)、服务层的中间结果、领域实体→dataclass(或 Pydantic 若要序列化);\n   - 适配:messages 数组(PY-020 的 ChatMessage)、OpenAI SDK 的参数结构→TypedDict(mypy 检查 dict 字面量)。\n3) 转换边界:Pydantic 模型在校验后可以 .to_dataclass()(内部传递用轻量结构)——但增加转换代码;务实做法:单一 Pydantic 模型贯穿(简单项目),或边界 Pydantic+内部 dataclass(性能敏感/大型项目)。判断:内部数据的实例化频率(每请求数百次→dataclass 的开销差可见)。\n4) 性能差异:Pydantic v2(Rust 核心)校验已经很快,但仍是 dataclass 的数倍(大数据量批量实例化可测出);dataclass(slots=True)的内存与访问速度最优;\n5) 演进路径:原型期全 Pydantic(校验兜住一切);性能热点出现→热点路径换 dataclass(PY-018 的 profiling 驱动);外部结构→TypedDict 标注(不改运行时)。",
+  "example": "```python\nfrom dataclasses import dataclass\nfrom typing import TypedDict\nfrom pydantic import BaseModel\n\n# 边界:LLM 返回解析(不可信 → 校验)\nclass LLMExtract(BaseModel):\n    order_id: str\n    amount: float\n\n# 内部:组装器片段(可信 → 轻量)\n@dataclass(slots=True)\nclass Segment:\n    kind: str\n    priority: int\n    content: str\n\n# 适配:messages 数组形状(描述 dict)\nclass ChatMessage(TypedDict):\n    role: str\n    content: str\n```",
+  "interview": "口述版:『三选一口诀:边界数据用 Pydantic(不可信,要校验转换)、内部数据用 dataclass(可信,轻量)、外部 dict 形状用 TypedDict(纯类型标注)。LLM 应用典型分布:LLM 返回解析/API 边界/配置是 Pydantic;组装器片段/内部实体是 dataclass;messages 数组是 TypedDict。演进策略:原型全 Pydantic,热点换 dataclass(PY-018 的 profiling 驱动)。核心是『信任边界』意识:数据从哪来决定用什么容器。』追问展开:v2 性能、slots 的作用、三者混用的边界转换。",
+  "followups": [
+   {
+    "q": "Pydantic v2 为什么快?还有哪些场景会慢?",
+    "a": "v2 核心用 Rust(pydantic-core)重写,校验与序列化在 Rust 层——比 v1(Python)快 5~50×。仍慢的场景:超大模型(数百字段)的单次实例化、深度嵌套的海量实例(批量转换)——热点 profiling 确认后再优化(换 dataclass 或延迟校验)。"
+   },
+   {
+    "q": "dataclass 的 slots=True 和 frozen=True 什么时候用?",
+    "a": "slots:实例不再有 __dict__,内存省 30~50%、属性访问更快——大量实例(批量处理)用;副作用:不能动态加属性。frozen:不可变(创建后不能改)——可哈希(能进 set/dict key)、线程安全语义;内部常量配置/值对象用 frozen。两者可组合。"
+   },
+   {
+    "q": "TypedDict 能做运行时校验吗?",
+    "a": "不能——它是纯类型声明(mypy 静态检查用),运行时就是普通 dict(塞什么都行)。需要运行时校验的 dict 用 Pydantic(或 typing 的运行时检查库,但不推荐)。分工:静态保证结构一致性用 TypedDict,运行时保证用 Pydantic——PY-020 的『两道岗』在容器选型上的体现。"
+   }
+  ],
+  "pitfalls": [
+   "边界数据(LLM 返回)用 dataclass/TypedDict——没有运行时校验,脏数据直进业务。",
+   "批量热路径用 Pydantic 反复实例化,profiling 发现校验是热点。",
+   "TypedDict 当运行时容器用(isinstance 检查会失败——它就是 dict)。",
+   "内部简单数据也定义 Pydantic 模型+全字段校验,代码与开销双重冗余。"
+  ],
+  "check": {
+   "q": "函数 A 接收『从 LLM 返回解析后的订单』,函数 B 接收『内部生成的分页参数』。分别用什么容器?",
+   "a": "A 用 Pydantic 模型:LLM 返回是边界数据(不可信),解析后必须运行时校验(LP-003 的闭环)——OrderExtract(BaseModel)。B 用 dataclass(slots):内部分页参数是自己构造的可信数据,轻量即可——PageParams(dataclass)。判据:数据从可信边界外还是内部来,决定校验需求与容器选择。",
+   "explain": "检验点:按『信任边界』选容器的判断,而不是『统一用一种』的教条。"
   },
-  {
-    "id": "PY-030",
-    "topic": "python-backend",
-    "type": "code",
-    "difficulty": "intermediate",
-    "title": "怎么实现一个通用的重试与降级组合器?把 LP-004 的策略做成可复用组件。",
-    "tags": ["重试", "降级", "组件设计"],
-    "prerequisites": ["LP-004", "PY-023"],
-    "answer": "组合器的接口设计:retry_with_fallback(fn, *, policy, fallback=None)——policy 声明(重试异常/退避/上限,fallback 声明降级链(主→备→兜底));内部职责:调用分类(参数错/瞬时/系统,AG-014 的信封)、重试执行(PY-023 或内置)、降级切换(每级尝试+失败原因记录)、总预算(时间与次数的双上限)、决策留痕(每步的尝试与结果进 trace,LP-004/AG-024)。与 tenacity 的关系:tenacity 管『重试』这一半,组合器加『降级链+预算+留痕』——包装 tenacity 而不是重造。设计要点:fn 的幂等前提显式(参数声明 idempotent=True)、fallback 的签名与主调用一致(调用方无感)、降级原因进响应(调用方知道结果来自备用)。",
-    "plain": "重试与降级的组合器像『自动挡的应急预案』:手动挡(手写 try/except)每辆车司机自己反应;自动挡=预先编好的预案(先重试 3 次每次退避→换备用路线→都不行给兜底答复),而且每步都打表(留痕)。设计的关键接口:预案声明式(policy/fallback 是配置)、总预算(不是无限打表)、过程留痕(走了哪条路记录在案)。比喻局限:代码的『幂等前提』检查(预案只对可重复执行的操作生效)是应急预案没有的工程约束。",
-    "deep": "1) 接口设计:\n```python\n@dataclass\nclass RetryPolicy:\n    exceptions: tuple\n    max_attempts: int = 3\n    backoff: str = \"exponential\"      # + jitter\n    budget_seconds: float = 30\n\n@dataclass\nclass Fallback:\n    alternatives: list[Callable]     # 主→备1→备2\n    final: Callable | None = None    # 兜底(缓存/话术)\n\nasync def with_resilience(call: Callable, policy: RetryPolicy,\n                          fallback: Fallback | None = None,\n                          *, idempotent: bool = True) -> Result:\n    ...  # 见 deep 流程\n```\n2) 执行流程:主调用(按 policy 重试)→失败→逐个 fallback.alternatives(每个也是一次『受治理调用』——备选调用自己的超时)→final 兜底→全失败抛聚合异常(含各路失败原因,AG-014 的信封)。每步:trace 记录(尝试序号/耗时/失败原因)、预算检查(时间超限直接进入下一级)。\n3) 幂等守卫:idempotent=False 时禁用重试(或只重试『确定未执行』的失败——连接失败可重试,超时不可重试因为可能已执行,PY-025 的『超时≠未执行』)——组合器的安全纪律。\n4) 与熔断的衔接:组合器是『单请求』的韧性;熔断(连续失败的状态)在组合器外层或由其上报失败计数(EN-009/LP-004 的分层)。两层职责:组合器管这一次怎么办,熔断管接下来还要不要试。\n5) 可观测:每次组合器调用的报告(attempts/latency/fallback_used/errors 链)进指标与 trace——『降级使用率』是主调用健康度的先行指标(EN-020 的看板数据)。",
-    "example": "```python\nresult = await with_resilience(\n    call=lambda: llm_main.chat(prompt),\n    policy=RetryPolicy((TransientError,), max_attempts=3),\n    fallback=Fallback(\n        alternatives=[lambda: llm_backup.chat(prompt_alt)],\n        final=lambda: cached_or_template(prompt)),\n    idempotent=False)   # 生成不可重试→超时不重试,直接降级\nif result.via_fallback:\n    log.warning(\"降级使用\", extra={\"reason\": result.failures})\n```",
-    "interview": "口述版:『组合器的接口:policy(重试声明)+fallback(降级链)+幂等守卫+总预算+留痕。内部流程:主调用按 policy 重试→逐级 fallback(每级自带超时)→final 兜底→全失败抛聚合异常。与 tenacity 的关系:包装它管重试,组合器加降级链/预算/留痕。三个设计要点:幂等守卫(不可重试的操作超时直接降级——超时≠未执行)、降级原因进响应(调用方知道结果来自备用)、降级使用率是主调用健康的先行指标。』追问展开:幂等守卫的实现、聚合异常的设计、降级使用率的告警。",
-    "followups": [
-      {"q": "幂等守卫的实现细节?", "a": "idempotent=False 时:重试策略只允许『确定未执行』的失败类型(ConnectError/连接拒绝——请求没发出去;超时类排除——可能已执行);或有幂等键(PY-025)时全部可重试(服务端去重)。守卫的作用:把『这个操作能不能重试』从调用方的心智负担变成组合器的显式参数与强制检查。"},
-      {"q": "聚合异常怎么设计才可用?", "a": "结构:ExceptionGroup 风格({primary: 主调用错误链, fallbacks: [{level, error}], final_result?})——每个失败的原因与层级都在;上层的决策依赖它(『主模型超时+备用模型 401』vs『主模型 400』——前者降级链用尽转人工,后者是修代码信号,LP-004 的分类)。消息摘要给模型/用户,完整链进日志(AG-014 的双层错误设计)。"},
-      {"q": "降级使用率的告警阈值怎么定?", "a": "基线统计(正常时 <5%)+趋势告警(突增=主调用健康问题,EN-002)+绝对上限(>30% 触发容量/供应商事件,LP-008)。降级使用率是『备用路线流量占比』——它高说明主路线坏了;它长期稳定在高值说明『备用其实成了主用』(配置或容量问题——名实不符的审查)。"}
-    ],
-    "pitfalls": [
-      "组合器无总预算,降级链每级都重试,总时长失控(LP-004 的重试预算缺失)。",
-      "降级结果不标注来源,用户/下游不知道答案来自备用模型(质量可能不同)。",
-      "fallback 的签名与主不一致,切换时代码崩(接口一致性)。",
-      "幂等守卫缺失,非幂等操作被自动重试(PY-025 的前提破坏)。"
-    ],
-    "check": {
-      "q": "降级链最后一级 final 是『缓存答案』。缓存命中旧内容时,调用方怎么知道这不是最新的?",
-      "a": "组合器的 Result 信封带 via_fallback 与 degradation 元数据(来源=cache、缓存时间、与主调用的差异标记);调用方的责任:按业务语义处理降级结果(展示时标注『由缓存回答』/高风险场景不接受降级→组合器配置 final=None)。原则:降级是能力不是欺骗——组合器负责透明,调用方负责策略。若业务要求『降级必须显式告知用户』,信封的元数据就是渲染依据(LP-024 的渲染关)。",
-      "explain": "检验点:降级的透明性设计(信封元数据)与调用方的策略责任分工。"
-    },
-    "related": ["LP-004", "PY-023", "PY-025", "AG-014", "EN-009"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "为独立整理的组件设计"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "为独立整理;代码为模式演示未运行(已标注)。"}
-  },
-  {
-    "id": "PY-031",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的装饰器参数校验和运行时类型检查(Runtime Validation)在边界层怎么做?",
-    "tags": ["Python", "校验", "边界"],
-    "prerequisites": ["PY-013", "PY-020"],
-    "answer": "边界层校验的分层实现:①声明式——FastAPI 的参数模型(PY-004)已覆盖 HTTP 边界;②内部边界——函数间的关键契约用类型标注(mypy 静态,PY-020)+可选的运行时检查(beartools/typeguard 或手写 assert,只在高风险边界开);③动态数据——LLM 返回/外部 API 的解析用 Pydantic(LP-003 的闭环)。原则:静态检查为主(零运行时成本)、运行时校验只放在信任边界(不可信数据进入处)、内部可信路径靠类型+测试。运行时全量校验的性能代价(每次调用都校验)与收益(内部数据通常已被上游校验过)不匹配——『边界校验、内部信任』是性能与安全的平衡点。",
-    "plain": "边界校验像海关与国内物流的分工:海关(边界)每件必查(不可信);国内物流(内部)靠运单系统(类型标注)与抽检(测试)——如果国内每件包裹也全查一遍(运行时全量校验),物流成本翻倍但查出的违禁品极少(内部数据早就被海关查过了)。原则:查边界,信内部,内部靠『单据系统』(mypy)保证不调包。比喻局限:『内部』的信任其实来自『边界的严格+内部的类型系统』两道岗——如果边界漏了,内部类型也拦不住值错误(类型对值错:传了负数给 int 参数)。",
-    "deep": "1) 边界的识别(哪些是边界):\n   - 系统边界:HTTP API、消息队列消费者、CLI 参数、定时任务输入;\n   - 服务边界:调用外部 API 的返回(LLM/第三方)、读取外部存储的数据;\n   - 信任降级点:用户生成内容进入系统(UGC 的任何位置);\n   - 非边界:同进程内的函数调用(已过边界的可信数据)、配置(已校验)。\n2) 实现方式的对比:\n   - FastAPI/Pydantic:声明式、自动文档、错误自动 422——HTTP 边界首选;\n   - Pydantic 手动:非 HTTP 边界(队列消费者/LLM 解析)显式 model_validate;\n   - beartype/typeguard 装饰器:对已有类型标注的函数做运行时检查——适合关键契约函数(少量,性能敏感处不开);\n   - 手动 assert:简单场景(assert isinstance/断言不变量)——注意 python -O 会跳过 assert(不能当安全检查)。\n3) 性能与安全的平衡:运行时校验的开销量化(热路径的校验成本,PY-018);分级策略:外部输入全校验、内部关键契约抽验(mypy 覆盖大部分)、性能热点零运行时校验(靠测试与类型)。\n4) 校验失败的处理:边界校验失败=可恢复错误(返回 422/拒绝消息/死信)——不重试(数据问题重试无意义,LP-004 的分类);错误信息面向调用方(PY-013 的字段定位)。\n5) 与 mypy 的关系(PY-020 的两道岗):mypy 管『代码内部声明的类型一致』(静态),运行时校验管『外部数据符合声明』(动态)——两道岗互补;只在边界放运行时校验的前提是 mypy 覆盖了内部传递(否则内部传错还是发现不了)。",
-    "example": "```python\n# 边界:LLM 返回解析(Pydantic,LP-003)\norder = OrderExtract.model_validate_json(raw)     # 运行时校验 ✅\n\n# 内部:已校验数据的传递(类型标注,mypy 管)\ndef compute_total(orders: list[OrderExtract]) -> float:   # 静态即可\n    ...\n\n# 关键契约:运行时抽查(beartype,可选)\n@beartype\ndef apply_refund(order_id: str, amount_cents: int) -> None: ...\n    # 资金操作:运行时也查(高风险边界)\n```",
-    "interview": "口述版:『边界校验的分层:HTTP 边界用 FastAPI 声明式;非 HTTP 边界(LLM 解析/队列消费)显式 Pydantic;关键契约函数可加运行时检查(beartype);内部可信路径靠 mypy+测试。原则:查边界信内部——全量运行时校验的性能代价换不来收益(内部数据已被上游校验)。两个细节:assert 会被 -O 跳过(不能当安全检查);校验失败不重试(数据问题重试无意义)。』追问展开:边界的识别清单、beartype 的开销、与 mypy 的两道岗。",
-    "followups": [
-      {"q": "怎么判断一个函数调用是不是『边界』?", "a": "三个判据:数据的最初来源是外部吗(HTTP/MQ/LLM/第三方)?数据的可信程度经过验证吗(上游校验过)?校验失败的影响面(进资金/入库/外发=高风险)?组合判断:来源外部+未验证+高风险=必须运行时校验;内部已验证数据=静态即可。边界清单应显式维护(PY-028 的分层文档),新人不用猜。"},
-      {"q": "beartype 的性能开销有多大?", "a": "beartype 用 O(1) 采样式检查(大部分类型检查编译成高效代码),开销远低于全量校验库——但仍是零成本以上(每次调用都查)。策略:只装饰高风险/关键契约的函数(资金/权限/核心算法边界),普通内部函数靠 mypy。度量:装饰函数的调用频率×单次开销(PY-018 验证)。"},
-      {"q": "为什么校验失败不能重试?", "a": "校验失败=输入数据不符合预期(类型/格式/范围)——这是确定性错误:同样的输入重试同样的失败(LP-004 的『400 类不重试』);重试的适用对象是瞬时错误(网络/限流)。确定性错误的正确处理:拒绝+清晰错误信息(调用方修数据)+进死信(队列场景,PY-024)。把校验失败丢进重试=烧钱循环。"}
-    ],
-    "pitfalls": [
-      "用 assert 做安全校验,python -O 下全部失效(安全漏洞)。",
-      "内部路径全量运行时校验,性能浪费(边界已经查过)。",
-      "校验失败进重试队列,死循环烧资源。",
-      "新边界(新消息消费者)上线没有校验,脏数据直入业务。"
-    ],
-    "check": {
-      "q": "队列消费者的 handler 收到消息直接 json.loads 后使用。这有什么风险?正确姿势?",
-      "a": "风险:消息是系统边界——格式错/字段缺失/恶意构造的脏数据直入业务(生产事故:None 传播/类型爆炸/注入)。正确姿势:①解析层 schema 校验(消息的 Pydantic 模型,失败→死信+错误记录,PY-024);②业务校验(值域/状态);③幂等消费(PY-025,消息至少一次投递)。队列消息与 HTTP 请求同等级别对待——都是不可信边界,这是『边界识别』最容易漏的位置(大家记得查 HTTP,忘了 MQ)。",
-      "explain": "检验点:消息队列作为边界的识别(边界清单的易漏项)与完整处理(schema+业务+幂等)。"
-    },
-    "related": ["PY-013", "PY-020", "LP-003", "PY-024", "PY-005"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "为独立整理(边界校验为通行实践)"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "为独立整理;代码为模式演示未运行(已标注)。"}
-  },
-  {
-    "id": "PY-032",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "Python 的上下文管理变量(contextvars)是什么?为什么 FastAPI 的日志要靠它?",
-    "tags": ["contextvars", "日志", "并发"],
-    "primitives": "",
-    "prerequisites": ["PY-003", "PY-009"],
-    "answer": "contextvars 提供『协程/任务本地的全局变量』:ContextVar.set() 设置的值在当前异步任务链中可见,不同请求互不干扰——解决并发下的『请求上下文传递』问题:trace_id、当前用户、租户信息在中间件设置一次,后续所有代码(包括深层调用的日志)自动读取。为什么 FastAPI 日志靠它:传统全局变量在并发下被请求互相覆盖(PY-003);层层传参污染所有函数签名;contextvars 是异步安全的隐式上下文——每个请求一个独立的值槽。配套:ContextVar 与日志 formatter(PY-009 的结构化日志自动携带)、与 SQLAlchemy 会话绑定(PY-016 的会话隔离)、跨服务的 header 传播(trace 上下文,EN-025)。",
-    "plain": "contextvars 像『每人一个的工位抽屉』:你把工牌(trace_id)放进自己抽屉,办公室所有人(深层函数)都能查到『当前是谁在办事』——而每个客人的抽屉是独立的(并发请求互不覆盖)。对比:全局变量=『一块共用的白板』(A 写上自己的名字,B 一来就擦掉写自己的——A 后续查名字查到 B);层层传参=『每办一件事都要复印一遍工牌给所有经办人』(签名污染)。比喻局限:contextvars 的值还可以在任务创建时被复制或隔离(copy_context)——抽屉比喻没有这个『上下文继承』语义。",
-    "deep": "1) 机制:ContextVar.set 返回 Token(可 reset 恢复);每个 Task/协程继承创建时的上下文快照(copy-on-write 语义)——asyncio.create_task 自动继承当前上下文;线程间不共享(每线程独立)。\n2) FastAPI 的标准模式:\n```python\nrequest_id: ContextVar[str] = ContextVar(\"request_id\", default=\"-\")\n\n@app.middleware(\"http\")\nasync def trace(request, call_next):\n    token = request_id.set(gen_id())\n    try:\n        return await call_next(request)\n    finally:\n        request_id.reset(token)      # 清理\n\n# 任意深层:logger.info(...) 自动带当前请求的 request_id(PY-009)\n```\n3) 使用场景清单:trace_id/请求 ID(PY-014)、当前用户/租户(EN-007 的租户上下文注入——DAO 强制过滤的来源)、事务/会话绑定(PY-016 的请求级会话)、特性开关快照(请求期间一致的开关状态)。\n4) 陷阱:①在错误的层级 set(中间件 set 后又在依赖里 set 不同值——覆盖混乱);②Task 的上下文继承语义:create_task 复制当前上下文(之后的 set 不影响已创建的任务)——后台任务要显式传上下文或依赖继承时机;③第三方库的线程池执行(to_thread 传播上下文,但自定义线程池要手动 copy_context,AG-023 的线程池注意);④reset 的纪律(中间件 finally reset,防长连接的上下文泄漏——WebSocket 长连接的上下文生命周期)。\n5) 与显式传参的权衡:contextvars 是隐式(签名干净但依赖关系不可见);显式传参(每个函数带 ctx 参数)更显式但签名污染。实践:横切关注点(trace/租户)用 contextvars(它们天然是环境不是参数),业务数据显式传参——隐式上下文只装『环境』不装『数据』。",
-    "example": "```python\n# 租户上下文(EN-007 的落地)\ntenant_id: ContextVar[str | None] = ContextVar(\"tenant\", default=None)\n\n# 中间件/依赖:set\n# repository 层:自动读取并注入过滤条件\nasync def get_orders(...):\n    tid = tenant_id.get()\n    if not tid:\n        raise RuntimeError(\"租户上下文缺失\")   # 防御:无上下文即失败\n    ...  # WHERE tenant_id = :tid 自动注入\n```",
-    "interview": "口述版:『contextvars 是协程本地的全局变量:中间件 set 一次,所有深层代码(含日志 formatter)自动读取,请求间互不干扰。FastAPI 日志靠它的原因:全局变量并发互踩、层层传参污染签名。三个陷阱我会主动讲:Task 的上下文继承时机(create_task 快照)、reset 纪律(长连接泄漏)、to_thread 的传播。设计边界:横切环境(trace/租户)用 contextvars,业务数据显式传参——隐式只装环境。防御性编程:读取时缺失即失败(租户上下文缺失就是请求错乱的前兆)。』追问展开:Task 继承语义、与 thread-local 的区别、租户上下文的防御。",
-    "followups": [
-      {"q": "contextvars 和 threading.local 的区别?", "a": "threading.local 是线程级(一线程一值);contextvars 是『上下文级』——一个线程内可以有多个并发上下文(asyncio 任务),且上下文可显式复制传播。async 环境必须用 contextvars(thread.local 在协程切换时共享错误——同线程的所有协程看到同一个值,请求互踩)。历史迁移:老代码的 threading.local 在 async 化时必须改造。"},
-      {"q": "create_task 的上下文继承有什么注意?", "a": "任务继承创建时刻的上下文快照:set 之后创建的任务看到新值,创建之后 set 的不影响已创建任务。场景:后台任务要在创建时捕获当前请求的 trace_id(自动继承✅);但后台任务自己 set 的新值不影响创建者(隔离✅)。长生命周期的 worker(启动时创建,之后每请求 set)——worker 内读不到请求上下文(要显式传递)!这是 background worker 丢 trace 的经典原因(PY-024)。"},
-      {"q": "租户上下文缺失就抛错,会不会太严格?", "a": "不严格,是防御:租户上下文缺失意味着请求未经鉴权中间件(内部调用忘了挂中间件/新入口没接入)——此时 DAO 若用『默认租户』或不过滤,就是越权事故(RG-015 的铁律)。fail fast 于缺失上下文,逼所有入口正确接入——比静默放行(数据混租)便宜一万倍。例外:系统级任务(无租户语义的清理任务)显式声明 system 上下文(显式的例外,不是默认的豁免)。"}
-    ],
-    "pitfalls": [
-      "async 项目用 threading.local,请求间值互踩(经典迁移 bug)。",
-      "后台 worker 读不到请求上下文(create_task 时机),trace 断链。",
-      "中间件不 reset,长连接/WebSocket 的上下文泄漏到后续逻辑。",
-      "把业务数据塞进 contextvars(应只装环境),隐式依赖失控。"
-    ],
-    "check": {
-      "q": "日志里 trace_id 全是同一个值(所有请求共享)。最可能的原因?",
-      "a": "trace_id 用了全局变量或 threading.local 而不是 contextvars——并发请求互相覆盖( everyone 看到最后一个请求的 ID)。也可能:中间件 set 的时机在响应后(顺序错)、或日志 formatter 读的是模块级缓存(读了一次就固定)。排查顺序:确认 ContextVar 的使用(不是普通变量)→确认中间件的 set 在 call_next 前→确认 formatter 动态读取(record 时取值,不是初始化时)。这是 async 化项目的经典第一坑。",
-      "explain": "检验点:trace_id 共享的根因(全局变量/threading.local)与三处检查点。"
-    },
-    "related": ["PY-003", "PY-009", "PY-014", "EN-007", "PY-016"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · contextvars", "url": "https://docs.python.org/zh-cn/3/library/contextvars.html", "kind": "official", "note": "语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "FastAPI 模式与陷阱为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "contextvars 语义为官方稳定知识;FastAPI 模式为独立整理。"}
-  },
-  {
-    "id": "PY-033",
-    "topic": "python-backend",
-    "type": "comparison",
-    "difficulty": "basic",
-    "title": "Python 的可变默认参数陷阱:default mutable argument 为什么危险?正确写法?",
-    "tags": ["Python", "陷阱", "基础"],
-    "prerequisites": ["PY-001"],
-    "answer": "默认参数在函数定义时求值一次(不是每次调用):def f(x=[]) 的 [] 只创建一个列表,所有不传 x 的调用共享同一个列表——第一次调用 append 后,后续调用看到被污染的默认值。危险在于静默(没有报错,数据悄悄串)。正确写法:默认用 None,函数体内 if x is None: x = [] 创建新列表。同样的机制也解释了:默认参数是昂贵对象(如 dict)时的行为、类属性的可变默认(所有实例共享)、闭包变量的晚绑定(loop 里 lambda 捕获的是变量不是值)——一族『定义时求值』的陷阱。LLM 场景的常见踩点:messages=[] 默认参数导致多轮对话串历史(不同请求共享一个列表,会话错乱的经典事故)。",
-    "plain": "默认可变参数像『酒店房间的欢迎水果盘』:水果盘在酒店开业那天摆了一次(定义时求值),之后每位不自带水果的客人吃的都是同一个盘——第一位客人吃了苹果,后面的客人看到的盘里少一个苹果(共享+被污染)。正确做法:默认『不摆盘』(None),每位客人到店时现摆一个新的。比喻局限:不可变默认(数字/字符串)完全安全——因为它们不可变,共享也没关系;陷阱专挑可变对象。",
-    "deep": "1) 机制:默认参数存放在函数对象的 __defaults__ 中——定义时创建,调用时不重建。可变默认在调用间共享且可被修改(函数体内的 append/pop 直接改它);甚至可以从外部观察:f.__defaults__ 看到被污染的状态(面试可以演示这个证据)。\n2) 一族陷阱:\n   - 函数默认参数(本题主角);\n   - 类属性:class C: items = [](所有实例共享——实例赋值才创建实例属性,append 直接改类属性);\n   - 闭包晚绑定:for i in range(3): fs.append(lambda: i)——三个 lambda 都返回 2(捕获变量 i 不是值 i);修复:默认参数固化(lambda i=i: i);\n   - 装饰器的共享(装饰器闭包里的可变状态被所有被装饰函数共享)。\n3) 正确写法与变体:\n   - None 哨兵:if x is None: x = [](标准);\n   - 显式不可变默认+内部转换:def f(x=()) → 内部转 list(适合真正的常量默认);\n   - 显式要求传参(无默认,调用方决定)——多轮对话场景最稳(避免静默共享);\n4) LLM 场景的踩点:\n   - def chat(messages=[], session=None):messages.append(...)——跨请求串历史(会话错乱,事故级);\n   - 工具调用的默认缓存 dict(跨请求共享缓存键冲突);\n   - 批处理函数的 results=[] 累积(重试时重复累积,PY-023 关联);\n   - Pydantic 模型字段的可变默认(要用 Field(default_factory=list)——v2 的正确姿势,同类陷阱的 Pydantic 版)。\n5) 检测:静态检查(ruff 的 B006 规则可变默认参数告警)——CI 拦截(PY-020 的工程化);code review 清单。",
-    "example": "```python\n# ❌ 陷阱:所有调用共享同一个列表\ndef chat(messages=[], session=None):\n    messages.append(session)\n    return messages\n\nchat()  # [s1]\nchat()  # [s1, s1]  ← 静默串数据!\n\n# ✅ 正确\ndef chat(messages=None, session=None):\n    messages = messages if messages is not None else []\n    messages.append(session)\n    return messages\n\n# ✅ Pydantic 的对应姿势\nclass Chat(BaseModel):\n    history: list[str] = Field(default_factory=list)\n```",
-    "interview": "口述版:『默认参数在定义时求值一次——可变默认被所有调用共享,append 直接污染。这是静默事故:多轮对话的 messages=[] 默认参数,不同请求共享同一个列表,会话串历史。正确写法 None 哨兵+函数体内创建;Pydantic 用 default_factory。同一机制还有两个兄弟陷阱:类属性可变默认(实例共享)与闭包晚绑定(lambda 捕获变量)。工程防线:ruff B006 进 CI 静态拦截。』追问展开:类属性陷阱、闭包晚绑定、ruff 的工程化拦截。",
-    "followups": [
-      {"q": "类属性的可变默认怎么触发?", "a": "class Config: retries = []——所有实例共享:实例 c.retries.append(x) 直接改类属性(读取时实例属性不存在,回退类属性;append 是修改不是赋值,所以不创建实例属性)。正确:__init__ 里 self.retries = [](实例化);或类属性用不可变元组。检测:修改类属性影响其他实例的单测。"},
-      {"q": "闭包晚绑定和默认参数的关系?", "a": "同一个『定义时 vs 调用时』求值机制:lambda: i 捕获的是变量 i 的引用(调用时求值)——循环结束后 i=2,三个 lambda 都返回 2;默认参数 i=i 在定义时固化当前值。这是 Python 作用域规则(闭包按引用)的直接结果——理解一个就理解一族(PY-020 的类型系统拦不住这类逻辑错误,靠测试)。"},
-      {"q": "ruff 怎么拦截这类问题?", "a": "ruff 的 B006(mutable-default)规则检测函数默认参数与类属性的可变默认;CI 集成(python 工程的 lint 门禁,EN-021 的 L0);告警的处理不是无脑改(有些场景故意共享——记忆化缓存),但需要显式注释说明意图。静态检查把『陷阱』变成『可见的选择』。"}
-    ],
-    "pitfalls": [
-      "多轮对话的 messages=[] 默认参数,跨请求串会话(事故级)。",
-      "类属性 items=[],所有实例共享同一个列表。",
-      "循环里建 lambda 闭包,全部返回最后一个值。",
-      "知道陷阱但团队 CI 没有 B006,新人持续踩坑。"
-    ],
-    "check": {
-      "q": "def add_tags(tags=[]): tags.append(...); return tags——调用三次 add_tags() 后返回什么?",
-      "a": "第一次返回 [t1];第二次返回 [t1, t2](共享同一个列表,append 到默认参数上);第三次 [t1, t2, t3]——每次的结果都包含之前的 tag。因为默认列表在定义时创建一次,所有不传 tags 的调用共享并修改它。验证:f.__defaults__[0] 就是那个被污染的列表(可以从外部直接观察到)。",
-      "explain": "检验点:能精确预测共享默认参数的多调用行为——理解的试金石(而不是只知道『危险』)。"
-    },
-    "related": ["PY-001", "PY-020", "PY-011"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · 默认参数求值(FAQ)", "url": "https://docs.python.org/zh-cn/3/faq/programming.html", "kind": "official", "note": "语言语义,长期稳定"}
-    ],
-    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "语言语义 verified;示例为演示。"}
-  },
-  {
-    "id": "PY-034",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "Python 的鸭子类型和 Protocol(结构化子类型)怎么用?接口抽象的正确姿势?",
-    "tags": ["Python", "鸭子类型", "Protocol"],
-    "prerequisites": ["PY-020", "PY-028"],
-    "answer": "鸭子类型(Python 传统):『只要它有 quack 就当鸭子』——不检查类型,直接调用属性;灵活但契约隐式(调用方依赖的属性/方法没有形式化声明)。Protocol(PEP 544,结构化子类型)把鸭子类型形式化:声明协议类(方法签名),任何『长得像』的类自动满足(无需继承)——mypy 静态检查契约,运行时仍是鸭子式(无继承耦合)。LLM 应用的用法:infra 层的 LLMClient Protocol(chat/embed/stream 签名)——OpenAI/自研网关/mock 都自动满足(测试替身无需继承,AG-034/014);run() 的 Tool Protocol(所有工具的统一形状)。与 ABC(继承式抽象)的选择:Protocol 解耦(实现方不需要知道协议存在——第三方类也能满足)是 Python 的推荐姿势(PY-028 的接口抽象)。",
-    "plain": "鸭子类型像『不查证件,能干活的都算』:饭店招厨子不问学历,炒个菜尝尝(调用属性看结果)。Protocol 像『把「能干活的」写成岗位要求』(方法签名清单)——不需要厨师来注册登记(无需继承),但人事系统(mypy)能自动核对他符不符合要求。好处:第三方大厨(OpenAI SDK 的类)不用来你这里登记,只要会炒菜就自动满足岗位;你的测试替身(mock)也自动合格。比喻局限:Protocol 还可以声明属性类型与默认实现(运行时检查有 runtime_checkable 但有限)——岗位要求可以写得很细。",
-    "deep": "1) Protocol 的定义与满足:\n```python\nclass LLMClient(Protocol):\n    async def chat(self, messages: list[ChatMessage], **kw) -> Completion: ...\n    async def stream(self, messages: list[ChatMessage]) -> AsyncIterator[str]: ...\n\n# OpenAI 实现类:没有继承 LLMClient,但签名匹配 → 类型上满足\n# 测试 fake:同样满足 → 注入即可(PY-011 的 mock 无需继承)\ndef use(client: LLMClient): ...      # mypy 校验所有调用点\n```\n2) 与 ABC 的对比:ABC=名义子类型(必须继承,运行时可 isinstance 检查,可提供默认实现);Protocol=结构子类型(不继承,mypy 静态检查;runtime_checkable 的 isinstance 只查方法存在不查签名)。选择:定义『第三方也应满足』的接口→Protocol(解耦);框架内部需要运行时注册/检查/默认实现→ABC。多数业务接口用 Protocol(PY-028 的 infra 抽象)。\n3) 设计要点:\n   - 协议最小化:只声明调用方真正使用的方法(接口膨胀=实现负担,LP-022 的片段思想:接口也是契约片段);\n   - 属性与只读:Protocol 可声明属性/property;\n   - 泛型协议(Generic[T] 的 Result[T] 信封,AG-014);\n   - runtime_checkable 的限制(isinstance 只检查方法名存在,不检查签名——运行时的完整校验仍要测试/Pydantic,PY-031 的两道岗)。\n4) LLM 场景的 Protocol 实战:\n   - LLMClient:chat/stream/embed 三能力(EN-014 的网关接口);\n   - Tool:run/signature(AG-011 的工具统一抽象);\n   - Retriever/Store/Reranker(RG-040 的多路组件)——每个组件可替换(供应商/自研/mock);\n   - 测试替身的零成本:fake 无需继承 Protocol(签名匹配即可)——AG-034 的 mock 库天然兼容。\n5) 边界:运行时多态仍靠鸭子(实际调用时 Python 不检查类型)——Protocol 的价值在『开发期的契约可见+静态可查』,运行时的安全保障靠测试与边界校验(PY-031)——类型系统(PY-020 的两道岗)在接口层的延续。",
-    "example": "```python\nfrom typing import Protocol, runtime_checkable\n\n@runtime_checkable\nclass Retriever(Protocol):\n    def search(self, query: str, k: int = 5) -> list[Hit]: ...\n\n# 三个实现(无需继承,签名匹配即满足)\nclass VectorRetriever: ...\nclass BM25Retriever: ...\nclass FakeRetriever: ...          # 测试替身(PY-011)\n\ndef hybrid_search(r1: Retriever, r2: Retriever, q: str): ...   # mypy 全链路校验\n```",
-    "interview": "口述版:『鸭子类型是 Python 传统(能干活就行),Protocol 把它形式化:声明方法签名的协议类,任何签名匹配的类自动满足(无需继承)——mypy 静态查契约,运行时无耦合。LLM 应用的用法:infra 的 LLMClient/Tool/Retriever 全用 Protocol——第三方 SDK 类自动满足、测试 fake 零成本注入(PY-011)。与 ABC 的选择:第三方应满足的接口用 Protocol,需要运行时注册/默认实现的用 ABC。协议最小化:只声明调用方真正用的方法。』追问展开:runtime_checkable 的限制、与 ABC 的详细对比、泛型协议。",
-    "followups": [
-      {"q": "runtime_checkable 的限制是什么?", "a": "isinstance(obj, Protocol) 只检查『方法名存在』不检查签名(参数个数/类型都不查)——粗粒度的运行时判断;数据成员(属性)的检查在 runtime_checkable 下也只查存在。所以运行时完整性还是要靠测试与边界校验(PY-031)——Protocol 的主战场是 mypy 静态检查(开发期),不是运行时门卫。"},
-      {"q": "Protocol 和 ABC 什么时候选 ABC?", "a": "需要运行时注册与分发的插件体系(按基类收集所有子类)、需要默认实现与模板方法(基类提供公共逻辑)、需要强制继承关系(团队规范:必须显式实现某基类)→ABC。接口是给第三方/测试满足的→Protocol。混合:ABC 提供骨架+Protocol 定义轻接口——按耦合需求选择(AG-010 的框架边界思想)。"},
-      {"q": "协议的最小化怎么把握?", "a": "从调用方视角定义:调用方(use 函数)用了哪些方法与属性,协议就声明哪些——接口是调用方的需求清单不是实现方的功能清单(接口隔离原则)。膨胀信号:协议方法没人调用/实现方为了满足协议写了空方法——拆分协议(调用方按需组合多个小协议)。接口腐烂是渐进的,定期复审(AG-010 的框架边界复审同理)。"}
-    ],
-    "pitfalls": [
-      "依赖具体实现类而不是 Protocol——mock/换供应商要改调用方(PY-028 的抽象失效)。",
-      "协议膨胀(声明了没人用的方法),实现负担与理解成本上升。",
-      "以为 runtime_checkable 的 isinstance 做了完整校验(只查方法名)。",
-      "接口定义照抄某个 SDK 的形状(抽象层泄漏供应商语义,EN-014 的反模式)。"
-    ],
-    "check": {
-      "q": "EN-014 说要抽象 LLM 供应商,但 OpenAI SDK 的类并没有实现你的 Protocol。mypy 怎么会通过?",
-      "a": "Protocol 是结构化子类型:满足条件是『签名匹配』不是『显式继承』——OpenAI 的 client.chat.completions.create 的签名若与协议方法一致,适配器包装后即满足。但更常见的实现:写一个薄的 Adapter 类(实现 Protocol 方法,内部调用 SDK)——适配器是你的代码(mypy 完全校验),SDK 的方言差异(参数名/返回结构)全部收敛在适配器内(EN-014 的 adapter 职责)。Protocol 让『适配器/mock/网关』都能无缝替换——这就是抽象层的机械保证。",
-      "explain": "检验点:结构化子类型的满足机制(签名匹配无需继承)+适配器模式的配合(方言收敛在 adapter)。"
-    },
-    "related": ["PY-020", "PY-028", "PY-011", "EN-014"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "PEP 544 · Protocols(结构化子类型)", "url": "https://peps.python.org/pep-0544/", "kind": "official-docs", "note": "语言语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "LLM 场景用法为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "PEP 语义为官方稳定知识;LLM 场景用法为独立整理。"}
-  },
-  {
-    "id": "PY-035",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "intermediate",
-    "title": "Python 的弱引用(weakref)和缓存防止内存泄漏的关系是什么?",
-    "tags": ["Python", "弱引用", "内存"],
-    "prerequisites": ["PY-018", "PY-011"],
-    "answer": "循环引用场景:对象 A 持有 B,B 的回调又引用 A(如缓存持有回调、观察者模式)——强引用环让引用计数无法归零(GC 可回收但延迟与不可控);弱引用(weakref)引用对象但不增加引用计数——对象被回收后弱引用自动变 None。缓存的经典泄漏:缓存值持有回调/闭包,闭包捕获外部对象——外部对象被缓存间接钉死;解法:weakref.WeakValueDictionary/WeakKeyDictionary(缓存不阻止对象回收)。Agent 场景:任务注册表(AG-024 的 create_task 弱引用问题——asyncio 文档明确提醒)、事件监听器、模型实例缓存。诊断:tracemalloc/objgraph 找引用链(PY-018);预防:缓存的上限与 TTL(PY-017)是第一道,弱引用处理『注册但不拥有』的语义。",
-    "plain": "强引用像『借书登记』:图书馆(缓存)登记了你的名字(引用),书(对象)就不能销毁;弱引用像『便利贴』:写着『这本书如果还在,通知我』——书被还了,便利贴自动失效,但不阻止书被还。循环引用的灾难:A 登记了 B 的书,B 又在等 A 还别的书——互相等,谁也还不了(内存钉死)。弱引用的用法:『我想知道它在不在,但我不想因为它在而在』(通知列表、缓存值)。比喻局限:Python 的 GC(分代回收)其实能处理纯循环引用——弱引用真正解决的是『循环+外部可达』的钉死与『引用但不拥有』的语义需求。",
-    "deep": "1) 引用计数与循环:CPython 主回收靠引用计数(立即释放),循环引用计数不减(需要分代 GC 兜底,但触发时机与延迟不可控);循环+弱引用:环上某一边用弱引用,打破环。\n2) 缓存泄漏的经典链:\n```\ncache[model_id] = callback   # cache 持有 callback\ncallback.__closure__ 捕获 model  # callback 钉住 model\n→ model 本应被新版本替换回收,但 cache+closure 链让它永生\n```\n解法:WeakValueDictionary(model_id → model 的弱引用;模型被别处回收则条目消失)+显式失效(版本替换时主动清)+TTL(PY-017)。\n3) weakref 的家族:ref(基本)/WeakValueDictionary(值为弱引用——对象回收条目消失)/WeakKeyDictionary(键为弱引用——监听器注册表:对象死了监听自动移除)/finalizer(对象回收时执行清理——C++ 析构的 Python 姿态)。\n4) Agent 场景的清单:\n   - asyncio 任务:任务注册表用弱引用集合或保存强引用(官方文档:事件循环只持弱引用——AG-009 提醒过保存引用,反向:你想『不拥有地观察』任务时用弱引用);\n   - 事件监听:agent 间的事件订阅(AG-021)——订阅者销毁后自动退订(WeakKeyDictionary/weakref.finalize);\n   - 工具注册表:工具实例的缓存(WeakValueDictionary,加载的适配器随引用消失);\n   - 模型/客户端实例缓存(PY-008 的单例是强引用——进程级单例本来就该强引用;多版本模型的 LRU 才涉及)。\n5) 诊断与预防:泄漏的诊断(PY-018 的 tracemalloc/objgraph:objgraph.show_backrefs 看谁钉着它);预防的层次:TTL/上限(缓存的通用纪律)→弱引用(『注册不拥有』语义)→显式生命周期管理(架构级,AG-030 的状态机清理)。弱引用是精细工具——大多数缓存问题用 TTL+上限解决,weakref 用于『语义上确实不拥有』的场景。",
-    "example": "```python\nimport weakref\n\n# 事件总线:监听者销毁自动退订\nclass EventBus:\n    def __init__(self):\n        self._subs = weakref.WeakKeyDictionary()\n    def subscribe(self, obj, handler):\n        self._subs[obj] = handler      # 弱键:obj 被回收自动消失\n\n# 任务观察:不拥有地跟踪(反向于保存强引用的提醒)\ntasks = weakref.WeakSet()\nt = asyncio.create_task(job())\ntasks.add(t)                            # 观察但不阻止取消后的回收\n```",
-    "interview": "口述版:『弱引用解决「引用但不拥有」:事件监听注册(WeakKeyDictionary,订阅者死了自动退订)、观察任务(WeakSet)、模型缓存(WeakValueDictionary)。它和循环引用的关系:循环+外部可达的钉死,弱引用破环;但纯循环 Python 的分代 GC 能收——真正高频的泄漏是缓存钉死(TTL+上限是第一道,weakref 是语义解)。诊断用 objgraph 看引用链。预防层次:TTL 上限→弱引用→显式生命周期。』追问展开:WeakValueDictionary 的行为细节、finalizer、GC 的分代机制。",
-    "followups": [
-      {"q": "WeakValueDictionary 的条目什么时候消失?", "a": "当值对象的所有强引用消失(引用计数归零或 GC 回收)后,条目自动移除(下次访问 KeyError)。注意:值对象的方法绑定(self.method)会通过 self 保持强引用——缓存值用绑定方法时,实例不会回收(经典坑);用弱引用方法(weakref.WeakMethod)或存实例+方法名。"},
-      {"q": "weakref.finalize 是什么?", "a": "注册『对象被回收时执行的回调』(finalize(obj, cleanup_func, args))——比 __del__ 可靠(__del__ 的调用时机与异常处理不可控,解释器关闭时更乱)。用途:临时文件的清理、外部资源的释放提示。注意:回调不能引用 obj 本身(会阻止回收)——finalize 的设计已处理(内部弱引用)。"},
-      {"q": "Python 的分代 GC 和引用计数的关系?", "a": "双层:引用计数为主(归零立即释放,确定性高)——但它处理不了循环;分代 GC(三代)定期扫描处理循环引用(不可回收环除外:带 __del__ 的旧版本问题)。含义:非循环的泄漏(缓存钉死/全局容器增长)GC 无能为力——它们不是『循环』问题是『强引用还在』的问题;GC 不是泄漏的万能解药(PY-018 的诊断仍是必需)。"}
-    ],
-    "pitfalls": [
-      "缓存值用绑定方法,实例被钉死(WeakValueDictionary 也失效)。",
-      "事件总线强引用监听者,页面/组件销毁后监听堆积(内存+重复触发)。",
-      "以为 GC 能解决所有泄漏——强引用链的泄漏 GC 无能为力(PY-018 诊断)。",
-      "滥用 weakref(该强持有的生命周期管理用了弱引用,对象意外消失)。"
-    ],
-    "check": {
-      "q": "事件总线用普通 dict 注册监听者,长期运行后内存持续增长。为什么 weakref 能解决?前提是什么?",
-      "a": "原因:监听者(如某个请求处理器/组件)已完成使命,但总线 dict 持有它的强引用→无法回收→累积。weakref.WeakKeyDictionary:键是监听者的弱引用——监听者被其他地方正常回收后,条目自动消失,总线不阻止回收。前提:①监听者的生命周期确实由其他引用管理(总线只是『观察者』语义——如果总线的职责就是保证监听者活着,弱引用反而错);②监听者可被弱引用(多数类可以,某些内置类型不能)。判断口诀:『注册但不拥有』→weakref;『注册且要保证存在』→强引用+显式清理。",
-      "explain": "检验点:weakref 的适用语义(注册不拥有)与前提条件——不是无脑替换强引用。"
-    },
-    "related": ["PY-018", "PY-017", "PY-011", "AG-024"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "Python 官方文档 · weakref", "url": "https://docs.python.org/zh-cn/3/library/weakref.html", "kind": "official", "note": "语义参考(未逐页抓取,标注)"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "场景与诊断为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "weakref 语义为官方稳定知识;场景为独立整理。"}
-  },
-  {
-    "id": "PY-036",
-    "topic": "python-backend",
-    "type": "principle",
-    "difficulty": "basic",
-    "title": "怎么组织 Python 项目的环境配置与多环境差异(dev/staging/prod)?",
-    "tags": ["配置", "环境管理", "工程化"],
-    "prerequisites": ["PY-010", "PY-015"],
-    "answer": "配置分层(12-factor 思想):①代码内默认值(安全的开发默认);②环境变量覆盖(部署环境注入,12-factor 的核心);③密钥走秘密管理(绝不入 Git,PY-010);④环境差异显式化——配置类按环境分组(数据库 URL/模型名/限流参数/功能开关),环境间差异集中在一份对比文件里(可审计)。管理纪律:配置校验启动即做(fail fast,PY-010)、配置的访问统一入口(禁止散落 os.environ)、配置变更记录(谁改了什么,EN-002 的变更管理)、配置与代码同版本语义(代码依赖的配置项有定义与文档)。多环境的差异原则:只差异『必须不同的』(密钥/端点/模型版本),其余默认一致(减少环境间行为漂移——staging 与 prod 配置越接近,发布验证越有效,EN-005)。",
-    "plain": "环境配置像连锁店的分店管理:总部的经营手册(代码+默认配置)所有店一样;每家店的地址、钥匙、供应商电话(环境变量)不同;保险柜里的东西(密钥)绝不贴在墙上;而且『各店的差异清单』要登记(哪些参数各店不同)——差异登记得越清楚,新店开业(部署)越不容易漏。最大的坑:各店配方悄悄不一样(环境间配置漂移)——staging 试菜没问题,prod 上桌变味。比喻局限:配置还有『热更新』的需求(不改代码改配置立即生效)——这需要配置中心,不只是环境变量。",
-    "deep": "1) 分层结构:\n```\nclass Settings(BaseSettings):        # PY-010 的 Settings 扩展\n    # 通用默认(所有环境一致)\n    log_level: str = \"INFO\"\n    # 环境差异(必须注入)\n    database_url: str\n    llm_api_key: SecretStr           # 掩码类型,日志安全(PY-010)\n    model_main: str = \"gpt-4o-2024-08-06\"\n    # 功能开关\n    enable_semantic_cache: bool = False\n```\n2) 环境差异的治理:\n   - 差异清单文档化:每环境一份配置快照(脱敏)+diff 说明(『prod 的限流是 staging 的 5 倍,原因:真实流量』)——配置漂移的可见化;\n   - 最小差异原则:staging/prod 除密钥与规模外尽量一致(模型版本/提示词版本/依赖版本一致——否则 staging 验证无效,EN-005 的环境保真);\n   - 配置漂移检测:定期对比各环境生效配置(允许的差异白名单外=告警)。\n3) 热更新与生效:配置中心(Consul/Apollo 类)vs 环境变量(重启生效)——分层:重启级(代码行为的配置)+热级(阈值/开关,EN-020 的预算、LP-004 的重试策略可热调);热更新的风险(会话内不一致,LP-021 的指针一致性问题)——按配置类型选择生效方式。\n4) 功能开关(feature flags)的纪律:开关也是配置(版本化、有 owner、有删除计划——长期存在的开关是技术债);开关的组合测试(PY-037 配置组合的同类问题);开关的用途分级(发布开关:灰度用,完成即删;运维开关:降级预案;实验开关:A/B,LP-019)。\n5) 与测试的配合:测试环境配置显式(测试专用的模型 mock 端点/小容量依赖);配置注入的测试化(PY-011 的 fixture 覆盖 Settings);禁止在测试里读生产配置(PY-010 的环境隔离)。",
-    "example": "```bash\n# 环境差异清单(文档化示例)\n#            staging              prod\n# db         staging-db           prod-cluster\n# model      gpt-4o-2024-08-06    gpt-4o-2024-08-06   ← 保持一致!\n# 限流       10 rps               50 rps\n# 审核阈值   标准                 严格(合规)\n```",
-    "interview": "口述版:『配置分层:代码默认+环境变量覆盖+密钥走秘密管理+环境差异显式化。两条治理纪律:最小差异原则(staging 与 prod 除密钥规模外尽量一致——否则 staging 验证无效,EN-005 的环境保真)、配置漂移检测(允许差异白名单外告警)。功能开关的纪律:用途分级(发布/运维/实验)+删除计划——长期存活的开关是技术债。热更新按类型选:阈值开关热调,行为配置走发布。』追问展开:配置漂移检测、功能开关的清理、热更新的分级。",
-    "followups": [
-      {"q": "配置漂移怎么检测?", "a": "快照对比:各环境生效配置定期导出(配置中心 API)→按白名单比对(允许差异的键之外,值不同即告警);白名单本身版本化(新增差异要理由)。漂移的危害分层:行为漂移(staging 验证无效)与安全漂移(prod 审核阈值被改低无人知,EN-021 的治理)——后者是事故级。"},
-      {"q": "功能开关什么时候删?", "a": "按用途:发布开关(灰度完成 100% 后,保留一个发布周期→删);实验开关(A/B 结束,胜者固化败者删,LP-019);运维开关(长期保留是合理的——它是降级预案的一部分,但要定期演练,EN-009 的混沌)。纪律:开关清单的季度审计(每个开关:用途/owner/年龄)——僵尸开关的复杂度成本(代码里到处 if)。"},
-      {"q": "配置热更新的一致性问题?", "a": "会话内不一致(前半用旧阈值后半用新阈值)——多数阈值可接受,但影响连续性的配置(如认证方式)要会话级绑定(LP-021 的会话绑定策略);多实例的生效时间差(滚动更新配置,各实例先后生效)——灰度思路(配置变更有比例控制,EN-005)。热更新的范围控制:只对『安全且需要快』的配置热更新,其余走发布流程(EN-005)——热更新是能力也是风险面。"}
-    ],
-    "pitfalls": [
-      "staging 与 prod 的配置差异巨大,staging 验证失去意义。",
-      "配置散落(os.environ 到处读),改一个配置要翻遍代码。",
-      "功能开关永不清理,if 嵌套地狱(代码复杂度爆炸)。",
-      "密钥配置进了版本管理的示例文件(只有占位也要防混淆)。"
-    ],
-    "check": {
-      "q": "staging 一切正常,prod 上线后模型输出风格明显不同。配置视角的排查?",
-      "a": "配置对账(EN-002 的变更对账+EN-005 的环境保真):①对比两环境的完整生效配置(diff 白名单外的差异)——高频真凶:model 版本不同(staging 用旧版或不同型号)、system prompt 版本不同(LP-021 的指针没同步)、温度/采样参数不同、知识库版本不同(RG-014);②配置中心与实际运行实例的对账(配置改了但实例没重启/热更新失败);③功能开关状态(prod 有开关未开)。治理:配置漂移检测会发现这类差异——若没有,把它建立起来(EN-020 的教训转化为基础设施)。",
-      "explain": "检验点:『staging 正常 prod 异常』的第一嫌疑是配置差异(model/prompt 版本/开关)——环境保真原则的对账应用。"
-    },
-    "related": ["PY-010", "PY-015", "EN-005", "EN-002", "LP-021"],
-    "doc_refs": ["doc-python-1"],
-    "sources": [
-      {"name": "The Twelve-Factor App(配置原则)", "url": "https://12factor.net/zh_cn/config", "kind": "official-docs", "note": "方法论参考"},
-      {"name": "独立整理", "url": "", "kind": "independent", "note": "治理纪律为独立整理"}
-    ],
-    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "12-factor 为公开方法论;治理纪律为独立整理。"}
+  "related": [
+   "PY-013",
+   "PY-020",
+   "PY-022",
+   "LP-003"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · dataclasses / typing.TypedDict",
+    "url": "https://docs.python.org/zh-cn/3/library/dataclasses.html",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "选型口诀为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "容器语义为官方稳定知识;选型口诀为独立整理。"
   }
+ },
+ {
+  "id": "PY-030",
+  "topic": "python-backend",
+  "type": "code",
+  "difficulty": "intermediate",
+  "title": "怎么实现一个通用的重试与降级组合器?把 LP-004 的策略做成可复用组件。",
+  "tags": [
+   "重试",
+   "降级",
+   "组件设计"
+  ],
+  "prerequisites": [
+   "LP-004",
+   "PY-023"
+  ],
+  "answer": "组合器的接口设计:retry_with_fallback(fn, *, policy, fallback=None)——policy 声明(重试异常/退避/上限,fallback 声明降级链(主→备→兜底));内部职责:调用分类(参数错/瞬时/系统,AG-014 的信封)、重试执行(PY-023 或内置)、降级切换(每级尝试+失败原因记录)、总预算(时间与次数的双上限)、决策留痕(每步的尝试与结果进 trace,LP-004/AG-024)。与 tenacity 的关系:tenacity 管『重试』这一半,组合器加『降级链+预算+留痕』——包装 tenacity 而不是重造。设计要点:fn 的幂等前提显式(参数声明 idempotent=True)、fallback 的签名与主调用一致(调用方无感)、降级原因进响应(调用方知道结果来自备用)。",
+  "plain": "重试与降级的组合器像『自动挡的应急预案』:手动挡(手写 try/except)每辆车司机自己反应;自动挡=预先编好的预案(先重试 3 次每次退避→换备用路线→都不行给兜底答复),而且每步都打表(留痕)。设计的关键接口:预案声明式(policy/fallback 是配置)、总预算(不是无限打表)、过程留痕(走了哪条路记录在案)。比喻局限:代码的『幂等前提』检查(预案只对可重复执行的操作生效)是应急预案没有的工程约束。",
+  "deep": "1) 接口设计:\n```python\n@dataclass\nclass RetryPolicy:\n    exceptions: tuple\n    max_attempts: int = 3\n    backoff: str = \"exponential\"      # + jitter\n    budget_seconds: float = 30\n\n@dataclass\nclass Fallback:\n    alternatives: list[Callable]     # 主→备1→备2\n    final: Callable | None = None    # 兜底(缓存/话术)\n\nasync def with_resilience(call: Callable, policy: RetryPolicy,\n                          fallback: Fallback | None = None,\n                          *, idempotent: bool = True) -> Result:\n    ...  # 见 deep 流程\n```\n2) 执行流程:主调用(按 policy 重试)→失败→逐个 fallback.alternatives(每个也是一次『受治理调用』——备选调用自己的超时)→final 兜底→全失败抛聚合异常(含各路失败原因,AG-014 的信封)。每步:trace 记录(尝试序号/耗时/失败原因)、预算检查(时间超限直接进入下一级)。\n3) 幂等守卫:idempotent=False 时禁用重试(或只重试『确定未执行』的失败——连接失败可重试,超时不可重试因为可能已执行,PY-025 的『超时≠未执行』)——组合器的安全纪律。\n4) 与熔断的衔接:组合器是『单请求』的韧性;熔断(连续失败的状态)在组合器外层或由其上报失败计数(EN-009/LP-004 的分层)。两层职责:组合器管这一次怎么办,熔断管接下来还要不要试。\n5) 可观测:每次组合器调用的报告(attempts/latency/fallback_used/errors 链)进指标与 trace——『降级使用率』是主调用健康度的先行指标(EN-020 的看板数据)。",
+  "example": "```python\nresult = await with_resilience(\n    call=lambda: llm_main.chat(prompt),\n    policy=RetryPolicy((TransientError,), max_attempts=3),\n    fallback=Fallback(\n        alternatives=[lambda: llm_backup.chat(prompt_alt)],\n        final=lambda: cached_or_template(prompt)),\n    idempotent=False)   # 生成不可重试→超时不重试,直接降级\nif result.via_fallback:\n    log.warning(\"降级使用\", extra={\"reason\": result.failures})\n```",
+  "interview": "口述版:『组合器的接口:policy(重试声明)+fallback(降级链)+幂等守卫+总预算+留痕。内部流程:主调用按 policy 重试→逐级 fallback(每级自带超时)→final 兜底→全失败抛聚合异常。与 tenacity 的关系:包装它管重试,组合器加降级链/预算/留痕。三个设计要点:幂等守卫(不可重试的操作超时直接降级——超时≠未执行)、降级原因进响应(调用方知道结果来自备用)、降级使用率是主调用健康的先行指标。』追问展开:幂等守卫的实现、聚合异常的设计、降级使用率的告警。",
+  "followups": [
+   {
+    "q": "幂等守卫的实现细节?",
+    "a": "idempotent=False 时:重试策略只允许『确定未执行』的失败类型(ConnectError/连接拒绝——请求没发出去;超时类排除——可能已执行);或有幂等键(PY-025)时全部可重试(服务端去重)。守卫的作用:把『这个操作能不能重试』从调用方的心智负担变成组合器的显式参数与强制检查。"
+   },
+   {
+    "q": "聚合异常怎么设计才可用?",
+    "a": "结构:ExceptionGroup 风格({primary: 主调用错误链, fallbacks: [{level, error}], final_result?})——每个失败的原因与层级都在;上层的决策依赖它(『主模型超时+备用模型 401』vs『主模型 400』——前者降级链用尽转人工,后者是修代码信号,LP-004 的分类)。消息摘要给模型/用户,完整链进日志(AG-014 的双层错误设计)。"
+   },
+   {
+    "q": "降级使用率的告警阈值怎么定?",
+    "a": "基线统计(正常时 <5%)+趋势告警(突增=主调用健康问题,EN-002)+绝对上限(>30% 触发容量/供应商事件,LP-008)。降级使用率是『备用路线流量占比』——它高说明主路线坏了;它长期稳定在高值说明『备用其实成了主用』(配置或容量问题——名实不符的审查)。"
+   }
+  ],
+  "pitfalls": [
+   "组合器无总预算,降级链每级都重试,总时长失控(LP-004 的重试预算缺失)。",
+   "降级结果不标注来源,用户/下游不知道答案来自备用模型(质量可能不同)。",
+   "fallback 的签名与主不一致,切换时代码崩(接口一致性)。",
+   "幂等守卫缺失,非幂等操作被自动重试(PY-025 的前提破坏)。"
+  ],
+  "check": {
+   "q": "降级链最后一级 final 是『缓存答案』。缓存命中旧内容时,调用方怎么知道这不是最新的?",
+   "a": "组合器的 Result 信封带 via_fallback 与 degradation 元数据(来源=cache、缓存时间、与主调用的差异标记);调用方的责任:按业务语义处理降级结果(展示时标注『由缓存回答』/高风险场景不接受降级→组合器配置 final=None)。原则:降级是能力不是欺骗——组合器负责透明,调用方负责策略。若业务要求『降级必须显式告知用户』,信封的元数据就是渲染依据(LP-024 的渲染关)。",
+   "explain": "检验点:降级的透明性设计(信封元数据)与调用方的策略责任分工。"
+  },
+  "related": [
+   "LP-004",
+   "PY-023",
+   "PY-025",
+   "AG-014",
+   "EN-009"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理的组件设计"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+  }
+ },
+ {
+  "id": "PY-031",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的装饰器参数校验和运行时类型检查(Runtime Validation)在边界层怎么做?",
+  "tags": [
+   "Python",
+   "校验",
+   "边界"
+  ],
+  "prerequisites": [
+   "PY-013",
+   "PY-020"
+  ],
+  "answer": "边界层校验的分层实现:①声明式——FastAPI 的参数模型(PY-004)已覆盖 HTTP 边界;②内部边界——函数间的关键契约用类型标注(mypy 静态,PY-020)+可选的运行时检查(beartools/typeguard 或手写 assert,只在高风险边界开);③动态数据——LLM 返回/外部 API 的解析用 Pydantic(LP-003 的闭环)。原则:静态检查为主(零运行时成本)、运行时校验只放在信任边界(不可信数据进入处)、内部可信路径靠类型+测试。运行时全量校验的性能代价(每次调用都校验)与收益(内部数据通常已被上游校验过)不匹配——『边界校验、内部信任』是性能与安全的平衡点。",
+  "plain": "边界校验像海关与国内物流的分工:海关(边界)每件必查(不可信);国内物流(内部)靠运单系统(类型标注)与抽检(测试)——如果国内每件包裹也全查一遍(运行时全量校验),物流成本翻倍但查出的违禁品极少(内部数据早就被海关查过了)。原则:查边界,信内部,内部靠『单据系统』(mypy)保证不调包。比喻局限:『内部』的信任其实来自『边界的严格+内部的类型系统』两道岗——如果边界漏了,内部类型也拦不住值错误(类型对值错:传了负数给 int 参数)。",
+  "deep": "1) 边界的识别(哪些是边界):\n   - 系统边界:HTTP API、消息队列消费者、CLI 参数、定时任务输入;\n   - 服务边界:调用外部 API 的返回(LLM/第三方)、读取外部存储的数据;\n   - 信任降级点:用户生成内容进入系统(UGC 的任何位置);\n   - 非边界:同进程内的函数调用(已过边界的可信数据)、配置(已校验)。\n2) 实现方式的对比:\n   - FastAPI/Pydantic:声明式、自动文档、错误自动 422——HTTP 边界首选;\n   - Pydantic 手动:非 HTTP 边界(队列消费者/LLM 解析)显式 model_validate;\n   - beartype/typeguard 装饰器:对已有类型标注的函数做运行时检查——适合关键契约函数(少量,性能敏感处不开);\n   - 手动 assert:简单场景(assert isinstance/断言不变量)——注意 python -O 会跳过 assert(不能当安全检查)。\n3) 性能与安全的平衡:运行时校验的开销量化(热路径的校验成本,PY-018);分级策略:外部输入全校验、内部关键契约抽验(mypy 覆盖大部分)、性能热点零运行时校验(靠测试与类型)。\n4) 校验失败的处理:边界校验失败=可恢复错误(返回 422/拒绝消息/死信)——不重试(数据问题重试无意义,LP-004 的分类);错误信息面向调用方(PY-013 的字段定位)。\n5) 与 mypy 的关系(PY-020 的两道岗):mypy 管『代码内部声明的类型一致』(静态),运行时校验管『外部数据符合声明』(动态)——两道岗互补;只在边界放运行时校验的前提是 mypy 覆盖了内部传递(否则内部传错还是发现不了)。",
+  "example": "```python\n# 边界:LLM 返回解析(Pydantic,LP-003)\norder = OrderExtract.model_validate_json(raw)     # 运行时校验 ✅\n\n# 内部:已校验数据的传递(类型标注,mypy 管)\ndef compute_total(orders: list[OrderExtract]) -> float:   # 静态即可\n    ...\n\n# 关键契约:运行时抽查(beartype,可选)\n@beartype\ndef apply_refund(order_id: str, amount_cents: int) -> None: ...\n    # 资金操作:运行时也查(高风险边界)\n```",
+  "interview": "口述版:『边界校验的分层:HTTP 边界用 FastAPI 声明式;非 HTTP 边界(LLM 解析/队列消费)显式 Pydantic;关键契约函数可加运行时检查(beartype);内部可信路径靠 mypy+测试。原则:查边界信内部——全量运行时校验的性能代价换不来收益(内部数据已被上游校验)。两个细节:assert 会被 -O 跳过(不能当安全检查);校验失败不重试(数据问题重试无意义)。』追问展开:边界的识别清单、beartype 的开销、与 mypy 的两道岗。",
+  "followups": [
+   {
+    "q": "怎么判断一个函数调用是不是『边界』?",
+    "a": "三个判据:数据的最初来源是外部吗(HTTP/MQ/LLM/第三方)?数据的可信程度经过验证吗(上游校验过)?校验失败的影响面(进资金/入库/外发=高风险)?组合判断:来源外部+未验证+高风险=必须运行时校验;内部已验证数据=静态即可。边界清单应显式维护(PY-028 的分层文档),新人不用猜。"
+   },
+   {
+    "q": "beartype 的性能开销有多大?",
+    "a": "beartype 用 O(1) 采样式检查(大部分类型检查编译成高效代码),开销远低于全量校验库——但仍是零成本以上(每次调用都查)。策略:只装饰高风险/关键契约的函数(资金/权限/核心算法边界),普通内部函数靠 mypy。度量:装饰函数的调用频率×单次开销(PY-018 验证)。"
+   },
+   {
+    "q": "为什么校验失败不能重试?",
+    "a": "校验失败=输入数据不符合预期(类型/格式/范围)——这是确定性错误:同样的输入重试同样的失败(LP-004 的『400 类不重试』);重试的适用对象是瞬时错误(网络/限流)。确定性错误的正确处理:拒绝+清晰错误信息(调用方修数据)+进死信(队列场景,PY-024)。把校验失败丢进重试=烧钱循环。"
+   }
+  ],
+  "pitfalls": [
+   "用 assert 做安全校验,python -O 下全部失效(安全漏洞)。",
+   "内部路径全量运行时校验,性能浪费(边界已经查过)。",
+   "校验失败进重试队列,死循环烧资源。",
+   "新边界(新消息消费者)上线没有校验,脏数据直入业务。"
+  ],
+  "check": {
+   "q": "队列消费者的 handler 收到消息直接 json.loads 后使用。这有什么风险?正确姿势?",
+   "a": "风险:消息是系统边界——格式错/字段缺失/恶意构造的脏数据直入业务(生产事故:None 传播/类型爆炸/注入)。正确姿势:①解析层 schema 校验(消息的 Pydantic 模型,失败→死信+错误记录,PY-024);②业务校验(值域/状态);③幂等消费(PY-025,消息至少一次投递)。队列消息与 HTTP 请求同等级别对待——都是不可信边界,这是『边界识别』最容易漏的位置(大家记得查 HTTP,忘了 MQ)。",
+   "explain": "检验点:消息队列作为边界的识别(边界清单的易漏项)与完整处理(schema+业务+幂等)。"
+  },
+  "related": [
+   "PY-013",
+   "PY-020",
+   "LP-003",
+   "PY-024",
+   "PY-005"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "为独立整理(边界校验为通行实践)"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-07",
+   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+  }
+ },
+ {
+  "id": "PY-032",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "Python 的上下文管理变量(contextvars)是什么?为什么 FastAPI 的日志要靠它?",
+  "tags": [
+   "contextvars",
+   "日志",
+   "并发"
+  ],
+  "primitives": "",
+  "prerequisites": [
+   "PY-003",
+   "PY-009"
+  ],
+  "answer": "contextvars 提供『协程/任务本地的全局变量』:ContextVar.set() 设置的值在当前异步任务链中可见,不同请求互不干扰——解决并发下的『请求上下文传递』问题:trace_id、当前用户、租户信息在中间件设置一次,后续所有代码(包括深层调用的日志)自动读取。为什么 FastAPI 日志靠它:传统全局变量在并发下被请求互相覆盖(PY-003);层层传参污染所有函数签名;contextvars 是异步安全的隐式上下文——每个请求一个独立的值槽。配套:ContextVar 与日志 formatter(PY-009 的结构化日志自动携带)、与 SQLAlchemy 会话绑定(PY-016 的会话隔离)、跨服务的 header 传播(trace 上下文,EN-025)。",
+  "plain": "contextvars 像『每人一个的工位抽屉』:你把工牌(trace_id)放进自己抽屉,办公室所有人(深层函数)都能查到『当前是谁在办事』——而每个客人的抽屉是独立的(并发请求互不覆盖)。对比:全局变量=『一块共用的白板』(A 写上自己的名字,B 一来就擦掉写自己的——A 后续查名字查到 B);层层传参=『每办一件事都要复印一遍工牌给所有经办人』(签名污染)。比喻局限:contextvars 的值还可以在任务创建时被复制或隔离(copy_context)——抽屉比喻没有这个『上下文继承』语义。",
+  "deep": "1) 机制:ContextVar.set 返回 Token(可 reset 恢复);每个 Task/协程继承创建时的上下文快照(copy-on-write 语义)——asyncio.create_task 自动继承当前上下文;线程间不共享(每线程独立)。\n2) FastAPI 的标准模式:\n```python\nrequest_id: ContextVar[str] = ContextVar(\"request_id\", default=\"-\")\n\n@app.middleware(\"http\")\nasync def trace(request, call_next):\n    token = request_id.set(gen_id())\n    try:\n        return await call_next(request)\n    finally:\n        request_id.reset(token)      # 清理\n\n# 任意深层:logger.info(...) 自动带当前请求的 request_id(PY-009)\n```\n3) 使用场景清单:trace_id/请求 ID(PY-014)、当前用户/租户(EN-007 的租户上下文注入——DAO 强制过滤的来源)、事务/会话绑定(PY-016 的请求级会话)、特性开关快照(请求期间一致的开关状态)。\n4) 陷阱:①在错误的层级 set(中间件 set 后又在依赖里 set 不同值——覆盖混乱);②Task 的上下文继承语义:create_task 复制当前上下文(之后的 set 不影响已创建的任务)——后台任务要显式传上下文或依赖继承时机;③第三方库的线程池执行(to_thread 传播上下文,但自定义线程池要手动 copy_context,AG-023 的线程池注意);④reset 的纪律(中间件 finally reset,防长连接的上下文泄漏——WebSocket 长连接的上下文生命周期)。\n5) 与显式传参的权衡:contextvars 是隐式(签名干净但依赖关系不可见);显式传参(每个函数带 ctx 参数)更显式但签名污染。实践:横切关注点(trace/租户)用 contextvars(它们天然是环境不是参数),业务数据显式传参——隐式上下文只装『环境』不装『数据』。",
+  "example": "```python\n# 租户上下文(EN-007 的落地)\ntenant_id: ContextVar[str | None] = ContextVar(\"tenant\", default=None)\n\n# 中间件/依赖:set\n# repository 层:自动读取并注入过滤条件\nasync def get_orders(...):\n    tid = tenant_id.get()\n    if not tid:\n        raise RuntimeError(\"租户上下文缺失\")   # 防御:无上下文即失败\n    ...  # WHERE tenant_id = :tid 自动注入\n```",
+  "interview": "口述版:『contextvars 是协程本地的全局变量:中间件 set 一次,所有深层代码(含日志 formatter)自动读取,请求间互不干扰。FastAPI 日志靠它的原因:全局变量并发互踩、层层传参污染签名。三个陷阱我会主动讲:Task 的上下文继承时机(create_task 快照)、reset 纪律(长连接泄漏)、to_thread 的传播。设计边界:横切环境(trace/租户)用 contextvars,业务数据显式传参——隐式只装环境。防御性编程:读取时缺失即失败(租户上下文缺失就是请求错乱的前兆)。』追问展开:Task 继承语义、与 thread-local 的区别、租户上下文的防御。",
+  "followups": [
+   {
+    "q": "contextvars 和 threading.local 的区别?",
+    "a": "threading.local 是线程级(一线程一值);contextvars 是『上下文级』——一个线程内可以有多个并发上下文(asyncio 任务),且上下文可显式复制传播。async 环境必须用 contextvars(thread.local 在协程切换时共享错误——同线程的所有协程看到同一个值,请求互踩)。历史迁移:老代码的 threading.local 在 async 化时必须改造。"
+   },
+   {
+    "q": "create_task 的上下文继承有什么注意?",
+    "a": "任务继承创建时刻的上下文快照:set 之后创建的任务看到新值,创建之后 set 的不影响已创建任务。场景:后台任务要在创建时捕获当前请求的 trace_id(自动继承✅);但后台任务自己 set 的新值不影响创建者(隔离✅)。长生命周期的 worker(启动时创建,之后每请求 set)——worker 内读不到请求上下文(要显式传递)!这是 background worker 丢 trace 的经典原因(PY-024)。"
+   },
+   {
+    "q": "租户上下文缺失就抛错,会不会太严格?",
+    "a": "不严格,是防御:租户上下文缺失意味着请求未经鉴权中间件(内部调用忘了挂中间件/新入口没接入)——此时 DAO 若用『默认租户』或不过滤,就是越权事故(RG-015 的铁律)。fail fast 于缺失上下文,逼所有入口正确接入——比静默放行(数据混租)便宜一万倍。例外:系统级任务(无租户语义的清理任务)显式声明 system 上下文(显式的例外,不是默认的豁免)。"
+   }
+  ],
+  "pitfalls": [
+   "async 项目用 threading.local,请求间值互踩(经典迁移 bug)。",
+   "后台 worker 读不到请求上下文(create_task 时机),trace 断链。",
+   "中间件不 reset,长连接/WebSocket 的上下文泄漏到后续逻辑。",
+   "把业务数据塞进 contextvars(应只装环境),隐式依赖失控。"
+  ],
+  "check": {
+   "q": "日志里 trace_id 全是同一个值(所有请求共享)。最可能的原因?",
+   "a": "trace_id 用了全局变量或 threading.local 而不是 contextvars——并发请求互相覆盖( everyone 看到最后一个请求的 ID)。也可能:中间件 set 的时机在响应后(顺序错)、或日志 formatter 读的是模块级缓存(读了一次就固定)。排查顺序:确认 ContextVar 的使用(不是普通变量)→确认中间件的 set 在 call_next 前→确认 formatter 动态读取(record 时取值,不是初始化时)。这是 async 化项目的经典第一坑。",
+   "explain": "检验点:trace_id 共享的根因(全局变量/threading.local)与三处检查点。"
+  },
+  "related": [
+   "PY-003",
+   "PY-009",
+   "PY-014",
+   "EN-007",
+   "PY-016"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · contextvars",
+    "url": "https://docs.python.org/zh-cn/3/library/contextvars.html",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "FastAPI 模式与陷阱为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "contextvars 语义为官方稳定知识;FastAPI 模式为独立整理。"
+  }
+ },
+ {
+  "id": "PY-033",
+  "topic": "python-backend",
+  "type": "comparison",
+  "difficulty": "basic",
+  "title": "Python 的可变默认参数陷阱:default mutable argument 为什么危险?正确写法?",
+  "tags": [
+   "Python",
+   "陷阱",
+   "基础"
+  ],
+  "prerequisites": [
+   "PY-001"
+  ],
+  "answer": "默认参数在函数定义时求值一次(不是每次调用):def f(x=[]) 的 [] 只创建一个列表,所有不传 x 的调用共享同一个列表——第一次调用 append 后,后续调用看到被污染的默认值。危险在于静默(没有报错,数据悄悄串)。正确写法:默认用 None,函数体内 if x is None: x = [] 创建新列表。同样的机制也解释了:默认参数是昂贵对象(如 dict)时的行为、类属性的可变默认(所有实例共享)、闭包变量的晚绑定(loop 里 lambda 捕获的是变量不是值)——一族『定义时求值』的陷阱。LLM 场景的常见踩点:messages=[] 默认参数导致多轮对话串历史(不同请求共享一个列表,会话错乱的经典事故)。",
+  "plain": "默认可变参数像『酒店房间的欢迎水果盘』:水果盘在酒店开业那天摆了一次(定义时求值),之后每位不自带水果的客人吃的都是同一个盘——第一位客人吃了苹果,后面的客人看到的盘里少一个苹果(共享+被污染)。正确做法:默认『不摆盘』(None),每位客人到店时现摆一个新的。比喻局限:不可变默认(数字/字符串)完全安全——因为它们不可变,共享也没关系;陷阱专挑可变对象。",
+  "deep": "1) 机制:默认参数存放在函数对象的 __defaults__ 中——定义时创建,调用时不重建。可变默认在调用间共享且可被修改(函数体内的 append/pop 直接改它);甚至可以从外部观察:f.__defaults__ 看到被污染的状态(面试可以演示这个证据)。\n2) 一族陷阱:\n   - 函数默认参数(本题主角);\n   - 类属性:class C: items = [](所有实例共享——实例赋值才创建实例属性,append 直接改类属性);\n   - 闭包晚绑定:for i in range(3): fs.append(lambda: i)——三个 lambda 都返回 2(捕获变量 i 不是值 i);修复:默认参数固化(lambda i=i: i);\n   - 装饰器的共享(装饰器闭包里的可变状态被所有被装饰函数共享)。\n3) 正确写法与变体:\n   - None 哨兵:if x is None: x = [](标准);\n   - 显式不可变默认+内部转换:def f(x=()) → 内部转 list(适合真正的常量默认);\n   - 显式要求传参(无默认,调用方决定)——多轮对话场景最稳(避免静默共享);\n4) LLM 场景的踩点:\n   - def chat(messages=[], session=None):messages.append(...)——跨请求串历史(会话错乱,事故级);\n   - 工具调用的默认缓存 dict(跨请求共享缓存键冲突);\n   - 批处理函数的 results=[] 累积(重试时重复累积,PY-023 关联);\n   - Pydantic 模型字段的可变默认(要用 Field(default_factory=list)——v2 的正确姿势,同类陷阱的 Pydantic 版)。\n5) 检测:静态检查(ruff 的 B006 规则可变默认参数告警)——CI 拦截(PY-020 的工程化);code review 清单。",
+  "example": "```python\n# ❌ 陷阱:所有调用共享同一个列表\ndef chat(messages=[], session=None):\n    messages.append(session)\n    return messages\n\nchat()  # [s1]\nchat()  # [s1, s1]  ← 静默串数据!\n\n# ✅ 正确\ndef chat(messages=None, session=None):\n    messages = messages if messages is not None else []\n    messages.append(session)\n    return messages\n\n# ✅ Pydantic 的对应姿势\nclass Chat(BaseModel):\n    history: list[str] = Field(default_factory=list)\n```",
+  "interview": "口述版:『默认参数在定义时求值一次——可变默认被所有调用共享,append 直接污染。这是静默事故:多轮对话的 messages=[] 默认参数,不同请求共享同一个列表,会话串历史。正确写法 None 哨兵+函数体内创建;Pydantic 用 default_factory。同一机制还有两个兄弟陷阱:类属性可变默认(实例共享)与闭包晚绑定(lambda 捕获变量)。工程防线:ruff B006 进 CI 静态拦截。』追问展开:类属性陷阱、闭包晚绑定、ruff 的工程化拦截。",
+  "followups": [
+   {
+    "q": "类属性的可变默认怎么触发?",
+    "a": "class Config: retries = []——所有实例共享:实例 c.retries.append(x) 直接改类属性(读取时实例属性不存在,回退类属性;append 是修改不是赋值,所以不创建实例属性)。正确:__init__ 里 self.retries = [](实例化);或类属性用不可变元组。检测:修改类属性影响其他实例的单测。"
+   },
+   {
+    "q": "闭包晚绑定和默认参数的关系?",
+    "a": "同一个『定义时 vs 调用时』求值机制:lambda: i 捕获的是变量 i 的引用(调用时求值)——循环结束后 i=2,三个 lambda 都返回 2;默认参数 i=i 在定义时固化当前值。这是 Python 作用域规则(闭包按引用)的直接结果——理解一个就理解一族(PY-020 的类型系统拦不住这类逻辑错误,靠测试)。"
+   },
+   {
+    "q": "ruff 怎么拦截这类问题?",
+    "a": "ruff 的 B006(mutable-default)规则检测函数默认参数与类属性的可变默认;CI 集成(python 工程的 lint 门禁,EN-021 的 L0);告警的处理不是无脑改(有些场景故意共享——记忆化缓存),但需要显式注释说明意图。静态检查把『陷阱』变成『可见的选择』。"
+   }
+  ],
+  "pitfalls": [
+   "多轮对话的 messages=[] 默认参数,跨请求串会话(事故级)。",
+   "类属性 items=[],所有实例共享同一个列表。",
+   "循环里建 lambda 闭包,全部返回最后一个值。",
+   "知道陷阱但团队 CI 没有 B006,新人持续踩坑。"
+  ],
+  "check": {
+   "q": "def add_tags(tags=[]): tags.append(...); return tags——调用三次 add_tags() 后返回什么?",
+   "a": "第一次返回 [t1];第二次返回 [t1, t2](共享同一个列表,append 到默认参数上);第三次 [t1, t2, t3]——每次的结果都包含之前的 tag。因为默认列表在定义时创建一次,所有不传 tags 的调用共享并修改它。验证:f.__defaults__[0] 就是那个被污染的列表(可以从外部直接观察到)。",
+   "explain": "检验点:能精确预测共享默认参数的多调用行为——理解的试金石(而不是只知道『危险』)。"
+  },
+  "related": [
+   "PY-001",
+   "PY-020",
+   "PY-011"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · 默认参数求值(FAQ)",
+    "url": "https://docs.python.org/zh-cn/3/faq/programming.html",
+    "kind": "official",
+    "note": "语言语义,长期稳定"
+   }
+  ],
+  "verify": {
+   "status": "verified",
+   "checked_date": "2026-09-06",
+   "note": "语言语义 verified;示例为演示。"
+  }
+ },
+ {
+  "id": "PY-034",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "Python 的鸭子类型和 Protocol(结构化子类型)怎么用?接口抽象的正确姿势?",
+  "tags": [
+   "Python",
+   "鸭子类型",
+   "Protocol"
+  ],
+  "prerequisites": [
+   "PY-020",
+   "PY-028"
+  ],
+  "answer": "鸭子类型(Python 传统):『只要它有 quack 就当鸭子』——不检查类型,直接调用属性;灵活但契约隐式(调用方依赖的属性/方法没有形式化声明)。Protocol(PEP 544,结构化子类型)把鸭子类型形式化:声明协议类(方法签名),任何『长得像』的类自动满足(无需继承)——mypy 静态检查契约,运行时仍是鸭子式(无继承耦合)。LLM 应用的用法:infra 层的 LLMClient Protocol(chat/embed/stream 签名)——OpenAI/自研网关/mock 都自动满足(测试替身无需继承,AG-034/014);run() 的 Tool Protocol(所有工具的统一形状)。与 ABC(继承式抽象)的选择:Protocol 解耦(实现方不需要知道协议存在——第三方类也能满足)是 Python 的推荐姿势(PY-028 的接口抽象)。",
+  "plain": "鸭子类型像『不查证件,能干活的都算』:饭店招厨子不问学历,炒个菜尝尝(调用属性看结果)。Protocol 像『把「能干活的」写成岗位要求』(方法签名清单)——不需要厨师来注册登记(无需继承),但人事系统(mypy)能自动核对他符不符合要求。好处:第三方大厨(OpenAI SDK 的类)不用来你这里登记,只要会炒菜就自动满足岗位;你的测试替身(mock)也自动合格。比喻局限:Protocol 还可以声明属性类型与默认实现(运行时检查有 runtime_checkable 但有限)——岗位要求可以写得很细。",
+  "deep": "1) Protocol 的定义与满足:\n```python\nclass LLMClient(Protocol):\n    async def chat(self, messages: list[ChatMessage], **kw) -> Completion: ...\n    async def stream(self, messages: list[ChatMessage]) -> AsyncIterator[str]: ...\n\n# OpenAI 实现类:没有继承 LLMClient,但签名匹配 → 类型上满足\n# 测试 fake:同样满足 → 注入即可(PY-011 的 mock 无需继承)\ndef use(client: LLMClient): ...      # mypy 校验所有调用点\n```\n2) 与 ABC 的对比:ABC=名义子类型(必须继承,运行时可 isinstance 检查,可提供默认实现);Protocol=结构子类型(不继承,mypy 静态检查;runtime_checkable 的 isinstance 只查方法存在不查签名)。选择:定义『第三方也应满足』的接口→Protocol(解耦);框架内部需要运行时注册/检查/默认实现→ABC。多数业务接口用 Protocol(PY-028 的 infra 抽象)。\n3) 设计要点:\n   - 协议最小化:只声明调用方真正使用的方法(接口膨胀=实现负担,LP-022 的片段思想:接口也是契约片段);\n   - 属性与只读:Protocol 可声明属性/property;\n   - 泛型协议(Generic[T] 的 Result[T] 信封,AG-014);\n   - runtime_checkable 的限制(isinstance 只检查方法名存在,不检查签名——运行时的完整校验仍要测试/Pydantic,PY-031 的两道岗)。\n4) LLM 场景的 Protocol 实战:\n   - LLMClient:chat/stream/embed 三能力(EN-014 的网关接口);\n   - Tool:run/signature(AG-011 的工具统一抽象);\n   - Retriever/Store/Reranker(RG-040 的多路组件)——每个组件可替换(供应商/自研/mock);\n   - 测试替身的零成本:fake 无需继承 Protocol(签名匹配即可)——AG-034 的 mock 库天然兼容。\n5) 边界:运行时多态仍靠鸭子(实际调用时 Python 不检查类型)——Protocol 的价值在『开发期的契约可见+静态可查』,运行时的安全保障靠测试与边界校验(PY-031)——类型系统(PY-020 的两道岗)在接口层的延续。",
+  "example": "```python\nfrom typing import Protocol, runtime_checkable\n\n@runtime_checkable\nclass Retriever(Protocol):\n    def search(self, query: str, k: int = 5) -> list[Hit]: ...\n\n# 三个实现(无需继承,签名匹配即满足)\nclass VectorRetriever: ...\nclass BM25Retriever: ...\nclass FakeRetriever: ...          # 测试替身(PY-011)\n\ndef hybrid_search(r1: Retriever, r2: Retriever, q: str): ...   # mypy 全链路校验\n```",
+  "interview": "口述版:『鸭子类型是 Python 传统(能干活就行),Protocol 把它形式化:声明方法签名的协议类,任何签名匹配的类自动满足(无需继承)——mypy 静态查契约,运行时无耦合。LLM 应用的用法:infra 的 LLMClient/Tool/Retriever 全用 Protocol——第三方 SDK 类自动满足、测试 fake 零成本注入(PY-011)。与 ABC 的选择:第三方应满足的接口用 Protocol,需要运行时注册/默认实现的用 ABC。协议最小化:只声明调用方真正用的方法。』追问展开:runtime_checkable 的限制、与 ABC 的详细对比、泛型协议。",
+  "followups": [
+   {
+    "q": "runtime_checkable 的限制是什么?",
+    "a": "isinstance(obj, Protocol) 只检查『方法名存在』不检查签名(参数个数/类型都不查)——粗粒度的运行时判断;数据成员(属性)的检查在 runtime_checkable 下也只查存在。所以运行时完整性还是要靠测试与边界校验(PY-031)——Protocol 的主战场是 mypy 静态检查(开发期),不是运行时门卫。"
+   },
+   {
+    "q": "Protocol 和 ABC 什么时候选 ABC?",
+    "a": "需要运行时注册与分发的插件体系(按基类收集所有子类)、需要默认实现与模板方法(基类提供公共逻辑)、需要强制继承关系(团队规范:必须显式实现某基类)→ABC。接口是给第三方/测试满足的→Protocol。混合:ABC 提供骨架+Protocol 定义轻接口——按耦合需求选择(AG-010 的框架边界思想)。"
+   },
+   {
+    "q": "协议的最小化怎么把握?",
+    "a": "从调用方视角定义:调用方(use 函数)用了哪些方法与属性,协议就声明哪些——接口是调用方的需求清单不是实现方的功能清单(接口隔离原则)。膨胀信号:协议方法没人调用/实现方为了满足协议写了空方法——拆分协议(调用方按需组合多个小协议)。接口腐烂是渐进的,定期复审(AG-010 的框架边界复审同理)。"
+   }
+  ],
+  "pitfalls": [
+   "依赖具体实现类而不是 Protocol——mock/换供应商要改调用方(PY-028 的抽象失效)。",
+   "协议膨胀(声明了没人用的方法),实现负担与理解成本上升。",
+   "以为 runtime_checkable 的 isinstance 做了完整校验(只查方法名)。",
+   "接口定义照抄某个 SDK 的形状(抽象层泄漏供应商语义,EN-014 的反模式)。"
+  ],
+  "check": {
+   "q": "EN-014 说要抽象 LLM 供应商,但 OpenAI SDK 的类并没有实现你的 Protocol。mypy 怎么会通过?",
+   "a": "Protocol 是结构化子类型:满足条件是『签名匹配』不是『显式继承』——OpenAI 的 client.chat.completions.create 的签名若与协议方法一致,适配器包装后即满足。但更常见的实现:写一个薄的 Adapter 类(实现 Protocol 方法,内部调用 SDK)——适配器是你的代码(mypy 完全校验),SDK 的方言差异(参数名/返回结构)全部收敛在适配器内(EN-014 的 adapter 职责)。Protocol 让『适配器/mock/网关』都能无缝替换——这就是抽象层的机械保证。",
+   "explain": "检验点:结构化子类型的满足机制(签名匹配无需继承)+适配器模式的配合(方言收敛在 adapter)。"
+  },
+  "related": [
+   "PY-020",
+   "PY-028",
+   "PY-011",
+   "EN-014"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "PEP 544 · Protocols(结构化子类型)",
+    "url": "https://peps.python.org/pep-0544/",
+    "kind": "official-docs",
+    "note": "语言语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "LLM 场景用法为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "PEP 语义为官方稳定知识;LLM 场景用法为独立整理。"
+  }
+ },
+ {
+  "id": "PY-035",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "intermediate",
+  "title": "Python 的弱引用(weakref)和缓存防止内存泄漏的关系是什么?",
+  "tags": [
+   "Python",
+   "弱引用",
+   "内存"
+  ],
+  "prerequisites": [
+   "PY-018",
+   "PY-011"
+  ],
+  "answer": "循环引用场景:对象 A 持有 B,B 的回调又引用 A(如缓存持有回调、观察者模式)——强引用环让引用计数无法归零(GC 可回收但延迟与不可控);弱引用(weakref)引用对象但不增加引用计数——对象被回收后弱引用自动变 None。缓存的经典泄漏:缓存值持有回调/闭包,闭包捕获外部对象——外部对象被缓存间接钉死;解法:weakref.WeakValueDictionary/WeakKeyDictionary(缓存不阻止对象回收)。Agent 场景:任务注册表(AG-024 的 create_task 弱引用问题——asyncio 文档明确提醒)、事件监听器、模型实例缓存。诊断:tracemalloc/objgraph 找引用链(PY-018);预防:缓存的上限与 TTL(PY-017)是第一道,弱引用处理『注册但不拥有』的语义。",
+  "plain": "强引用像『借书登记』:图书馆(缓存)登记了你的名字(引用),书(对象)就不能销毁;弱引用像『便利贴』:写着『这本书如果还在,通知我』——书被还了,便利贴自动失效,但不阻止书被还。循环引用的灾难:A 登记了 B 的书,B 又在等 A 还别的书——互相等,谁也还不了(内存钉死)。弱引用的用法:『我想知道它在不在,但我不想因为它在而在』(通知列表、缓存值)。比喻局限:Python 的 GC(分代回收)其实能处理纯循环引用——弱引用真正解决的是『循环+外部可达』的钉死与『引用但不拥有』的语义需求。",
+  "deep": "1) 引用计数与循环:CPython 主回收靠引用计数(立即释放),循环引用计数不减(需要分代 GC 兜底,但触发时机与延迟不可控);循环+弱引用:环上某一边用弱引用,打破环。\n2) 缓存泄漏的经典链:\n```\ncache[model_id] = callback   # cache 持有 callback\ncallback.__closure__ 捕获 model  # callback 钉住 model\n→ model 本应被新版本替换回收,但 cache+closure 链让它永生\n```\n解法:WeakValueDictionary(model_id → model 的弱引用;模型被别处回收则条目消失)+显式失效(版本替换时主动清)+TTL(PY-017)。\n3) weakref 的家族:ref(基本)/WeakValueDictionary(值为弱引用——对象回收条目消失)/WeakKeyDictionary(键为弱引用——监听器注册表:对象死了监听自动移除)/finalizer(对象回收时执行清理——C++ 析构的 Python 姿态)。\n4) Agent 场景的清单:\n   - asyncio 任务:任务注册表用弱引用集合或保存强引用(官方文档:事件循环只持弱引用——AG-009 提醒过保存引用,反向:你想『不拥有地观察』任务时用弱引用);\n   - 事件监听:agent 间的事件订阅(AG-021)——订阅者销毁后自动退订(WeakKeyDictionary/weakref.finalize);\n   - 工具注册表:工具实例的缓存(WeakValueDictionary,加载的适配器随引用消失);\n   - 模型/客户端实例缓存(PY-008 的单例是强引用——进程级单例本来就该强引用;多版本模型的 LRU 才涉及)。\n5) 诊断与预防:泄漏的诊断(PY-018 的 tracemalloc/objgraph:objgraph.show_backrefs 看谁钉着它);预防的层次:TTL/上限(缓存的通用纪律)→弱引用(『注册不拥有』语义)→显式生命周期管理(架构级,AG-030 的状态机清理)。弱引用是精细工具——大多数缓存问题用 TTL+上限解决,weakref 用于『语义上确实不拥有』的场景。",
+  "example": "```python\nimport weakref\n\n# 事件总线:监听者销毁自动退订\nclass EventBus:\n    def __init__(self):\n        self._subs = weakref.WeakKeyDictionary()\n    def subscribe(self, obj, handler):\n        self._subs[obj] = handler      # 弱键:obj 被回收自动消失\n\n# 任务观察:不拥有地跟踪(反向于保存强引用的提醒)\ntasks = weakref.WeakSet()\nt = asyncio.create_task(job())\ntasks.add(t)                            # 观察但不阻止取消后的回收\n```",
+  "interview": "口述版:『弱引用解决「引用但不拥有」:事件监听注册(WeakKeyDictionary,订阅者死了自动退订)、观察任务(WeakSet)、模型缓存(WeakValueDictionary)。它和循环引用的关系:循环+外部可达的钉死,弱引用破环;但纯循环 Python 的分代 GC 能收——真正高频的泄漏是缓存钉死(TTL+上限是第一道,weakref 是语义解)。诊断用 objgraph 看引用链。预防层次:TTL 上限→弱引用→显式生命周期。』追问展开:WeakValueDictionary 的行为细节、finalizer、GC 的分代机制。",
+  "followups": [
+   {
+    "q": "WeakValueDictionary 的条目什么时候消失?",
+    "a": "当值对象的所有强引用消失(引用计数归零或 GC 回收)后,条目自动移除(下次访问 KeyError)。注意:值对象的方法绑定(self.method)会通过 self 保持强引用——缓存值用绑定方法时,实例不会回收(经典坑);用弱引用方法(weakref.WeakMethod)或存实例+方法名。"
+   },
+   {
+    "q": "weakref.finalize 是什么?",
+    "a": "注册『对象被回收时执行的回调』(finalize(obj, cleanup_func, args))——比 __del__ 可靠(__del__ 的调用时机与异常处理不可控,解释器关闭时更乱)。用途:临时文件的清理、外部资源的释放提示。注意:回调不能引用 obj 本身(会阻止回收)——finalize 的设计已处理(内部弱引用)。"
+   },
+   {
+    "q": "Python 的分代 GC 和引用计数的关系?",
+    "a": "双层:引用计数为主(归零立即释放,确定性高)——但它处理不了循环;分代 GC(三代)定期扫描处理循环引用(不可回收环除外:带 __del__ 的旧版本问题)。含义:非循环的泄漏(缓存钉死/全局容器增长)GC 无能为力——它们不是『循环』问题是『强引用还在』的问题;GC 不是泄漏的万能解药(PY-018 的诊断仍是必需)。"
+   }
+  ],
+  "pitfalls": [
+   "缓存值用绑定方法,实例被钉死(WeakValueDictionary 也失效)。",
+   "事件总线强引用监听者,页面/组件销毁后监听堆积(内存+重复触发)。",
+   "以为 GC 能解决所有泄漏——强引用链的泄漏 GC 无能为力(PY-018 诊断)。",
+   "滥用 weakref(该强持有的生命周期管理用了弱引用,对象意外消失)。"
+  ],
+  "check": {
+   "q": "事件总线用普通 dict 注册监听者,长期运行后内存持续增长。为什么 weakref 能解决?前提是什么?",
+   "a": "原因:监听者(如某个请求处理器/组件)已完成使命,但总线 dict 持有它的强引用→无法回收→累积。weakref.WeakKeyDictionary:键是监听者的弱引用——监听者被其他地方正常回收后,条目自动消失,总线不阻止回收。前提:①监听者的生命周期确实由其他引用管理(总线只是『观察者』语义——如果总线的职责就是保证监听者活着,弱引用反而错);②监听者可被弱引用(多数类可以,某些内置类型不能)。判断口诀:『注册但不拥有』→weakref;『注册且要保证存在』→强引用+显式清理。",
+   "explain": "检验点:weakref 的适用语义(注册不拥有)与前提条件——不是无脑替换强引用。"
+  },
+  "related": [
+   "PY-018",
+   "PY-017",
+   "PY-011",
+   "AG-024"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "Python 官方文档 · weakref",
+    "url": "https://docs.python.org/zh-cn/3/library/weakref.html",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "场景与诊断为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "weakref 语义为官方稳定知识;场景为独立整理。"
+  }
+ },
+ {
+  "id": "PY-036",
+  "topic": "python-backend",
+  "type": "principle",
+  "difficulty": "basic",
+  "title": "怎么组织 Python 项目的环境配置与多环境差异(dev/staging/prod)?",
+  "tags": [
+   "配置",
+   "环境管理",
+   "工程化"
+  ],
+  "prerequisites": [
+   "PY-010",
+   "PY-015"
+  ],
+  "answer": "配置分层(12-factor 思想):①代码内默认值(安全的开发默认);②环境变量覆盖(部署环境注入,12-factor 的核心);③密钥走秘密管理(绝不入 Git,PY-010);④环境差异显式化——配置类按环境分组(数据库 URL/模型名/限流参数/功能开关),环境间差异集中在一份对比文件里(可审计)。管理纪律:配置校验启动即做(fail fast,PY-010)、配置的访问统一入口(禁止散落 os.environ)、配置变更记录(谁改了什么,EN-002 的变更管理)、配置与代码同版本语义(代码依赖的配置项有定义与文档)。多环境的差异原则:只差异『必须不同的』(密钥/端点/模型版本),其余默认一致(减少环境间行为漂移——staging 与 prod 配置越接近,发布验证越有效,EN-005)。",
+  "plain": "环境配置像连锁店的分店管理:总部的经营手册(代码+默认配置)所有店一样;每家店的地址、钥匙、供应商电话(环境变量)不同;保险柜里的东西(密钥)绝不贴在墙上;而且『各店的差异清单』要登记(哪些参数各店不同)——差异登记得越清楚,新店开业(部署)越不容易漏。最大的坑:各店配方悄悄不一样(环境间配置漂移)——staging 试菜没问题,prod 上桌变味。比喻局限:配置还有『热更新』的需求(不改代码改配置立即生效)——这需要配置中心,不只是环境变量。",
+  "deep": "1) 分层结构:\n```\nclass Settings(BaseSettings):        # PY-010 的 Settings 扩展\n    # 通用默认(所有环境一致)\n    log_level: str = \"INFO\"\n    # 环境差异(必须注入)\n    database_url: str\n    llm_api_key: SecretStr           # 掩码类型,日志安全(PY-010)\n    model_main: str = \"gpt-4o-2024-08-06\"\n    # 功能开关\n    enable_semantic_cache: bool = False\n```\n2) 环境差异的治理:\n   - 差异清单文档化:每环境一份配置快照(脱敏)+diff 说明(『prod 的限流是 staging 的 5 倍,原因:真实流量』)——配置漂移的可见化;\n   - 最小差异原则:staging/prod 除密钥与规模外尽量一致(模型版本/提示词版本/依赖版本一致——否则 staging 验证无效,EN-005 的环境保真);\n   - 配置漂移检测:定期对比各环境生效配置(允许的差异白名单外=告警)。\n3) 热更新与生效:配置中心(Consul/Apollo 类)vs 环境变量(重启生效)——分层:重启级(代码行为的配置)+热级(阈值/开关,EN-020 的预算、LP-004 的重试策略可热调);热更新的风险(会话内不一致,LP-021 的指针一致性问题)——按配置类型选择生效方式。\n4) 功能开关(feature flags)的纪律:开关也是配置(版本化、有 owner、有删除计划——长期存在的开关是技术债);开关的组合测试(PY-037 配置组合的同类问题);开关的用途分级(发布开关:灰度用,完成即删;运维开关:降级预案;实验开关:A/B,LP-019)。\n5) 与测试的配合:测试环境配置显式(测试专用的模型 mock 端点/小容量依赖);配置注入的测试化(PY-011 的 fixture 覆盖 Settings);禁止在测试里读生产配置(PY-010 的环境隔离)。",
+  "example": "```bash\n# 环境差异清单(文档化示例)\n#            staging              prod\n# db         staging-db           prod-cluster\n# model      gpt-4o-2024-08-06    gpt-4o-2024-08-06   ← 保持一致!\n# 限流       10 rps               50 rps\n# 审核阈值   标准                 严格(合规)\n```",
+  "interview": "口述版:『配置分层:代码默认+环境变量覆盖+密钥走秘密管理+环境差异显式化。两条治理纪律:最小差异原则(staging 与 prod 除密钥规模外尽量一致——否则 staging 验证无效,EN-005 的环境保真)、配置漂移检测(允许差异白名单外告警)。功能开关的纪律:用途分级(发布/运维/实验)+删除计划——长期存活的开关是技术债。热更新按类型选:阈值开关热调,行为配置走发布。』追问展开:配置漂移检测、功能开关的清理、热更新的分级。",
+  "followups": [
+   {
+    "q": "配置漂移怎么检测?",
+    "a": "快照对比:各环境生效配置定期导出(配置中心 API)→按白名单比对(允许差异的键之外,值不同即告警);白名单本身版本化(新增差异要理由)。漂移的危害分层:行为漂移(staging 验证无效)与安全漂移(prod 审核阈值被改低无人知,EN-021 的治理)——后者是事故级。"
+   },
+   {
+    "q": "功能开关什么时候删?",
+    "a": "按用途:发布开关(灰度完成 100% 后,保留一个发布周期→删);实验开关(A/B 结束,胜者固化败者删,LP-019);运维开关(长期保留是合理的——它是降级预案的一部分,但要定期演练,EN-009 的混沌)。纪律:开关清单的季度审计(每个开关:用途/owner/年龄)——僵尸开关的复杂度成本(代码里到处 if)。"
+   },
+   {
+    "q": "配置热更新的一致性问题?",
+    "a": "会话内不一致(前半用旧阈值后半用新阈值)——多数阈值可接受,但影响连续性的配置(如认证方式)要会话级绑定(LP-021 的会话绑定策略);多实例的生效时间差(滚动更新配置,各实例先后生效)——灰度思路(配置变更有比例控制,EN-005)。热更新的范围控制:只对『安全且需要快』的配置热更新,其余走发布流程(EN-005)——热更新是能力也是风险面。"
+   }
+  ],
+  "pitfalls": [
+   "staging 与 prod 的配置差异巨大,staging 验证失去意义。",
+   "配置散落(os.environ 到处读),改一个配置要翻遍代码。",
+   "功能开关永不清理,if 嵌套地狱(代码复杂度爆炸)。",
+   "密钥配置进了版本管理的示例文件(只有占位也要防混淆)。"
+  ],
+  "check": {
+   "q": "staging 一切正常,prod 上线后模型输出风格明显不同。配置视角的排查?",
+   "a": "配置对账(EN-002 的变更对账+EN-005 的环境保真):①对比两环境的完整生效配置(diff 白名单外的差异)——高频真凶:model 版本不同(staging 用旧版或不同型号)、system prompt 版本不同(LP-021 的指针没同步)、温度/采样参数不同、知识库版本不同(RG-014);②配置中心与实际运行实例的对账(配置改了但实例没重启/热更新失败);③功能开关状态(prod 有开关未开)。治理:配置漂移检测会发现这类差异——若没有,把它建立起来(EN-020 的教训转化为基础设施)。",
+   "explain": "检验点:『staging 正常 prod 异常』的第一嫌疑是配置差异(model/prompt 版本/开关)——环境保真原则的对账应用。"
+  },
+  "related": [
+   "PY-010",
+   "PY-015",
+   "EN-005",
+   "EN-002",
+   "LP-021"
+  ],
+  "doc_refs": [
+   "doc-python-1"
+  ],
+  "sources": [
+   {
+    "name": "The Twelve-Factor App(配置原则)",
+    "url": "https://12factor.net/zh_cn/config",
+    "kind": "official-docs",
+    "note": "方法论参考"
+   },
+   {
+    "name": "独立整理",
+    "url": "",
+    "kind": "independent",
+    "note": "治理纪律为独立整理"
+   }
+  ],
+  "verify": {
+   "status": "partial",
+   "checked_date": "2026-09-06",
+   "note": "12-factor 为公开方法论;治理纪律为独立整理。"
+  }
+ }
 ]

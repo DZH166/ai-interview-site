@@ -36,3 +36,14 @@ Embedding 把文本映射成高维向量,训练目标是"意思近的文本坐�
 - 上下文窗口 vs 参数量:一个是单次请求能读入的额度(运行时),一个是固化权重规模(能力上限)。
 
 这类"对比题"在面试里出现率极高,建议成对记忆。
+## 基础必学练习组(7 题)
+
+以下是本专题**基础难度**的题目,按建议学习顺序排列(先概念后应用)。每题都有直接答案、大白话与理解检查;第一次学习建议先自己想再看答案。进阶与高级题目请按需在练习页按难度筛选。
+
+1. [FD-017](#/study/FD-017) 『预训练目标(下一 token 预测)』为什么能涌现出推理等复杂能力?
+2. [FD-024](#/study/FD-024) 模型的『上下文学习』(in-context learning, ICL)是什么?为什么不用训练就能学新任务?
+3. [FD-025](#/study/FD-025) 生成式 AI 和判别式 AI 的区别?为什么这个区分对选型重要?
+4. [FD-027](#/study/FD-027) Base model、Instruct model、Chat model 有什么区别?为什么选型时要注意?
+5. [FD-012](#/study/FD-012) 解码策略全景:greedy、beam search、top-k、top-p 各是什么?LLM 为什么基本不用 beam search?
+6. [FD-015](#/study/FD-015) 词表(vocabulary)大小和多语言 token 效率有什么关系?为什么中文更『贵』?
+7. [FD-016](#/study/FD-016) encoder-only、decoder-only、encoder-decoder 三类模型各适合什么任务?
