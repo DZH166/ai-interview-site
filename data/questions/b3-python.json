@@ -1,0 +1,112 @@
+[
+  {
+    "id": "PY-008",
+    "topic": "python-backend",
+    "type": "principle",
+    "difficulty": "intermediate",
+    "title": "调外部 HTTP API(httpx)要注意什么?超时、连接池、重试分别怎么配?",
+    "tags": ["httpx", "HTTP 客户端", "连接池"],
+    "prerequisites": ["PY-003", "LP-004"],
+    "answer": "四个必配:①超时——连接/读/写/池四类必须显式设置(默认无超时是挂死之源),LLM 流式要给『首字节』足够长但整体可控的超时;②连接复用——用 AsyncClient 上下文管理器,复用连接池,不要每请求 new 一个;③并发上限——客户端级别的限流(信号量或平台 SDK 的 max_connections);④重试——只对幂等/瞬时错误做指数退避(见 LP-004),且重试要在『同一客户端』上做以复用连接池。",
+    "plain": "HTTP 客户端像打电话:超时=『响了 30 秒没接就挂』(不挂就永远占着线);连接复用=别每次都重新拨号,保持热线(连接池);限流=别同时打 500 个电话把对方总机打爆;重试=对方占线就等会儿再拨,而不是疯狂回拨。比喻局限:HTTP 连接是可复用的通道,不只是『一次通话』。",
+    "deep": "1) 超时分类:httpx.Timeout(connect=5, read=60, write=10, pool=5)。LLM 场景要点:读超时覆盖『首 token 延迟』(强推理模型可能几十秒);流式请求读超时语义是『两次数据块之间的最大间隔』而非总时长——这正好适合流式;整体上限用 asyncio.wait_for 包住。\n2) 连接池:limits=httpx.Limits(max_connections=100, max_keepalive_connections=20);客户端生命周期=应用生命周期(启动时创建、关闭时 aclose),FastAPI 用 lifespan 管理;每请求建客户端=反复 TLS 握手,延迟高且耗尽端口。\n3) 与 asyncio 配合:同步 requests 在 async 服务里是事故(阻塞事件循环);异步栈用 httpx.AsyncClient,同步栈用 requests/httpx + 线程池。\n4) 错误面:httpx.TimeoutException / ConnectError / HTTPStatusError(raise_for_status 后)——分别对应超时/网络/状态码三类处理(LP-004 的分类)。\n5) 流式:httpx 的 stream() + aiter_lines() 逐行读 SSE(见 LP-005 的转发示例);注意 stream 上下文退出会关闭连接,客户端断开时要正确取消上游(异常传播到 async generator 的 finally)。",
+    "example": "```python\n# 应用级单例客户端(FastAPI lifespan)\nclient = httpx.AsyncClient(\n    base_url=\"https://api.llm.com\",\n    timeout=httpx.Timeout(connect=5, read=120, write=10, pool=5),\n    limits=httpx.Limits(max_connections=50, max_keepalive_connections=20),\n)\n\nasync def call_llm(payload):\n    r = await client.post(\"/v1/chat\", json=payload)\n    r.raise_for_status()\n    return r.json()\n```",
+    "interview": "口述版:『httpx 我必配四件事:分项超时(流式的 read 是块间隔语义,适合 LLM)、应用级单例客户端复用连接池、max_connections 限流、幂等错误退避重试。我会主动说默认无超时是生产挂死的常见根因,以及同步 requests 绝不能进 async 路由。』追问展开:流式转发怎么写、keepalive 与 429 的关系、客户端生命周期管理。",
+    "followups": [
+      {"q": "为什么不要每个请求新建 AsyncClient?", "a": "每次新建都要 TCP+TLS 握手(百毫秒级),连接无法复用,高并发下端口/文件句柄耗尽。正确做法:应用生命周期内单例(或小池),FastAPI 用 lifespan 创建与关闭。"},
+      {"q": "流式调上游时客户端断开,上游连接会怎样?", "a": "取消会沿 async generator 传播,httpx 的 stream 上下文在 finally 中关闭,上游连接被释放。若在生成器里吞掉了取消(没有 await 点/捕获 CancelledError 不抛),上游会继续生成、继续计费——这是真实的成本事故来源。"},
+      {"q": "连接池大小怎么定?", "a": "≈ 目标 QPS × 平均延迟 + 余量,并受上游并发配额约束;配合 Semaphore 使用。池太小排队增加延迟,太大触发上游 429。压测定参。"}
+    ],
+    "pitfalls": [
+      "不设超时(默认无超时),一次上游挂起拖死整个事件循环。",
+      "每请求新建客户端,TLS 握手开销 + 句柄泄漏。",
+      "流式转发时整段 await 上游完成再返回——那是伪流式。",
+      "在 async 路由里用 requests(阻塞),整个服务卡死。"
+    ],
+    "check": {
+      "q": "read=120 的超时对流式 LLM 响应意味着『整个回答必须在 120 秒内完成』吗?",
+      "a": "不是。流式下 read 超时是『相邻数据块之间的最大等待』——只要上游持续吐 token,连接就一直有效;120 秒内没有收到任何新块才超时。整体时长上限要另用总超时包裹。这正是流式场景把 read 设得较大的原因。",
+      "explain": "检验点:分项超时在流式语义下的准确理解。"
+    },
+    "related": ["PY-003", "LP-004", "LP-005"],
+    "doc_refs": ["doc-python-1"],
+    "sources": [
+      {"name": "httpx 官方文档(超时/连接池/流式)", "url": "https://www.python-httpx.org/", "kind": "official-docs", "note": "库语义稳定参考(未逐页抓取,标注)"}
+    ],
+    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "HTTP 客户端实践为通行工程知识;httpx 具体 API 以官方文档为准。"}
+  },
+  {
+    "id": "PY-009",
+    "topic": "python-backend",
+    "type": "principle",
+    "difficulty": "basic",
+    "title": "生产环境的日志应该怎么打?LLM 应用的日志和普通服务有什么不同?",
+    "tags": ["日志", "logging", "可观测性"],
+    "prerequisites": ["PY-005", "EN-002"],
+    "answer": "规范四条:①结构化(JSON)而不是纯文本,字段固定(trace_id、level、module、耗时、关键 ID);②分级使用(DEBUG 调试/ INFO 关键路径/ WARNING 可恢复/ ERROR 需处理),生产 INFO 起步;③绝不打敏感信息(密钥、身份证、完整用户内容按策略脱敏);④用 logger 而不是 print,配置走统一初始化。LLM 应用特有的日志点:每次模型调用的 token 用量与成本、检索 top-k 与分数、提示词版本——中间证据是排查的生命线(见 EN-002)。",
+    "plain": "日志像店铺的监控录像:要『拍得到关键时刻』(结构化,能按时间/柜台检索)、『分级存储』(大事常存,琐碎的存两天就删)、『不侵犯顾客隐私』(打码)。print 像店员口头转述——转述人一休假(进程重启)什么都没留下。比喻局限:结构化日志的价值在于『机器可查询』——能按 trace_id 把一次请求的所有日志串成一条线,这是排查的基本功。",
+    "deep": "1) 结构化日志:logging + JSON formatter(或 structlog);字段规范:ts、level、logger、trace_id、span、msg、duration_ms、自定义字段。避免把大对象整个 dump(日志膨胀),按需取关键字段。\n2) 分级与采样:DEBUG 开发期;INFO 记请求/响应摘要与关键决策;WARNING 可自动恢复的异常(重试后成功);ERROR 需要人介入。高频 INFO 可采样。错误率突增靠 WARNING/ERROR 比例告警。\n3) LLM 应用专属字段(EN-002 的落地):model、prompt_version、input_tokens/output_tokens/cost、retrieval_topk(块 ID+分数,不含全文)、cache_hit、finish_reason;失败/差评请求按策略保留完整内容(脱敏后)。\n4) 敏感信息治理:入口脱敏(正则+分类器),密钥永不入日志(Exception 里可能带 header——logger 要过滤);保留期与访问权限分级;合规要求(等保/GDPR 类)按业务定。\n5) 运维配套:日志聚合(ELK/Loki 类)、按 trace_id 串联、错误聚合告警;本地开发用彩色格式,生产 JSON——同一 logger 两套 formatter。",
+    "example": "```python\nimport logging, json, time\n\nlogger = logging.getLogger(\"app\")\n\nclass JsonFormatter(logging.Formatter):\n    def format(self, record):\n        base = {\"ts\": self.formatTime(record), \"level\": record.levelname,\n                \"logger\": record.name, \"msg\": record.getMessage()}\n        base.update(getattr(record, \"extra_fields\", {}))\n        return json.dumps(base, ensure_ascii=False)\n\ndef log_llm_call(trace_id, model, usage, cost, latency):\n    logger.info(\"llm_call\", extra={\"extra_fields\": {\n        \"trace_id\": trace_id, \"model\": model,\n        \"in_toks\": usage.input, \"out_toks\": usage.output,\n        \"cost_usd\": round(cost, 5), \"latency_ms\": latency}})\n```",
+    "interview": "口述版:『我的日志规范:结构化 JSON、固定字段带 trace_id、分级+采样、敏感信息入口脱敏。LLM 应用我会加三层专属日志:模型调用(用量/成本/版本)、检索证据(top-k ID 与分数)、提示词版本——排查「为什么答错」全靠这些中间证据。日志聚合平台按 trace_id 串起一次请求的全链路。』追问展开:日志与 trace 的关系、脱敏实现、日志成本控制。",
+    "followups": [
+      {"q": "trace_id 从哪来,怎么贯穿?", "a": "入口(网关/中间件)生成或继承上游的 X-Request-ID,放进 contextvars;所有 logger 自动附带。跨服务调用透传到 header。这是把『散落日志』变成『请求轨迹』的关键一跳。"},
+      {"q": "日志里要记录完整提示词吗?", "a": "分级:元数据(长度、版本、hash)全量记录;内容按策略——失败与差评请求全量(脱敏)、正常请求抽样、高敏行业默认不记内容只记 hash。平衡排查价值与隐私/成本。"},
+      {"q": "print 和 logging 的实质区别?", "a": "logging 有级别可开关、可路由(文件/聚合平台)、带时间与模块信息、线程安全;print 无处不在但不可管理——生产代码里 print 等于监控盲区。"}
+    ],
+    "pitfalls": [
+      "日志里打完整用户对话与密钥——隐私与安全事故。",
+      "全站 print,无级别无轨迹。",
+      "把大 JSON 整个打进每条日志,存储成本爆炸。",
+      "只记 ERROR 不记 WARNING,重试成功这类『亚健康』状态完全不可见。"
+    ],
+    "check": {
+      "q": "线上发现 5% 回答变差,你的日志里缺少哪一类信息时排查会直接卡死?",
+      "a": "提示词版本与变更记录(模型/提示词/知识库版本)——没有它无法归因『变差』发生在哪次变更之后;其次是检索证据(top-k 与分数),没有它无法区分检索问题还是生成问题。",
+      "explain": "检验点:日志设计服务于『可归因』,与 EN-002 的排查流程闭环。"
+    },
+    "related": ["PY-005", "EN-002", "LP-004"],
+    "doc_refs": ["doc-eng-1"],
+    "sources": [
+      {"name": "Python 官方文档 · logging", "url": "https://docs.python.org/zh-cn/3/library/logging.html", "kind": "official", "note": "库语义稳定(未逐页抓取,标注)"},
+      {"name": "独立整理", "url": "", "kind": "independent", "note": "LLM 应用日志要点为独立整理(与 EN-002 一致)"}
+    ],
+    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "logging 语义为官方稳定内容;LLM 专属字段为独立整理。"}
+  },
+  {
+    "id": "PY-010",
+    "topic": "python-backend",
+    "type": "principle",
+    "difficulty": "basic",
+    "title": "API 密钥和配置应该怎么管理?为什么不能硬编码在代码里?",
+    "tags": ["配置管理", "密钥", "环境变量"],
+    "prerequisites": [],
+    "answer": "分层管理:密钥等敏感配置来自环境变量或密钥管理服务(never 写进代码/提交进 Git);非敏感配置按环境(开发/测试/生产)分文件;代码里用 Pydantic Settings 统一加载、校验、给默认值。硬编码的三大后果:泄漏(Git 历史永久留痕)、无法分环境、轮换密钥要改代码重新部署。",
+    "plain": "家门钥匙不会刻在门框上(代码里),也不会贴在小区公告栏(Git 仓库)——它在你口袋里(环境变量/密钥管理服务),搬家换锁(轮换密钥)也不用拆门。配置像家里的常备参数『快递放哪』写在便签上按住处分(环境配置文件),而钥匙绝不。比喻局限:真实世界里 Git 泄漏是永久性的——即使后续删除,历史提交仍能翻出,所以泄漏后必须立即作废重发密钥。",
+    "deep": "1) 加载与校验:pydantic-settings 定义 Settings 类(字段、类型、默认值、env 前缀),启动时加载并校验——缺配置直接 fail fast(启动失败好过运行中神秘错误);不同环境用 .env.dev/.env.prod(后者不入 Git)或部署平台的注入。\n2) 密钥治理:本地开发用 .env(列入 .gitignore)+ 示例文件 .env.example(占位)提交;CI/生产用平台密钥管理(GitHub Secrets/K8s Secret/云 KMS);泄漏应急:立即吊销→轮换→排查影响面→事后在提交历史清理(工具如 BFG)但仍要视为已泄漏。\n3) 分级:公开配置(功能开关、非敏感默认值)可入 Git;敏感(密钥、数据库连接串)只走注入;环境差异(域名、模型名)用环境变量覆盖。\n4) LLM 应用特有:多供应商密钥(主/备模型各一套,支持降级链,见 LP-004)、按租户的配额凭据、密钥轮换不影响运行(热加载或重启窗口)。\n5) 反模式:config.py 里 API_KEY = \"sk-...\";把 .env 提交进仓库;在日志/错误信息里输出配置对象(密钥进日志)。掩码原则:任何配置打印都要 mask 敏感字段。",
+    "example": "```python\nfrom pydantic_settings import BaseSettings\n\nclass Settings(BaseSettings):\n    llm_api_key: str                    # 必填,缺失启动即报错\n    llm_base_url: str = \"https://api.openai.com/v1\"\n    redis_url: str = \"redis://localhost:6379/0\"\n    model_main: str = \"gpt-4o\"\n    model_backup: str | None = None     # 降级模型(可选)\n    class Config: env_prefix = \"APP_\"   # 读 APP_LLM_API_KEY 等\n\nsettings = Settings()   # 启动时校验,fail fast\n```",
+    "interview": "口述版:『密钥走环境变量或密钥管理服务,绝不进代码和 Git——Git 历史是永久的,泄漏只能吊销重发。代码里用 pydantic-settings 统一加载并在启动时校验,缺配置 fail fast。LLM 应用我会预留主备两套供应商密钥支撑降级链,并确保日志与错误信息永远不输出配置明文。』追问展开:.gitignore 与历史清理、K8s Secret 与环境注入、多租户密钥。",
+    "followups": [
+      {"q": "密钥已经不小心提交了,怎么办?", "a": "立即作废该密钥并签发新的(第一优先,历史清理是其次)→ 排查泄漏窗口内的异常调用 → 用 BFG/filter-repo 清历史(但仍视为已泄漏)→ 复盘流程(pre-commit 扫描、CI secret scanning)。"},
+      {"q": "配置项太多怎么组织?", "a": "按域拆分(Settings 里嵌套模型或多个 Section:llm/storage/log),命名前缀区分环境变量;文档化每个配置的含义与默认值;禁止在业务代码里直接读 os.environ(统一走 Settings,可测试)。"},
+      {"q": "测试时怎么处理密钥依赖?", "a": "依赖注入+假实现:业务函数接收 settings/client 参数,测试注入 fake;敏感集成测试用测试专用密钥或本地 mock 服务。绝不在测试代码里写真实生产密钥。"}
+    ],
+    "pitfalls": [
+      "密钥写进 config.py 并提交——最常见也最贵的失误。",
+      ".env 忘记加 .gitignore,一 commit 全世界可见。",
+      "在异常信息里把请求头/配置对象打出来,密钥进了日志。",
+      "没有 .env.example,新人接手不知道要配哪些项。"
+    ],
+    "check": {
+      "q": "代码评审发现 `API_KEY = \"sk-abc123\"` 写在 config.py 且已提交一周。列出你按顺序要做的三件事。",
+      "a": "①立即在供应商平台吊销该密钥并换新(止血优先于代码修复);②排查这一周该密钥的调用量与异常,确认是否被滥用;③改配置为环境变量注入、加 pre-commit/CI 密钥扫描,并清理历史提交(仍视为已泄漏,做好监控)。",
+      "explain": "检验点:安全事件的正确顺序是『吊销→排查→流程修复』,而不是先改代码。"
+    },
+    "related": ["PY-005", "LP-004", "EN-005"],
+    "doc_refs": ["doc-python-1"],
+    "sources": [
+      {"name": "pydantic-settings 官方文档", "url": "https://docs.pydantic.dev/latest/concepts/pydantic_settings/", "kind": "official-docs", "note": "库语义参考(未逐页抓取,标注)"},
+      {"name": "独立整理", "url": "", "kind": "independent", "note": "密钥治理流程为独立整理的行业通行实践"}
+    ],
+    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "配置管理为通行实践;pydantic-settings API 以官方文档为准。"}
+  }
+]

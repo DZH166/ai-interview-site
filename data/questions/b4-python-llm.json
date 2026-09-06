@@ -1,0 +1,147 @@
+[
+  {
+    "id": "PY-011",
+    "topic": "python-backend",
+    "type": "principle",
+    "difficulty": "basic",
+    "title": "pytest 单元测试怎么写?fixture、mock 什么时候用?",
+    "tags": ["pytest", "单元测试", "mock"],
+    "prerequisites": ["PY-005"],
+    "answer": "pytest 三件套:①测试函数按 test_ 前缀命名,断言直接用 assert;②fixture 管理测试的前置资源(数据库会话、临时文件、配置对象),用 yield 做清理,作用域(scope)控制创建次数;③mock 替换外部依赖(LLM API、数据库),用 monkeypatch/unittest.mock 隔离网络与副作用。原则:单元测试要快(毫秒级)、独立(互不依赖)、确定(不依赖真实外部服务)。",
+    "plain": "单元测试像给零件做质检:每个零件(函数)单独上检台(fixture 提供标准工装),不依赖整台机器(外部服务);mock=用假件代替真件——测发动机时不会真接油管(真调 LLM API 又贵又慢还不稳定)。比喻局限:mock 的风险是『假件行为和真件不一样』——测了半天全对,上线发现真实 API 返回结构和 mock 不同,所以集成层还要少量真实测试(见 AG-009 分层)。",
+    "deep": "1) fixture 进阶:scope=function/class/module/session 控制生命周期;conftest.py 共享 fixture;工厂 fixture(返回创建函数)处理多实例;autouse 谨慎用(隐式依赖难排查)。\n2) mock 边界:只 mock 你不拥有的边界(LLM API、DB、时钟、随机);不要 mock 被测函数内部逻辑——那是自欺。LLM 相关:mock 返回结构按真实响应 schema 建(AG-009 的 fixture 库思路)。\n3) 参数化:@pytest.mark.parametrize 覆盖边界值(空输入/超长/特殊字符)——LLM 输入校验的边界测试尤其重要。\n4) 测什么(应用后端):token 裁剪逻辑、提示词组装、参数校验、错误分类、重试逻辑(用 mock 时钟/假 429 响应)、幂等性;不测:框架本身、第三方库内部。\n5) 集成测试分层:纯单测(mock)→ 打桩集成(本地 stub 服务)→ 少量真实冒烟(每日一次,真调 API 验证契约没变)。",
+    "example": "```python\nimport pytest\nfrom unittest.mock import AsyncMock\n\ndef crop_history(messages, max_tokens, count_tokens):\n    ...\n\n@pytest.fixture\ndef sample_messages():\n    return [{\"role\": \"user\", \"content\": \"你好\"},\n            {\"role\": \"assistant\", \"content\": \"你好,请问?\"}]\n\ndef test_crop_keeps_system(sample_messages):\n    msgs = [{\"role\": \"system\", \"content\": \"规则\"}] + sample_messages\n    out = crop_history(msgs, max_tokens=10, count_tokens=len)\n    assert out[0][\"role\"] == \"system\"          # system 永远保留\n\n@pytest.mark.asyncio\nasync def test_ask_llm_retries_on_429(monkeypatch):\n    fake = AsyncMock(side_effect=[RateLimitError(), {\"ok\": 1}])\n    monkeypatch.setattr(\"app.llm._post\", fake)\n    assert (await ask_llm(\"hi\")) == {\"ok\": 1}   # 第一次 429,重试成功\n    assert fake.await_count == 2\n```",
+    "interview": "口述版:『pytest 我常用三层:纯逻辑用参数化测边界;fixture 管前置资源用 yield 清理;外部依赖用 mock 隔离——只 mock 边界不 mock 内部。LLM 后端我重点测 token 裁剪、重试逻辑(假 429)和幂等;真实 API 只做每日一次的冒烟验证契约。』追问展开:fixture scope、mock 过度的危害、测试覆盖率怎么看。",
+    "followups": [
+      {"q": "fixture 的 scope 怎么选?", "a": "默认 function(每测试新建,隔离最好);昂贵的只读资源(连接池、编译好的模型)用 session/module;注意 scope 越大越可能互相污染,有状态资源宁可用 function+工厂。"},
+      {"q": "mock 用过头会怎样?", "a": "测试全绿但真实集成失败——mock 的行为假设(响应结构、错误类型)与真实服务脱节。对策:mock 的响应 schema 从真实 API 文档/抓包生成;保留少量真实集成测试定期验证契约(AG-009 的契约层)。"},
+      {"q": "异步代码怎么测?", "a": "pytest-asyncio 提供 event loop fixture;async 测试函数直接 await;mock 用 AsyncMock(区分 await 调用);注意异步重试/超时逻辑用可控的假时钟,别真 sleep。"}
+    ],
+    "pitfalls": [
+      "测试之间共享可变状态(全局变量、同一个临时文件)导致顺序依赖。",
+      "mock 被测函数内部——测试和实现绑死,重构即全红。",
+      "只测 happy path,边界(空列表、超长输入、None)零覆盖。",
+      "集成测试每次跑都真调 LLM API——又贵又慢还 flaky。"
+    ],
+    "check": {
+      "q": "一个函数负责『重试调 LLM,指数退避,最多 3 次』。单元测试怎么设计才能不真等退避时间?",
+      "a": "把 sleep 依赖注入(mock 时钟或 monkeypatch time.sleep/asyncio.sleep),用假响应序列 [429, 429, 200] 验证:调用次数 3、退避间隔按 2 的幂递增、成功后返回结果;再用 [429×3] 验证耗尽后抛异常。核心手法:时间与网络都是可注入的依赖。",
+      "explain": "检验点:『让时间可注入』的测试设计意识。"
+    },
+    "related": ["PY-005", "PY-008", "AG-009"],
+    "doc_refs": ["doc-python-1"],
+    "sources": [
+      {"name": "pytest 官方文档", "url": "https://docs.pytest.org/", "kind": "official-docs", "note": "库语义参考(未逐页抓取,标注)"}
+    ],
+    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "pytest 实践为通行知识;示例代码为模式演示未运行(已标注)。"}
+  },
+  {
+    "id": "PY-012",
+    "topic": "python-backend",
+    "type": "concept",
+    "difficulty": "basic",
+    "title": "上下文管理器和 with 语句是什么?__enter__/__exit__ 怎么工作?",
+    "tags": ["Python", "上下文管理器", "资源管理"],
+    "prerequisites": ["PY-005"],
+    "answer": "with 语句是『确保清理』的语法:进入时调用对象的 __enter__(返回值 as 给变量),离开时无论正常还是异常都调用 __exit__(负责关闭/释放/回滚)。它把 try/finally 的清理逻辑声明化,防止资源泄漏(文件句柄、数据库连接、锁)。异步版本是 async with(__aenter__/__aexit__),AI 后端里的 httpx.AsyncClient、数据库连接池、分布式锁都用它。",
+    "plain": "with 像酒店的『退房保证』:进门(enter)领房卡,不管住得开心还是中途吵架退房(exit 都会执行),房卡一定被收回、房间一定被清理。没有 with 的手动 close 就像『记得退房全靠自觉』——一旦中途出事(异常),房间就一直占着(资源泄漏)。比喻局限:with 的 exit 还能拿到异常信息并决定是否吞掉(返回 True),酒店退房可没这个功能。",
+    "deep": "1) 协议细节:__exit__(exc_type, exc_val, tb) 三个参数在无异常时都是 None;返回 True 会吞掉异常(慎用——通常用于特定可恢复场景,如锁获取失败转策略);@contextmanager 装饰器用生成器写简单上下文管理器(yield 前=enter,yield 后=exit)。\n2) 异步协议:async with 调 __aenter__/__aexit__;AI 后端高频对象:httpx.AsyncClient、asyncpg 连接、asyncio.Semaphore(限制并发时包住临界区)、SSE 流。注意 async generator 作为 FastAPI 依赖时的清理语义(yield 后代码在请求结束时执行)。\n3) 典型应用模式:\n   - 计时统计(with timer(): ... 记录段耗时);\n   - 临时修改配置(测试里改环境变量,退出自动还原);\n   - 批量事务(成功提交/异常回滚);\n   - 并发限流(async with semaphore: 一次调用,见 PY-003)。\n4) 常见坑:在 __exit__ 里再抛异常会掩盖原异常;多个资源用逗号写一个 with(Python 3.10+ 支持括号多行);生成器写的 contextmanager 忘记 try/finally 导致清理不执行。",
+    "example": "```python\nfrom contextlib import contextmanager\nimport time\n\n@contextmanager\ndef timed(label, metrics):\n    t0 = time.perf_counter()\n    try:\n        yield                      # with 块执行在这里\n    finally:\n        metrics.record(label, time.perf_counter() - t0)\n\nasync with httpx.AsyncClient() as client:      # 退出自动关闭连接池\n    async with semaphore:                      # 限流临界区\n        resp = await call_llm(client, prompt)\n```",
+    "interview": "口述版:『with 是声明式清理:enter 领资源、exit 必然执行释放,异常信息还会传给 exit 让我决定吞不吞。AI 后端我用它管三类东西:客户端连接池(async with)、限流临界区(semaphore)、计时与配置还原(contextmanager 快速写)。我会主动提异步版本 async with 和 contextmanager 里要 try/finally 的坑。』追问展开:exit 返回 True 的语义、异步依赖的清理时机、和 finally 的选择。",
+    "followups": [
+      {"q": "__exit__ 返回 True 意味着什么?什么时候用?", "a": "表示异常已被处理、不再向上传播。仅用于『异常本身就是预期分支』的场景(如获取锁失败转排队策略);默认返回 None/False 让异常继续传播——吞异常是最后手段(呼应 PY-005 的反模式清单)。"},
+      {"q": "FastAPI 依赖里 yield 之后写清理代码,和上下文管理器什么关系?", "a": "yield 型依赖本质就是上下文管理器:yield 前是 setup(进),响应完成后执行 yield 后的清理(出)。适合『每请求一个 DB 会话』;注意清理在响应发送后执行,流式响应要考虑清理时机与长连接的交互。"},
+      {"q": "contextmanager 装饰器和写类相比怎么选?", "a": "简单的一次性 enter/exit 用 contextmanager(代码少);需要状态复用、多次进入、实现复杂协议(可重入锁)用类。生成器版务必 try/finally 包 yield,否则 with 块内异常会跳过清理。"}
+    ],
+    "pitfalls": [
+      "手动 open/close 不用 with——异常路径泄漏句柄。",
+      "contextmanager 里 yield 没有 try/finally,异常时清理不执行。",
+      "在 __exit__ 里做重活或再抛新异常,掩盖原始错误。",
+      "把 async 对象用在同步 with(或反之),运行时报错。"
+    ],
+    "check": {
+      "q": "with open('a.txt') as f: raise ValueError; f.close() 会被执行吗?",
+      "a": "会被执行——但不是你写的那行(异常后跳过了它),而是 with 机制调用 __exit__ 完成的清理。这正是 with 的意义:清理与业务代码的成败无关。那行 f.close() 永远执行不到,属于冗余代码。",
+      "explain": "检验点:理解清理发生在 __exit__ 而不是依赖手写调用,以及异常时控制流的变化。"
+    },
+    "related": ["PY-005", "PY-008", "PY-003"],
+    "doc_refs": ["doc-python-1"],
+    "sources": [
+      {"name": "Python 官方文档 · with 语句与上下文管理器", "url": "https://docs.python.org/zh-cn/3/reference/datamodel.html#context-managers", "kind": "official", "note": "语言核心语义,长期稳定"}
+    ],
+    "verify": {"status": "verified", "checked_date": "2026-09-06", "note": "语言核心语义 verified;示例为模式演示。"}
+  },
+  {
+    "id": "LP-011",
+    "topic": "llm-prompt",
+    "type": "principle",
+    "difficulty": "basic",
+    "title": "模型的输出长度怎么控制?max_tokens、提示词约束和 stop 序列各管什么?",
+    "tags": ["输出控制", "max_tokens", "stop 序列"],
+    "prerequisites": ["LP-001", "LP-002"],
+    "answer": "三个手段三层管:①max_tokens 是硬上限——输出到达即截断(可能把 JSON/句子拦腰截断,属于失败状态要处理);②提示词约束是软引导——『不超过 100 字』『只输出结论』,影响分布但不保证;③stop 序列是精准停止——遇到指定字符串就停(如 \\n\\n、『用户:』),适合防止模型自问自答。工程最佳实践:结构化输出限定字段(天然短)+ max_tokens 留合理余量 + 检测 finish_reason==length 触发处理(重试加长/降级/报错)。",
+    "plain": "让模型写短一点的三种办法:max_tokens=直接拔电源(说到哪算哪,可能半句话);提示词约束=拜托它『写短点』(通常听话但偶尔忘);stop 序列=设定『一写到句号就收工』(精准但只认字符串)。成熟做法是『让答案天然短』——要结构化输出(每个字段都短),而不是让散文变短。比喻局限:截断不优雅但有 finish_reason 告诉你发生了什么,电源拔了可没回执。",
+    "deep": "1) max_tokens 语义:输出预留(从窗口里扣,见 LP-002);到达上限时停止并标记 finish_reason=length(各家字段名略有差异)。截断的连锁反应:JSON 半截(json.loads 失败)、引用编号丢失、代码不完整——所以关键路径要把 length 当错误处理,不是当正常结束。\n2) 提示词约束技巧:给数字(『≤3 句』比『简短』有效);给结构(『先一行结论,再 2 条要点』);给示例(示例的长度就是目标长度的锚);重要约束放开头与结尾(中部易忽略,LP-006)。\n3) stop 序列:精确字符串匹配停止,stop 本身不包含在输出里;用途:多轮补全场景防自问自答(「\\n用户:」)、模板填空截断;局限:只能匹配字面量,中文分词边界要注意(「。」vs「。」后空格)。\n4) 长度与质量的关系:强制过短会截断推理链(复杂问题需要空间思考);『结论先行+细节按需』的结构比硬压字数更稳。长输出需求(长报告)→分段生成(先大纲后逐节),每段独立控制。\n5) 成本联动:输出 token 通常比输入贵数倍(平台定价),输出控制=直接省钱(见 EN-003);max_tokens 设过大不花钱(按实际用量计),但失控生成(runaway)会花钱——上限是保险丝。",
+    "example": "```python\nresp = client.chat.completions.create(\n    model=MODEL,\n    max_tokens=300,                      # 保险丝:防失控\n    stop=[\"\\n用户:\"],                    # 防自问自答(补全场景)\n    messages=[{\"role\": \"system\",\n               \"content\": \"先一行给结论;再最多 2 条要点,每条 ≤30 字。\"}],\n)\nfinish = resp.choices[0].finish_reason\nif finish == \"length\":                    # 被截断 = 失败状态\n    handle_truncated(resp)                # 重试加长/降级/提示用户\n```",
+    "interview": "口述版:『输出控制三层:max_tokens 是硬保险丝但要处理 finish_reason=length——截断的 JSON 是失败不是结果;提示词给数字和结构比说「简短」有效;stop 序列管精确停止。我的默认做法是让输出天然短(结构化输出),成本上输出 token 更贵,控长度就是控成本;复杂长任务用分段生成而不是硬压字数。』追问展开:截断处理策略、长度约束与质量的权衡、分段生成设计。",
+    "followups": [
+      {"q": "被 max_tokens 截断后,『续写』怎么做才安全?", "a": "把已生成内容作为 assistant 消息放回,请求『继续』;风险:续写与已有内容重复/风格断裂,且计费翻倍。更好:提高 max_tokens 重试一次;或预判输出长度(按任务类型设默认值),把截断率压到 <1% 而不是设计续写流程。"},
+      {"q": "为什么『不超过 100 字』有时不生效?", "a": "软约束会被更强的信号覆盖:任务本身的复杂性、示例的长度锚定、指令位置太深。缓解:数字+结构+示例三件套、放开头结尾、温度低一点;对长度硬需求走结构化输出(字段级约束)或生成后校验+重试(超长拒收带原因)。"},
+      {"q": "stop 序列在流式下怎么处理?", "a": "行为一致:到达 stop 即结束流,但 stop 字符串之前的完整内容会正常发出。前端要按 finish_reason/结束事件收尾;注意 stop 序列本身不会出现在输出里,别指望用它当『输出的一部分』。"}
+    ],
+    "pitfalls": [
+      "max_tokens 设太小,JSON 半截还当正常结果解析(报错一脸懵)。",
+      "max_tokens 设 4096 但从不看 finish_reason,失控生成烧钱。",
+      "『简短回答』这种软约束, ten 次九次没用。",
+      "stop 序列选了会在正常内容中出现的字符串,输出被意外截断。"
+    ],
+    "check": {
+      "q": "抽取任务的 JSON 输出频繁被 max_tokens 截断。三个解决方向按优先级?",
+      "a": "①先看 schema:是否让模型输出了不必要的大字段(如原文摘录)——砍字段是最优解;②schema 瘦身后仍不够:按字段实际分布把 max_tokens 提到合理值(留 30% 余量);③兜底:length 检测→带『输出到一半』的重试策略。反模式:无脑把 max_tokens 拉满——掩盖 schema 问题且失去保险丝意义。",
+      "explain": "检验点:截断问题先怀疑输出设计,再调参数。"
+    },
+    "related": ["LP-001", "LP-002", "LP-003", "EN-003"],
+    "doc_refs": ["doc-llm-1"],
+    "sources": [
+      {"name": "OpenAI 官方文档 · Chat API(max_tokens/finish_reason/stop)", "url": "https://developers.openai.com/api/docs/guides/text-generation", "kind": "official", "note": "参数语义稳定;字段名以所用 SDK 为准(未逐页抓取,标注)"}
+    ],
+    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "参数语义为平台公开稳定行为;字段名细节以 SDK 版本为准。"}
+  },
+  {
+    "id": "LP-012",
+    "topic": "llm-prompt",
+    "type": "scenario",
+    "difficulty": "intermediate",
+    "title": "离线批量处理(给 10 万条文本打标签)怎么设计?批处理 API 和任务队列怎么用?",
+    "tags": ["批处理", "任务队列", "离线任务"],
+    "prerequisites": ["LP-004", "PY-011"],
+    "answer": "离线批量与在线服务的目标不同:吞吐和成本优先,延迟无所谓。设计要点:①用批处理 API(主流平台对 24 小时内完成的批量任务打 5 折左右,版本相关)——提交文件式任务而非逐条调用;②自建时用任务队列(分片、断点续跑、幂等);③限速与退避遵守配额,进度可观测(完成率/失败率/成本);④结果校验与重试分离——失败样本单独重跑,不重复成功部分;⑤便宜模型先行+抽样人工校验,质量达标再全量。",
+    "plain": "在线服务像便利店(单笔快、随时来);离线批量像海运集装箱(不赶时间、按柜计费便宜)。关键工程:集装箱要编号(分片+幂等)——船翻了(任务中断)知道哪些柜子沉了,只重捞那些;别把整船货重新装一遍。比喻局限:LLM 批处理还有『质量抽查』这一层——便宜模型批量打标前要先抽样验收,不然 10 万条错标的下游修复成本更高。",
+    "deep": "1) 批处理 API 模式:上传 JSONL(每行一个请求+自定义 ID)→ 平台 24h 内异步完成 → 下载结果按 ID 对账。优势:五折左右成本、不占在线配额;约束:延迟不可控、有文件大小/行数上限、结果要自行校验完整性。\n2) 自建队列设计(平台批处理不满足时):\n   - 分片:10 万条按 1000 条一片,失败只重跑片;每条任务带唯一 ID(幂等),结果表按 ID upsert;\n   - 并发控制:令牌桶遵守 TPM/RPM 配额(见 LP-004),队列消费速率可调;\n   - 断点续跑:任务状态持久化(pending/running/done/failed),进程重启从断点继续;\n   - 成本护栏:预估总成本(条数×平均 token×单价),超预算告警暂停。\n3) 质量流程:小模型试跑 500 条 → 人工抽 50 条验收(准确率 ≥ 目标)→ 全量 → 结果分布检查(标签分布突变=模型行为异常信号)→ 抽样复检。\n4) 与在线联动:批量产物(标签/向量)入库要版本化(EN-004 真相源原则);在线服务引用时按版本取;\n5) 时机选择:夜间跑批占低价配额窗口;避开在线高峰(共享配额时互相挤压)。",
+    "example": "10 万条客服对话打标签的流程(示例):\n```\n1) 抽样 500 条 → 便宜模型试跑 → 人工验收 50 条:准确率 93%(目标 90%)✅\n2) 成本估算:10 万 × 800 token × $0.15/M ≈ $12(批处理价)→ 批准\n3) 提交批处理 API:200 个 JSONL 文件 × 500 条,每条带 task_id\n4) 完成后对账:99,870 条成功 / 130 条失败(超长被拒)→ 单独预处理重跑\n5) 结果入库(带模型与批次版本)→ 标签分布 vs 试跑分布对比 → 无突变 ✅\n```",
+    "interview": "口述版:『离线批量三原则:成本上优先批处理 API(五折左右、异步 24h);工程上分片+幂等+断点续跑(失败只重跑片);质量上先抽样验收再全量、完成后做分布对比。我会主动提两件容易漏的:结果要带模型与批次版本号(下游可追溯),以及预估成本护栏防止超支。』追问展开:批处理 API 的对账细节、队列选型、失败样本处理。",
+    "followups": [
+      {"q": "批处理结果怎么对账?", "a": "按自定义 ID 对齐:提交 N 条,结果必须有 N 条对应(成功/失败状态各一);缺失=平台侧异常,重提缺失 ID;失败分类(超长/内容策略/格式)分别处理。对账脚本要幂等,可反复跑。"},
+      {"q": "队列用什么?怎么选?", "a": "轻量:数据库表+状态字段+定时轮询(够用且零新增组件);中等:Redis + RQ/Celery;大规模:云任务队列。选择标准:量级、是否需要重试策略配置、团队熟悉度。LLM 批量常见量级(万级)数据库方案就够。"},
+      {"q": "批量任务的输出怎么防『模型悄悄变差』?", "a": "分片内嵌金标准样本(已知答案的 canary),每片校验通过率;结果分布对比历史批次(标签比例突变告警);随机抽样复检按批次留档。把『模型版本』记录进结果,供应商升级后可追溯。"}
+    ],
+    "pitfalls": [
+      "10 万条一条条同步调用在线接口——又贵(无折扣)又容易把在线配额挤爆。",
+      "无幂等设计,中断重跑导致重复计费与重复入库。",
+      "全量跑完才发现质量不达标,10 万条错标重做的成本远高于先抽样。",
+      "结果不带版本信息,一个月后无法知道这是哪个模型哪天的产物。"
+    ],
+    "check": {
+      "q": "批处理任务跑到 60% 时供应商限流策略变化,大量 429。任务设计上哪些机制让你不慌?",
+      "a": "①分片+幂等:已完成的 6 万条结果已按 task_id 落库,重跑只碰未完成的;②速率自适应:消费端遇到 429 自动降速+退避(LP-004),而不是硬顶;③成本与进度看板:能立刻回答『还剩多少、预计多久、要花多少钱』;④兜底:剩余部分切批处理 API(不急的部分)或换备用供应商。设计时就为『必然发生的中断』做准备。",
+      "explain": "检验点:离线任务的设计目标是『任意时刻可中断、可恢复、可对账』。"
+    },
+    "related": ["LP-004", "PY-011", "EN-003", "EN-004"],
+    "doc_refs": ["doc-llm-1"],
+    "sources": [
+      {"name": "OpenAI 官方文档 · Batch API", "url": "https://developers.openai.com/api/docs/guides/batch", "kind": "official", "note": "未逐页抓取,标注;折扣比例版本相关"},
+      {"name": "独立整理", "url": "", "kind": "independent", "note": "批量任务设计为独立整理的工程实践"}
+    ],
+    "verify": {"status": "partial", "checked_date": "2026-09-06", "note": "批处理机制以平台文档为准(版本相关);流程设计为独立整理。"}
+  }
+]

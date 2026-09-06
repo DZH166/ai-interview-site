@@ -1,0 +1,46 @@
+{
+  "type": "aiiv-records",
+  "exported_at": "2026-09-06T01:50:00.000Z",
+  "_comment": "个人记录备份示例:在网站的『维护』页导出得到同结构文件。导入时按题目 ID 合并,不会清空现有记录。可直接用本文件测试导入功能。",
+  "records": {
+    "v": 2,
+    "questions": {
+      "PY-002": {
+        "status": "ok",
+        "fav": true,
+        "note": "生成器一次性消费:sum 两次,第二次为 0。面试时主动提这个坑。",
+        "viewedAt": 1757100000000,
+        "practiceCount": 2,
+        "lastPracticedAt": 1757100000000,
+        "lastResult": "mock"
+      },
+      "RG-004": {
+        "status": "review",
+        "fav": false,
+        "note": "四类故障要背:语料没有/检索没中/组织乱/生成不遵循。排查先看检索原文里有没有答案。",
+        "viewedAt": 1757100000000,
+        "practiceCount": 1,
+        "lastPracticedAt": 1757100000000,
+        "lastResult": "mock"
+      }
+    },
+    "mock": {
+      "rounds": [
+        {
+          "ts": 1757100000000,
+          "config": { "topics": ["python-backend", "rag"], "diffs": ["basic", "intermediate"], "count": 2 },
+          "items": [
+            { "qid": "PY-002", "title": "什么是生成器(generator)?为什么处理大文件和 LLM 流式输出时要用它?", "self": "yield 暂停恢复,内存 O(1),适合流式", "revealed": true, "mark": "ok" },
+            { "qid": "RG-004", "title": "RAG 系统明明接了知识库,为什么回答还是错?请给出一套分类定位与排查方法。", "self": "", "revealed": false, "mark": "" }
+          ]
+        }
+      ]
+    },
+    "ui": {
+      "lastHash": "#/study/RG-004",
+      "browse": { "topic": "", "diff": "", "type": "", "status": "", "fav": false, "kw": "", "qid": "RG-004" },
+      "docPos": { "docId": "doc-rag-1", "secId": "sec-4", "y": 1200 },
+      "search": { "q": "切分", "scope": "", "topic": "" }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 面试学习站</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+  <header class="site-head">
+    <div class="head-inner">
+      <a class="brand" href="#/home">🤖 AI 面试学习站</a>
+      <nav class="site-nav">
+        <a class="nav-link" data-view="home" href="#/home">首页</a>
+        <a class="nav-link" data-view="browse" href="#/browse">练习</a>
+        <a class="nav-link" data-view="docs" href="#/docs">文档阅读</a>
+        <a class="nav-link" data-view="mock" href="#/mock">自测</a>
+        <a class="nav-link" data-view="review" href="#/review">复习</a>
+        <a class="nav-link" data-view="maintain" href="#/maintain">维护</a>
+      </nav>
+      <form id="global-search" class="global-search">
+        <input id="global-search-input" class="input" placeholder="全文搜索:题目 / 解析 / 笔记…" autocomplete="off">
+      </form>
+      <button class="theme-toggle" id="theme-toggle" title="切换暗色模式">🌙</button>
+    </div>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <footer class="site-foot">
+    <div>内容为结合公开资料的独立整理,题目均标注核查状态与出处;来源与许可见<a href="#/maintain">维护页</a>。个人记录仅保存在本机浏览器。</div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/markdown.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/views-practice.js"></script>
+  <script src="js/views-knowledge.js"></script>
+  <script src="js/views-review.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

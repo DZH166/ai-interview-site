@@ -1,0 +1,26 @@
+{
+  "built_at": "2026-09-06",
+  "questions_total": 306,
+  "by_topic": {
+    "agent": 58,
+    "advanced": 22,
+    "rag": 70,
+    "llm-prompt": 44,
+    "python-backend": 44,
+    "engineering": 45,
+    "fundamentals": 23
+  },
+  "by_difficulty": {
+    "basic": 52,
+    "intermediate": 164,
+    "advanced": 90
+  },
+  "by_verify_status": {
+    "verified": 238,
+    "partial": 68
+  },
+  "docs_total": 12,
+  "sources_total": 26,
+  "candidates_total": 150,
+  "data_js_kb": 2004.8
+}
