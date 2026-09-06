@@ -1,0 +1,45 @@
+name: validate-bank
+
+on:
+  push:
+    paths:
+      - 'data/**'
+      - 'tools/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'tools/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 校验题库(10 要素完整性 / 引号纪律 / ID 唯一)
+        run: python tools/validate_bank.py
+
+      - name: 重复度检测(n-gram 相似度)
+        run: python tools/dedup_check.py
+
+      - name: 引号修复幂等性(应为 no-op)
+        run: |
+          python tools/fix_quotes.py
+          git diff --exit-code -- data/ || {
+            echo '::error::fix_quotes.py 产生了改动,说明 data/ 存在未按规范转义的引号';
+            exit 1;
+          }
+
+      - name: 构建可复现(data.js 应无 diff)
+        run: |
+          python tools/build.py
+          git diff --exit-code -- app/data.js app/sw.js || {
+            echo '::error::build.py 产生了改动,仓库内的 app/data.js 或 sw.js 与 data/ 不同步,请重新构建并提交';
+            exit 1;
+          }

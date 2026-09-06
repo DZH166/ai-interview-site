@@ -103,3 +103,10 @@ FastAPI 流式与取消/Python asyncio-task/OpenAI function-calling 与 structur
 - [x] 升级 1: 复习中心——今日复习队列(智能排序)+ 错题本(mock weak 自动入册)+ 8 个 tab
 - [ ] 升级 2: 文档更新与新章节
 - [ ] 升级 3~5: 后续优化
+
+## 上线与自进化(2026-09-06)
+- [x] GitHub 上线:https://github.com/DZH166/ai-interview-site(main 分支,95+ 文件);Pages:https://dzh166.github.io/ai-interview-site/(根 index.html 跳转 ./app/);仓库 topics 已设置
+- [x] PWA:app/manifest.webmanifest + app/sw.js(导航/数据网络优先,静态缓存优先后台更新;CACHE_VERSION 由 build.py 按 data.js 内容哈希盖章)+ 3 个图标(icons/);index.html 注册 SW(仅 https/localhost)
+- [x] CI:.github/workflows/validate.yml —— push/PR 自动跑 validate_bank + dedup_check + fix_quotes 幂等 + build 可复现(data.js/sw.js 无 diff)
+- [x] 纠错渠道:.github/ISSUE_TEMPLATE/question-feedback.yml(题号/类型/描述/出处)+ config.yml
+- [ ] 后续:PWA 安装与离线冒烟验证(线上);统计图表;Anki 导出

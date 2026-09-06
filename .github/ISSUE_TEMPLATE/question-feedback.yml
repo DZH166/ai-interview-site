@@ -1,0 +1,37 @@
+name: 题库纠错
+description: 发现某道题答案有误、表述不清或出处不对,请在这里反馈
+title: "[纠错] 题目编号 + 简述"
+labels: ["content-fix"]
+body:
+  - type: input
+    id: question-id
+    attributes:
+      label: 题目编号
+      description: 题目详情页左上角的编号,如 RG-012、AG-005
+      placeholder: 例如 RG-012
+    validations:
+      required: true
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: 问题类型
+      options:
+        - 答案或原理有错误
+        - 表述不清楚 / 有歧义
+        - 出处或核查状态不对
+        - 例子或代码不能运行
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: 问题描述
+      description: 哪里不对?如果方便,请给出正确说法或可靠出处链接
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: 参考出处(可选)
+      description: 官方文档、论文或仓库链接

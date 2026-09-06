@@ -1,8 +1,14 @@
 # AI 面试学习站(AI 应用开发与 Agent 方向)
 
+![validate-bank](https://github.com/DZH166/ai-interview-site/actions/workflows/validate.yml/badge.svg)
+
 一个**纯本地、离线可用**的中文面试学习网站:题库练习 + 文档阅读检索 + 模拟面试,个人记录保存在本机浏览器。面向 AI 应用开发 / Agent 方向的实习与校招。
 
 **在线访问(GitHub Pages):<https://dzh166.github.io/ai-interview-site/>** —— 无需安装任何东西,打开即用;个人学习记录保存在你自己的浏览器里,不会上传。
+
+**安装为桌面/手机应用(PWA):** 用 Chrome / Edge 打开上面的在线地址,地址栏右侧点「安装」;手机上用浏览器菜单里的「添加到主屏幕」。安装后**完全离线可用**,306 题与文档全部缓存在本地。
+
+**发现题目有错?** [提一个纠错 issue](https://github.com/DZH166/ai-interview-site/issues/new?template=question-feedback.yml),附上题号即可,会尽快核实修正。题库数据在每次推送时由 CI 自动校验(要素完整性、重复度、构建一致性)。
 
 ## 快速开始
 

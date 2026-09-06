@@ -61,6 +61,15 @@ def main():
                                             separators=(",", ":")) + ";\n")
     out = ROOT / "app" / "data.js"
     out.write_text(js, encoding="utf-8")
+    # Service Worker 缓存版本:按 data.js 内容哈希盖章,数据一变缓存即失效重建
+    import hashlib
+    stamp = hashlib.md5(out.read_bytes()).hexdigest()[:12]
+    sw = ROOT / "app" / "sw.js"
+    sw.write_text(
+        re.sub(r"const CACHE_VERSION = '[^']*';",
+               f"const CACHE_VERSION = 'bank-{stamp}';",
+               sw.read_text(encoding="utf-8")),
+        encoding="utf-8")
     # 统计
     by_topic, by_diff, by_status = {}, {}, {}
     for q in questions:

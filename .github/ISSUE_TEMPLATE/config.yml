@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用问题 / 功能建议
+    about: 网站使用上的问题或新功能想法,也欢迎在这里提出
+    url: https://github.com/DZH166/ai-interview-site/discussions
