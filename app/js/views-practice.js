@@ -373,11 +373,28 @@ const StudyView = (() => {
           ${QRender.section('sources', '出处与核查状态', QRender.verifyBlock(q), false)}
         </div>
         <div class="q-note-box">
-          <label class="note-label">我的笔记(参与全文搜索)</label>
+          <label class="note-label">为什么没掌握(可多选,排进今日复习的理由)</label>
+          <div class="reason-group" id="reason-group">
+            ${[['concept', '概念不清'], ['prereq', '前置缺失'], ['causal', '因果混淆'], ['exec', '代码执行误判'], ['edge', '边界没考虑'], ['expression', '表达不完整']].map(([v, label]) => {
+              const on = (Store.rec(qid).reviewReasons || []).includes(v);
+              return `<label class="chk"><input type="checkbox" data-reason="${v}" ${on ? 'checked' : ''}> ${label}</label>`;
+            }).join('')}
+          </div>
+          <label class="note-label" style="margin-top:8px">我的笔记(参与全文搜索)</label>
           <textarea id="note-area" placeholder="写下你的理解、易错点或自己的例子……">${esc(Store.rec(qid).note || '')}</textarea>
         </div>
       </div>`;
     wire(root, qid);
+    $$('[data-reason]', root).forEach(cb => {
+      cb.addEventListener('change', () => {
+        const r = Store.rec(qid);
+        const set = new Set(r.reviewReasons || []);
+        cb.checked ? set.add(cb.dataset.reason) : set.delete(cb.dataset.reason);
+        r.reviewReasons = [...set];
+        r._updatedAt = Date.now();
+        Store.saveNow();
+      });
+    });
     revealAnchor(root, anchor);
   }
 

@@ -1,0 +1,141 @@
+{
+  "projects": [
+    {
+      "id": "proj-a-model-client",
+      "name": "项目A:可靠的模型调用层",
+      "goal": "把『调一次模型』写成生产可用的函数:校验/错误分类/超时/有限重试/日志,全部本地可运行(fake model)。",
+      "prereq": [
+        "阶段3(PY-003/PY-022)",
+        "阶段4(LP-003)"
+      ],
+      "concepts": [
+        "c-async",
+        "c-failure-classify"
+      ],
+      "questions": [
+        "PY-003",
+        "PY-008",
+        "PY-023",
+        "LP-003",
+        "LP-004"
+      ],
+      "files": [
+        {
+          "path": "projects/proj_a/model_client.py",
+          "desc": "主实现:fake 与真实 API 同签名"
+        }
+      ],
+      "run": "python projects/proj_a/model_client.py",
+      "expected": "六种场景逐一打印:正常返回/拒答终态/截断终态/临时错误退避重试后成功/schema 错误回喂/业务错误终态;最后打印调用统计。",
+      "debug_case": "把 MAX_RETRY 改成 0:临时错误场景立即失败——体会『重试预算换可用性』的取舍。",
+      "extensions": [
+        "接入真实 API(自备 key,可选)",
+        "加 Semaphore 限流",
+        "把日志换成结构化 JSON(PY-009)"
+      ],
+      "deliverable": "能解释:六类情况为什么分别重试/终止;fake 与真实 API 的差异点。"
+    },
+    {
+      "id": "proj-b-streaming",
+      "name": "项目B:流式响应与取消",
+      "goal": "用生成器模拟逐块输出,观察 chunk 边界、取消时机与资源清理;理解 HTTP/SSE/生成器三层。",
+      "prereq": [
+        "项目A",
+        "PY-004"
+      ],
+      "concepts": [
+        "c-streaming",
+        "c-generator"
+      ],
+      "questions": [
+        "PY-002",
+        "PY-004",
+        "PY-003"
+      ],
+      "files": [
+        {
+          "path": "projects/proj_b/stream_demo.py",
+          "desc": "同步生成器分块 + async 版本 + 取消演示"
+        }
+      ],
+      "run": "python projects/proj_b/stream_demo.py",
+      "expected": "逐块打印(带时间戳);取消后打印『清理执行』;最后输出 chunk 数与字符数(chunk≠token)。",
+      "debug_case": "把生成器里的 await 换成 time.sleep:取消永远到不了 except CancelledError——对照 PY-004 的取消语义。",
+      "extensions": [
+        "接入 FastAPI StreamingResponse(PY-004)",
+        "加 SSE 格式头",
+        "客户端断开场景"
+      ],
+      "deliverable": "能解释:chunk 与 token 的关系、取消发生在哪一层、finally 为什么必须清理。"
+    },
+    {
+      "id": "proj-c-mini-rag",
+      "name": "项目C:小型文档问答(本地检索)",
+      "goal": "用 3~5 段本地文档跑通 RAG 全流程:切分/检索/证据组织/引用/拒答;再做小评测集对比改动。",
+      "prereq": [
+        "阶段5(RG-001/RG-020)"
+      ],
+      "concepts": [
+        "c-rag-pipeline",
+        "c-retrieval",
+        "c-rag-eval"
+      ],
+      "questions": [
+        "RG-001",
+        "RG-005",
+        "RG-020",
+        "RG-059",
+        "RG-067"
+      ],
+      "files": [
+        {
+          "path": "projects/proj_c/mini_rag.py",
+          "desc": "可解释的本地检索(词重合),含评测集与拒答逻辑"
+        }
+      ],
+      "run": "python projects/proj_c/mini_rag.py",
+      "expected": "评测集逐条打印:query/命中文档/是否该拒答;最后输出 recall 汇总;『库里没有』的 query 正确触发拒答。",
+      "debug_case": "把 top_k 从 2 改成 1:可回答的问题开始拒答——观察证据预算与召回的权衡(RG-018)。",
+      "extensions": [
+        "接入向量检索(本地模型或自备 API,可选)",
+        "加 rerank 对照",
+        "把评测集扩到 20 条"
+      ],
+      "deliverable": "能解释:每一层的失败(库里没有/检索漏/噪声/不遵循)分别怎么被发现和修。"
+    },
+    {
+      "id": "proj-d-stateful-agent",
+      "name": "项目D:有状态的工具调用 Agent",
+      "goal": "在两轮工具循环上扩成多轮有状态 Agent:两个以上工具、状态、护栏、失败恢复、检查点。",
+      "prereq": [
+        "阶段6 循环",
+        "项目A"
+      ],
+      "concepts": [
+        "c-agent-loop",
+        "c-agent-failure"
+      ],
+      "questions": [
+        "AG-001",
+        "AG-002",
+        "AG-043",
+        "AG-058"
+      ],
+      "files": [
+        {
+          "path": "projects/proj_d/agent.py",
+          "desc": "多轮循环+状态+检查点(本地 fake model)"
+        }
+      ],
+      "run": "python projects/proj_d/agent.py",
+      "expected": "多步任务(查天气→换算单位→生成报告)完成;未知工具/异常参数/重复动作各分支按规则处理;中断后从检查点恢复。",
+      "debug_case": "删除参数校验:模型传入非法参数直接崩——对照 AG-043 的失败分类,体会护栏在哪一层。",
+      "extensions": [
+        "接入真实 LLM 决策(自备 key,可选)",
+        "加人工确认分支",
+        "把轨迹写成结构化日志"
+      ],
+      "deliverable": "能画出模型/应用/工具的边界图,并从轨迹日志解释每一步是谁执行的。"
+    }
+  ]
+}

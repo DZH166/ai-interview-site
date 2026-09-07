@@ -5,8 +5,9 @@ const ReviewView = (() => {
   let tab = 'today';
 
   /* ---- 今日复习队列 ----
-     规则:状态为「待复习」或「还不熟」的题进入队列;
-     在复习中标记「基本掌握」后自然移出,标「还不熟/待复习」保留。不自动假定掌握。 */
+     规则(可解释):①状态「待复习」或「还不熟」入队;②有复盘原因的题加「未消化」标记排前;
+     ③标「基本掌握」自然移出,「还不熟/待复习」保留——不自动假定掌握。
+     (间隔安排是启发式提示,不覆盖手动状态。) */
   function getTodayQueue() {
     const qs = Data.allQuestions();
     return qs.filter(q => {
@@ -14,7 +15,9 @@ const ReviewView = (() => {
       return r.status === 'review' || r.status === 'weak';
     }).sort((a, b) => {
       const ra = Store.rec(a.id), rb = Store.rec(b.id);
-      // 待复习 > 还不熟;同级按最久未练优先
+      const pa = (ra.reviewReasons || []).length > 0 ? 0 : 1;
+      const pb = (rb.reviewReasons || []).length > 0 ? 0 : 1;
+      if (pa !== pb) return pa - pb;                       // 有复盘原因的排前
       if (ra.status !== rb.status) return ra.status === 'review' ? -1 : 1;
       return (ra.lastPracticedAt || 0) - (rb.lastPracticedAt || 0);
     });
@@ -90,6 +93,7 @@ const ReviewView = (() => {
               ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
               ${QRender.badge(Data.diffLabel(q.difficulty), 'b-diff-' + q.difficulty)}
               ${QRender.badge(st.label, st.cls)}
+              ${tab === 'today' && (r.reviewReasons || []).length ? `<span class="badge b-tag">未消化 ${r.reviewReasons.length}</span>` : ''}
               ${tab === 'today' && r.lastPracticedAt ? `<span class="muted" style="font-size:12px">上次练习 ${fmtTime(r.lastPracticedAt)}</span>` : ''}
               ${tab === 'note' && r.note ? `<div class="ri-note">${esc(r.note.slice(0, 120))}${r.note.length > 120 ? '…' : ''}</div>` : ''}
               ${tab === 'recent' && r.viewedAt ? `<span class="muted">${fmtTime(r.viewedAt)}</span>` : ''}

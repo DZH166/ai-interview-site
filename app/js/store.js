@@ -326,6 +326,10 @@ const Store = (() => {
       });
       if (r.lastResult !== undefined && typeof r.lastResult !== 'string') errs.push(`题目记录 ${qid}: lastResult 必须是字符串`);
       if (r.contentRev !== undefined && typeof r.contentRev !== 'string') errs.push(`题目记录 ${qid}: contentRev 必须是字符串`);
+      if (r.reviewReasons !== undefined) {
+        const OK = ['concept', 'prereq', 'causal', 'exec', 'edge', 'expression'];
+        if (!Array.isArray(r.reviewReasons) || r.reviewReasons.some(x => !OK.includes(x))) errs.push(`题目记录 ${qid}: reviewReasons 非法`);
+      }
     });
     const mock = incoming.mock;
     if (mock !== undefined) {
@@ -467,6 +471,12 @@ const Store = (() => {
       if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
       if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
+      if (Array.isArray(inc.reviewReasons) && inc.reviewReasons.length) {
+        const set = new Set(cur.reviewReasons || []);
+        let added = false;
+        inc.reviewReasons.forEach(x => { if (!set.has(x)) { set.add(x); added = true; } });
+        if (added) { cur.reviewReasons = [...set]; adopted = true; }
+      }
       if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;
       qMerged++;
@@ -654,6 +664,12 @@ const Store = (() => {
       if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
       if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
+      if (Array.isArray(inc.reviewReasons) && inc.reviewReasons.length) {
+        const set = new Set(cur.reviewReasons || []);
+        let added = false;
+        inc.reviewReasons.forEach(x => { if (!set.has(x)) { set.add(x); added = true; } });
+        if (added) { cur.reviewReasons = [...set]; adopted = true; }
+      }
       if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;
       qMerged++;

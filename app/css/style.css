@@ -745,3 +745,6 @@ textarea:focus-visible {
 /* ---- 专项练习(代码预测/找错修复/条件变化) ---- */
 .path-drill { border-top: 1px dashed var(--line); padding: 8px 0 2px; margin-top: 6px; }
 .path-drill-q { font-size: 13.5px; margin-bottom: 4px; overflow-wrap: anywhere; }
+
+/* ---- 复盘原因 ---- */
+.reason-group { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 4px; }

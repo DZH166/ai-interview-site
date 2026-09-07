@@ -412,13 +412,33 @@ const PathView = (() => {
         <h3>⚪ ${esc(path.optional.name)}</h3>
         <div class="rel-row">${(path.optional.questions || []).map(id => Data.question(id)
           ? `<a class="rel-link" href="#/study/${id}">${id}</a>` : '').join(' ')}</div>
-      </div>` : ''}`;
+      </div>` : ''}
+      ${renderProjects()}`;
     $$('.path-stage-actions [data-done]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.done, true); render(root); toast('已确认本阶段理解;可随时取消'); });
     });
     $$('.path-stage-actions [data-undone]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.undone, false); render(root); });
     });
+  }
+
+
+  /* 动手项目(来自 data/projects.json):每个项目展示目标/前置/运行/预期/排查/扩展/交付标准 */
+  function renderProjects() {
+    const projs = (window.APP_DATA.projects && window.APP_DATA.projects.projects) || [];
+    if (!projs.length) return '';
+    return `<div style="margin-top:18px"><h2 style="font-size:17px;margin:0 0 10px">🛠 动手项目(本地可运行,无需 API)</h2>
+      ${projs.map(pr => `
+      <details class="path-exercise proj-card">
+        <summary><b>${esc(pr.name)}</b> <span class="muted small">${esc((pr.questions || []).join(' · '))}</span></summary>
+        <p><b>目标:</b>${esc(pr.goal)}</p>
+        <p class="muted small"><b>前置:</b>${esc((pr.prereq || []).join('; '))}</p>
+        <pre class="code"><code>${esc(pr.run)}</code></pre>
+        <p><b>预期输出:</b>${esc(pr.expected)}</p>
+        <p><b>排查案例:</b>${esc(pr.debug_case)}</p>
+        <p class="muted small"><b>扩展挑战:</b>${esc((pr.extensions || []).join('; '))}</p>
+        <p><b>完成标准:</b>${esc(pr.deliverable)}</p>
+      </details>`).join('')}</div>`;
   }
 
   /* 变式检查:问题直接可见;参考答案与原因默认折叠(先自己回答再展开) */
