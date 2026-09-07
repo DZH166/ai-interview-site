@@ -117,6 +117,166 @@ const Store = (() => {
   }
 
   /* 校验记录对象结构,返回错误列表(空数组=通过)。不修改任何状态。 */
+  /* ---- 题目 schema 校验(共享数据层规则)----
+     普通题库导入(MaintainView)、资料备份、完整备份、启动读取隔离
+     全部使用同一份规则。返回 {errors, warnings};errors 非空的题不允许进入存储。 */
+  const Q_ID_RE = /^[A-Z]{2,4}-\d{3}$/;
+  const Q_TYPES = ['concept', 'principle', 'comparison', 'code', 'debug', 'scenario'];
+  const Q_DIFFS = ['basic', 'intermediate', 'advanced'];
+  const Q_VERIFY = ['verified', 'partial', 'todo'];
+  const Q_SRC_KINDS = ['official', 'paper', 'repo', 'independent', 'web'];
+  const MOJI_RE = /\ufffd|锟斤拷|烫烫|Ã[^\x00-\x7F]/;
+
+  function topicIds() {
+    return ((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.topics) || []).map(t => t.id);
+  }
+
+  function validateQuestion(q, seen, existing) {
+    const errs = [], warns = [];
+    const push = m => errs.push(`${(q && q.id) || '?'}: ${m}`);
+    if (!q || typeof q !== 'object' || Array.isArray(q)) { errs.push('题不是对象'); return { errs, warns }; }
+    if (typeof q.id !== 'string' || !Q_ID_RE.test(q.id)) push('题号不符合 XX-NNN');
+    if (seen.has(q.id)) push('编号重复(同批或已存在)');
+    if (typeof q.id === 'string') seen.add(q.id);
+    if (!Q_TYPES.includes(q.type)) push(`type 非法(${JSON.stringify(q.type ?? null)})`);
+    if (!Q_DIFFS.includes(q.difficulty)) push(`difficulty 非法(${JSON.stringify(q.difficulty ?? null)})`);
+    if (!topicIds().includes(q.topic)) push(`topic 非法(${JSON.stringify(q.topic ?? null)})`);
+    ['title', 'answer', 'plain', 'deep', 'example', 'interview'].forEach(k => {
+      if (typeof q[k] !== 'string' || !q[k].trim()) push(`缺字段或非文本 ${k}`);
+    });
+    if (!Array.isArray(q.tags) || !q.tags.length) push('tags 需为非空数组');
+    else q.tags.forEach((t, i) => { if (typeof t !== 'string') push(`tags[${i}] 非文本`); });
+    if (!Array.isArray(q.followups) || !q.followups.length) push('followups 需为非空数组');
+    else q.followups.forEach((f, j) => { if (!f || !String(f.q || '').trim() || !String(f.a || '').trim()) push(`followups[${j}] 缺 q/a`); });
+    if (!Array.isArray(q.pitfalls) || !q.pitfalls.length) push('pitfalls 需为非空数组');
+    else q.pitfalls.forEach((p, j) => { if (typeof p !== 'string' || !p.trim()) push(`pitfalls[${j}] 非文本`); });
+    if (!q.check || typeof q.check !== 'object' || !String(q.check.q || '').trim() || !String(q.check.a || '').trim()) push('check 缺 q/a');
+    ['prerequisites', 'related', 'doc_refs'].forEach(k => {
+      if (q[k] !== undefined && !Array.isArray(q[k])) push(`${k} 需为数组`);
+    });
+    if (!Array.isArray(q.sources) || !q.sources.length) push('缺 sources');
+    else q.sources.forEach((s, j) => {
+      if (!s || typeof s !== 'object') push(`sources[${j}] 非对象`);
+      else {
+        if (!Q_SRC_KINDS.includes(s.kind)) push(`sources[${j}].kind 非法(${JSON.stringify(s.kind ?? null)})`);
+        if (typeof s.name !== 'string' || !s.name.trim()) push(`sources[${j}].name 缺失`);
+        if (s.url !== undefined && s.url !== '' && !/^https?:\/\//.test(s.url)) push(`sources[${j}].url 需为 http(s) 链接`);
+      }
+    });
+    if (!q.verify || typeof q.verify !== 'object' || !Q_VERIFY.includes(q.verify.status)) {
+      push(`verify.status 非法(${JSON.stringify((q.verify || {}).status ?? null)})`);
+    }
+    if (MOJI_RE.test(JSON.stringify(q))) push('疑似乱码(锟斤拷/烫烫/替换符)');
+    return { errs, warns };
+  }
+
+  /* 校验一批题目。existingIds:视为已存在的编号集合(默认当前全库)。 */
+  function validateQuestions(arr, existingIds) {
+    const existing = existingIds || new Set(
+      (((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id))
+        .concat(extraBankLoad().map(q => q.id))
+    );
+    const seen = new Set();
+    const errors = [], warnings = [];
+    (arr || []).forEach(q => {
+      const { errs, warns } = validateQuestion(q, seen, existing);
+      errors.push(...errs); warnings.push(...warns);
+    });
+    return { errors, warnings };
+  }
+
+  /* 校验导入资料(用户文档)条目 */
+  function validateDoc(d) {
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return '资料条目不是对象';
+    if (typeof d.id !== 'string' || !/^udoc-\d+$/.test(d.id)) return '资料 id 非法(需 udoc-数字)';
+    if (typeof d.title !== 'string' || !d.title.trim()) return '资料缺 title';
+    if (d.parsed === false) {
+      if (d.text !== undefined && d.text !== '' && typeof d.text !== 'string') return '资料 text 需为字符串';
+    } else if (typeof d.text !== 'string' || !d.text.trim()) return '资料缺正文 text';
+    if (d.ts !== undefined && !(typeof d.ts === 'number' && isFinite(d.ts))) return '资料 ts 需为数字';
+    return null;
+  }
+
+  /* ---- 启动隔离:历史坏扩展数据不进入内存,原始内容保留在隔离键,可导出修复 ---- */
+  const KEY_QUARANTINE = PREFIX + 'quarantine';
+  function quarantineAdd(kind, reason, raw) {
+    let arr = [];
+    try { arr = JSON.parse(localStorage.getItem(KEY_QUARANTINE) || '[]'); if (!Array.isArray(arr)) arr = []; } catch (e) { arr = []; }
+    arr.push({ kind, reason, raw, ts: Date.now() });
+    try { localStorage.setItem(KEY_QUARANTINE, JSON.stringify(arr)); } catch (e) { /* 隔离写入失败不影响主流程 */ }
+  }
+  function quarantineCount() {
+    try { const a = JSON.parse(localStorage.getItem(KEY_QUARANTINE) || '[]'); return Array.isArray(a) ? a.length : 0; }
+    catch (e) { return 0; }
+  }
+  function quarantineExport() {
+    try { return JSON.stringify({ type: 'aiiv-quarantine', v: 1, items: JSON.parse(localStorage.getItem(KEY_QUARANTINE) || '[]') }, null, 2); }
+    catch (e) { return '[]'; }
+  }
+  /* 校验后的扩展题库加载:合法的返回,坏的移入隔离(保留原始),不进入内存 */
+  function loadExtraBankSafe() {
+    let raw = null;
+    try { raw = localStorage.getItem(KEY_EXTRA); } catch (e) { return []; }
+    if (!raw) return [];
+    let obj;
+    try { obj = JSON.parse(raw); } catch (e) {
+      quarantineAdd('bank-extra', 'JSON 解析失败', raw);
+      localStorage.removeItem(KEY_EXTRA);
+      return [];
+    }
+    const qs = Array.isArray(obj && obj.questions) ? obj.questions : null;
+    if (!qs) {
+      quarantineAdd('bank-extra', 'questions 字段缺失', raw);
+      localStorage.removeItem(KEY_EXTRA);
+      return [];
+    }
+    const seen = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
+    const good = [];
+    let dirty = false;
+    qs.forEach(q => {
+      const { errs } = validateQuestion(q, new Set(), seen);
+      if (errs.length) {
+        quarantineAdd('bank-extra', errs.slice(0, 3).join('; '), JSON.stringify(q));
+        dirty = true;
+      } else {
+        good.push(q);
+        seen.add(q.id);
+      }
+    });
+    if (dirty) {
+      try { localStorage.setItem(KEY_EXTRA, JSON.stringify({ v: 1, saved_at: Date.now(), questions: good })); } catch (e) { /* 保持原样 */ }
+    }
+    return good;
+  }
+  /* 校验后的用户资料加载(同上) */
+  function loadUserDocsSafe() {
+    let raw = null;
+    try { raw = localStorage.getItem(KEY_USERDOCS); } catch (e) { return []; }
+    if (!raw) return [];
+    let arr;
+    try { arr = JSON.parse(raw); } catch (e) {
+      quarantineAdd('userdocs', 'JSON 解析失败', raw);
+      localStorage.removeItem(KEY_USERDOCS);
+      return [];
+    }
+    if (!Array.isArray(arr)) {
+      quarantineAdd('userdocs', '不是数组', raw);
+      localStorage.removeItem(KEY_USERDOCS);
+      return [];
+    }
+    const good = [];
+    let dirty = false;
+    arr.forEach(d => {
+      const err = validateDoc(d);
+      if (err) { quarantineAdd('userdocs', err, JSON.stringify(d)); dirty = true; }
+      else good.push(d);
+    });
+    if (dirty) {
+      try { localStorage.setItem(KEY_USERDOCS, JSON.stringify(good)); } catch (e) { /* 保持原样 */ }
+    }
+    return good;
+  }
+
   function validateRecordsObj(incoming) {
     const errs = [];
     if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
@@ -136,6 +296,7 @@ const Store = (() => {
         if (r[k] !== undefined && !isTs(r[k])) errs.push(`题目记录 ${qid}: ${k} 必须是非负数字`);
       });
       if (r.lastResult !== undefined && typeof r.lastResult !== 'string') errs.push(`题目记录 ${qid}: lastResult 必须是字符串`);
+      if (r.contentRev !== undefined && typeof r.contentRev !== 'string') errs.push(`题目记录 ${qid}: contentRev 必须是字符串`);
     });
     const mock = incoming.mock;
     if (mock !== undefined) {
@@ -176,8 +337,10 @@ const Store = (() => {
     let obj;
     try { obj = JSON.parse(jsonText); } catch (e) { throw new Error('不是合法的 JSON 文件'); }
     if (!obj || typeof obj !== 'object') throw new Error('格式不正确:应为备份 JSON 对象');
-    if (obj.type && !['aiiv-records', 'aiiv-full'].includes(obj.type)) {
-      throw new Error(`备份类型不匹配:${obj.type}(本入口接受 aiiv-records / aiiv-full)`);
+    if (obj.type && !['aiiv-records'].includes(obj.type)) {
+      throw new Error(obj.type === 'aiiv-full'
+        ? '这是完整备份:请用「导入完整备份」入口,一次恢复记录+题库+资料'
+        : `备份类型不匹配:${obj.type}(本入口接受 aiiv-records)`);
     }
     if (obj.v !== undefined && obj.v !== 1 && obj.v !== 2) {
       throw new Error(`不支持的备份版本:v${obj.v}`);
@@ -196,24 +359,33 @@ const Store = (() => {
       const cur = merged.questions[qid] ? JSON.parse(JSON.stringify(merged.questions[qid]))
         : { status: '', fav: false, note: '', viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 };
       const incAt = inc._updatedAt || 0, curAt = cur._updatedAt || 0;
-      /* fav:布尔或,保留 false 的真实语义 */
-      if (inc.fav === true) cur.fav = true;
+      let adopted = false;
       /* 计数与时间戳:取较大(重复导入幂等) */
-      ['viewedAt', 'practiceCount', 'lastPracticedAt', '_updatedAt'].forEach(k => {
-        if (typeof inc[k] === 'number' && inc[k] > (cur[k] || 0)) cur[k] = inc[k];
+      ['viewedAt', 'practiceCount', 'lastPracticedAt'].forEach(k => {
+        if (typeof inc[k] === 'number' && inc[k] > (cur[k] || 0)) { cur[k] = inc[k]; adopted = true; }
       });
-      /* note:备份只补空;两者都有时按 _updatedAt 新者胜 */
-      if (typeof inc.note === 'string' && inc.note !== '') {
-        if (!cur.note) { cur.note = inc.note; notesUpdated++; }
-        else if (incAt > curAt && inc.note !== cur.note) { cur.note = inc.note; notesUpdated++; }
+      /* 字段级合并规则:
+         - 备份字段「明确存在」且备份记录更新(_updatedAt 更大)→ 采用备份值,包括空串/false(明确清空语义);
+         - 备份字段存在但不是更新(旧备份/同刻)→ 只补空,不覆盖已有值;
+         - 字段缺失 → 完全不动本地值;
+         - fav 的旧备份特例:legacy 备份的 true 仍然恢复收藏(只增不减);取消收藏必须来自带新时间戳的备份;
+         - 未采用任何值时不提升 _updatedAt(不给没用上的数据盖新时间)。 */
+      if (inc.note !== undefined) {
+        if (incAt > curAt) { if (cur.note !== inc.note) { cur.note = inc.note; notesUpdated++; adopted = true; } }
+        else if (!cur.note && inc.note) { cur.note = inc.note; notesUpdated++; adopted = true; }
       }
-      /* status:同样新者胜;无时间戳时只补空 */
-      if (inc.status !== undefined && inc.status !== '') {
-        if (!cur.status) cur.status = inc.status;
-        else if (incAt > curAt) cur.status = inc.status;
+      if (inc.status !== undefined) {
+        if (incAt > curAt) { if (cur.status !== inc.status) { cur.status = inc.status; adopted = true; } }
+        else if (!cur.status && inc.status) { cur.status = inc.status; adopted = true; }
       }
-      /* lastResult 跟随更新的练习时间 */
-      if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) cur.lastResult = inc.lastResult;
+      if (inc.fav !== undefined) {
+        if (incAt > curAt) { if (cur.fav !== inc.fav) { cur.fav = inc.fav; adopted = true; } }
+        else if (inc.fav === true && !cur.fav) { cur.fav = true; adopted = true; }
+      }
+      if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
+      if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
+      else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
+      if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;
       qMerged++;
     });
@@ -245,7 +417,8 @@ const Store = (() => {
     return { qMerged, roundsAdded, notesUpdated };
   }
 
-  /* 导入题库/资料备份。返回 {questionsAdded, docsAdded};失败 throw。 */
+  /* 导入题库/资料备份(整体校验→原子写入→回滚保护)。
+     与普通题库导入不同:备份恢复是全有全无——任何一题/一篇资料不合法,整个文件拒绝。 */
   function importLibrary(jsonText) {
     let obj;
     try { obj = JSON.parse(jsonText); } catch (e) { throw new Error('不是合法的 JSON 文件'); }
@@ -253,18 +426,45 @@ const Store = (() => {
     if (obj.type && !['aiiv-library', 'aiiv-full', 'aiiv-bank'].includes(obj.type)) {
       throw new Error(`备份类型不匹配:${obj.type}(本入口接受 aiiv-library / aiiv-full / aiiv-bank)`);
     }
-    const qs = obj.questions;
-    const docs = obj.docs;
+    if (obj.v !== undefined && obj.v !== 1) throw new Error(`不支持的备份版本:v${obj.v}`);
+    if (obj.type === 'aiiv-full') {
+      throw new Error('这是完整备份:请用「导入完整备份」入口,一次恢复记录+题库+资料');
+    }
+    const qs = obj.questions, docs = obj.docs;
     if (qs === undefined && docs === undefined) throw new Error('备份中没有 questions / docs 数据');
+    /* 整体校验:全部通过才继续(库内已有编号属于幂等恢复场景,跳过而非报错;同批内部重复是真错误) */
+    if (qs !== undefined) {
+      if (!Array.isArray(qs)) throw new Error('questions 需为数组');
+      const hardErrors = [];
+      const seen = new Set();
+      qs.forEach(q => {
+        const r = validateQuestion(q, seen, new Set());
+        r.errs.forEach(e => { if (!e.includes('编号重复')) hardErrors.push(e); });
+      });
+      const batchSeen = new Set();
+      qs.forEach(q => {
+        if (q && typeof q.id === 'string') {
+          if (batchSeen.has(q.id)) hardErrors.push(`${q.id}: 同批内编号重复`);
+          batchSeen.add(q.id);
+        }
+      });
+      if (hardErrors.length) {
+        throw new Error('备份校验未通过,未做任何修改:' + hardErrors.slice(0, 5).join(';') + (hardErrors.length > 5 ? ` 等 ${hardErrors.length} 项` : ''));
+      }
+    }
+    if (docs !== undefined) {
+      if (!Array.isArray(docs)) throw new Error('docs 需为数组');
+      const docErrs = docs.map(validateDoc).filter(Boolean);
+      if (docErrs.length) throw new Error('备份校验未通过,未做任何修改:' + docErrs.slice(0, 5).join(';') + (docErrs.length > 5 ? ` 等 ${docErrs.length} 项` : ''));
+    }
     let questionsAdded = 0, docsAdded = 0;
     let newQ = null, newD = null;
     if (Array.isArray(qs)) {
-      /* 与内置题库和已导入题库查重(store 不依赖 Data:直接读打包数据 + 扩展库) */
       const exist = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
       extraBankLoad().forEach(q => exist.add(q.id));
       newQ = extraBankLoad().slice();
       qs.forEach(q => {
-        if (!q || typeof q !== 'object' || !q.id || exist.has(q.id)) return;
+        if (!q || !q.id || exist.has(q.id)) return;
         newQ.push(q); exist.add(q.id); questionsAdded++;
       });
     }
@@ -272,7 +472,7 @@ const Store = (() => {
       const exist = new Set(userDocsLoad().map(d => d.id));
       newD = userDocsLoad().slice();
       docs.forEach(d => {
-        if (!d || typeof d !== 'object' || !d.id || exist.has(d.id)) return;
+        if (!d || !d.id || exist.has(d.id)) return;
         newD.push(d); exist.add(d.id); docsAdded++;
       });
     }
@@ -293,6 +493,130 @@ const Store = (() => {
       }
     }
     return { questionsAdded, docsAdded };
+  }
+
+  /* 完整备份恢复:一次事务恢复 记录+题库+资料。
+     整体校验 → 三个键按序原子写入(后写失败回滚先写)→ 成功后调用方重建内存与索引。 */
+  function importFull(jsonText) {
+    let obj;
+    try { obj = JSON.parse(jsonText); } catch (e) { throw new Error('不是合法的 JSON 文件'); }
+    if (!obj || typeof obj !== 'object') throw new Error('格式不正确:应为备份 JSON 对象');
+    if (obj.type !== 'aiiv-full') throw new Error(`备份类型不匹配:${obj.type || '(缺失)'}(本入口接受 aiiv-full)`);
+    if (obj.v !== undefined && obj.v !== 1) throw new Error(`不支持的备份版本:v${obj.v}`);
+    /* 记录部分 */
+    const incoming = obj.records;
+    if (!incoming || typeof incoming !== 'object') throw new Error('完整备份缺少 records');
+    const recErrs = validateRecordsObj(incoming);
+    if (recErrs.length) throw new Error('记录校验未通过:' + recErrs.slice(0, 5).join(';'));
+    /* 题库/资料部分 */
+    let newQ = null, newD = null, questionsAdded = 0, docsAdded = 0;
+    if (obj.questions !== undefined) {
+      if (!Array.isArray(obj.questions)) throw new Error('questions 需为数组');
+      const hardErrors = [];
+      const seen = new Set();
+      obj.questions.forEach(q => {
+        const r = validateQuestion(q, seen, new Set());
+        r.errs.forEach(e => { if (!e.includes('编号重复')) hardErrors.push(e); });
+      });
+      const batchSeen = new Set();
+      obj.questions.forEach(q => {
+        if (q && typeof q.id === 'string') {
+          if (batchSeen.has(q.id)) hardErrors.push(`${q.id}: 同批内编号重复`);
+          batchSeen.add(q.id);
+        }
+      });
+      if (hardErrors.length) throw new Error('题库校验未通过:' + hardErrors.slice(0, 5).join(';'));
+      const exist = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
+      extraBankLoad().forEach(q => exist.add(q.id));
+      newQ = extraBankLoad().slice();
+      obj.questions.forEach(q => {
+        if (!q || !q.id || exist.has(q.id)) return;
+        newQ.push(q); exist.add(q.id); questionsAdded++;
+      });
+    }
+    if (obj.docs !== undefined) {
+      if (!Array.isArray(obj.docs)) throw new Error('docs 需为数组');
+      const docErrs = obj.docs.map(validateDoc).filter(Boolean);
+      if (docErrs.length) throw new Error('资料校验未通过:' + docErrs.slice(0, 5).join(';'));
+      const exist = new Set(userDocsLoad().map(d => d.id));
+      newD = userDocsLoad().slice();
+      obj.docs.forEach(d => {
+        if (!d || !d.id || exist.has(d.id)) return;
+        newD.push(d); exist.add(d.id); docsAdded++;
+      });
+    }
+    /* 在副本上合并记录(与 importRecords 相同规则) */
+    const merged = JSON.parse(JSON.stringify(data));
+    let qMerged = 0, roundsAdded = 0, notesUpdated = 0;
+    Object.keys(incoming.questions).forEach(qid => {
+      const inc = incoming.questions[qid];
+      const cur = merged.questions[qid] ? JSON.parse(JSON.stringify(merged.questions[qid]))
+        : { status: '', fav: false, note: '', viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 };
+      const incAt = inc._updatedAt || 0, curAt = cur._updatedAt || 0;
+      let adopted = false;
+      ['viewedAt', 'practiceCount', 'lastPracticedAt'].forEach(k => {
+        if (typeof inc[k] === 'number' && inc[k] > (cur[k] || 0)) { cur[k] = inc[k]; adopted = true; }
+      });
+      if (inc.note !== undefined) {
+        if (incAt > curAt) { if (cur.note !== inc.note) { cur.note = inc.note; notesUpdated++; adopted = true; } }
+        else if (!cur.note && inc.note) { cur.note = inc.note; notesUpdated++; adopted = true; }
+      }
+      if (inc.status !== undefined) {
+        if (incAt > curAt) { if (cur.status !== inc.status) { cur.status = inc.status; adopted = true; } }
+        else if (!cur.status && inc.status) { cur.status = inc.status; adopted = true; }
+      }
+      if (inc.fav !== undefined) {
+        if (incAt > curAt) { if (cur.fav !== inc.fav) { cur.fav = inc.fav; adopted = true; } }
+        else if (inc.fav === true && !cur.fav) { cur.fav = true; adopted = true; }
+      }
+      if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
+      if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
+      else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
+      if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
+      merged.questions[qid] = cur;
+      qMerged++;
+    });
+    const existIds = new Set(merged.mock.rounds.map(r => r.id || roundId(r)));
+    (incoming.mock && incoming.mock.rounds || []).forEach(r => {
+      const id = roundId(r);
+      if (existIds.has(id)) return;
+      const copy = JSON.parse(JSON.stringify(r));
+      copy.id = id;
+      merged.mock.rounds.push(copy);
+      existIds.add(id);
+      roundsAdded++;
+    });
+    merged.mock.rounds.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    merged.mock.rounds = merged.mock.rounds.slice(0, 100);
+    if (!merged.mock.draft && incoming.mock && incoming.mock.draft) merged.mock.draft = incoming.mock.draft;
+    if (incoming.ui && typeof incoming.ui.lastHash === 'string' && incoming.ui.lastHash) merged.ui.lastHash = incoming.ui.lastHash;
+
+    /* 三键原子写入:失败回滚已写键 */
+    const prev = {
+      records: localStorage.getItem(KEY_RECORDS),
+      extra: localStorage.getItem(KEY_EXTRA),
+      docs: localStorage.getItem(KEY_USERDOCS),
+    };
+    const restore = (written) => {
+      try {
+        if (written.includes('docs')) { prev.docs === null ? localStorage.removeItem(KEY_USERDOCS) : localStorage.setItem(KEY_USERDOCS, prev.docs); }
+        if (written.includes('extra')) { prev.extra === null ? localStorage.removeItem(KEY_EXTRA) : localStorage.setItem(KEY_EXTRA, prev.extra); }
+        if (written.includes('records')) { prev.records === null ? localStorage.removeItem(KEY_RECORDS) : localStorage.setItem(KEY_RECORDS, prev.records); }
+      } catch (e) { /* 回滚尽力而为 */ }
+    };
+    const written = [];
+    try {
+      merged.ui.savedAt = Date.now();
+      localStorage.setItem(KEY_RECORDS, JSON.stringify(merged)); written.push('records');
+      if (newQ) { localStorage.setItem(KEY_EXTRA, JSON.stringify({ v: 1, saved_at: Date.now(), questions: newQ })); written.push('extra'); }
+      if (newD) { localStorage.setItem(KEY_USERDOCS, JSON.stringify(newD)); written.push('docs'); }
+    } catch (e) {
+      restore(written);
+      throw new Error('保存失败:本地存储空间不足或写入中断,已回滚,导入未生效');
+    }
+    /* 全部写入成功:替换内存记录状态(题库/资料由调用方 init 重建) */
+    data = merged;
+    return { qMerged, roundsAdded, notesUpdated, questionsAdded, docsAdded };
   }
 
   function clearAll() {
@@ -341,8 +665,10 @@ const Store = (() => {
 
   return {
     STATUS, load, save, saveNow, rec, setStatus, toggleFav, setNote, markViewed, markPracticed,
-    exportRecords, exportLibrary, exportFull, importRecords, importLibrary, clearAll,
-    extraBankLoad, extraBankSave, userDocsLoad, userDocsSave,
+    exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
+    validateQuestions, validateQuestion,
+    quarantineCount, quarantineExport,
+    extraBankLoad, extraBankSave, loadExtraBankSafe, userDocsLoad, userDocsSave, loadUserDocsSafe,
     get data() { return data; }
   };
 })();

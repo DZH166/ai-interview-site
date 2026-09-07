@@ -9,7 +9,8 @@ const Data = (() => {
 
   function init() {
     const base = (window.APP_DATA && window.APP_DATA.questions) || [];
-    const extra = Store.extraBankLoad();
+    /* 启动隔离:坏扩展数据移入隔离键(原始保留,维护页可导出),合法数据才进内存 */
+    const extra = Store.loadExtraBankSafe();
     questions = base.slice();
     /* 用本轮新建的 seen 判重:不能用上一轮的 byId,否则重复 init 会把
        已导入的扩展题误判为冲突而丢弃(init 必须可重入) */
@@ -24,7 +25,7 @@ const Data = (() => {
     });
     byId = new Map(questions.map(q => [q.id, q]));
     docs = ((window.APP_DATA && window.APP_DATA.docs) || []).slice();
-    userDocs = Store.userDocsLoad();
+    userDocs = Store.loadUserDocsSafe();
   }
 
   function allQuestions() { return questions; }
@@ -89,12 +90,14 @@ const QRender = (() => {
     const v = Data.VERIFY[(q.verify && q.verify.status) || 'todo'];
     const st = Data.statusInfo(q.id);
     const r = Store.rec(q.id);
+    const revised = q.content_version && r.contentRev !== q.content_version.rev;
     return `
       <div class="q-meta">
         ${badge(Data.topicName(q.topic), 'b-topic')}
         ${badge(Data.diffLabel(q.difficulty), 'b-diff-' + q.difficulty)}
         ${badge(Data.typeLabel(q.type), 'b-type')}
         ${badge(st.label, st.cls)}
+        ${revised ? '<a class="badge vf-partial" href="#/study/' + esc(q.id) + '" title="内容有更新,建议重做">♻ 有更新</a>' : ''}
         ${r.fav ? badge('★ 已收藏', 'b-fav') : ''}
         ${badge(v.label, v.cls)}
         ${(q.tags || []).map(t => badge(t, 'b-tag')).join('')}

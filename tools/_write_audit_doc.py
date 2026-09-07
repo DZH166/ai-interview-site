@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+"""用 tools/gen_audit_stats.py 的生成数据重写 内容核查记录.md(数字不手写)"""
+import json, pathlib, io, sys
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+S = json.loads((ROOT / 'delivery' / '核查统计.json').read_text(encoding='utf-8'))
+up_ids = [d['id'] for d in S['compare_vs_baseline']['list_up']]
+
+doc = f"""# 内容核查记录
+
+最后更新:{S['generated_at']}(数据可靠性与内容一致性轮)· 覆盖:全部 {S['total']} 题
+统计由 `tools/gen_audit_stats.py` 从实际题库数据 + git 版本对比(基线 {S['baseline_commit'][:7]})生成,数字不手写;明细见《核查统计.json》与《核查状态明细.md》。
+
+## 分类统计(按实际数据生成)
+
+| 类别 | 数量 | 说明 |
+|---|---|---|
+| 正式条目 | {S['total']} | 全部含 10 要素,validate_bank 0 错误 0 警告(结构完整 {S['structure_complete']}) |
+| 内容已对照(verified) | {S['verified_total']} | 有可打开的具体来源页/论文,结论对照来源核对;其中全部带 URL({S['verified_with_url_content_checked']} 条) |
+| 版本相关/部分核查且带来源(partial+URL) | {S['partial_with_url_version_related_or_part']} | 核心机制稳定或有部分来源,具体数值/版本相关已标注 |
+| 缺具体来源(partial 无 URL) | {S['partial_no_source_yet']} | 独立整理或通行实践,暂无单一官方来源页;基础题 {S['basic_without_url']}/{S['basic_total']} |
+| 待核查(todo) | {S['todo']} | 无 |
+| 展示代码实际运行 | 3 处 | PY-003 无锁版+锁版(tests/behavior-tests.js 从题库字段提取运行)、LP-003 五分支 mock(tests/lp003_mock_test.py) |
+
+基础题 {S['basic_total']} 道中,无 URL 的 {S['basic_without_url']} 道为无法用单一官方页面支撑的实践/整理类主题(提示词工程实践、产品/评审/UAT 流程等),如实保持 partial,不填首页凑数。
+
+## 与基线版本的核查状态迁移(脚本对比生成)
+
+- partial → verified:{S['compare_vs_baseline']['to_verified']} 题({', '.join(up_ids)})——附官方文档/论文链接并逐题核对要点
+- verified → partial:{S['compare_vs_baseline']['away_from_verified']} 题——2026-09-06/07 诚实化审查:标注 verified 但无可打开的具体来源页,降级并逐题注明原因(保留全部题目)
+
+## 核查方法与状态定义
+
+- **verified**:结论对照一手来源(官方文档/原论文)核对,来源 URL 在题目「出处与核查状态」给出;计算类结论须实际运行(运行记录注明 Python 版本与日期)。
+- **partial**:①机制稳定但具体数值/版本相关已标注;②独立整理、暂无具体来源页。partial ≠ 内容错误,表示尚未(完全)对照一手来源。
+- **明确声明**:「独立整理」不是事实来源;不得为凑数把首页链接当「已核查」。
+
+## 已在本机实际运行的验证(非纸面)
+
+| 验证 | 环境 | 结果 |
+|---|---|---|
+| PY-003 竞争反例:100 协程×10 次自增,无锁 vs asyncio.Lock | Python 3.13.9 | 10 vs 1000(测试自动从题库提取代码运行) |
+| PY-022 TaskGroup 三场景(子任务失败/自取消/父取消) | Python 3.13.9 | 取消兄弟+抛组 / 不影响兄弟 / 正常传播 |
+| PY-038 except* 分区(未匹配打包成组传播) | Python 3.13.9 | ValueError 分支拿 [1,3];TypeError 残组上抛 |
+| Pydantic 校验器顺序(before→核心→after)与 model_json_schema 缺 additionalProperties | pydantic 2.10.4 | 与文档一致 |
+| 元组可哈希对照 (1,2) / ([1],2) | Python 3.13.9 | True / TypeError |
+| FD-026 KV 显存三档 / EN-009 TPM↔QPS 换算 | Node 断言 | 0.5/4/16 GiB;0.0833 QPS;10.5M TPM |
+| LP-003 五类失败分支(拒答/截断/临时/校验/业务) | openai 2.34.0 异常类 + 桩客户端(mock,非真实调用) | 14 断言全过;拒答 1 次终止;截断不重试;临时错误退避 3 次;回喂错误进第二次请求 |
+
+## 尚未完成(如实列出)
+
+- {S['partial_no_source_yet']} 题(含基础 {S['basic_without_url']} 题)仍缺具体来源页,需继续分批补证与核对;
+- 进阶/高级题的章节练习组未建;长文档内深位置的精确定位(区块内偏移)未实现,当前定位到区块顶部;
+- LP-003/PY-003 之外的题目代码示例大多为演示结构,未逐个运行(已在各题 verify.note 标注);
+- PWA 离线已在 2026-09-06 线上验证过一轮;本轮改动部署后未重新验证。
+"""
+(ROOT / 'delivery' / '内容核查记录.md').write_text(doc, encoding='utf-8', newline='\n')
+print('内容核查记录.md regenerated')

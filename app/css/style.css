@@ -704,3 +704,32 @@ textarea:focus-visible {
 .round-details .qid { font-weight: 600; }
 [data-theme="dark"] .round-details { background: var(--card); border-color: var(--line); }
 [data-theme="dark"] .search-item { color: var(--text); }
+
+/* ---- 学习路径页 ---- */
+.path-head { margin-bottom: 14px; }
+.path-head h1 { font-size: 22px; margin: 0 0 6px; }
+.path-stage { margin-bottom: 14px; }
+.path-stage.path-done { border-color: var(--ok); }
+.path-stage-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.path-stage-head h3 { margin: 0; }
+.path-goals { margin: 6px 0; padding-left: 20px; color: var(--muted); font-size: 13.5px; }
+.path-qs { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.path-q {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: #fff;
+}
+.path-q:hover { border-color: #c9d6f5; }
+.path-q .path-q-title { flex: 1; font-size: 13px; overflow-wrap: anywhere; }
+.path-q.st-ok { background: #f0fdf4; }
+.path-q.st-weak, .path-q.st-review { background: #fffbeb; }
+.path-exercise { margin: 8px 0; }
+.path-exercise summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
+.path-stage-actions { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+[data-theme="dark"] .path-q { background: var(--card); }
+[data-theme="dark"] .path-q.st-ok { background: rgba(5,150,105,.12); }
+[data-theme="dark"] .path-q.st-weak, [data-theme="dark"] .path-q.st-review { background: rgba(217,119,6,.12); }
+
+/* ---- 内容修订提醒 ---- */
+.rev-notice { border: 1px solid var(--warn); background: #fffbeb; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13.5px; }
+.rev-changes { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+[data-theme="dark"] .rev-notice { background: rgba(217,119,6,.12); }

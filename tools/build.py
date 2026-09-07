@@ -27,6 +27,7 @@ def main():
     topics = load_json(ROOT / "data" / "topics.json")
     sources = load_json(ROOT / "data" / "sources.json")
     candidates = load_json(ROOT / "data" / "candidates.json")
+    paths = load_json(ROOT / "data" / "paths.json")
     questions = []
     for f in sorted((ROOT / "data" / "questions").glob("*.json")):
         questions.extend(load_json(f))
@@ -49,12 +50,13 @@ def main():
         })
     docs.sort(key=lambda d: (d["order"], d["id"]))
     data = {
-        "generated_at": "2026-09-06",
+        "generated_at": "2026-09-07",
         "topics": topics,
         "questions": questions,
         "docs": docs,
         "sources": sources,
         "candidates": candidates,
+        "paths": paths,
     }
     js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。 */\n"
           "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,

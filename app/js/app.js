@@ -5,14 +5,20 @@ const App = (() => {
   const routes = {
     home: HomeView, browse: BrowseView, study: StudyView,
     mock: MockView, review: ReviewView, docs: DocsView,
-    search: SearchView, maintain: MaintainView
+    search: SearchView, maintain: MaintainView, path: PathView
   };
   let pendingAnchor = '';
 
   function route() {
     const { view, parts, query } = parseHash();
     const root = $('#view');
-    if (StudyView.cleanup) StudyView.cleanup(); /* 离开旧视图时清理全局键盘监听 */
+    /* 视图退出统一清理(必须在新内容渲染前——输入框/滚动位置还属于旧视图):
+       笔记与自测草稿同步落盘;文档阅读位置按真实滚动保存并注销监听;
+       学习页全局键盘监听注销。 */
+    try { if (MockView.flushDraft) MockView.flushDraft(); } catch (e) {}
+    try { if (StudyView.flushNote) StudyView.flushNote(); } catch (e) {}
+    try { if (DocsView.cleanup) DocsView.cleanup(); } catch (e) {}
+    try { if (StudyView.cleanup) StudyView.cleanup(); } catch (e) {}
     const fn = routes[view] || HomeView;
     try {
       if (view === 'study') {

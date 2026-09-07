@@ -207,15 +207,15 @@
    "PY-022",
    "PY-005"
   ],
-  "answer": "ExceptionGroup(3.11+)打包多个异常(TaskGroup 的并发失败,gather 的聚合),except*(3.11+)按异常类型分别捕获组内的异常:except* ValueError 处理组内所有 ValueError、except* TypeError 处理 TypeError——与普通 except 的区别:except* 可以匹配组内的部分异常(其余继续传播),且可多分支同时命中(不同类型的分支都执行)。用法:并发操作的多类失败处理(AG-017 的失败聚合:网络错误与业务错误分别处理)、嵌套组(组内组的递归处理)。设计:并发失败的业务分类(PY-005 的层次:哪些可重试哪些终止)映射到 except* 的分支;裸 ExceptionGroup 的处理(兜底分支)。",
+  "answer": "ExceptionGroup(3.11+)打包多个异常(TaskGroup 的并发失败,gather 的聚合),except*(3.11+)按异常类型分别捕获组内的异常:except* ValueError 处理组内所有 ValueError、except* TypeError 处理 TypeError——与普通 except 的区别:except* 可以匹配组内的部分异常(其余继续传播),且分支执行取决于组内实际出现的类型(两类都出现时对应分支都会执行;若首个错误触发取消,尚未失败的任务不再产生异常)。用法:并发操作的多类失败处理(AG-017 的失败聚合:网络错误与业务错误分别处理)、嵌套组(组内组的递归处理)。设计:并发失败的业务分类(PY-005 的层次:哪些可重试哪些终止)映射到 except* 的分支;裸 ExceptionGroup 的处理(兜底分支)。",
   "plain": "异常组像『打包的投诉信』:一次并发操作失败,包装了一堆投诉(每个子任务的异常)——except* 像『按投诉类型分拣』:所有『服务态度』的分给客服部处理,所有『产品质量』的分给质检部,两类都有的话两个部门都处理;没分拣到的类型继续往上抛(上级处理)。普通 except 是『抓到一封处理一封』(对组不适用)。比喻局限:except* 的语义是『组内过滤』(每组类型一个子组),匹配到的子组继续传播或处理——分拣的细节比比喻精确。",
-  "deep": "1) 语法与语义:\n```python\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(network_op())     # 可能 ConnectionError\n        tg.create_task(validate_op())    # 可能 ValueError\nexcept* ConnectionError as eg:         # 组内的连接错误\n    handle_network(eg.exceptions)\nexcept* ValueError as eg:              # 组内的校验错误\n    handle_validation(eg.exceptions)\n# 两类都出现 → 两个分支都执行\n# 未匹配的类型 → 打包成新的组继续传播\n```\n2) 与 gather 的组合:gather(return_exceptions=True) 的结果列表手动分类(PY-022)vs TaskGroup+except*(自动打包)——TaskGroup 的结构化+except* 的分类是现代姿势;\n3) 业务的应用:AG-017 的失败聚合(部分失败的处理策略)映射到 except* 的分支(网络错误→重试逻辑,业务错误→降级,权限错误→终止);嵌套的组(fanout 内的 TaskGroup)的递归处理;\n4) 设计的纪律:异常类型的层次(业务异常的基类设计,PY-005)与 except* 的分支对齐(每个分支=一类处理策略);裸组兜底(未预期的类型不能静默——记录+上抛);组内异常的全量处理(每个子异常都要被看到——日志与指标的完整)。\n5) 版本:3.11+ 的特性(老版本用收集中转:结果的异常检查+手动分组——PY-022 的 gather 模式),迁移的路径(3.11+ 的 except* 是目标形态)。",
+  "deep": "1) 语法与语义:\n```python\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(network_op())     # 可能 ConnectionError\n        tg.create_task(validate_op())    # 可能 ValueError\nexcept* ConnectionError as eg:         # 组内的连接错误\n    handle_network(eg.exceptions)\nexcept* ValueError as eg:              # 组内的校验错误\n    handle_validation(eg.exceptions)\n# 哪个类型的子组存在,对应分支就执行(两类都有才都执行;首错取消后未失败的任务不产生异常)\n# 未匹配的类型 → 打包成新的组继续传播\n```\n2) 与 gather 的组合:gather(return_exceptions=True) 的结果列表手动分类(PY-022)vs TaskGroup+except*(自动打包)——TaskGroup 的结构化+except* 的分类是现代姿势;\n3) 业务的应用:AG-017 的失败聚合(部分失败的处理策略)映射到 except* 的分支(网络错误→重试逻辑,业务错误→降级,权限错误→终止);嵌套的组(fanout 内的 TaskGroup)的递归处理;\n4) 设计的纪律:异常类型的层次(业务异常的基类设计,PY-005)与 except* 的分支对齐(每个分支=一类处理策略);裸组兜底(未预期的类型不能静默——记录+上抛);组内异常的全量处理(每个子异常都要被看到——日志与指标的完整)。\n5) 版本:3.11+ 的特性(老版本用收集中转:结果的异常检查+手动分组——PY-022 的 gather 模式),迁移的路径(3.11+ 的 except* 是目标形态)。",
   "example": "```python\n# 并发失败的业务分类(示意)\ntry:\n    async with asyncio.TaskGroup() as tg:\n        tg.create_task(fetch_data())\n        tg.create_task(validate(input))\nexcept* TransientError as eg:          # 瞬时:走重试/降级\n    schedule_retry(eg.exceptions)\nexcept* ValidationError as eg:         # 参数:回喂修正\n    feed_back_errors(eg.exceptions)\nexcept* PermissionError as eg:         # 权限:终止\n    abort_with_audit(eg.exceptions)\n```",
-  "interview": "口述版:『ExceptionGroup+except* 是并发失败的业务分拣:TaskGroup 打包失败,except* 按异常类型分拣(部分匹配,多分支可同时命中,未匹配的继续传播)。与 gather 的组合:gather(return_exceptions) 手动分类 vs TaskGroup+except* 的自动分拣——现代姿势是后者。设计:业务异常的层次与 except* 分支对齐(每分支=一类策略:瞬时重试/参数回喂/权限终止)+裸组兜底。』追问展开:与 gather 的选择、异常层次的设计、嵌套组。",
+  "interview": "口述版:『ExceptionGroup+except* 是并发失败的业务分拣:TaskGroup 打包失败,except* 按异常类型分拣(部分匹配:出现了哪些类型哪些分支执行,未匹配的继续传播)。与 gather 的组合:gather(return_exceptions) 手动分类 vs TaskGroup+except* 的自动分拣——现代姿势是后者。设计:业务异常的层次与 except* 分支对齐(每分支=一类策略:瞬时重试/参数回喂/权限终止)+裸组兜底。』追问展开:与 gather 的选择、异常层次的设计、嵌套组。",
   "followups": [
    {
     "q": "except* 和普通 except 的关键区别?",
-    "a": "普通 except:匹配『抛出的那个异常』(一对一);except*:匹配『组内的一部分异常』(过滤语义)——匹配的子组被该分支处理,其余的打包继续传播;多个 except* 分支可同时命中(不同类型);同一类型不能重复匹配。语义上:except* 是『组的分区处理』,普通 except 是『单异常的拦截』。"
+    "a": "普通 except:匹配『抛出的那个异常』(一对一);except*:匹配『组内的一部分异常』(过滤语义)——匹配的子组被该分支处理,其余的打包继续传播;出现了哪些类型,对应分支就执行(两类都出现才会都执行);同一类型不能重复匹配。语义上:except* 是『组的分区处理』,普通 except 是『单异常的拦截』。"
    },
    {
     "q": "异常层次怎么设计才好用?",
@@ -230,7 +230,7 @@
   ],
   "check": {
    "q": "TaskGroup 中 3 个任务:1 个超时、1 个参数错误、1 个成功。except* 的各分支会发生什么?",
-   "a": "TaskGroup 抛出含 2 个异常的组(超时 TimeoutError、参数 ValidationError;成功的无异常)。except* TimeoutError 分支命中(处理超时);except* ValidationError 分支命中(处理参数错误)——两个分支都执行(组内部分匹配的语义);成功的任务的结果在组的上下文外(需要另行收集——TaskGroup 的结果通过闭包/字典收集,不是组的返回值)。若还有未匹配的类型(如 PermissionError)→打包成新组继续传播。这展示了 except* 的『分区处理』语义。",
+   "a": "TaskGroup 抛出含 2 个异常的组(超时 TimeoutError、参数 ValidationError;成功的无异常)。except* TimeoutError 分支命中(处理超时);except* ValidationError 分支命中(处理参数错误)——两个分支都执行——前提是两类异常都已发生;若超时先发生并触发取消,尚未失败的任务不会产生参数错误;成功的任务的结果在组的上下文外(需要另行收集——TaskGroup 的结果通过闭包/字典收集,不是组的返回值)。若还有未匹配的类型(如 PermissionError)→打包成新组继续传播。这展示了 except* 的『分区处理』语义。",
    "explain": "检验点:except* 的分区语义(部分匹配+多分支+未匹配传播)在具体例子的推演。"
   },
   "related": [
@@ -254,6 +254,13 @@
    "status": "verified",
    "checked_date": "2026-09-07",
    "note": "except* 分区语义已在本机 Python 3.13 运行验证(匹配分支处理子集 [1,3];未匹配的 TypeError 打包成单成员组继续传播);业务映射为独立整理。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "修正 except* 误区:未匹配异常不会静默丢失而是打包继续传播;分支执行取决于实际发生的类型。",
+   "changes": [
+    "误区/答案/检查题对齐分区语义(本机实测)"
+   ]
   }
  },
  {
@@ -312,16 +319,28 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "Python 官方教程 · 关键字参数与 **kwargs 语义",
+    "url": "https://docs.python.org/3/tutorial/controlflow.html#keyword-arguments",
+    "note": "对照要点:kwargs 打包/解包与形参匹配"
+   },
+   {
+    "kind": "official",
+    "name": "PEP 3102 · Keyword-Only Arguments",
+    "url": "https://peps.python.org/pep-3102/",
+    "note": "对照要点:* 之后参数必须按关键字传递(互斥参数显式化的语言支撑)"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "重构手法(参数对象/拆函数)为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+   "note": "kwargs 语义与 keyword-only 参数已对照 Python 官方教程与 PEP 3102;重构手法为通行实践。"
   }
  },
  {
@@ -379,16 +398,22 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "Python 官方文档 · import 系统(模块缓存与部分初始化)",
+    "url": "https://docs.python.org/3/reference/import.html",
+    "note": "对照要点:循环导入时模块可能处于部分初始化状态,属性访问失败"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "解法(下沉/依赖倒置/延迟导入)为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+   "note": "循环导入的部分初始化行为已对照官方 import 系统文档;解法为通行实践(已标注)。"
   }
  },
  {
@@ -579,16 +604,28 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "Python 官方术语表 · duck typing / EAFP",
+    "url": "https://docs.python.org/3/glossary.html#term-duck-typing",
+    "note": "对照要点:鸭子类型定义与 EAFP 风格"
+   },
+   {
+    "kind": "official",
+    "name": "Python 官方文档 · functools.singledispatch",
+    "url": "https://docs.python.org/3/library/functools.html#functools.singledispatch",
+    "note": "对照要点:基于类型的分派官方设施"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "何时显式检查的判断清单为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+   "note": "鸭子类型定义、EAFP、singledispatch 均已对照官方文档。"
   }
  },
  {

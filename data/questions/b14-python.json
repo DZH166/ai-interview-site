@@ -140,6 +140,14 @@
    "status": "verified",
    "checked_date": "2026-09-07",
    "note": "gather/TaskGroup 语义已核验;TaskGroup 三场景(子任务普通失败/单子任务自取消/父取消)已在本机 Python 3.13 运行验证;示例为演示。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "TaskGroup 语义精确化:只有「非取消异常失败」才取消兄弟;单子任务自取消不影响整组(三种场景已实测)。",
+   "changes": [
+    "答案/原理:区分三类取消场景",
+    "新增追问:子任务自取消会怎样"
+   ]
   }
  },
  {
@@ -416,16 +424,35 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "PostgreSQL · LIMIT/OFFSET(跳过行仍被计算,深 offset 性能差)",
+    "url": "https://www.postgresql.org/docs/current/queries-limit.html",
+    "note": "对照要点:OFFSET 行为与性能特征"
+   },
+   {
+    "kind": "official",
+    "name": "Stripe API · 游标分页(以对象位置为游标,稳定不重不漏)",
+    "url": "https://docs.stripe.com/api/pagination",
+    "note": "对照要点:cursor 分页的稳定性设计"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(keyset 分页为数据库通行实践)"
+    "note": "决策建议(用户翻页 vs 无限加载)为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;SQL 为演示。"
+   "note": "已对照 PostgreSQL OFFSET 语义与 Stripe 游标分页文档;性能结论(offset 丢弃已扫描行)与官方文档一致。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "补 PostgreSQL/Stripe 官方来源并核对(offset 丢弃已扫描行、游标稳定性);高频表述改为常见场景。",
+   "changes": [
+    "来源补证与状态升级 verified"
+   ]
   }
  },
  {
@@ -554,16 +581,22 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "FastAPI · Bigger Applications(router 组织的官方方案)",
+    "url": "https://fastapi.tiangolo.com/tutorial/bigger-applications/",
+    "note": "对照要点:APIRouter 的分层用法"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(经典分层在 LLM 应用的展开)"
+    "note": "service/repos 分层为通行实践,无官方规定"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;目录为演示。"
+   "note": "router 层组织已对照 FastAPI 官方文档;service/repos 的更细分层为通行实践(非官方规定)。"
   }
  }
 ]

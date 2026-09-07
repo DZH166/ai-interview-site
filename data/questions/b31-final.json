@@ -13,11 +13,11 @@
   "prerequisites": [
    "FD-003"
   ],
-  "answer": "KV Cache 缓存每层注意力中已生成 token 的 Key/Value 矩阵——生成第 N+1 个 token 时只需计算新 token 的 Q,与缓存的 K/V 做注意力,避免重算全部历史。它让推理从 O(n²) 降到每步 O(n),是自回归生成可行的前提。代价:KV Cache 的显存随序列长度线性增长——128K 上下文的 KV Cache 可能超过模型权重本身。这也是长对话『越来越贵』的技术根源:每多一轮,KV Cache 就多一块。",
+  "answer": "KV Cache 缓存每层注意力中已生成 token 的 Key/Value 矩阵——生成下一个 token 时,只对**新 token 本身**计算一遍 Q/K/V(算出的 K/V 追加进缓存),再拿新 Q 与缓存里的全部历史 K/V 做注意力——省掉的是『对历史 token 重复计算 Q/K/V』,不是不算。它让推理从 O(n²) 降到每步 O(n),是自回归生成可行的前提。代价:KV Cache 的显存随序列长度线性增长——128K 上下文的 KV Cache 可能超过模型权重本身。这也是长对话『越来越贵』的技术根源:每多一轮,KV Cache 就多一块。",
   "plain": "KV Cache 像读书时的书签笔记:读第 10 页时记下要点(缓存),读第 11 页只需看新内容+翻笔记——不用重读前 10 页。笔记越积越厚(序列越长),占的桌子空间越大(显存)——128K 的书,笔记可能比书本身还厚。比喻局限:笔记可以摘要,KV Cache 不能(信息丢失会改变后续注意力分布)——所以只能靠分页管理(AD-011)或量化来省空间。",
   "deep": "1) 显存估算:每 token 的 KV = 2 × 层数 × KV头数 × head_dim × 精度字节。以 7B(32层/GQA 8KV头/128dim/FP16)为例:2×32×8×128×2 = 131KB/token;128K token ≈ 16GB(仅 KV)。2) 优化方向:GQA/MQA(减少 KV 头数,FD-007)、KV 量化(INT8/INT4 的 KV)、滑动窗口(只保留最近 N token 的 KV)、PagedAttention(碎片管理,AD-011)。3) 与前缀缓存的联动:相同前缀(如 system prompt)的 KV 可共享——多租户/多请求的显存节省(AD-011 的前缀共享)。4) 对延迟的影响:TTFT 随输入长度上升(预填充大量 token 的 KV 计算);生成阶段每步的注意力计算也随历史增长——这是长对话每步变慢的原因。",
   "example": "显存估算(7B GQA 模型;假设 batch=1、32 层、8 个 KV 头、head_dim=128、FP16 每值 2 字节;\n每 token KV 字节 = 2(K/V) × 32 层 × 8 头 × 128 × 2B = 131072 B = 128 KiB):\n```\n权重 FP16:  ~14 GB\nKV Cache(batch=1):\n  4K 上下文:  128KiB × 4096  = 0.5 GiB\n  32K 上下文: 128KiB × 32768 = 4 GiB\n  128K 上下文: 128KiB × 131072 = 16 GiB  ← 接近甚至超过权重\n→ 长上下文的瓶颈是 KV Cache,不是权重\n注:batch 增大按倍数线性增长;MHA(无 GQA 分组)KV 头数=查询头数,还要再大数倍\n```",
-  "interview": "口述版:『KV Cache 缓存已生成 token 的 K/V 矩阵,让自回归生成避免重算历史——每步只需计算新 token 的 Q 与缓存的 K/V 交互。代价是显存随长度线性增长——128K 上下文的 KV 可能超过权重本身,这就是长对话越来越贵的技术根源。优化方向:GQA 减头、KV 量化、滑窗、分页管理(AD-011)。』追问展开:显存估算、GQA 原理、与 RAG 的关系。",
+  "interview": "口述版:『KV Cache 缓存已生成 token 的 K/V 矩阵,让自回归生成避免对历史 token 重复计算 Q/K/V(新 token 自己的 Q/K/V 每步都要算)——每步只对新 token 算一遍 Q/K/V(K/V 入缓存),拿新 Q 与缓存的历史 K/V 交互。代价是显存随长度线性增长——128K 上下文的 KV 可能超过权重本身,这就是长对话越来越贵的技术根源。优化方向:GQA 减头、KV 量化、滑窗、分页管理(AD-011)。』追问展开:显存估算、GQA 原理、与 RAG 的关系。",
   "followups": [
    {
     "q": "GQA 为什么能省 KV 显存?",
@@ -61,6 +61,13 @@
    "status": "partial",
    "checked_date": "2026-09-07",
    "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:估算公式与三档数字已在本机复算(0.5/4/16 GiB @ batch=1、32层、8KV头、128dim、FP16);机制说明对照 Transformers KV cache 文档;估算假设已显式标注。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "KV 显存三档修正为 0.5/4/16 GiB(原翻倍);澄清新 token 的 Q/K/V 都要计算、省的是历史重复计算。",
+   "changes": [
+    "答案/口述/例子/检查题对齐"
+   ]
   }
  },
  {
@@ -114,16 +121,22 @@
   ],
   "sources": [
    {
+    "kind": "paper",
+    "name": "InstructGPT(Ouyang 等 2022)——SFT+RLHF 训练指令跟随模型",
+    "url": "https://arxiv.org/abs/2203.02155",
+    "note": "对照要点:从 base 到 instruct 的两阶段训练、对齐目标"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "选型结论(何时可用 base)为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理"
+   "note": "instruct 模型的训练方式(SFT+RLHF)与 base 的续写行为已对照 InstructGPT 论文。"
   }
  },
  {

@@ -232,12 +232,6 @@ const ReviewView = (() => {
 
 /* ---- 题库维护 (MaintainView) ---- */
 const MaintainView = (() => {
-  const MOJI_RE = /\ufffd|锟斤拷|烫烫|Ã[^\x00-\x7F]/;
-  const ID_RE = /^[A-Z]{2,4}-\d{3}$/;
-  const DIFFS = ['basic', 'intermediate', 'advanced'];
-  const TYPES = ['concept', 'principle', 'comparison', 'code', 'debug', 'scenario'];
-  const VERIFY_STATUS = ['verified', 'partial', 'todo'];
-  const SOURCE_KINDS = ['official', 'paper', 'repo', 'independent', 'web'];
 
   function render(root) {
     const qs = Data.allQuestions();
@@ -267,7 +261,7 @@ const MaintainView = (() => {
         </div>
         <div class="card">
           <h3>个人记录备份</h3>
-          <p class="muted small">记录存于 localStorage(键前缀 <code>aiiv:</code>)。备份范围:「个人记录」= 状态/收藏/笔记/轮次;「题库与资料」= 你导入的题目和文档;「完整备份」= 两者。导入自动识别类型,整体校验后原子写入,重复导入幂等。</p>
+          <p class="muted small">备份范围:「个人记录」= 状态/收藏/笔记/轮次;「题库与资料」= 你导入的题目和文档;「完整备份」= 两者。恢复规则:整体校验后原子写入;记录字段按更新时间合并——<b>更新的备份可以恢复被清空的笔记/状态</b>,旧备份只补空不覆盖;重复导入幂等。</p>
           <div class="btn-row">
             <button class="btn btn-primary" id="r-export">导出个人记录</button>
             <button class="btn" id="l-export">导出题库与资料</button>
@@ -276,8 +270,13 @@ const MaintainView = (() => {
           <div class="btn-row" style="margin-top:8px">
             <button class="btn btn-primary" id="r-import">导入记录</button>
             <button class="btn" id="l-import">导入题库与资料</button>
+            <button class="btn btn-primary" id="f-import">导入完整备份</button>
             <button class="btn btn-danger" id="r-clear">清空全部记录</button>
           </div>
+          ${(() => {
+            const qc = Store.quarantineCount();
+            return qc ? `<div class="notice warn" style="margin-top:10px">检测到 ${qc} 条历史坏数据已被启动隔离(原始内容已保留,未影响你的记录)。<button class="btn btn-small" id="q-export" style="margin-left:8px">导出隔离数据</button></div>` : '';
+          })()}
         </div>
       </div>
       <div class="card full">
@@ -325,6 +324,8 @@ const MaintainView = (() => {
     $('#r-import').addEventListener('click', () => {
       openFileText('.json').then(({text}) => {
         try {
+          const t = JSON.parse(text);
+          if (t && t.type === 'aiiv-full') { toast('这是完整备份:已改走「导入完整备份」入口,本次未做任何修改', 'err'); return; }
           const r = Store.importRecords(text);
           toast(`导入成功:合并 ${r.qMerged} 题记录、新增 ${r.roundsAdded} 轮${r.notesUpdated ? `、更新 ${r.notesUpdated} 条笔记` : ''}`);
           App.route();
@@ -335,6 +336,8 @@ const MaintainView = (() => {
     $('#l-import').addEventListener('click', () => {
       openFileText('.json').then(({text}) => {
         try {
+          const t = JSON.parse(text);
+          if (t && t.type === 'aiiv-full') { toast('这是完整备份:已改走「导入完整备份」入口,本次未做任何修改', 'err'); return; }
           const r = Store.importLibrary(text);
           Data.init();
           Search.build(StudyView.currentCtx());
@@ -344,8 +347,45 @@ const MaintainView = (() => {
         catch(e) { toast('导入失败(未生效): ' + e.message, 'err'); }
       }).catch(() => {});
     });
+    $('#f-import').addEventListener('click', () => {
+      openFileText('.json').then(({text}) => {
+        try {
+          const t = JSON.parse(text);
+          if (!t || t.type !== 'aiiv-full') { toast('这不是完整备份(aiiv-full):请用对应的「导入记录」或「导入题库与资料」入口', 'err'); return; }
+          /* 预览:记录/轮次/草稿/扩展题/资料的数量与冲突规则 */
+          const rec = t.records || {};
+          const preview = `
+            <p>将一次完整恢复以下内容(整体校验通过、原子写入):</p>
+            <div class="kv"><span>题目记录</span><b>${Object.keys(rec.questions || {}).length} 条</b></div>
+            <div class="kv"><span>模拟面试轮次</span><b>${(rec.mock && rec.mock.rounds || []).length} 轮</b></div>
+            <div class="kv"><span>未完成草稿</span><b>${rec.mock && rec.mock.draft ? '1 份' : '无'}</b></div>
+            <div class="kv"><span>导入题库</span><b>${(t.questions || []).length} 题</b></div>
+            <div class="kv"><span>导入资料</span><b>${(t.docs || []).length} 篇</b></div>
+            <p class="muted small">合并规则:笔记/状态/收藏按更新时间采用(更新的备份可恢复清空);轮次按内容去重;已存在的导入题/资料跳过。校验不通过或写盘失败则全部不生效。</p>`;
+          modal('确认完整恢复?', preview, [
+            { label: '取消' },
+            { label: '完整恢复', primary: true, onClick: () => {
+                try {
+                  const r = Store.importFull(text);
+                  Data.init();
+                  Search.build(StudyView.currentCtx());
+                  toast(`完整恢复成功:${r.qMerged} 条记录、${r.roundsAdded} 轮、${r.questionsAdded} 题、${r.docsAdded} 篇资料`);
+                  App.route();
+                }
+                catch(e) { toast('完整恢复失败(全部未生效): ' + e.message, 'err'); return false; }
+              } }
+          ]);
+        }
+        catch(e) { toast('导入失败(未生效): ' + e.message, 'err'); }
+      }).catch(() => {});
+    });
+    const qBtn = $('#q-export', root);
+    if (qBtn) qBtn.addEventListener('click', () => {
+      download('aiiv-quarantine-' + dateStr() + '.json', Store.quarantineExport());
+      toast('已导出隔离数据(原始内容)');
+    });
     $('#r-clear').addEventListener('click', () => {
-      modal('确认清空全部记录?','<p>不可恢复,建议先导出备份。</p>',[
+      modal('确认清空全部记录?','<p>不可恢复,建议先导出备份。导入的题库与资料不受影响。</p>',[
         {label:'取消'},
         {label:'确认清空',danger:true,onClick:()=>{Store.clearAll();toast('已清空,建议刷新');}}
       ]);
@@ -354,56 +394,9 @@ const MaintainView = (() => {
 
   function dateStr() { const d=new Date(),p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`; }
 
-  /* ---- 题库 schema 校验:返回 {errors, warnings},errors 内按题聚合 ----
-     同批内部与既有题库的编号冲突都算错误;只有 0 错误的题才允许进入导入预览。 */
+  /* 题库 schema 校验:统一委托数据层 Store.validateQuestions(与资料/完整备份/启动隔离共用同一份规则) */
   function validateQuestions(arr, allExisting) {
-    const existing = new Set(allExisting || Data.allQuestions().map(q => q.id));
-    const errors = [], warnings = [];
-    const seen = new Set();
-    const bad = qid => errors.some(e => e.startsWith(qid + ':'));
-    (arr || []).forEach((q, i) => {
-      const tag = (q && q.id) ? q.id : '#' + i;
-      const push = msg => errors.push(`${tag}: ${msg}`);
-      if (!q || typeof q !== 'object' || Array.isArray(q)) { errors.push(`${tag}: 不是对象`); return; }
-      if (typeof q.id !== 'string' || !ID_RE.test(q.id)) push('题号不符合 XX-NNN');
-      if (seen.has(q.id)) push('与本批前面的题目编号重复');
-      if (existing.has(q.id)) push('与现有题库编号重复');
-      if (typeof q.id === 'string') seen.add(q.id);
-      if (!TYPES.includes(q.type)) push(`type 非法(${JSON.stringify(q.type || null)})`);
-      if (!DIFFS.includes(q.difficulty)) push(`difficulty 非法(${JSON.stringify(q.difficulty || null)})`);
-      const topicIds = (window.APP_DATA.topics || []).map(t => t.id);
-      if (!topicIds.includes(q.topic)) push(`topic 非法(${JSON.stringify(q.topic || null)})`);
-      ['title', 'answer', 'plain', 'deep', 'example', 'interview'].forEach(k => {
-        if (typeof q[k] !== 'string' || !q[k].trim()) push(`缺字段或非文本 ${k}`);
-      });
-      if (!Array.isArray(q.followups) || q.followups.length < 1) push('followups 需为非空数组');
-      else q.followups.forEach((f, j) => {
-        if (!f || typeof f !== 'object' || !String(f.q || '').trim() || !String(f.a || '').trim()) push(`followups[${j}] 缺 q/a`);
-      });
-      if (!Array.isArray(q.pitfalls) || q.pitfalls.length < 1) push('pitfalls 需为非空数组');
-      else q.pitfalls.forEach((p, j) => { if (typeof p !== 'string' || !p.trim()) push(`pitfalls[${j}] 非文本`); });
-      if (!q.check || typeof q.check !== 'object' || !String(q.check.q || '').trim() || !String(q.check.a || '').trim()) push('check 缺 q/a');
-      if (!Array.isArray(q.tags) || !q.tags.length) warnings.push(`${tag}: 无标签`);
-      if (Array.isArray(q.prerequisites)) q.prerequisites.forEach(id => { if (!existing.has(id) && !(typeof q.id === 'string' && id === q.id)) warnings.push(`${tag}: 前置 ${id} 不在当前题库`); });
-      if (Array.isArray(q.related)) q.related.forEach(id => { if (!existing.has(id) && !(typeof q.id === 'string' && id === q.id)) warnings.push(`${tag}: 相关 ${id} 不在当前题库`); });
-      /* 来源与核查格式 */
-      if (!Array.isArray(q.sources) || !q.sources.length) push('缺 sources');
-      else q.sources.forEach((s, j) => {
-        if (!s || typeof s !== 'object') push(`sources[${j}] 非对象`);
-        else {
-          if (!SOURCE_KINDS.includes(s.kind)) push(`sources[${j}].kind 非法(${JSON.stringify(s.kind || null)})`);
-          if (typeof s.name !== 'string' || !s.name.trim()) push(`sources[${j}].name 缺失`);
-          if (s.url !== undefined && s.url !== '' && !/^https?:\/\//.test(s.url)) push(`sources[${j}].url 需为 http(s) 链接`);
-        }
-      });
-      if (!q.verify || typeof q.verify !== 'object') push('缺 verify');
-      else {
-        if (!VERIFY_STATUS.includes(q.verify.status)) push(`verify.status 非法(${JSON.stringify(q.verify.status || null)})`);
-        if (q.verify.status === 'verified' && !(q.verify.checked_date || '').trim()) warnings.push(`${tag}: verified 但无核查日期`);
-      }
-      if (MOJI_RE.test(JSON.stringify(q))) push('疑似乱码(锟斤拷/烫烫/替换符)');
-    });
-    return { errors, warnings, isValid: q => q && q.id && ID_RE.test(q.id) && !bad(q.id) };
+    return Store.validateQuestions(arr, allExisting);
   }
 
   function importBank() {
@@ -417,8 +410,17 @@ const MaintainView = (() => {
         if (!Array.isArray(arr)) throw new Error('无题目数组');
       }
       catch(e) { toast('JSON 解析失败:' + e.message, 'err'); return; }
-      const { errors, warnings, isValid } = validateQuestions(arr);
-      const fresh = arr.filter(isValid);
+      const existing = new Set(Data.allQuestions().map(q => q.id));
+      const seen = new Set();
+      const errors = [], warnings = [], fresh = [];
+      arr.forEach(q => {
+        const r = Store.validateQuestion(q, seen, existing);
+        r.errs.forEach(e => errors.push(e));
+        r.warns.forEach(w => warnings.push(w));
+        const tag = (q && typeof q.id === 'string') ? q.id : null;
+        const bad = tag ? r.errs.some(e => e.startsWith(tag + ':')) : true;
+        if (!bad && tag) fresh.push(q);
+      });
       if (!fresh.length) {
         modal('没有可导入的题目',
           `<p>共 ${arr.length} 题,全部存在校验问题,已整体拒绝(未写入任何数据)。前 10 项问题:</p>

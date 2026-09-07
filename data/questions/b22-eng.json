@@ -189,16 +189,22 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "Google · Rules of Machine Learning(ML 工程化最佳实践)",
+    "url": "https://developers.google.com/machine-learning/guides/rules-of-ml",
+    "note": "对照要点:ML 系统从 demo 到生产的工程纪律"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理的生产化清单"
+    "note": "LLM 特有的鸿沟清单(评测/成本/护栏)为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;checklist 为演示。"
+   "note": "ML 工程化纪律已对照 Rules of ML;LLM 特有项为独立整理。"
   }
  },
  {

@@ -163,8 +163,8 @@
   ],
   "answer": "按可靠度从低到高三档:①提示词里给 schema 和示例——靠模型自觉,最弱;②JSON mode——保证输出是合法 JSON,但不保证字段符合你的预期;③结构化输出/带 strict 的函数调用——按 JSON Schema 约束解码,枚举值、必填字段都受强制。无论哪一档,服务端都必须再用 Pydantic 校验一次并准备重试,因为官方文档明确说:即使结构化输出『仍可能包含内容错误』——schema 对了,内容不一定对。",
   "plain": "让模型交作业:①口头叮嘱『按这个格式写』=提示词约束,他可能忘记;②发一张空白答题卡『随便填但必须交卡』=JSON mode,格式有了内容可能跑偏;③发一张带格子的表格,每格限定类型,写不进去就交不了=结构化输出。比喻的局限:表格保证的是『格子都在、类型合法』,不保证格子里的内容是真的——地址栏可以一本正经地填一个不存在的地址。",
-  "deep": "原理与分层(OpenAI 官方文档已核验):\n1) 提示词约束:schema 写进 prompt + few-shot 示例。任何模型可用,但遵循率取决于模型与 schema 复杂度,失败模式包括 markdown 包裹、字段改名、枚举拼错。\n2) JSON mode(格式 type: json_object):只约束『输出是合法 JSON』,不约束 schema。解决『半截 JSON/带 markdown』问题,不解决字段问题。\n3) Structured Outputs(json_schema + strict:true)或工具定义中的 strict:约束解码——生成阶段每一步只允许产出符合 schema 的 token,所以『枚举字段不会出现枚举外的值、必填字段一定在』(官方文档:确保遵循你提供的 JSON Schema)。注意官方列出的限制:部分 schema 关键字不支持;strict 要求所有对象 additionalProperties:false 且全部字段 required(本机实测:pydantic 的 model_json_schema() 不自动补 additionalProperties——要用官方 SDK 的 parse() helper 或手动补全);首次使用某 schema 有额外处理延迟。\n4) 四类失败分开处理(面试重点):①安全拒答——message.refusal 字段识别;②截断——finish_reason==length(max_tokens 不够);③schema/API 错误——请求层异常(不支持的关键字等);④业务校验失败——schema 合法但内容不对(金额为负等),服务端二次校验兜住。\n5) 服务端闭环:Pydantic 定义模型 → SDK helper 生成合规 schema → 调用 → 分类处理上述四类失败 → ValidationError 时把错误信息回喂重试(2~3 次)→ 仍失败降级(默认值/人工/换提示)。",
-  "example": "```python\nfrom typing import Literal\nfrom pydantic import BaseModel, ValidationError\nfrom openai import OpenAI\nclient = OpenAI()\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float\n    channel: Literal[\"alipay\", \"wechat\"]   # 枚举用 Literal,strict 下受强制\n\ndef extract(text: str) -> Order:\n    last_err = None\n    for _ in range(3):                      # 失败带错误重试\n        try:\n            # parse() 是官方 SDK helper:自动把 Pydantic 模型转成符合\n            # strict 要求的 schema(补 additionalProperties:false 等)。\n            # 注意:直接用 Order.model_json_schema() 是不行的——\n            # 本机 pydantic 2.10.4 实测它不带 additionalProperties:false,\n            # strict 会拒绝。不用 helper 时必须手动补全 schema。\n            resp = client.chat.completions.parse(\n                model=MODEL,\n                messages=[\n                    {\"role\": \"system\", \"content\": \"从文本抽取订单字段\"},\n                    {\"role\": \"user\", \"content\": text + (f\"\\n上次错误:{last_err}\" if last_err else \"\")},\n                ],\n                response_format=Order,\n            )\n            msg = resp.choices[0].message\n            refusal = getattr(msg, \"refusal\", None)\n            if refusal:                              # ①安全拒答:单独处理\n                raise ValueError(f\"模型拒答:{refusal}\")\n            if resp.choices[0].finish_reason == \"length\":   # ②截断\n                raise ValueError(\"输出被 max_tokens 截断\")\n            return msg.parsed                        # SDK 已解析并通过校验\n        except ValidationError as e:                 # ③schema 校验失败:回喂重试\n            last_err = str(e)\n        except ValueError as e:                      # 拒答/截断:业务分类处理\n            last_err = str(e)\n        except Exception as e:                       # ④API/schema 错误:另类告警\n            last_err = f\"API 错误:{e}\"\n    raise ValueError(\"结构化抽取三次失败\")\n```\n说明:此示例依赖付费 API,未真实调用;SDK 未安装时按所装版本对照官方文档。拒答/截断/校验失败/API 错误四类失败分开分类处理,是结构化输出工程化的关键。",
+  "deep": "原理与分层(OpenAI 官方文档已核验;SDK 分支语义对照本机 openai 2.34.0 源码):\n1) 提示词约束:schema 写进 prompt + few-shot 示例。任何模型可用,但遵循率取决于模型与 schema 复杂度,失败模式包括 markdown 包裹、字段改名、枚举拼错。\n2) JSON mode(格式 type: json_object):只约束『输出是合法 JSON』,不约束 schema。解决『半截 JSON/带 markdown』问题,不解决字段问题。\n3) Structured Outputs(json_schema + strict:true)或工具定义中的 strict:约束解码——生成阶段每一步只允许产出符合 schema 的 token,所以『枚举字段不会出现枚举外的值、必填字段一定在』(官方文档:确保遵循你提供的 JSON Schema)。注意官方列出的限制:部分 schema 关键字不支持;strict 要求所有对象 additionalProperties:false 且全部字段 required(本机实测:pydantic 的 model_json_schema() 不自动补 additionalProperties——要用官方 SDK 的 parse() helper 或手动补全);首次使用某 schema 有额外处理延迟。\n4) 五类失败分开处理(面试重点;SDK 2.x 行为已对照源码):\n   ① 拒答——message.refusal 非空,parse() 不抛异常、parsed 为 None:有效终态,不进格式修复重试;\n   ② 截断 / 内容过滤——parse() 直接抛 LengthFinishReasonError / ContentFilterFinishReasonError(不是返回后查 finish_reason):终态,截断的正确修法是调大输出预算;\n   ③ 临时错误——APIConnectionError / RateLimitError / 5xx:退避后原样重试(条件随时间变化);\n   ④ schema 校验失败——parse() 内部抛 pydantic ValidationError:回喂错误信息后重试(有信息增量);\n   ⑤ 业务校验失败——schema 合法但业务规则不满足(金额为负等):schema 表达不了跨字段/数值规则,单独校验、回喂或转人工,与类型校验是两回事。\n5) 服务端闭环:Pydantic 定义模型 → SDK helper 生成合规 schema → 调用 → 按五类分类处理 → 仍失败降级(默认值/人工/换提示)。",
+  "example": "结构化抽取的完整工程骨架(五类失败分开处理;依赖 openai SDK 与付费 API,**本例未经真实调用**,分支语义已用 mock 测试验证——tests/lp003_mock_test.py,从本字段提取代码、桩掉 client 后逐分支断言):\n```python\nimport time\nimport openai\nfrom openai import OpenAI\nfrom typing import Literal\nfrom pydantic import BaseModel, ValidationError\n\nclient = OpenAI()\nMODEL = \"gpt-4o-mini\"   # 示意;以实际接入的模型为准\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float\n    channel: Literal[\"alipay\", \"wechat\"]   # 枚举用 Literal,strict 下受强制\n\nclass FatalExtract(Exception):\n    \"\"\"不可重试的终态:拒答 / 截断 / 内容过滤 / 重试耗尽\"\"\"\n\nMAX_RETRY = 2   # 「带新信息的重试」上限;临时网络错误另按退避重试\n\ndef extract(text: str) -> Order:\n    last_err = None\n    backoff = 1\n    for attempt in range(MAX_RETRY + 1):\n        try:\n            # parse() 是官方 SDK helper:自动生成符合 strict 要求的 schema\n            # (补 additionalProperties:false 等;手写 model_json_schema() 缺这些会被 API 拒绝)\n            resp = client.chat.completions.parse(\n                model=MODEL,\n                messages=[\n                    {\"role\": \"system\", \"content\": \"从文本抽取订单字段\"},\n                    {\"role\": \"user\", \"content\": text + (f\"\\n上次错误:{last_err}\" if last_err else \"\")},\n                ],\n                response_format=Order,\n            )\n        except (openai.LengthFinishReasonError, openai.ContentFilterFinishReasonError) as e:\n            # 截断 / 内容过滤:parse() 直接抛 SDK 专属异常(不是返回后查 finish_reason)。\n            # 重试条件没变,再试结果一样 → 终态。截断的正确修法是调大 max_tokens 预算。\n            raise FatalExtract(f\"不可重试:{type(e).__name__}\") from e\n        except (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError) as e:\n            # 临时错误:退避后重试(条件随时间变化,重试有意义)\n            last_err = f\"临时错误:{type(e).__name__}\"\n            time.sleep(backoff)\n            backoff *= 2\n            continue\n        except ValidationError as e:\n            # schema 校验失败:回喂错误信息,重试有信息增量\n            last_err = str(e)\n            continue\n        msg = resp.choices[0].message\n        if getattr(msg, \"refusal\", None):\n            # 拒答是有效终态:不是校验失败,不回喂重试(条件不变,重试必失败)。\n            # 交人工 / 换提示词 / 改路由。\n            raise FatalExtract(f\"模型拒答:{msg.refusal}\")\n        order = msg.parsed\n        if order is None:\n            last_err = \"未返回结构化内容\"\n            continue\n        if order.amount <= 0:\n            # 业务校验(schema 表达不了的规则,如金额必须为正):\n            # 与 float 这类类型校验分开;回喂后重试一次,仍错则终态\n            last_err = f\"amount 必须为正,得到 {order.amount}\"\n            continue\n        return order\n    raise FatalExtract(f\"抽取失败(重试 {MAX_RETRY} 次后):{last_err}\")\n```\n",
   "interview": "口述版:『我会分三档说:提示词约束最弱;JSON mode 保证合法 JSON 不保证 schema;结构化输出用 JSON Schema 约束解码,strict 模式下枚举和必填都是强制的。但我会强调官方文档自己都写了「结构化输出仍可能有内容错误」,所以我的服务端一定有 Pydantic 校验加带错误回喂的重试闭环,三次失败就降级。schema 设计上尽量扁平,别用平台不支持的关键字。』追问展开:schema 太深的后果、refusal 处理、不支持 strict 的模型怎么办。",
   "followups": [
    {
@@ -183,14 +183,14 @@
   "pitfalls": [
    "以为 JSON mode 能保证字段正确——它只保证『是 JSON』。",
    "把 model_json_schema() 的产物直接丢给 strict:true——缺少 additionalProperties:false 会被 API 拒绝(本机 pydantic 2.10.4 实测不自动带),要用 SDK 的 parse() helper 或手动补全。",
-   "服务端不做二次校验,直接 json.loads 后用——schema 合法但内容错误照样进库;拒答(refusal)与截断(finish_reason)也不分类处理。",
-   "重试时只重发原请求——要把校验错误信息附上,模型才有机会修正。",
-   "枚举值和业务代码两处维护不一致——枚举以 Pydantic/单一来源生成。"
+   "把拒答当校验失败回喂重试——条件不变,重试必失败;refusal 是终态,应转人工或换提示(本例 mock 实测:拒答 1 次调用即终止)。",
+   "以为 parse() 截断时能靠返回值里的 finish_reason 判断——SDK 2.x 直接抛 LengthFinishReasonError / ContentFilterFinishReasonError,要在异常分支处理。",
+   "把 float 这类类型校验当成业务校验的全部——金额为正、字段联动等 schema 表达不了的规则要单独写业务校验。"
   ],
   "check": {
-   "q": "两个问题:①strict 模式下,Pydantic 的 model_json_schema() 输出能直接当 json_schema 用吗?②模型返回了 message.refusal 非空,这说明 schema 哪里写错了?",
-   "a": "①不能直接用——strict 要求每个对象 additionalProperties:false 且字段全部 required,pydantic 的 schema 生成器默认不带 additionalProperties(本机实测),要用官方 SDK 的 parse() helper 或手动补全。②refusal 非空不是 schema 错——它是安全拒答信号,和校验失败、截断、API 错误是四类不同的失败,要分开处理(拒答不该回喂重试,该转人工或改提示)。",
-   "explain": "检验点:strict 的额外 schema 要求与四类失败的分类处理;把拒答当校验失败反复重试是常见工程事故。"
+   "q": "三个判断:①message.refusal 非空,是 schema 写错了吗?该重试吗?②parse() 抛 LengthFinishReasonError 说明什么?重试同样参数有用吗?③Order(amount=-3) 通过了 schema 校验,是 ValidationError 吗?该怎么处理?",
+   "a": "①不是 schema 错,拒答是安全终态;不该原样重试(条件不变必再拒),应转人工/换提示词。②输出被 max_tokens 截断,SDK 直接抛异常;原样重试结果相同,要调大输出预算(或压缩要求)。③不是 ValidationError(schema 层它合法:float、必填都在);这是业务校验(金额必须为正),要单独写业务规则校验,回喂修正或转人工。",
+   "explain": "检验点:五类失败的边界——拒答终态、截断调预算、临时错误退避重试、schema 失败回喂重试、业务规则独立校验。"
   },
   "related": [
    "LP-001",
@@ -211,7 +211,15 @@
   "verify": {
    "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "三档区别、strict 语义与限制、refusal/截断语义已对 OpenAI 官方文档核验;『model_json_schema 不带 additionalProperties』『校验器顺序』已在本机 pydantic 2.10.4 运行验证;代码示例未真实调用付费 API(SDK helper 写法以所装版本文档为准)。"
+   "note": "三档区别、strict 语义与限制、refusal/截断语义已对 OpenAI 官方文档核验;『model_json_schema 不带 additionalProperties』已在本机 pydantic 2.10.4 运行验证;SDK 异常分支对照本机 openai 2.34.0 源码确认(parse 对 length/content_filter 抛异常、refusal 返回 None);展示代码的五类失败分支由 tests/lp003_mock_test.py 用桩客户端逐分支验证(mock,非真实 API 调用)。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "结构化输出代码按五类失败重写:拒答是终态不重试、截断走 SDK 异常、临时错误退避重试、业务校验与类型校验分离。",
+   "changes": [
+    "例子代码全部分支经 mock 测试验证",
+    "strict 需 additionalProperties 的说明与 SDK helper 用法"
+   ]
   }
  },
  {

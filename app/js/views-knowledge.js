@@ -169,9 +169,13 @@ const DocsView = (() => {
       });
     });
     /* 阅读位置:实际滚动发生在 window(#view 未做内部滚动容器),统一监听 window。
-       每次渲染先移除旧监听,路由切换不残留。 */
+       每次渲染生成新令牌;滚动回调只在自己仍是当前令牌时写位置——
+       视图退出(cleanup)作废旧令牌并注销监听,跨视图的滚动(如新页面回顶)不会污染文档位置。 */
+    const token = ++DocsView._renderToken;
+    DocsView._activeDoc = d;
     if (DocsView._onScroll) window.removeEventListener('scroll', DocsView._onScroll);
     DocsView._onScroll = debounce(() => {
+      if (DocsView._renderToken !== token) return; /* 已离开本文档:忽略 */
       const cur = currentSection(d);
       Store.data.ui.docPos = { docId: d.id, secId: cur, y: window.scrollY };
       Store.save();
@@ -221,6 +225,21 @@ const DocsView = (() => {
     Store.save();
   }
 
+  /* 视图退出(App.route 统一调用):
+     1) 以当前真实滚动位置保存一次阅读位置(比最后一条防抖更准);
+     2) 作废令牌(挂起的防抖回调不再写位置);
+     3) 注销 window 滚动监听——离开后新页面的滚动与本视图无关。 */
+  function cleanup() {
+    const d = DocsView._activeDoc;
+    if (d) {
+      Store.data.ui.docPos = { docId: d.id, secId: currentSection(d), y: window.scrollY };
+      Store.save();
+    }
+    DocsView._activeDoc = null;
+    DocsView._renderToken++;
+    if (DocsView._onScroll) { window.removeEventListener('scroll', DocsView._onScroll); DocsView._onScroll = null; }
+  }
+
   function importDoc() {
     return openFileText('.md,.markdown,.txt,.json,.pdf').then(({ name, text }) => {
       const ext = (name.split('.').pop() || '').toLowerCase();
@@ -257,7 +276,7 @@ const DocsView = (() => {
     Search.build({ questions: Data.allQuestions(), docs: Data.allDocs(), userDocs: Data.allUserDocs(), records: Store.data });
   }
 
-  return { render, rebuildSearch };
+  return { render, rebuildSearch, cleanup, _renderToken: 0, _activeDoc: null, _onScroll: null };
 })();
 
 /* ---------- 全局搜索 ---------- */
@@ -337,6 +356,88 @@ const SearchView = (() => {
           <div class="si-snippet">${r.snippet}</div>
         </a>`;
     }).join('');
+  }
+
+  return { render };
+})();
+
+/* ---------- 学习路径 ---------- */
+const PathView = (() => {
+  /* 路径定义来自 data/paths.json(稳定题号);完成与否由用户手动确认,进度存 Store */
+  function progress() { return Store.data.ui.pathProgress || {}; }
+  function markStage(stageId, done) {
+    const p = Store.data.ui.pathProgress || {};
+    if (done) p[stageId] = Date.now(); else delete p[stageId];
+    Store.data.ui.pathProgress = p;
+    Store.save();
+  }
+
+  function render(root) {
+    const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
+    if (!paths.length) { root.innerHTML = '<div class="empty">暂无路径定义</div>'; return; }
+    const path = paths[0];
+    const prog = progress();
+    const doneCount = path.stages.filter(s => prog[s.id]).length;
+    root.innerHTML = `
+      <div class="path-head">
+        <h1>${esc(path.name)}</h1>
+        <p class="muted">${esc(path.audience || '')} 完成与否由你自己确认——能讲给别人听才算懂,点过不算。</p>
+        <div class="progress" style="max-width:420px"><div class="progress-in" style="width:${path.stages.length ? Math.round(doneCount / path.stages.length * 100) : 0}%"></div></div>
+        <span class="muted small">${doneCount} / ${path.stages.length} 阶段已确认理解</span>
+      </div>
+      ${path.stages.map((s, si) => renderStage(s, si, prog)).join('')}
+      ${path.optional ? `
+      <div class="card" style="margin-top:14px">
+        <h3>⚪ ${esc(path.optional.name)}</h3>
+        <div class="rel-row">${(path.optional.questions || []).map(id => Data.question(id)
+          ? `<a class="rel-link" href="#/study/${id}">${id}</a>` : '').join(' ')}</div>
+      </div>` : ''}`;
+    $$('.path-stage-actions [data-done]', root).forEach(b => {
+      b.addEventListener('click', () => { markStage(b.dataset.done, true); render(root); toast('已确认本阶段理解;可随时取消'); });
+    });
+    $$('.path-stage-actions [data-undone]', root).forEach(b => {
+      b.addEventListener('click', () => { markStage(b.dataset.undone, false); render(root); });
+    });
+  }
+
+  function renderStage(s, si, prog) {
+    const done = !!prog[s.id];
+    const qs = (s.questions || []).map(id => {
+      const q = Data.question(id);
+      if (!q) return '';
+      const st = Data.statusInfo(id);
+      return `
+        <div class="path-q ${st.cls}" role="link" tabindex="0" data-qid="${id}">
+          <a class="qid" href="#/study/${id}">${id}</a>
+          <span class="path-q-title">${esc(q.title)}</span>
+          <span class="badge ${st.cls}">${st.label}</span>
+        </div>`;
+    }).join('');
+    const ex = s.exercise || {};
+    return `
+      <div class="card path-stage ${done ? 'path-done' : ''}">
+        <div class="path-stage-head">
+          <h3>${done ? '✅' : '🔹'} ${esc(s.name)}</h3>
+          ${done ? `<span class="muted small">确认于 ${fmtTime(prog[s.id])}</span>` : ''}
+        </div>
+        <p class="muted small">前置:${esc(s.prereq || '无')}</p>
+        <ul class="path-goals">${(s.goals || []).map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+        <div class="path-qs">${qs}</div>
+        ${ex.code ? `
+        <details class="path-exercise">
+          <summary>🛠 ${esc(ex.name || '迷你练习')}</summary>
+          <pre class="code"><code>${esc(ex.code)}</code></pre>
+          ${ex.variant ? `<p class="muted small">${esc(ex.variant)}</p>` : ''}
+        </details>` : ''}
+        <div class="path-stage-actions">
+          ${(s.docs || []).map(did => Data.doc(did) ? `<a class="btn btn-small" href="#/docs/${did}">📖 章节阅读</a>` : '').join(' ')}
+          <a class="btn btn-small" href="${esc(s.review || '#/review')}">📌 复盘薄弱点</a>
+          <span class="flex1"></span>
+          ${done
+            ? `<button class="btn btn-small" data-undone="${s.id}">取消确认</button>`
+            : `<button class="btn btn-primary btn-small" data-done="${s.id}">✓ 此阶段已理解(自测通过)</button>`}
+        </div>
+      </div>`;
   }
 
   return { render };

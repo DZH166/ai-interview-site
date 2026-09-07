@@ -50,16 +50,22 @@
   ],
   "sources": [
    {
+    "kind": "paper",
+    "name": "Language Models are Few-Shot Learners(GPT-3, Brown 等 2020)——提出并实证 in-context learning",
+    "url": "https://arxiv.org/abs/2005.14165",
+    "note": "对照要点:ICL 定义(few-shot 提示、无梯度更新)"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(ICL 为公开研究方向)"
+    "note": "机制解释(任务定位说)为主流假说的独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;机制假说保持概念级。"
+   "note": "ICL 定义与『无需梯度更新』已对照 GPT-3 论文;内部机制尚无定论,题目按主流假说表述并已标注。"
   }
  },
  {

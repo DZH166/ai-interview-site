@@ -5,11 +5,15 @@ on:
     paths:
       - 'data/**'
       - 'tools/**'
+      - 'app/**'
+      - 'tests/**'
       - '.github/workflows/**'
   pull_request:
     paths:
       - 'data/**'
       - 'tools/**'
+      - 'app/**'
+      - 'tests/**'
   workflow_dispatch:
 
 jobs:

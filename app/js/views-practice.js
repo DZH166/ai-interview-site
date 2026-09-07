@@ -334,8 +334,20 @@ const StudyView = (() => {
     currentQid = qid;
     Store.markViewed(qid);
     const nb = NavCtx.neighbors(qid);
+    /* 内容修订提醒:实质修订过且你还没确认过新版 → 提示;旧笔记/记录保留,由你决定 */
+    const cv = q.content_version;
+    const needRevNotice = !!(cv && Store.rec(qid).contentRev !== cv.rev);
     root.innerHTML = `
       <div class="study-wrap">
+        ${needRevNotice ? `
+        <div class="notice rev-notice" data-rev-notice>
+          <b>♻ 本题内容有更新(${esc(cv.rev)})</b>:${esc(cv.summary)}
+          <ul class="rev-changes">${(cv.changes || []).map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+          <div class="btn-row" style="margin-top:6px">
+            <button class="btn btn-small btn-primary" data-rev-redo>标记待复习(重做)</button>
+            <button class="btn btn-small" data-rev-ack>知道了(旧笔记与记录保留)</button>
+          </div>
+        </div>` : ''}
         <div class="detail-toolbar">
           <a class="btn btn-small" href="#/browse">← 浏览</a>
           <button class="btn btn-small" data-nav="${nb.prev || ''}" ${nb.prev ? '' : 'disabled'}>← 上一题</button>
@@ -407,6 +419,16 @@ const StudyView = (() => {
     $$('[data-nav]', root).forEach(b => {
       b.addEventListener('click', () => { if (b.dataset.nav) go('#/study/' + b.dataset.nav); });
     });
+    /* 修订提醒:重做 → 标待复习并记录已读新版;知道了 → 只记录已读,不清任何记录 */
+    const revBox = $('[data-rev-notice]', root);
+    if (revBox) {
+      const cv = (Data.question(qid) || {}).content_version;
+      const ack = () => { const r = Store.rec(qid); r.contentRev = cv.rev; r._updatedAt = Date.now(); Store.saveNow(); };
+      $('[data-rev-redo]', revBox).addEventListener('click', () => {
+        ack(); Store.setStatus(qid, 'review'); toast('已标记待复习;你的笔记与历史保留'); render(root, qid);
+      });
+      $('[data-rev-ack]', revBox).addEventListener('click', () => { ack(); render(root, qid); });
+    }
     /* 键盘快捷键:← 上一题 → 下一题,空格展开全部。
        焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。 */
     setKeyHandler((e) => {
@@ -434,11 +456,12 @@ const StudyView = (() => {
    会话状态(含未写完的回答草稿)实时落盘 Store.data.mock.draft:
    切题/对照/复盘/翻页即保存,刷新或离开后可从配置页恢复继续;完成或放弃才清除。 */
 const MockView = (() => {
-  let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}, directed, label} */
+  let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}, directed, label, sid} */
+  let sessionSeq = 0;
 
   function draftLoad() { return (Store.data.mock && Store.data.mock.draft) || null; }
   function draftSave() {
-    if (!state) return;
+    if (!state || state.ended) return; /* 会话已终结:任何残留回调不得再写 */
     Store.data.mock.draft = {
       config: state.config, items: state.items, idx: state.idx,
       answers: state.answers, directed: !!state.directed,
@@ -450,10 +473,11 @@ const MockView = (() => {
     if (Store.data.mock && Store.data.mock.draft) { Store.data.mock.draft = null; Store.save(); }
   }
 
-  /* pagehide 兜底:输入框里尚未过防抖的自答回答立即写入草稿 */
-  function flushDraft() {
+  /* 把输入框当前内容同步进会话(不经防抖)。所有离开当前题的动作前调用:
+     下一题/上一题/对照/复盘/结束/完成/路由离开。 */
+  function captureInput() {
     const ta = $('#m-self');
-    if (!ta || !state) return;
+    if (!ta || !state || state.ended) return;
     const q = Data.question(state.items[state.idx].qid || state.items[state.idx].id);
     if (!q) return;
     const ans = state.answers[q.id] || {};
@@ -461,6 +485,14 @@ const MockView = (() => {
       state.answers[q.id] = Object.assign(ans, { self: ta.value });
       draftSave();
     }
+  }
+  /* pagehide 兜底:与 captureInput 相同(名称保留供 App.flush 调用) */
+  function flushDraft() { captureInput(); }
+
+  /* 结束/放弃会话:作废所有挂起的防抖回调(按会话 ID 判定),清除草稿 */
+  function endSession() {
+    if (state) state.ended = true;
+    draftClear();
   }
 
   function render(root, parts) {
@@ -471,7 +503,8 @@ const MockView = (() => {
           state = {
             config: d.config || { topics: [], diffs: [], count: d.items.length },
             items: d.items, idx: Math.min(d.idx || 0, d.items.length - 1),
-            answers: d.answers || {}, directed: !!d.directed, label: d.label || ''
+            answers: d.answers || {}, directed: !!d.directed, label: d.label || '',
+            sid: ++sessionSeq, ended: false
           };
         }
       }
@@ -527,7 +560,7 @@ const MockView = (() => {
     if (hasDraft) {
       $('#m-resume', root).addEventListener('click', () => go('#/mock/run'));
       $('#m-discard', root).addEventListener('click', () => {
-        draftClear();
+        endSession();
         state = null;
         toast('已放弃未完成的草稿');
         renderConfig(root);
@@ -539,10 +572,12 @@ const MockView = (() => {
       const count = parseInt($('#m-count').value, 10);
       const pool = Data.allQuestions().filter(q => selTopics.includes(q.topic) && selDiffs.includes(q.difficulty));
       if (!pool.length) { toast('没有符合条件的题目,请放宽筛选', 'err'); return; }
+      endSession(); /* 丢弃旧会话(作废其挂起回调) */
       state = {
         config: { topics: selTopics, diffs: selDiffs, count },
         items: sample(pool, Math.min(count, pool.length)).map(q => ({ qid: q.id })),
-        idx: 0, answers: {}, directed: false, label: ''
+        idx: 0, answers: {}, directed: false, label: '',
+        sid: ++sessionSeq, ended: false
       };
       draftSave();
       go('#/mock/run');
@@ -552,10 +587,12 @@ const MockView = (() => {
   /* 定向复习入口(今日复习/错题本重做等):只包含给定队列的普通自测会话 */
   function startDirected(qids, label) {
     if (!qids || !qids.length) { toast('队列为空', 'err'); return; }
+    endSession();
     state = {
       config: { topics: [], diffs: [], count: qids.length, label: label || '定向复习' },
       items: qids.map(id => ({ qid: id })),
-      idx: 0, answers: {}, directed: true, label: label || '定向复习'
+      idx: 0, answers: {}, directed: true, label: label || '定向复习',
+      sid: ++sessionSeq, ended: false
     };
     draftSave();
     go('#/mock/run');
@@ -611,28 +648,32 @@ const MockView = (() => {
       </div>`;
 
     const selfBox = $('#m-self');
+    const sid = state.sid; /* 回调绑定本题所属会话:会话结束/更换后不得写回 */
     selfBox.addEventListener('input', debounce(() => {
+      if (!state || state.ended || state.sid !== sid) return;
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { self: selfBox.value });
-      draftSave(); /* 草稿即写,刷新不丢 */
+      draftSave();
     }, 200));
 
     const revealBtn = $('#m-reveal');
     if (revealBtn) revealBtn.addEventListener('click', () => {
+      captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { revealed: true, self: selfBox.value });
       Store.markPracticed(qid, 'mock');
       draftSave();
       renderRun(root);
     });
     $$('[data-mark]', root).forEach(b => b.addEventListener('click', () => {
+      captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { mark: b.dataset.mark });
       Store.setStatus(qid, b.dataset.mark);
       draftSave();
       renderRun(root);
     }));
     const prev = $('#m-prev');
-    if (prev) prev.addEventListener('click', () => { state.idx--; draftSave(); renderRun(root); });
+    if (prev) prev.addEventListener('click', () => { captureInput(); state.idx--; draftSave(); renderRun(root); });
     const next = $('#m-next');
-    if (next) next.addEventListener('click', () => { state.idx++; draftSave(); renderRun(root); });
+    if (next) next.addEventListener('click', () => { captureInput(); state.idx++; draftSave(); renderRun(root); });
     const finishBtn = $('#m-finish');
     if (finishBtn) finishBtn.addEventListener('click', () => finish(root));
     const quitBtn = $('#m-quit');
@@ -640,6 +681,8 @@ const MockView = (() => {
   }
 
   function finish(root) {
+    captureInput(); /* 同步捕获当前输入,快速结束时最后一个回答不丢 */
+    const sid = state.sid;
     const answered = Object.keys(state.answers).filter(k => (state.answers[k].self || '').trim() || state.answers[k].revealed).length;
     if (!answered) { toast('本轮还没有作答,已按原样记录'); }
     const round = {
@@ -654,9 +697,10 @@ const MockView = (() => {
     };
     Store.data.mock.rounds.unshift(round);
     Store.data.mock.rounds = Store.data.mock.rounds.slice(0, 50);
-    draftClear(); /* 本轮已完成,清除草稿 */
+    endSession(); /* 会话终结:挂起的防抖回调不得再写回草稿 */
     Store.save();
     state.round = round;
+    state.sid = sid;
     go('#/mock/done');
   }
 
@@ -687,7 +731,7 @@ const MockView = (() => {
           <a class="btn btn-primary" href="#/home">返回首页</a>
         </div>
       </div>`;
-    $('#m-again').addEventListener('click', () => { state = null; go('#/mock'); });
+    $('#m-again').addEventListener('click', () => { endSession(); state = null; go('#/mock'); });
   }
 
   return { render, startDirected, flushDraft };

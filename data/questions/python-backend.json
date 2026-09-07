@@ -158,7 +158,7 @@
   "answer": "async/await 是单线程内的协作式并发:协程运行到 await(通常是等网络响应)时主动让出控制权,事件循环趁机去跑其他协程,等 I/O 完成再切回来。它解决『等』的浪费,不解决『算』的慢。并发调用多个 LLM API、多个工具是它的主场;CPU 密集任务(解析大 PDF、跑本地模型)要交给进程池或多进程。与多线程相比:线程由操作系统抢占式调度,随时可能在任意两条字节码之间被切换,所以要靠锁保护临界区;协程只在 await 处切换,不会被打断在普通语句中间——但这不等于没有竞争:跨越 await 的『读-改-写』序列照样会交错(本机实测:100 个协程各加 10 次,无锁只得到 10,加 asyncio.Lock 才是 1000)。还有一条铁律:一处同步阻塞,全体卡死。",
   "plain": "一个服务员(事件循环)照看整个大厅:某桌客人点完菜在等厨房(I/O 等待),服务员不会站在桌边干等,而是去服务别桌,菜好了再端回来。多线程是雇一堆服务员,每桌一个——人多了,工资(内存)和互相碰撞(锁)都来了。比喻的局限:服务员不能同时烧两道菜,厨房(CPU)只有一个灶台,所以『算得慢』的问题协程帮不了;另外协程这服务员是『全靠自觉』——任何一个服务员在原地傻等(time.sleep、同步 requests),整个大厅都得停摆。",
   "deep": "机制拆解:\n1) async def 定义协程函数,调用它得到协程对象(不执行,类比 PY-002 生成器);事件循环(通常 asyncio.run 启动)负责驱动它们。\n2) await 做两件事:等待一个可等待对象;同时把控制权交还事件循环。await 处就是切换点——协程不会被抢占在普通语句中间,但『读共享变量 → await → 写回』这种跨 await 的序列会被其他协程插进来,更新互相覆盖(见例子):临界区用 asyncio.Lock 保护。『单线程所以没竞争』是高频误区,面试里要能主动讲出反例。\n3) 并发跑一批任务:asyncio.gather(*aws) 并发运行并按传入顺序聚合结果;return_exceptions=True 把异常也放进结果列表(默认第一个异常立即上抛,官方文档已核验)。asyncio.create_task 把协程调度成后台任务,注意官方提醒:事件循环只持弱引用,要保存返回的 Task 引用,新代码推荐 TaskGroup。\n4) 限流:asyncio.Semaphore(n) 包住请求,防止 2000 个并发打爆 API 触发 429(配合 LP-004 的退避重试)。\n5) 超时:asyncio.wait_for / asyncio.timeout,超时抛 TimeoutError 并取消任务。\n6) 阻塞代码怎么办:必须调用同步 SDK(有些厂商 SDK 没有异步版)时,用 asyncio.to_thread 把它扔进线程池,别让它堵住事件循环(官方文档:to_thread 适合 I/O 型阻塞函数,受 GIL 限制对 CPU 密集无效)。\n7) 和多线程/多进程的分工:GIL 之下,线程适合『等 I/O 的同步代码』与『释放 GIL 的 C 扩展(如 numpy 的一部分操作)』;CPU 密集用 multiprocessing/进程池。FastAPI 里 async def 路由跑在事件循环,普通 def 路由自动跑在线程池——两者别混写阻塞代码。\n适用边界:高并发网络 I/O→asyncio;简单脚本并发几十个请求→线程池也够;CPU 密集→进程。",
-  "example": "```python\nimport asyncio, httpx\n\nasync def ask(client, prompt: str) -> str:\n    resp = await client.post(\"/v1/chat/completions\", json={...})\n    return resp.json()[\"choices\"][0][\"message\"][\"content\"]\n\nasync def main():\n    limits = asyncio.Semaphore(10)          # 最多 10 个并发,防 429\n    async with httpx.AsyncClient(timeout=30) as client:\n        async def guarded(p):\n            async with limits:\n                return await ask(client, p)\n        results = await asyncio.gather(     # 并发执行,按顺序返回\n            *[guarded(p) for p in prompts],\n            return_exceptions=True)         # 单个失败不炸全局\n        for p, r in zip(prompts, results):\n            print(p, \"→\", r if not isinstance(r, Exception) else f\"失败: {r}\")\n\n# 阻塞 SDK 的正确姿势:\n# result = await asyncio.to_thread(sync_sdk.complete, prompt)\n```\n\n反例:单线程也有竞争(已在本机 Python 3.13 运行,结果如下):\n```python\ncounter = 0\nasync def worker():\n    global counter\n    for _ in range(10):\n        v = counter               # 读\n        await asyncio.sleep(0)    # 让出:100 个协程都读到同一个值\n        counter = v + 1           # 写回:基于过期值,更新丢失\n\nasyncio.run(asyncio.gather(*[worker() for _ in range(100)]))\nprint(counter)   # 无锁输出 10(期望 1000,丢了 990 次更新)\n# 把『读-改-写』包进 async with asyncio.Lock() 后:输出 1000\n```",
+  "example": "并发调用 LLM API 的标准写法(Semaphore 限流 + gather 聚合;依赖 httpx 与网络,示意结构、不可直接运行):\n```python\nimport asyncio, httpx\n\nasync def ask(client, prompt: str) -> str:\n    resp = await client.post(\"/v1/chat/completions\", json={...})\n    return resp.json()[\"choices\"][0][\"message\"][\"content\"]\n\nasync def main():\n    limits = asyncio.Semaphore(10)          # 最多 10 个并发,防 429\n    async with httpx.AsyncClient(timeout=30) as client:\n        async def guarded(p):\n            async with limits:\n                return await ask(client, p)\n        results = await asyncio.gather(     # 并发执行,按顺序返回\n            *[guarded(p) for p in prompts],\n            return_exceptions=True)         # 单个失败不炸全局\n        for p, r in zip(prompts, results):\n            print(p, \"→\", r if not isinstance(r, Exception) else f\"失败: {r}\")\n\n# 阻塞 SDK 的正确姿势:\n# result = await asyncio.to_thread(sync_sdk.complete, prompt)\n```\n\n反例:单线程也有竞争。下面两个脚本都是**完整可运行**的(保存为 race_demo.py 后执行 `python race_demo.py`,仅依赖标准库)。无锁版:100 个协程各把计数器加 10 次,期望 1000,实际远小于——跨 await 的『读-改-写』被其他协程插队,更新互相覆盖。锁版:同一把 asyncio.Lock 包住临界区,结果正确。\n```python\n# 无锁版(race_demo.py)——Python 3.13 实测输出:最终计数: 10\nimport asyncio\n\ncounter = 0\n\nasync def worker():\n    global counter\n    for _ in range(10):\n        v = counter               # 读\n        await asyncio.sleep(0)    # 让出:其他协程都在这附近读到同一个旧值\n        counter = v + 1           # 写回:基于过期值,更新互相覆盖\n\nasync def main():\n    await asyncio.gather(*[worker() for _ in range(100)])\n\nasyncio.run(main())\nprint(\"最终计数:\", counter)   # 期望 1000,实测 10(丢了 990 次更新)\n```\n\n```python\n# 锁版(lock_demo.py)——Python 3.13 实测输出:最终计数: 1000\nimport asyncio\n\ncounter = 0\nlock = asyncio.Lock()\n\nasync def worker():\n    global counter\n    for _ in range(10):\n        async with lock:          # 读-改-写放进临界区\n            v = counter\n            await asyncio.sleep(0)\n            counter = v + 1\n\nasync def main():\n    await asyncio.gather(*[worker() for _ in range(100)])\n\nasyncio.run(main())\nprint(\"最终计数:\", counter)   # 实测 1000,与期望一致\n```\n",
   "interview": "口述版:『asyncio 是单线程协作式并发:await 处让出控制权,事件循环调度别的协程,I/O 等待互相填空。适合 LLM 应用里「一次并发调几十个模型或工具」的场景,配合 Semaphore 限流、gather 收结果、to_thread 兜住阻塞 SDK。多线程是抢占式,有 GIL 和锁,通常在同步代码栈或调释放 GIL 的库时用;CPU 密集走多进程。另外我会主动提一句:单线程不等于没竞争,跨 await 的读改写要用 asyncio.Lock——这点很多人答错。』追问展开:gather 的异常语义、在 async 里误用同步库的后果、GIL。项目经验的说法:如果你真的写过 FastAPI + httpx.AsyncClient 的并发调用层,就讲你自己的设计(限流怎么定的、失败怎么兜);没写过就诚实说『这是我的练手计划,设计思路如上』——不要把没做过说成做过。",
   "followups": [
    {
@@ -212,7 +212,16 @@
   "verify": {
    "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "gather/create_task/to_thread 语义已对 Python 官方文档核验;『跨 await 竞争』反例与 Lock 对照已在本机 Python 3.13 实际运行(无锁计数 10/1000,加锁 1000/1000)。"
+   "note": "gather/create_task/to_thread 语义已对 Python 官方文档核验;例子中的无锁/锁版脚本为完整可运行代码,已在本机 Python 3.13.9 实际运行(输出 10 与 1000),并有自动化测试从题库字段提取代码执行(tests/behavior-tests.js)。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "修正「单线程无数据竞争」的说法:跨 await 的读改写仍会竞争;例子补了完整可运行的竞争反例与 Lock 对照。",
+   "changes": [
+    "答案与原理:明确临界区与 asyncio.Lock",
+    "例子:新增两个可直接运行的脚本(实测输出 10 / 1000)",
+    "口述:捏造经历改为条件式模板"
+   ]
   }
  },
  {
@@ -289,6 +298,13 @@
    "status": "verified",
    "checked_date": "2026-09-07",
    "note": "流式与取消语义已核验;Pydantic 校验器执行顺序(before→核心→after,核心失败时 after 不执行)已在本机 pydantic 2.10.4 运行验证;422 明细字段为框架长期稳定行为,使用时对照所装 FastAPI 版本文档。"
+  },
+  "content_version": {
+   "rev": "2026-09-07",
+   "summary": "Pydantic 校验顺序按 before/after/wrap 模式精确化(原「类型→约束→自定义」只覆盖默认 after)。",
+   "changes": [
+    "原理:校验器执行顺序已在本机运行验证"
+   ]
   }
  }
 ]

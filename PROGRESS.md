@@ -120,3 +120,11 @@ FastAPI 流式与取消/Python asyncio-task/OpenAI function-calling 与 structur
 - 验证:validate/dedup 0 错 0 警;node --check 全过;浏览器回归 A~G 七组(见 delivery/功能测试记录.md);390px iframe 移动端全过;8765 真实数据完好
 - 交付物:delivery/修改说明.md、功能测试记录.md、修复任务清单.md、内容核查记录.md(重写)、RG-055-RG-064合并与迁移映射.json
 - 下一步(等验收后):推送部署;252 题来源补齐(基础优先);进阶章节练习组
+
+## 第二修复轮(2026-09-07,基线 3b51d85;工作树改动未提交)
+
+- A:共享校验入 Store(validateQuestion(s))+备份全有全无+启动隔离(aiiv:quarantine,维护页可导出);Mock 会话令牌+所有出口 captureInput;Store.importFull 一次完整恢复+明确清空语义;App.route 统一视图退出清理(DocsView.cleanup+令牌)
+- B:PY-003 展示代码完整可运行(测试从题库提取运行,10/1000);LP-003 五类失败重写(tests/lp003_mock_test.py 14 断言,openai 2.34 异常类+桩客户端);B3 跨字段残留清零;B4 基础题补证(28→14 无 URL,verified 62);gen_audit_stats.py 统计脚本化(178 降/2 升与报告口径吻合)
+- C:data/paths.json 六阶段主线+PathView(#/path)+文档题序按路径重排;content_version 修订提醒(12 题,旧记录保留,用户自决)
+- CI:触发补 app/**+tests/**
+- 行为测试 62+mock 14 全过;浏览器回归 H~M 组全过;8765 数据完好

@@ -39,6 +39,19 @@ Object.defineProperty(global, 'navigator', { value: { serviceWorker: null }, con
 global.HashChangeEvent = class HashChangeEvent { constructor(t) { this.type = t; } };
 global.addEventListener = () => {};
 global.removeEventListener = () => {};
+/* 与站点一致的数据桩:专题清单(校验器依赖)与内置题库(空) */
+global.window.APP_DATA = {
+  topics: [
+    { id: 'python-backend', name: 'Python 与 AI 后端基础', short: 'PY' },
+    { id: 'llm-prompt', name: '大模型调用与提示词', short: 'LP' },
+    { id: 'rag', name: 'RAG 与检索', short: 'RG' },
+    { id: 'agent', name: 'Agent 与工具调用', short: 'AG' },
+    { id: 'engineering', name: '工程实践与项目面试', short: 'EN' },
+    { id: 'fundamentals', name: 'AI 基础原理', short: 'FD' },
+    { id: 'advanced', name: '进阶专题(选学)', short: 'AD' }
+  ],
+  questions: []
+};
 
 function load(file) {
   const src = fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -121,7 +134,7 @@ console.log('== Store 记录导入/导出 ==');
 
   /* 更新的备份(_updatedAt 更大)可以覆盖 */
   Store.importRecords(JSON.stringify({
-    type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { note: '更新的备份笔记', _updatedAt: 9999999999999 } }, mock: { rounds: [] } }
+    type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { note: '更新的备份笔记', _updatedAt: Date.now() + 5000 } }, mock: { rounds: [] } }
   }));
   eq('更新的备份覆盖笔记', Store.rec('PY-001').note, '更新的备份笔记');
 
@@ -183,11 +196,109 @@ console.log('== 导入题库校验(通过 MaintainView 前置的独立实现)=='
 {
   /* MaintainView.validateQuestions 在浏览器视图内,Node 里以等价规则测试核心拒绝逻辑:
      这里直接测 Store.importLibrary 的去重与恢复;schema 校验在浏览器回归中覆盖。 */
-  const okBank = [{ id: 'ZZ-901', topic: 'rag', type: 'concept', difficulty: 'basic', title: '合法题', answer: 'a', plain: 'p', deep: 'd', example: 'e', interview: 'i', followups: [{ q: 'fq', a: 'fa' }], pitfalls: ['pf'], check: { q: 'cq', a: 'ca' }, sources: [{ kind: 'official', name: 'doc' }], verify: { status: 'partial' } }];
+  const okBank = [{ id: 'ZZ-901', topic: 'rag', type: 'concept', difficulty: 'basic', title: '合法题', tags: ['测试'], answer: 'a', plain: 'p', deep: 'd', example: 'e', interview: 'i', followups: [{ q: 'fq', a: 'fa' }], pitfalls: ['pf'], check: { q: 'cq', a: 'ca' }, sources: [{ kind: 'official', name: 'doc' }], verify: { status: 'partial' } }];
   const r = Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 1, questions: okBank, docs: [{ id: 'udoc-9001', title: '资料', text: '内容', ts: 1, kind: 'md', parsed: true }] }));
   eq('合法题库+资料导入', [r.questionsAdded, r.docsAdded], [1, 1]);
   const r2 = Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 1, questions: okBank, docs: [{ id: 'udoc-9001', title: '资料', text: '内容', ts: 1, kind: 'md', parsed: true }] }));
   eq('重复导入幂等', [r2.questionsAdded, r2.docsAdded], [0, 0]);
+}
+
+console.log('== A1/A3: 导入入口统一校验 / 启动隔离 / 完整恢复 / 清空语义 ==');
+{
+  const ZZ907_FIXTURE = { id: 'ZZ-907', topic: 'rag', type: 'concept', difficulty: 'basic', title: '隔离测试合法题', tags: ['测试'], answer: 'a', plain: 'p', deep: 'd', example: 'e', interview: 'i', followups: [{ q: 'q', a: 'a' }], pitfalls: ['p'], check: { q: 'q', a: 'a' }, sources: [{ kind: 'official', name: 'doc', url: 'https://example.com' }], verify: { status: 'partial' } };
+  const validQFull = { id: 'ZZ-908', topic: 'rag', type: 'concept', difficulty: 'basic', title: '完整恢复测试题', tags: ['测试'], answer: 'a', plain: 'p', deep: 'd', example: 'e', interview: 'i', followups: [{ q: 'q', a: 'a' }], pitfalls: ['p'], check: { q: 'q', a: 'a' }, sources: [{ kind: 'official', name: 'doc', url: 'https://example.com' }], verify: { status: 'partial' } };
+  /* noop */
+  /* A1: 坏 library(tags 是字符串)整批拒绝,存储不变 */
+  const before = localStorage.getItem('aiiv:bank-extra');
+  let threw = '';
+  try { Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 1, questions: [{ id: 'ZZ-902', title: '自备题', tags: 'Python' }], docs: [] })); }
+  catch (e) { threw = e.message; }
+  ok('坏 library 整体拒绝', threw.includes('备份校验未通过'), threw);
+  eq('坏 library 未写入', localStorage.getItem('aiiv:bank-extra'), before);
+  /* 未知版本 */
+  threw = '';
+  try { Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 9, questions: [], docs: [] })); }
+  catch (e) { threw = e.message; }
+  ok('library 未知版本拒绝', threw.includes('版本'), threw);
+  threw = '';
+  try { Store.importFull(JSON.stringify({ type: 'aiiv-full', v: 7, records: { questions: {} }, questions: [], docs: [] })); }
+  catch (e) { threw = e.message; }
+  ok('full 未知版本拒绝', threw.includes('版本'), threw);
+  /* 坏资料条目(缺正文/坏 id) */
+  threw = '';
+  try { Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 1, questions: [], docs: [{ id: 'udoc-abc', title: 'x', text: 't' }] })); }
+  catch (e) { threw = e.message; }
+  ok('坏资料 id 拒绝', threw.includes('id 非法'), threw);
+  threw = '';
+  try { Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 1, questions: [], docs: [{ id: 'udoc-5', title: 'x' }] })); }
+  catch (e) { threw = e.message; }
+  ok('缺正文的资料拒绝', threw.includes('text'), threw);
+  /* 启动隔离:storage 里的坏扩展数据不进内存,原始保留在隔离键 */
+  localStorage.setItem('aiiv:bank-extra', JSON.stringify({ v: 1, saved_at: 1, questions: [
+    { id: 'ZZ-905', title: 'bad', tags: 'x' },
+    ZZ907_FIXTURE,
+  ] }));
+  const safe = Store.loadExtraBankSafe();
+  eq('隔离后内存只含合法题', safe.map(q => q.id), ['ZZ-907']);
+  ok('坏数据进入隔离键', Store.quarantineCount() > 0);
+  ok('隔离数据可导出(原始内容保留)', Store.quarantineExport().includes('ZZ-905'));
+  /* full 从记录/资料入口拒绝(应走完整恢复入口) */
+  threw = '';
+  try { Store.importRecords(JSON.stringify({ type: 'aiiv-full', v: 1, records: { questions: {} }, questions: [], docs: [] })); }
+  catch (e) { threw = e.message; }
+  ok('记录入口拒绝 full', threw.includes('完整备份'), threw);
+  threw = '';
+  try { Store.importLibrary(JSON.stringify({ type: 'aiiv-full', v: 1, records: { questions: {} }, questions: [], docs: [] })); }
+  catch (e) { threw = e.message; }
+  ok('资料入口拒绝 full', threw.includes('完整备份'), threw);
+  /* A3: 完整恢复一次到位(记录+轮次+题库+资料) */
+  const full = JSON.stringify({
+    type: 'aiiv-full', v: 1,
+    records: { v: 2, questions: { 'PY-001': { note: '完整恢复笔记', _updatedAt: Date.now() + 10000 } }, mock: { rounds: [{ ts: 7, items: [{ qid: 'PY-001', title: 't', self: 's', revealed: false, mark: '' }] }] }, ui: {} },
+    questions: [validQFull],
+    docs: [{ id: 'udoc-777', title: '恢复资料', text: '内容', ts: 1, kind: 'md', parsed: true }]
+  });
+  const r = Store.importFull(full);
+  ok('完整恢复统计(记录/轮次/题库/资料)', r.qMerged === 1 && r.roundsAdded === 1 && r.questionsAdded === 1 && r.docsAdded === 1, JSON.stringify(r));
+  eq('完整恢复笔记', Store.rec('PY-001').note, '完整恢复笔记');
+  const r2 = Store.importFull(full);
+  eq('完整恢复幂等', [r2.roundsAdded, r2.questionsAdded, r2.docsAdded], [0, 0, 0]);
+  /* A3 清空语义:更新的备份明确清空 → 生效 */
+  Store.setNote('PY-001', '本地新笔记');
+  Store.setStatus('PY-001', 'ok');
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { note: '', status: '', fav: false, _updatedAt: Date.now() + 20000 } }, mock: { rounds: [] } } }));
+  eq('更新的备份明确清空笔记', Store.rec('PY-001').note, '');
+  eq('更新的备份明确清空状态', Store.rec('PY-001').status, '');
+  eq('更新的备份明确取消收藏', Store.rec('PY-001').fav, false);
+  /* 旧备份(无时间戳)不清空 */
+  Store.setNote('PY-001', '再写回');
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { note: '', status: '' } }, mock: { rounds: [] } } }));
+  eq('旧备份不清空新笔记', Store.rec('PY-001').note, '再写回');
+  /* 未采用不盖新时间戳:备份字段与本地相同且时间更新 → 本地 _updatedAt 不变 */
+  const tsBefore = Store.rec('PY-001')._updatedAt;
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { note: '再写回', _updatedAt: Date.now() + 50000 } }, mock: { rounds: [] } } }));
+  eq('无变化的更新不提升时间戳', Store.rec('PY-001')._updatedAt, tsBefore);
+}
+
+console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
+{
+  const { execFileSync } = require('child_process');
+  const os = require('os');
+  const src = fs.readFileSync(path.join(ROOT, 'data/questions/python-backend.json'), 'utf8');
+  const py3 = JSON.parse(src).find(q => q.id === 'PY-003');
+  const blocks = [...py3.example.matchAll(/```python\n([\s\S]*?)```/g)].map(m => m[1]);
+  const runnable = blocks.filter(b => b.includes('asyncio.run'));
+  eq('PY-003 可运行展示块数量(无锁版+锁版)', runnable.length, 2);
+  runnable.forEach((code, i) => {
+    const tmp = path.join(os.tmpdir(), `_py003_block${i}.py`);
+    fs.writeFileSync(tmp, code, 'utf8');
+    let out = '', code0 = 1;
+    try { out = execFileSync('python', [tmp], { encoding: 'utf8' }); code0 = 0; }
+    catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); }
+    const hasLock = code.includes('Lock');
+    ok(`展示代码块${i + 1}(${hasLock ? '锁版' : '无锁版'})原样运行成功`, code0 === 0, out.slice(0, 200));
+    ok(`展示代码块${i + 1} 输出${hasLock ? ' 1000' : ' 10'}`, out.includes(hasLock ? '1000' : '10'), out.trim());
+  });
 }
 
 console.log('== 计算例题复算 ==');

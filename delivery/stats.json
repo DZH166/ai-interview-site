@@ -16,11 +16,11 @@
     "advanced": 90
   },
   "by_verify_status": {
-    "verified": 54,
-    "partial": 252
+    "verified": 62,
+    "partial": 244
   },
   "docs_total": 12,
   "sources_total": 26,
   "candidates_total": 150,
-  "data_js_kb": 2061.9
+  "data_js_kb": 2078.8
 }

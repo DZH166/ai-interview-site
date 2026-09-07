@@ -50,16 +50,28 @@
   ],
   "sources": [
    {
+    "kind": "paper",
+    "name": "Emergent Abilities of LLMs(Wei 等 2022)——涌现能力的提出",
+    "url": "https://arxiv.org/abs/2206.07682",
+    "note": "对照要点:涌现能力的定义与度量争议"
+   },
+   {
+    "kind": "paper",
+    "name": "Are Emergent Abilities a Mirage?(Schaeffer 等 2023)——对涌现度量的质疑",
+    "url": "https://arxiv.org/abs/2304.15004",
+    "note": "对照要点:指标选择造成的『涌现』假象"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(公开共识的表述)"
+    "note": "『为什么能涌现』的解释为开放问题的独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;机制讨论保持实用立场。"
+   "note": "涌现能力的提出与质疑两篇论文已列为对照;『为什么能涌现』尚无定论,题目答案为机制假说整理——不要当成已证结论背诵。"
   }
  },
  {

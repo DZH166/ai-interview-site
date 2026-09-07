@@ -199,16 +199,28 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "Pydantic · @validate_decorator(声明式运行时校验)",
+    "url": "https://docs.pydantic.dev/latest/concepts/validation_decorator/",
+    "note": "对照要点:装饰器运行时校验的官方用法与前置条件"
+   },
+   {
+    "kind": "official",
+    "name": "Pydantic · 校验概念",
+    "url": "https://docs.pydantic.dev/latest/concepts/validation/",
+    "note": "对照要点:模型校验语义"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(边界校验为通行实践)"
+    "note": "分层策略(静态为主、高风险边界才开运行时检查)为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+   "note": "已对照 Pydantic 校验器装饰器官方文档;分层原则为独立整理(已标注)。"
   }
  },
  {

@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-09-07",
+  "baseline_commit": "0498044cfce2d56d444cdfe1f043662dd701a898",
+  "total": 306,
+  "structure_complete": 306,
+  "verified_total": 62,
+  "verified_with_url_content_checked": 62,
+  "partial_total": 244,
+  "partial_with_url_version_related_or_part": 69,
+  "partial_no_source_yet": 175,
+  "todo": 0,
+  "basic_total": 52,
+  "basic_without_url": 14,
+  "compare_vs_baseline": {
+    "to_verified": 2,
+    "list_up": [
+      {
+        "id": "FD-007",
+        "from": "partial",
+        "to": "verified"
+      },
+      {
+        "id": "PY-038",
+        "from": "partial",
+        "to": "verified"
+      }
+    ],
+    "away_from_verified": 178,
+    "list_down_count": 178
+  }
+}

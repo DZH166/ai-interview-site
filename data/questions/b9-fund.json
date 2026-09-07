@@ -488,16 +488,22 @@
   ],
   "sources": [
    {
+    "kind": "official",
+    "name": "HuggingFace · Tokenizer 总结(BPE 等算法)",
+    "url": "https://huggingface.co/docs/transformers/tokenizer_summary",
+    "note": "对照要点:BPE 按频率合并的机制"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(BPE 机制为公开知识)"
+    "note": "多语言 token 效率差异的具体数字随分词器版本变化"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;具体 token 比例随词表版本变化(示意标注)。"
+   "note": "BPE 机制已对照 HF 文档;多语言效率的具体倍数随分词器/词表版本变化,须以所用模型实测。"
   }
  },
  {
@@ -556,16 +562,28 @@
   ],
   "sources": [
    {
+    "kind": "paper",
+    "name": "BERT(Devlin 等 2018)——encoder-only 双向预训练",
+    "url": "https://arxiv.org/abs/1810.04805",
+    "note": "对照要点:双向注意力、理解类任务"
+   },
+   {
+    "kind": "paper",
+    "name": "T5(Raffel 等 2019)——encoder-decoder 文本到文本统一框架",
+    "url": "https://arxiv.org/abs/1910.10683",
+    "note": "对照要点:编码-解码结构与适用形态"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(架构常识的工程化表述)"
+    "note": "三类分工与选型结论为独立整理"
    }
   ],
   "verify": {
-   "status": "partial",
+   "status": "verified",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;架构事实为公开稳定知识。"
+   "note": "三类架构的注意力形态与代表模型已对照 BERT/T5 原论文;『decoder-only 成为主流』为事实性概括(以主流开源模型规格为证)。"
   }
  }
 ]
