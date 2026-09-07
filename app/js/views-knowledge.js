@@ -273,7 +273,7 @@ const DocsView = (() => {
   }
 
   function rebuildSearch() {
-    Search.build({ questions: Data.allQuestions(), docs: Data.allDocs(), userDocs: Data.allUserDocs(), records: Store.data });
+    Search.build(currentCtx());
   }
 
   return { render, rebuildSearch, cleanup, _renderToken: 0, _activeDoc: null, _onScroll: null };
@@ -326,11 +326,17 @@ const SearchView = (() => {
       box.innerHTML = `<div class="empty">没有找到与「${esc(q)}」相关的内容。<br><span class="muted">提示:换更短的关键词,或检查范围/专题筛选。</span></div>`;
       return;
     }
-    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料' };
+    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目' };
     box.innerHTML = results.map(r => {
       const u = r.unit;
       let href, title;
-      if (u.kind === 'q' || u.kind === 'note') {
+      if (u.kind === 'concept') {
+        href = `#/study/${(window.APP_DATA.concepts.concepts.find(c => c.id === u.cid)?.questions || [])[0] || ''}`;
+        title = (window.APP_DATA.concepts.concepts.find(c => c.id === u.cid) || {}).name || u.cid;
+      } else if (u.kind === 'project') {
+        href = '#/path';
+        title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
+      } else if (u.kind === 'q' || u.kind === 'note') {
         /* 带上命中的区块锚点:学习页会按需展开并定位到该层级(检查题同时揭示答案) */
         const a = u.anchor && u.anchor !== 'top' ? `?a=${encodeURIComponent(u.anchor)}` : '';
         href = `#/study/${u.qid}${a}`;
@@ -344,7 +350,7 @@ const SearchView = (() => {
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
-      const fieldLabel = { title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节' }[u.field] || u.field;
+      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明' }[u.field]) || u.field;
       return `
         <a class="search-item" href="${esc(href)}">
           <div class="si-head">

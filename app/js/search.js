@@ -42,6 +42,26 @@ const Search = (() => {
         }
       });
     });
+    /* 专项练习与动手项目进入索引(任务书阶段7:统一检索) */
+    ((ctx.concepts || [])).forEach(c => {
+      if (!c.name) return;
+      units.push({
+        kind: 'concept', cid: c.id, field: 'concept', anchor: '',
+        text: norm(c.name + ' ' + (c.definition || '')),
+        raw: c.name + ':' + (c.definition || ''),
+        weight: 2.0, topic: c.topic || ''
+      });
+    });
+    ((ctx.projects || [])).forEach(pr => {
+      if (!pr || !pr.name) return;
+      const body = [pr.goal, pr.expected, pr.debug_case, pr.deliverable, (pr.extensions || []).join('; ')]
+        .filter(Boolean).join('\n');
+      units.push({
+        kind: 'project', pid: pr.id, field: 'project', anchor: '',
+        text: norm(pr.name + ' ' + body), raw: pr.name + '\n' + body,
+        weight: 1.8, topic: ''
+      });
+    });
     (ctx.userDocs || []).forEach(d => {
       units.push({ kind: 'udoc', docId: d.id, field: 'title', anchor: '', text: norm(d.title), raw: d.title, weight: 2.0, topic: '' });
       Markdown.sections(d.text || '').forEach(sec => {

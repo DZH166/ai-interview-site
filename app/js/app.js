@@ -72,7 +72,7 @@ const App = (() => {
   function init() {
     Store.load();
     Data.init();
-    Search.build({ questions: Data.allQuestions(), docs: Data.allDocs(), userDocs: Data.allUserDocs(), records: Store.data });
+    Search.build(StudyView.currentCtx());
 
     /* 暗色模式 */
     const saved = localStorage.getItem('aiiv:theme');

@@ -462,7 +462,9 @@ const StudyView = (() => {
       questions: Data.allQuestions(),
       docs: Data.allDocs(),
       userDocs: Data.allUserDocs(),
-      records: Store.data
+      records: Store.data,
+      concepts: (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [],
+      projects: (window.APP_DATA.projects && window.APP_DATA.projects.projects) || []
     };
   }
 
@@ -553,6 +555,10 @@ const MockView = (() => {
       <div class="card mock-config">
         <h2>自测 / 模拟面试</h2>
         <p class="muted">参考答案默认隐藏:先在输入框写下你的回答,再对照参考要点并自我复盘。抽题会优先选择你最近没有练过的题。未完成的轮次会自动保存草稿,刷新后可继续。</p>
+        <div class="notice" style="border-color:var(--primary);background:#eff6ff">
+          <b>追问梯度(自我检查):</b>概念是什么 → 为什么这样设计 → 代码怎么写 → 边界条件 → 出错怎么排查 → 方案怎么取舍。
+          <span class="muted small">答不上某层就回到对应题目,别背整段稿。</span>
+        </div>
         <div class="form-row">
           <label>专题(可多选)</label>
           <div class="chk-group" id="m-topics">
