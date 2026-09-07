@@ -416,6 +416,11 @@ const Store = (() => {
     if (typeof incoming.ui.pathVersion === 'string' && incoming.ui.pathVersion && !merged.ui.pathVersion) {
       merged.ui.pathVersion = incoming.ui.pathVersion;
     }
+    /* 其他 ui 偏好(drillsOpened 等):本地为空的键才采用备份,不覆盖本地已有 */
+    Object.keys(incoming.ui).forEach(k => {
+      if (['lastHash', 'pathProgress', 'docPos', 'pathVersion', 'savedAt', 'browse', 'search'].includes(k)) return;
+      if (merged.ui[k] === undefined) merged.ui[k] = incoming.ui[k];
+    });
   }
 
   /* 合并导入个人记录。失败 throw(状态不变);成功返回 {qMerged, roundsAdded, notesUpdated} */
