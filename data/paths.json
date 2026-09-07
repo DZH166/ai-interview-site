@@ -14,8 +14,19 @@
             "避开引用语义、可变默认参数两个经典陷阱",
             "写出规范的 try/except(不吞异常、精确捕获)"
           ],
-          "questions": ["PY-001", "PY-042", "PY-044", "PY-041", "PY-033", "PY-005", "PY-039", "PY-043"],
-          "docs": ["doc-python-1"],
+          "questions": [
+            "PY-001",
+            "PY-042",
+            "PY-044",
+            "PY-041",
+            "PY-033",
+            "PY-005",
+            "PY-039",
+            "PY-043"
+          ],
+          "docs": [
+            "doc-python-1"
+          ],
           "exercise": {
             "name": "迷你练习:安全的配置合并(本地可运行)",
             "code": "def merge_config(base: dict, override: dict | None) -> dict:\n    \"\"\"返回合并后的新 dict;不修改入参;override 为 None 时返回 base 的浅拷贝。\"\"\"\n    result = dict(base)\n    if override:\n        result.update(override)\n    return result\n\nprint(merge_config({'model': 'gpt-4o-mini', 'temperature': 0.7}, {'temperature': 0.2}))\n# 期望: {'model': 'gpt-4o-mini', 'temperature': 0.2}\n\n# 陷阱演示:浅拷贝的边界\nbase = {'tags': []}\nresult = merge_config(base, None)\nresult['tags'].append('new')\nprint(base)   # {'tags': ['new']} ← base 被改了!为什么?",
@@ -37,8 +48,16 @@
             "会用 with/上下文管理器管理资源生命周期",
             "理解静态类型检查与运行时校验的分工边界"
           ],
-          "questions": ["PY-002", "PY-012", "PY-020", "PY-031", "PY-040"],
-          "docs": ["doc-python-1"],
+          "questions": [
+            "PY-002",
+            "PY-012",
+            "PY-020",
+            "PY-031",
+            "PY-040"
+          ],
+          "docs": [
+            "doc-python-1"
+          ],
           "exercise": {
             "name": "迷你练习:逐块流式生成器(两种写法对比)",
             "code": "def stream_range(text: str, size: int):\n    \"\"\"range 版:由语言推进并检查终止。\"\"\"\n    if size <= 0:\n        raise ValueError('size 必须为正')\n    for i in range(0, len(text), size):\n        yield text[i:i + size]\n\ndef stream_while(text: str, size: int):\n    \"\"\"while 版:自己推进索引——同样正确,但终止要自己维护。\"\"\"\n    if size <= 0:\n        raise ValueError('size 必须为正')\n    i = 0\n    while i < len(text):\n        yield text[i:i + size]\n        i += size            # 忘记这行 → 死循环\n\nfor c in stream_range('流式输出的本质是生成器', 4):\n    print(c, end='|')\nprint()\nfor c in stream_while('流式输出的本质是生成器', 4):\n    print(c, end='|')\nprint()\ntry:\n    list(stream_range('abc', 0))   # size=0:快速失败\nexcept ValueError as e:\n    print('size=0 →', e)",
@@ -61,8 +80,17 @@
             "理解 FastAPI 校验 422、流式响应与取消语义",
             "会为外部调用配超时/重试/退避"
           ],
-          "questions": ["PY-003", "PY-022", "PY-004", "PY-026", "PY-023", "PY-008"],
-          "docs": ["doc-python-1"],
+          "questions": [
+            "PY-003",
+            "PY-022",
+            "PY-004",
+            "PY-026",
+            "PY-023",
+            "PY-008"
+          ],
+          "docs": [
+            "doc-python-1"
+          ],
           "exercise": {
             "name": "迷你练习:并发请求三家模型(本地可运行,无需网络)",
             "code": "import asyncio\n\nasync def fake_call(name: str, delay: float, fail: bool = False):\n    await asyncio.sleep(delay)\n    if fail:\n        raise RuntimeError(name + ' 失败')\n    return name + ' 完成'\n\nasync def main():\n    results = await asyncio.gather(\n        fake_call('a', 0.1),\n        fake_call('b', 0.2, fail=True),\n        fake_call('c', 0.15),\n        return_exceptions=True,          # 收集失败不中断\n    )\n    print(results)  # ['a 完成', RuntimeError('b 失败'), 'c 完成']\n\nasyncio.run(main())",
@@ -85,19 +113,32 @@
             "搭起结构化输出的工程闭环(五类失败分开处理)",
             "知道拒答是终态,会设计『诚实的不知道』"
           ],
-          "questions": ["FD-027", "FD-025", "FD-016", "FD-024", "FD-012", "LP-001", "LP-011", "LP-003", "LP-036", "LP-032", "LP-038"],
-          "docs": ["doc-llm-1"],
+          "questions": [
+            "FD-027",
+            "FD-025",
+            "FD-016",
+            "FD-024",
+            "FD-012",
+            "LP-001",
+            "LP-011",
+            "LP-003",
+            "LP-036",
+            "LP-032",
+            "LP-038"
+          ],
+          "docs": [
+            "doc-llm-1"
+          ],
           "exercise": {
             "name": "迷你练习:本地校验一个结构化输出(mock,无需 API,需 pydantic)",
-            "code": "from typing import Literal\nfrom pydantic import BaseModel, Field\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float = Field(gt=0)          # 数值约束:schema 层就能拒绝负数\n    channel: Literal[\"alipay\", \"wechat\"]\n\nraw = '{\"order_id\": \"A1\", \"amount\": -3, \"channel\": \"cash\"}'   # 模型输出:负数+错误渠道\ntry:\n    Order.model_validate_json(raw)\nexcept Exception as e:\n    print('校验失败 → 把这条错误回喂给模型重试:', str(e)[:100])\n# 思考:①如果 amount 没写 gt=0,负数会被拒吗?②『这笔订单是不是当前用户的』为什么 schema 管不了?"
+            "code": "from typing import Literal\nfrom pydantic import BaseModel, Field\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float = Field(gt=0)          # 数值约束:schema 层就能拒绝负数\n    channel: Literal[\"alipay\", \"wechat\"]\n\nraw = '{\"order_id\": \"A1\", \"amount\": -3, \"channel\": \"cash\"}'   # 模型输出:负数+错误渠道\ntry:\n    Order.model_validate_json(raw)\nexcept Exception as e:\n    print('校验失败 → 把这条错误回喂给模型重试:', str(e)[:100])\n# 思考:①如果 amount 没写 gt=0,负数会被拒吗?②『这笔订单是不是当前用户的』为什么 schema 管不了?",
+            "variant": {
+              "question": "①Order 只声明 amount: float(无 gt=0)时,-3 能通过校验吗?②怎么让它在结构校验层就被拒绝?③『这笔订单是不是当前用户下的』为什么不能靠 schema?",
+              "reference": "①能——float 只约束类型,-3 是合法浮点数;没有数值约束时负数畅通无阻。②JSON Schema 的 exclusiveMinimum: 0(对应 Pydantic 的 Field(gt=0))在结构校验层直接拒绝。注意:某些模型 API 的结构化输出只支持 JSON Schema 的一个子集,gt=0 在你所用平台是否被支持要看官方文档——平台限制不等于 schema 表达力限制。③它依赖外部状态(订单归属在数据库里、库存余额实时变),schema 是纯结构声明;必须由应用层查询后校验,失败了也属于业务失败而不是 schema 失败。",
+              "reason": "三个对照:-3 通过『仅 float』的 schema(类型合法但缺数值约束)→ 加 gt=0 后结构层拒绝(数值约束生效)→ 归属/库存类规则连 schema 都写不出(外部状态)。把三层混为一谈,就会得出『schema 表达不了金额为正』这种错误结论。",
+              "run": "保存为 order_check.py 后 python order_check.py,需 pydantic(pip install pydantic)。"
+            }
           },
-          "variant": {
-            "question": "①Order 只声明 amount: float(无 gt=0)时,-3 能通过校验吗?②怎么让它在结构校验层就被拒绝?③『这笔订单是不是当前用户下的』为什么不能靠 schema?",
-            "reference": "①能——float 只约束类型,-3 是合法浮点数;没有数值约束时负数畅通无阻。②JSON Schema 的 exclusiveMinimum: 0(对应 Pydantic 的 Field(gt=0))在结构校验层直接拒绝。注意:某些模型 API 的结构化输出只支持 JSON Schema 的一个子集,gt=0 在你所用平台是否被支持要看官方文档——平台限制不等于 schema 表达力限制。③它依赖外部状态(订单归属在数据库里、库存余额实时变),schema 是纯结构声明;必须由应用层查询后校验,失败了也属于业务失败而不是 schema 失败。",
-            "reason": "三个对照:-3 通过『仅 float』的 schema(类型合法但缺数值约束)→ 加 gt=0 后结构层拒绝(数值约束生效)→ 归属/库存类规则连 schema 都写不出(外部状态)。把三层混为一谈,就会得出『schema 表达不了金额为正』这种错误结论。",
-            "run": "保存为 order_check.py 后 python order_check.py,需 pydantic(pip install pydantic)。"
-          }
-          ,
           "review": "#/review"
         },
         {
@@ -109,8 +150,15 @@
             "会看检索评估的可视化(不看分数看分布)",
             "知道索引何时必须重建、如何不停服"
           ],
-          "questions": ["RG-001", "RG-020", "RG-059", "RG-067"],
-          "docs": ["doc-rag-1"],
+          "questions": [
+            "RG-001",
+            "RG-020",
+            "RG-059",
+            "RG-067"
+          ],
+          "docs": [
+            "doc-rag-1"
+          ],
           "exercise": {
             "name": "迷你练习:给段落打检索标签(本地可运行,仅标准库)",
             "code": "docs = [\n    '退款政策:下单 7 天内可无理由退款。',\n    '发货时间:现货 24 小时内发出。',\n    '发票:支持电子发票,下单时填写抬头。',\n]\nquery = '东西买错了想退,来得及吗?'\n# 不用向量库:写一个最朴素的检索(字符重合打分),返回最相关的 1 条\n\ndef naive_search(query, docs):\n    q = set(query)\n    return max(docs, key=lambda d: len(q & set(d)))\n\nprint(naive_search(query, docs))",
@@ -132,8 +180,31 @@
             "把测试、日志、配置、缓存串成一个能上线的最小项目",
             "会用期望管理与产品评审的语言与非技术同事协作"
           ],
-          "questions": ["AG-001", "AG-002", "PY-011", "PY-009", "PY-010", "PY-017", "PY-036", "PY-028", "EN-040", "EN-033", "EN-036", "EN-041", "EN-042", "AG-056", "AG-058", "LP-034", "LP-044", "LP-029", "LP-043"],
-          "docs": ["doc-agent-1", "doc-eng-1"],
+          "questions": [
+            "AG-001",
+            "AG-002",
+            "PY-011",
+            "PY-009",
+            "PY-010",
+            "PY-017",
+            "PY-036",
+            "PY-028",
+            "EN-040",
+            "EN-033",
+            "EN-036",
+            "EN-041",
+            "EN-042",
+            "AG-056",
+            "AG-058",
+            "LP-034",
+            "LP-044",
+            "LP-029",
+            "LP-043"
+          ],
+          "docs": [
+            "doc-agent-1",
+            "doc-eng-1"
+          ],
           "exercise": {
             "name": "迷你练习:完整的工具调用循环(本地可运行,无需网络)",
             "code": "import json\n\nTOOLS = {\n    'get_weather': lambda city: {'city': city, 'weather': '晴 25°C', 'source': '示意数据'},\n}\n\ndef model_turn(messages):\n    \"\"\"替身模型:按对话历史决定『调用工具』还是『给最终回答』。\n    真实场景这一步是 LLM;这里用规则模拟,专注循环本身。\"\"\"\n    user_msg = [m for m in messages if m['role'] == 'user'][-1]['content']\n    tool_msgs = [m for m in messages if m['role'] == 'tool']\n    if '天气' in user_msg and not tool_msgs:\n        return {'type': 'tool_call', 'name': 'get_weather', 'args': {'city': '北京'}}\n    if tool_msgs:\n        return {'type': 'final', 'answer': '根据工具结果(' + tool_msgs[-1]['content'] + '),今天适合出行。'}\n    return {'type': 'final', 'answer': '这个问题不需要工具,我直接回答。'}\n\ndef run_agent(user_input, max_rounds=3):\n    \"\"\"完整循环:用户输入 → 模型意图 → 应用执行工具 → 结果回传 → 模型终答。\"\"\"\n    messages = [{'role': 'user', 'content': user_input}]\n    model_calls = 0\n    for _ in range(max_rounds):\n        model_calls += 1\n        decision = model_turn(messages)\n        if decision['type'] == 'final':\n            return decision['answer'], model_calls\n        name, args = decision['name'], decision['args']\n        try:\n            tool = TOOLS.get(name)\n            if tool is None:\n                result = {'error': '未知工具 ' + name}   # 回喂错误,让模型换路\n            else:\n                result = tool(**args)\n        except Exception as e:\n            result = {'error': '工具执行失败: ' + str(e)}   # 工具异常 ≠ 最终答案\n        messages.append({'role': 'assistant', 'content': json.dumps(decision, ensure_ascii=False)})\n        messages.append({'role': 'tool', 'content': json.dumps(result, ensure_ascii=False)})\n    return '达到最大轮次,已终止(护栏防死循环)', model_calls\n\nans, calls = run_agent('北京天气怎么样?')\nprint(ans, '| 模型调用', calls, '次')\nans2, calls2 = run_agent('1+1等于几?')\nprint(ans2, '| 模型调用', calls2, '次')",
@@ -149,7 +220,11 @@
       ],
       "optional": {
         "name": "选学(不挡路,有余力再看)",
-        "questions": ["FD-017", "AG-029", "LP-010"]
+        "questions": [
+          "FD-017",
+          "AG-029",
+          "LP-010"
+        ]
       }
     }
   ]
