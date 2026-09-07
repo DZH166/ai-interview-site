@@ -435,6 +435,34 @@ const PathView = (() => {
         </details>` : ''}`;
   }
 
+
+  /* 专项练习(代码预测/找错修复/条件变化):先答再看,展开状态记入 Store */
+  function drillKey(stageId, di) { return `drill:${stageId}:${di}`; }
+  function drillOpened(key) {
+    const m = Store.data.ui.drillsOpened || {};
+    return !!m[key];
+  }
+  function markDrill(key) {
+    const m = Store.data.ui.drillsOpened || {};
+    m[key] = Date.now();
+    Store.data.ui.drillsOpened = m;
+    Store.save();
+  }
+  function renderDrill(stageId, di, d) {
+    const key = drillKey(stageId, di);
+    const opened = drillOpened(key);
+    return `
+      <div class="path-drill">
+        <div class="path-drill-q"><span class="badge b-tag">${esc(d.type)}</span> ${esc(d.q)}</div>
+        <details class="path-variant-ref" ${opened ? 'open' : ''}
+          ontoggle="if(this.open && !window.__drillMarked) { window.__drillMarked=true; }">
+          <summary>展开参考要点(先自己预测/找错/推演)</summary>
+          <div class="path-variant-body">${esc(d.reference)}</div>
+          ${d.reason ? `<div class="path-variant-reason"><b>为什么:</b>${esc(d.reason)}</div>` : ''}
+        </details>
+      </div>`;
+  }
+
   function renderStage(s, si, prog) {
     const st = stageStatus(prog[s.id]);
     const done = st.state === 'done';
@@ -469,6 +497,7 @@ const PathView = (() => {
           ${(ex.run) ? `<p class="muted small">运行:${esc(ex.run)}</p>` : ''}
           ${ex.variant ? renderVariant(ex.variant) : ''}
         </details>` : ''}
+        ${(s.drills || []).map((d, di) => renderDrill(s.id, di, d)).join('')}
         <div class="path-stage-actions">
           ${(s.docs || []).map(did => Data.doc(did) ? `<a class="btn btn-small" href="#/docs/${did}">📖 章节阅读</a>` : '').join(' ')}
           <a class="btn btn-small" href="${esc(s.review || '#/review')}">📌 复盘薄弱点</a>

@@ -37,7 +37,27 @@
               "run": "保存为 merge_demo.py 后 python merge_demo.py,仅标准库。"
             }
           },
-          "review": "#/review"
+          "review": "#/review",
+          "drills": [
+            {
+              "type": "代码预测",
+              "q": "先预测输出再运行:\nt = ('a', ['x'])\nt[1] += ['y']\nprint(t)  # 输出什么?有没有异常?",
+              "reference": "输出 ('a', ['x', 'y'])——元组顶层不可变,但元素对象本身可变。注意:tuple 的 += 对可变元素是原地修改(抛异常但已生效的边界行为在这里不会出现,因为是对 list 做 +=),所以没有异常。若写成 t += ('b',) 则抛 TypeError(顶层不可变)。",
+              "reason": "反例:很多人预测『抛异常』——混淆了『元组不可变』的层面(顶层槽位)与『元素对象可变』。与 PY-001 的可哈希讨论同源。"
+            },
+            {
+              "type": "找错修复",
+              "q": "这段函数想统计每个单词出现次数,但结果不对。找出原因并修复:\ndef count_words(words):\n    counters = {}\n    for w in words:\n        c = counters.get(w, [])\n        c.append(1)\n        counters[w] = len(c)\n    return counters",
+              "reference": "逻辑能算对但写法绕:每次 get 拿新列表、append 后又覆盖成长度——语义混乱。规范修复:counters[w] = counters.get(w, 0) + 1。或者用 collections.Counter(words)。",
+              "reason": "考查『字典 get 默认值』与可变对象误用;与 PY-033(可变默认参数)同族,但这里是逻辑绕而不是陷阱。"
+            },
+            {
+              "type": "条件变化",
+              "q": "merge_config(base, override) 里 override 含 {'temperature': None}。合并后 temperature 是什么?这和键缺失的行为差异要在 API 配置里怎么处理?",
+              "reference": "dict.update 会把 None 写进去——temperature 变成 None,与『用户没传』(保留 base)不同。API 配置层必须区分『显式 null』与『未提供』:通常显式 null 视为清除/报错,未提供视为继承。这是很多配置系统的真实坑。",
+              "reason": "变式把『合并』从语法题变成语义设计题:同一段代码,条件变了结论就变。"
+            }
+          ]
         },
         {
           "id": "s2-python-iter",
@@ -68,7 +88,27 @@
               "run": "保存为 stream_demo.py 后 python stream_demo.py,仅标准库。"
             }
           },
-          "review": "#/review"
+          "review": "#/review",
+          "drills": [
+            {
+              "type": "代码预测",
+              "q": "先预测输出再运行:\ndef gen():\n    yield 1\n    return 2\n\ng = gen()\nprint(next(g))\ntry:\n    next(g)\nexcept StopIteration as e:\n    print('stop value:', e.value)",
+              "reference": "先打印 1;第二个 next 抛 StopIteration,其 value 属性是 return 的 2。生成器的 return 不产生值,只作为 StopIteration.value 传出——这是『生成器表达式 vs 函数返回值』的常见误区。",
+              "reason": "检验对『暂停/恢复+返回值通道』的理解,与 PY-002 的核心机制对应。"
+            },
+            {
+              "type": "找错修复",
+              "q": "这个上下文管理器想统计文件处理耗时,但计时总是 0。找原因:\nimport time\nfrom contextlib import contextmanager\n\n@contextmanager\ndef timed():\n    start = time.perf_counter()\n    yield\n    print(time.perf_counter() - start)",
+              "reference": "代码本身正确——错误常在使用侧:with timed(): 里面写的是早已加载好的变量(没有真实 I/O),耗时自然是 0。修复:在 with 体内放真实的文件读取;或者用 time.perf_counter 而不是 time.time(精度)。教训:先确认测量对象真的发生了,再怀疑计时器。",
+              "reason": "找错题常指向『错误不在被怀疑的组件』——这也是排查故障的第一课(与 EN-036 的排查链一致)。"
+            },
+            {
+              "type": "条件变化",
+              "q": "流式生成器 stream_chunks(text, size) 里,size 从 4 改成 0,以及改成 10**9,行为分别如何变化?哪个错误应该在入口拒绝,哪个可以放行?",
+              "reference": "size=0:range step 为 0 → ValueError,应在入口拒绝(参数非法);size=10**9:合法但整段文本只有一个块——流式语义失效(等价于非流式)。可以放行但要在文档说明。变式考『参数合法性与语义有效性的区分』。",
+              "reason": "边界条件分类:必须拒绝/允许但警告/静默接受——三种处理的选择是 API 设计判断。"
+            }
+          ]
         },
         {
           "id": "s3-async-fastapi",
@@ -101,7 +141,27 @@
               "run": "保存对照1+3 为 gather_demo.py 后 python gather_demo.py;对照2 单独保存 case2.py 运行。全程 asyncio.sleep,仅标准库。"
             }
           },
-          "review": "#/review"
+          "review": "#/review",
+          "drills": [
+            {
+              "type": "代码预测",
+              "q": "先预测输出顺序再运行:\nimport asyncio\n\nasync def job(i):\n    await asyncio.sleep(0.1 if i % 2 else 0.3)\n    return i\n\nasync def main():\n    for coro in asyncio.as_completed([job(i) for i in range(4)]):\n        print(await coro)\n\nasyncio.run(main())",
+              "reference": "输出顺序:1, 3, 0, 2(奇数 0.1s 先完成,偶数 0.3s 后完成)。as_completed 按完成顺序交付;gather 会按提交顺序返回 [0,1,2,3]。两种原语的顺序语义差异是并发编排的核心。",
+              "reason": "与 PY-022 的原语选型直接对应;『结果顺序=提交顺序』只对 gather 成立。"
+            },
+            {
+              "type": "找错修复",
+              "q": "这段代码想并发调 3 个接口,但实际是串行。找原因:\nasync def main():\n    results = []\n    for url in urls:\n        results.append(await fetch(url))\n    return results",
+              "reference": "await 在循环体内逐个等待——每次等完才发下一个。修复:results = await asyncio.gather(*[fetch(u) for u in urls])。如果 fetch 内部有同步阻塞(requests),即使 gather 也不是真并发——要用 httpx.AsyncClient 或 to_thread。",
+              "reason": "『写了 async 不等于并发了』——await 的位置决定并发结构;这是 PY-003 的第一误区。"
+            },
+            {
+              "type": "条件变化",
+              "q": "gather(urls...) 中第三个请求慢了 30 秒,整体最好情况/最坏情况如何?加 return_exceptions=True 会改变什么?若要求『慢请求 2 秒就放弃』,怎么改?",
+              "reference": "最好=最慢者决定总时长(30 秒,gather 全等);加 return_exceptions=True 不改变时长,只改变失败的表现形式。2 秒放弃:asyncio.wait_for 包每个请求,或 as_completed(timeout=) 收快者再取消慢者(与 PY-022 的检查题呼应)。",
+              "reason": "把『选原语』从记忆题变成预算题:延迟预算、失败语义、顺序需求三个条件一变,答案就变。"
+            }
+          ]
         },
         {
           "id": "s4-llm-api",
@@ -139,7 +199,27 @@
               "run": "保存为 order_check.py 后 python order_check.py,需 pydantic(pip install pydantic)。"
             }
           },
-          "review": "#/review"
+          "review": "#/review",
+          "drills": [
+            {
+              "type": "代码预测",
+              "q": "同一 prompt 调两次 temperature=1 的模型,输出一定不同吗?temperature=0 呢?",
+              "reference": "temperature=1:大概率不同(采样随机),但小概率相同(采样到同一序列);temperature=0:工程上通常取概率最高 token,输出接近确定,但平台不保证逐字节一致(模型服务/批处理实现的非确定性)。面试里说『0 等于确定』要加限定词。",
+              "reason": "与 LP-001 的采样机制对应;检验『采样随机性』与『实现确定性』是两件事。"
+            },
+            {
+              "type": "找错修复",
+              "q": "这段结构化输出调用偶尔失败,日志显示『支持的关键字之外』。找原因:\nclass Order(BaseModel):\n    order_id: str\n    tags: tuple[str, ...]\nschema = Order.model_json_schema()\nresp = client.chat.completions.create(\n    response_format={\"type\": \"json_schema\", \"json_schema\": {\"name\": \"o\", \"strict\": True, \"schema\": schema}})",
+              "reference": "两处问题:①model_json_schema() 缺 additionalProperties:false(strict 必需,本机实测);②JSON Schema 没有 tuple 类型概念在多数平台的子集里不受支持(数组用 array+items)。修复:用 SDK 的 parse() helper 自动转换,或把 tuple 改 list 并手动补 additionalProperties。",
+              "reason": "把 LP-003 的『平台子集』教训变成找错场景:错误信息在平台侧,根因在 schema 写法。"
+            },
+            {
+              "type": "条件变化",
+              "q": "五类失败的处理策略,如果把『重试 2 次』的预算从 2 改成 0(不重试)、再改成 10,各会发生什么?哪类失败的重试次数增加也没用?",
+              "reference": "预算 0:临时错误直接失败(可用性下降)、schema 错误失去自愈机会;预算 10:临时错误恢复率升但延迟和费用涨,拒答/截断/内容过滤依然终态(重试无信息增量)——次数增加只对『回喂有新信息』的失败(schema/业务)和『条件随时间变化』的失败(临时)有用。",
+              "reason": "把 LP-003 的失败分类从『记住五类』变成『预算变化下的策略推演』。"
+            }
+          ]
         },
         {
           "id": "s5-rag-basics",
@@ -169,7 +249,27 @@
               "run": "保存为 naive_search.py 后 python naive_search.py,仅标准库。"
             }
           },
-          "review": "#/review"
+          "review": "#/review",
+          "drills": [
+            {
+              "type": "代码预测",
+              "q": "naive_search 用字符重合打分,query=『退款』,docs=[『退款政策…』,『如何退货…』]。谁的分高?如果把打分改成按词(『退款』『退货』是不同词)呢?",
+              "reference": "字符重合:两条都含『退』,『退款政策』多一个重合字胜出。按词切分:『退款』与『退货』是不同词,两者得分都只来自『退』——可能并列。这说明打分粒度直接改变检索结果;同义词问题正是语义检索(向量)要解决的。",
+              "reason": "与阶段5 练习的 naive_search 呼应,把『粒度影响结果』变成可运行的预测。"
+            },
+            {
+              "type": "找错修复",
+              "q": "这段评测脚本每次跑分数都不同。找原因:\ndef eval_retrieval(queries, docs):\n    scores = []\n    for q in queries:\n        docs_shuffled = shuffle(docs)   # 打乱后取前 3 作为检索结果\n        scores.append(recall(q, docs_shuffled))\n    return mean(scores)",
+              "reference": "评测把文档随机打乱当『检索结果』——测的是随机数不是检索器。修复:评测必须调用真实的检索函数,并且固定索引快照与随机种子。这与 RG-055 的『控制变量』纪律一致。",
+              "reason": "评测脚本的错误常在『测错了对象』;找错题训练对评测有效性的怀疑。"
+            },
+            {
+              "type": "条件变化",
+              "q": "知识库每天更新 5% 文档。索引重建策略从『每晚全量』改成『每周全量』,检索质量与成本分别怎么变?什么信号告诉你改错了?",
+              "reference": "成本下降(重建次数×单价);质量风险上升——5%×7≈35% 文档一周内可能漂移,过期索引对更新主题的检索质量下滑。信号:nightly 评测中『涉及新文档的 query』回归变差、线上空结果率上升(与 RG-064 的漂移监控呼应)。",
+              "reason": "条件变化题训练『成本-质量权衡+监控信号』的联动思考。"
+            }
+          ]
         },
         {
           "id": "s6-agent-project",
@@ -215,7 +315,27 @@
               "run": "保存为 agent_loop.py 后 python agent_loop.py,仅标准库。自动化验证:python tests/path_exercise_test.py。"
             }
           },
-          "review": "#/review"
+          "review": "#/review",
+          "drills": [
+            {
+              "type": "代码预测",
+              "q": "run_agent('北京天气怎么样?') 中,如果把 model_turn 的 tool_msgs 判断放在『天气』判断之前,会发生什么?多轮对话里第二个问题(非天气)会得到什么?",
+              "reference": "顺序对调后:第一轮 tool_msgs 为空,走『天气→tool_call』不变;但第二轮(已有工具结果)如果用户再问非天气问题,只要 tool_msgs 非空就仍返回天气 final——替身模型的决策被历史污染。真实模型靠注意力区分,但污染历史同样会带偏它。",
+              "reason": "预测题揭示『对话历史影响决策』——为真实 LLM 的上下文管理(PY-009/AD-005)铺垫。"
+            },
+            {
+              "type": "找错修复",
+              "q": "这个工具把用户输入直接拼进查询:TOOLS['search'] = lambda q: db.execute('SELECT * FROM t WHERE name=' + q)。有什么风险?怎么修?",
+              "reference": "SQL 注入风险——模型产生的参数不可信(模型可能被诱导输出恶意串)。修复:参数化查询 db.execute('SELECT * FROM t WHERE name=?', (q,))。教训:工具是应用的代码,安全边界在应用层;模型点名≠可信输入。",
+              "reason": "把 AG-002 的『模型只是点名』推进到安全含义:执行权与输入合法性都在应用。"
+            },
+            {
+              "type": "条件变化",
+              "q": "把 max_rounds 从 3 改成 30,配合一个『永远回错参数』的工具,费用和用户体验怎么变?什么样的终止条件比固定轮数更好?",
+              "reference": "费用×10 且用户等 30 轮才得到一句失败说明;体验差。更好的终止:连续 N 次同类错误即终止、按任务进度判断(是否在推进)、或把『需要用户补充信息』作为合法出口。固定轮数只是最粗暴的护栏。",
+              "reason": "与 AG-043 的失败分类联动:护栏设计从『防死循环』升级为『失败尽早以正确方式结束』。"
+            }
+          ]
         }
       ],
       "optional": {

@@ -741,3 +741,7 @@ textarea:focus-visible {
 .path-variant-body { font-size: 13.5px; margin: 8px 0; padding: 8px 12px; background: #f8fafc; border-radius: 6px; overflow-wrap: anywhere; }
 .path-variant-reason { font-size: 13px; color: var(--muted); margin-top: 6px; }
 [data-theme="dark"] .path-variant-body { background: rgba(148,163,184,.08); }
+
+/* ---- 专项练习(代码预测/找错修复/条件变化) ---- */
+.path-drill { border-top: 1px dashed var(--line); padding: 8px 0 2px; margin-top: 6px; }
+.path-drill-q { font-size: 13.5px; margin-bottom: 4px; overflow-wrap: anywhere; }
