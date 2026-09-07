@@ -363,11 +363,32 @@ const SearchView = (() => {
 
 /* ---------- 学习路径 ---------- */
 const PathView = (() => {
-  /* 路径定义来自 data/paths.json(稳定题号);完成与否由用户手动确认,进度存 Store */
+  /* 路径定义来自 data/paths.json(稳定题号);完成与否由用户手动确认,进度存 Store。
+     条目形状:{done?: ts, cancelled?: ts}(旧版 number 自动迁移为 {done:n},见 store 合并)。
+     状态判定:按最新事件(done vs cancelled),晚者胜;同刻本地事件胜(此处即单一数据源)。 */
   function progress() { return Store.data.ui.pathProgress || {}; }
+  /* 统一读取:返回 {state:'done'|'cancelled'|'none', ts} */
+  function stageStatus(entry) {
+    if (entry == null) return { state: 'none', ts: 0 };
+    if (typeof entry === 'number') return { state: 'done', ts: entry }; /* 旧版形状 */
+    const done = typeof entry.done === 'number' && isFinite(entry.done) ? entry.done : 0;
+    const cancelled = typeof entry.cancelled === 'number' && isFinite(entry.cancelled) ? entry.cancelled : 0;
+    if (done > cancelled) return { state: 'done', ts: done };
+    if (cancelled > 0) return { state: 'cancelled', ts: cancelled };
+    if (done > 0) return { state: 'done', ts: done };
+    return { state: 'none', ts: 0 };
+  }
+  /* 标记完成/取消:都写事件,不删条目(取消留痕,旧备份不会复活完成态) */
   function markStage(stageId, done) {
     const p = Store.data.ui.pathProgress || {};
-    if (done) p[stageId] = Date.now(); else delete p[stageId];
+    const cur = (typeof p[stageId] === 'object' && p[stageId]) || {};
+    const now = Date.now();
+    p[stageId] = done
+      ? { done: now, cancelled: cur.cancelled && cur.cancelled > now ? cur.cancelled : (cur.cancelled || 0) || 0 }
+      : { cancelled: now, done: cur.done || 0 };
+    /* done 与 cancelled 同时为 0 时清理为 undefined 字段,避免无意义对象 */
+    const e = p[stageId];
+    if (!e.done && !e.cancelled) delete p[stageId];
     Store.data.ui.pathProgress = p;
     Store.save();
   }
@@ -377,7 +398,7 @@ const PathView = (() => {
     if (!paths.length) { root.innerHTML = '<div class="empty">暂无路径定义</div>'; return; }
     const path = paths[0];
     const prog = progress();
-    const doneCount = path.stages.filter(s => prog[s.id]).length;
+    const doneCount = path.stages.filter(s => stageStatus(prog[s.id]).state === 'done').length;
     root.innerHTML = `
       <div class="path-head">
         <h1>${esc(path.name)}</h1>
@@ -415,7 +436,9 @@ const PathView = (() => {
   }
 
   function renderStage(s, si, prog) {
-    const done = !!prog[s.id];
+    const st = stageStatus(prog[s.id]);
+    const done = st.state === 'done';
+    const cancelled = st.state === 'cancelled';
     const qs = (s.questions || []).map(id => {
       const q = Data.question(id);
       if (!q) return '';
@@ -432,8 +455,9 @@ const PathView = (() => {
     return `
       <div class="card path-stage ${done ? 'path-done' : ''}">
         <div class="path-stage-head">
-          <h3>${done ? '✅' : '🔹'} ${esc(s.name)}</h3>
-          ${done ? `<span class="muted small">确认于 ${fmtTime(prog[s.id])}</span>` : ''}
+          <h3>${done ? '✅' : cancelled ? '⭕' : '🔹'} ${esc(s.name)}</h3>
+          ${done && st.ts ? `<span class="muted small">确认于 ${fmtTime(st.ts)}</span>` : ''}
+          ${cancelled ? `<span class="muted small">已取消确认(${st.ts ? fmtTime(st.ts) : '时间未知'});完成记录保留,可随时重新确认</span>` : ''}
         </div>
         <p class="muted small">前置:${esc(s.prereq || '无')}</p>
         <ul class="path-goals">${(s.goals || []).map(g => `<li>${esc(g)}</li>`).join('')}</ul>
@@ -450,7 +474,7 @@ const PathView = (() => {
           <a class="btn btn-small" href="${esc(s.review || '#/review')}">📌 复盘薄弱点</a>
           <span class="flex1"></span>
           ${done
-            ? `<button class="btn btn-small" data-undone="${s.id}">取消确认</button>`
+            ? `<button class="btn btn-small" data-undone="${s.id}">取消确认(留痕)</button>`
             : `<button class="btn btn-primary btn-small" data-done="${s.id}">✓ 此阶段已理解(自测通过)</button>`}
         </div>
       </div>`;

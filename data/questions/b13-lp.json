@@ -523,7 +523,8 @@
   ],
   "check": {
    "q": "用户用中日混排提问(中文为主夹日语产品名)。系统应该用什么语言回答?提示词层面怎么保证?",
-   "a": "策略:主语言回答(中文)+产品名保留原文(术语不译,RG-016)——『检测用户主语言』的显式指令+评测覆盖混合输入 case(这类 case 不测,模型可能整段切日语)。实现:指令写明『Respond in the dominant language of the user's message; keep product names in their original language』;评测构造混排样本集(比例不同的混排)验证行为稳定。这题的深层考点:混合语言是 i18n 的真实难点(纯单语言 case 测不出来)——评测集要主动构造边界样本。"
+   "a": "策略:主语言回答(中文)+产品名保留原文(术语不译,RG-016)——『检测用户主语言』的显式指令+评测覆盖混合输入 case(这类 case 不测,模型可能整段切日语)。实现:指令写明『Respond in the dominant language of the user's message; keep product names in their original language』;评测构造混排样本集(比例不同的混排)验证行为稳定。这题的深层考点:混合语言是 i18n 的真实难点(纯单语言 case 测不出来)——评测集要主动构造边界样本。",
+   "explain": "检验点:混合语言场景的显式策略(主语言回答+术语不译)与『评测集必须构造边界样本』的意识——只答『跟随用户语言』而不提检测指令与混排评测,说明没接触过多语言产品的真实边界。"
   },
   "related": [
    "LP-016",

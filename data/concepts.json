@@ -1,0 +1,288 @@
+{
+  "concepts": [
+    {
+      "id": "c-list-tuple",
+      "name": "列表与元组(可变性决定语义)",
+      "topic": "python-backend",
+      "definition": "列表内容可变、元组固定;可变性和元素可哈希性决定谁能当字典键。",
+      "prereq": [],
+      "questions": [
+        "PY-001",
+        "PY-044"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-reference",
+      "name": "引用语义与浅/深拷贝",
+      "topic": "python-backend",
+      "definition": "Python 变量是对象的引用;赋值只复制引用,嵌套结构需要 deepcopy 才能隔离。",
+      "prereq": [
+        "c-list-tuple"
+      ],
+      "questions": [
+        "PY-042",
+        "PY-033"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-exception",
+      "name": "异常处理(EAFP/精确捕获)",
+      "topic": "python-backend",
+      "definition": "Python 推崇『先做再补救』(EAFP);捕获要精确、不吞异常。",
+      "prereq": [],
+      "questions": [
+        "PY-005"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-generator",
+      "name": "生成器(暂停/恢复)",
+      "topic": "python-backend",
+      "definition": "yield 让函数可暂停恢复;内存 O(1)、首值快,是流式输出的底座。",
+      "prereq": [
+        "c-list-tuple"
+      ],
+      "questions": [
+        "PY-002",
+        "PY-021"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-context-manager",
+      "name": "上下文管理器(with)",
+      "topic": "python-backend",
+      "definition": "with 保证资源的清理逻辑一定执行;__enter__/__exit__ 是协议不是语法糖。",
+      "prereq": [
+        "c-exception"
+      ],
+      "questions": [
+        "PY-012"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-async",
+      "name": "协作式并发(asyncio)",
+      "topic": "python-backend",
+      "definition": "await 处让出控制权;事件循环调度;跨 await 的读改写仍要 Lock。",
+      "prereq": [
+        "c-generator"
+      ],
+      "questions": [
+        "PY-003",
+        "PY-022",
+        "PY-004",
+        "PY-008",
+        "PY-023"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-fastapi-validate",
+      "name": "请求校验与 422",
+      "topic": "python-backend",
+      "definition": "Pydantic 模型在进入业务代码前完成类型/约束校验;失败返回 422 带字段明细。",
+      "prereq": [
+        "c-async"
+      ],
+      "questions": [
+        "PY-004",
+        "PY-013"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-streaming",
+      "name": "流式响应",
+      "topic": "python-backend",
+      "definition": "生成器逐块 yield + StreamingResponse;取消只在 await 处生效。",
+      "prereq": [
+        "c-generator",
+        "c-async"
+      ],
+      "questions": [
+        "PY-004"
+      ],
+      "docs": [
+        "doc-python-1"
+      ]
+    },
+    {
+      "id": "c-decode",
+      "name": "解码策略(temperature/top_p)",
+      "topic": "llm-prompt",
+      "definition": "控制采样的随机性;不改变模型能力,影响输出多样性。",
+      "prereq": [],
+      "questions": [
+        "LP-001",
+        "FD-012"
+      ],
+      "docs": [
+        "doc-llm-1"
+      ]
+    },
+    {
+      "id": "c-structured-output",
+      "name": "结构化输出(约束解码)",
+      "topic": "llm-prompt",
+      "definition": "按 JSON Schema 约束每步 token 生成;strict 需 additionalProperties:false。",
+      "prereq": [
+        "c-decode"
+      ],
+      "questions": [
+        "LP-003",
+        "LP-033",
+        "LP-036",
+        "LP-044"
+      ],
+      "docs": [
+        "doc-llm-1"
+      ]
+    },
+    {
+      "id": "c-failure-classify",
+      "name": "五类失败分类(结构化输出)",
+      "topic": "llm-prompt",
+      "definition": "拒答/截断/内容过滤=终态;临时错误退避重试;schema 失败回喂;业务规则应用层。",
+      "prereq": [
+        "c-structured-output"
+      ],
+      "questions": [
+        "LP-003"
+      ],
+      "docs": [
+        "doc-llm-1"
+      ]
+    },
+    {
+      "id": "c-model-forms",
+      "name": "模型形态(base/instruct/chat)",
+      "topic": "llm-prompt",
+      "definition": "Base=预训练续写引擎;Instruct/Chat 是提供方命名,能力以模型卡为准。",
+      "prereq": [],
+      "questions": [
+        "FD-027",
+        "FD-016"
+      ],
+      "docs": [
+        "doc-llm-1"
+      ]
+    },
+    {
+      "id": "c-rag-pipeline",
+      "name": "RAG 三步流程",
+      "topic": "rag",
+      "definition": "检索(R)→增强(A)→生成(G);每步都有独立失败模式。",
+      "prereq": [
+        "c-structured-output"
+      ],
+      "questions": [
+        "RG-001",
+        "RG-020"
+      ],
+      "docs": [
+        "doc-rag-1"
+      ]
+    },
+    {
+      "id": "c-retrieval",
+      "name": "检索与混合检索",
+      "topic": "rag",
+      "definition": "关键词匹配字面、向量匹配语义;生产常两者混合+重排。",
+      "prereq": [
+        "c-rag-pipeline"
+      ],
+      "questions": [
+        "RG-005",
+        "RG-020"
+      ],
+      "docs": [
+        "doc-rag-1"
+      ]
+    },
+    {
+      "id": "c-rag-eval",
+      "name": "检索评估与 CI",
+      "topic": "rag",
+      "definition": "评测集+recall/MRR 进流水线;上线后靠 nightly 发现漂移。",
+      "prereq": [
+        "c-rag-pipeline"
+      ],
+      "questions": [
+        "RG-055",
+        "RG-064",
+        "RG-059"
+      ],
+      "docs": [
+        "doc-rag-1"
+      ]
+    },
+    {
+      "id": "c-agent-loop",
+      "name": "Agent 工具调用循环",
+      "topic": "agent",
+      "definition": "模型点名工具→应用执行→结果回传→模型再决策;模型从不执行工具。",
+      "prereq": [
+        "c-structured-output"
+      ],
+      "questions": [
+        "AG-001",
+        "AG-002"
+      ],
+      "docs": [
+        "doc-agent-1"
+      ]
+    },
+    {
+      "id": "c-agent-failure",
+      "name": "Agent 失败恢复",
+      "topic": "agent",
+      "definition": "未知工具/参数错/工具异常回喂错误;护栏(max_rounds)防死循环。",
+      "prereq": [
+        "c-agent-loop"
+      ],
+      "questions": [
+        "AG-043",
+        "AG-058"
+      ],
+      "docs": [
+        "doc-agent-1"
+      ]
+    },
+    {
+      "id": "c-cost",
+      "name": "token 成本结构",
+      "topic": "engineering",
+      "definition": "输入(system+证据+历史)是大头;证据按生成模型输入单价计费。",
+      "prereq": [
+        "c-rag-pipeline"
+      ],
+      "questions": [
+        "RG-018",
+        "RG-070",
+        "EN-009"
+      ],
+      "docs": [
+        "doc-eng-1"
+      ]
+    }
+  ]
+}

@@ -49,6 +49,15 @@ try:
 except subprocess.TimeoutExpired:
     ok('忘记推进索引确实死循环(反例验证)', True)
 
+
+print('== 阶段3:三种收尾对照展示代码 ==')
+s3 = stages['s3-async-fastapi']
+code3 = extract_code(s3)
+r3 = run_py(code3)
+ok('阶段3 展示代码运行成功', r3.returncode == 0, r3.stderr[:200])
+ok('对照1:c 完成未被取消(孤儿任务)', '[main] 捕获: b 失败' in r3.stdout and r3.stdout.count('[c] 完成') >= 1)
+ok('对照3:TaskGroup 取消 c', '[c] 被取消' in r3.stdout and 'ExceptionGroup' in r3.stdout)
+
 print('== 阶段6:完整工具调用循环 ==')
 s6 = stages['s6-agent-project']
 code6 = extract_code(s6)
@@ -64,13 +73,16 @@ unknown = code6.replace("'get_weather': lambda city:", "'get_temp': lambda city:
 unknown2 = re.sub(r"TOOLS = \{[\s\S]*?\n\}", "TOOLS = {}", code6)
 r6b = run_py(unknown2)
 ok('未知工具:错误回传且循环按规则结束', r6b.returncode == 0 and '未知工具' in r6b.stdout, r6b.stdout[:200])
-ok('未知工具错误被明示而非冒充数据', '"error"' in r6b.stdout)
+ok('未知工具:失败说明而非成功建议', '查询失败' in r6b.stdout and '适合出行' not in r6b.stdout, r6b.stdout[:200])
+ok('未知工具:仍走两轮(回喂后终答)', '模型调用 2 次' in r6b.stdout)
 # 变式:工具抛异常 → 包装回喂,不当最终答案
 failing = code6.replace("'source': '示意数据'", "'source': '示意数据'").replace(
     "'get_weather': lambda city: {'city': city, 'weather': '晴 25°C', 'source': '示意数据'},",
     "'get_weather': lambda city: (_ for _ in ()).throw(RuntimeError('API 炸了')),")
 r6c = run_py(failing)
 ok('工具异常被包装回喂而非透传', r6c.returncode == 0 and '工具执行失败' in r6c.stdout, r6c.stdout[:200])
+ok('工具异常:失败说明而非成功建议', '查询失败' in r6c.stdout and '适合出行' not in r6c.stdout, r6c.stdout[:200])
+ok('成功路径:失败字样不出现(协议不误伤)', r6.returncode == 0 and '查询失败' not in r6.stdout)
 # 死循环护栏:把模型替身改成永远要工具
 always_tool = code6.replace(
     "    if '天气' in user_msg and not tool_msgs:",

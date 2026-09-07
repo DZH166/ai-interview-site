@@ -158,16 +158,39 @@ const QRender = (() => {
     return Markdown.render(text || '');
   }
 
+  /* 概念(来自 data/concepts.json):题目→概念的正查与反查 */
+  function conceptsOf(qid) {
+    const cs = (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [];
+    return cs.filter(c => (c.questions || []).includes(qid));
+  }
+  /* 本题前置概念的通俗名与定义(不只给题号) */
+  function prereqConcepts(q) {
+    const cs = (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [];
+    const byId = new Map(cs.map(c => [c.id, c]));
+    const out = [];
+    const seen = new Set();
+    (q.prerequisites || []).forEach(pid => {
+      conceptsOf(pid).forEach(c => {
+        if (!seen.has(c.id)) { seen.add(c.id); out.push(c); }
+      });
+    });
+    return out;
+  }
+
   function relLinks(q) {
     const pre = (q.prerequisites || []).filter(id => Data.question(id));
     const rel = (q.related || []).filter(id => Data.question(id));
     const docs = (q.doc_refs || []).filter(d => Data.doc(d));
     const tdoc = Data.topicMainDoc(q.topic);
+    const pc = prereqConcepts(q);
+    const myConcepts = conceptsOf(q.id);
     return `
-      ${pre.length ? `<div class="rel-row"><span class="rel-label">前置知识:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
+      ${pc.length ? `<div class="rel-row"><span class="rel-label">先懂这些概念:</span>${pc.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''}
+      ${pre.length ? `<div class="rel-row"><span class="rel-label">前置题目:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
       ${rel.length ? `<div class="rel-row"><span class="rel-label">相关题目:</span>${rel.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
       ${docs.length ? `<div class="rel-row"><span class="rel-label">原理章节:</span>${docs.map(id => `<a class="rel-link" href="#/docs/${id}">${esc(Data.doc(id) ? Data.doc(id).title : id)}</a>`).join(' ')}</div>` : ''}
-      ${tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : ''}`;
+      ${tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : ''}
+      ${myConcepts.length ? `<div class="rel-row"><span class="rel-label">本题涉及概念:</span>${myConcepts.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''}`;
   }
 
   /* 学习页主体(完整展开结构) */

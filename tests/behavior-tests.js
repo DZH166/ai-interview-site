@@ -334,6 +334,33 @@ console.log('== R3-1/2/3: 隔离失败保原文 / 来源类型兼容 / pathProgr
   ok('阅读位置: 本地为空才采用备份', Store.data.ui.docPos.y === 1056);
 }
 
+
+console.log('== R4-1.1: 阶段状态统一(最新事件判定/取消留痕/旧格式) ==');
+{
+  function stageStatus(entry) {
+    if (entry == null) return { state: 'none', ts: 0 };
+    if (typeof entry === 'number') return { state: 'done', ts: entry };
+    const done = typeof entry.done === 'number' && isFinite(entry.done) ? entry.done : 0;
+    const cancelled = typeof entry.cancelled === 'number' && isFinite(entry.cancelled) ? entry.cancelled : 0;
+    if (done > cancelled) return { state: 'done', ts: done };
+    if (cancelled > 0) return { state: 'cancelled', ts: cancelled };
+    if (done > 0) return { state: 'done', ts: done };
+    return { state: 'none', ts: 0 };
+  }
+  ok('取消晚于完成 → 未完成(报告用例)', stageStatus({ done: 1788750000000, cancelled: 1788750300000 }).state === 'cancelled');
+  ok('时间戳有效(fmtTime 不再 NaN)', isFinite(new Date(stageStatus({ done: 1, cancelled: 1788750300000 }).ts).getTime()));
+  ok('旧 number 形状 → done', stageStatus(1788750000000).state === 'done');
+  ok('重新完成(晚于取消)→ done', stageStatus({ done: 1788750400000, cancelled: 1788750300000 }).state === 'done');
+  ok('空/null → none', stageStatus({}).state === 'none' && stageStatus(null).state === 'none');
+  /* 取消留痕 + 备份交互 */
+  Store.data.ui.pathProgress = { s9: { done: 100, cancelled: 200 } };
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, ui: { pathProgress: { s9: { done: 100 } } } } }));
+  ok('旧备份不复活完成态(本地取消 200 更新)', stageStatus(Store.data.ui.pathProgress.s9).state === 'cancelled');
+  Store.data.ui.pathProgress = { s9: { done: 100, cancelled: 0 } };
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, ui: { pathProgress: { s9: { done: 100 } } } } }));
+  ok('本地仅完成(无取消事件)且备份同刻 done → 本地保留 done', stageStatus(Store.data.ui.pathProgress.s9).state === 'done');
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');

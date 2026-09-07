@@ -28,6 +28,7 @@ def main():
     sources = load_json(ROOT / "data" / "sources.json")
     candidates = load_json(ROOT / "data" / "candidates.json")
     paths = load_json(ROOT / "data" / "paths.json")
+    concepts = load_json(ROOT / "data" / "concepts.json")
     questions = []
     for f in sorted((ROOT / "data" / "questions").glob("*.json")):
         questions.extend(load_json(f))
@@ -57,6 +58,7 @@ def main():
         "sources": sources,
         "candidates": candidates,
         "paths": paths,
+        "concepts": concepts,
     }
     js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。 */\n"
           "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,
