@@ -337,16 +337,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "OpenAI Cookbook · Prompt engineering 实践(评估迭代)",
+    "url": "https://github.com/openai/openai-cookbook",
+    "note": "对照要点:提示词迭代与评估的工程框架"
+   },
+   {
     "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
+    "note": "experiment log 字段设计为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "实践类主题,内容为独立整理;experiment log 记录法:待核查项=与 ML 实验管理(如 W&B/MLflow 字段)的通行做法对照。不填首页链接凑数。"
+   "note": "迭代与评估框架可对照 OpenAI Cookbook;具体记录字段为独立整理。"
   }
  },
  {

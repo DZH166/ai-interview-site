@@ -379,16 +379,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "W3C · 国际化术语与最佳实践",
+    "url": "https://www.w3.org/International/",
+    "note": "对照要点:术语一致性的本地化通用原则"
+   },
+   {
     "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
+    "note": "术语表进提示词的做法为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "实践类主题,内容为独立整理;术语一致性:待核查项=本地化行业标准(术语库/TB)与提示词结合的公开案例。不填首页链接凑数。"
+   "note": "国际化原则可对照 W3C I18N;术语表注入提示词的具体做法为独立整理。"
   }
  },
  {

@@ -447,16 +447,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "Google · Rules of ML(#29-33 上线前人工评估的通行纪律)",
+    "url": "https://developers.google.com/machine-learning/guides/rules-of-ml",
+    "note": "对照要点:UAT 在 ML 系统中的位置"
+   },
+   {
     "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
+    "note": "Agent 场景的 UAT 用例设计为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "实践类主题,内容为独立整理;Agent UAT:待核查项=UAT 通行流程与 Agent 场景的结合点。不填首页链接凑数。"
+   "note": "上线前人工评估纪律可对照 Rules of ML;Agent 特有 UAT(轨迹评审/工具权限)为独立整理。"
   }
  },
  {

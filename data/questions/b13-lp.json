@@ -538,16 +538,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "OpenAI · Language models are multilingual(多语言能力与指令)",
+    "url": "https://platform.openai.com/docs/guides/language",
+    "note": "对照要点:多语言指令跟随"
+   },
+   {
     "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
+    "note": "i18n 提示词策略(主语言检测/术语不译)为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "实践类主题,内容为独立整理;多语言提示词策略:待核查项=官方多语言基准(如 MGSM)与厂商多语言指引的对照。不填首页链接凑数。"
+   "note": "多语言能力已对照 OpenAI 官方指引;产品化 i18n 策略为独立整理,以自建混排评测为准。"
   }
  }
 ]

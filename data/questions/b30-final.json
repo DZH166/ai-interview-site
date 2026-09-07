@@ -257,13 +257,13 @@
     "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
+    "note": "独立整理(任务报告设计为可观测性实践)"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "实践类主题,内容为独立整理;任务完成报告:待核查项=可观测性文献(如 LangSmith trace 字段)对照。不填首页链接凑数。"
+   "note": "实践主题;待核查项=LangSmith/LangFusion 等 trace 平台的公开字段模型对照。"
   }
  }
 ]
