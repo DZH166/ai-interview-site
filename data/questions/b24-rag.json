@@ -245,16 +245,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "RAGAS · 评估指标与结果分析(官方文档)",
+    "url": "https://docs.ragas.io/en/stable/",
+    "note": "对照要点:指标口径与可视化起点"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理的可视化框架"
+    "note": "『看分布不看均分』的分析清单为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;图为演示。"
+   "note": "指标体系已对照 RAGAS 文档;可视化分析清单为独立整理。"
   }
  },
  {

@@ -400,18 +400,33 @@ const PathView = (() => {
     });
   }
 
+  /* 变式检查:问题直接可见;参考答案与原因默认折叠(先自己回答再展开) */
+  function renderVariant(v) {
+    const question = typeof v === 'string' ? v : v.question;
+    return `
+      <div class="path-variant">
+        <div class="path-variant-q"><b>变式检查:</b>${esc(question)}</div>
+        ${typeof v === 'object' && v.reference ? `
+        <details class="path-variant-ref">
+          <summary>展开参考答案(先自己回答)</summary>
+          <div class="path-variant-body">${esc(v.reference)}</div>
+          ${v.reason ? `<div class="path-variant-reason"><b>原因/反例:</b>${esc(v.reason)}</div>` : ''}
+        </details>` : ''}`;
+  }
+
   function renderStage(s, si, prog) {
     const done = !!prog[s.id];
     const qs = (s.questions || []).map(id => {
       const q = Data.question(id);
       if (!q) return '';
       const st = Data.statusInfo(id);
+      /* 整行就是一个真链接:单一焦点停靠点,Enter/Space 原生激活,无 role 伪装 */
       return `
-        <div class="path-q ${st.cls}" role="link" tabindex="0" data-qid="${id}">
-          <a class="qid" href="#/study/${id}">${id}</a>
+        <a class="path-q ${st.cls}" href="#/study/${id}">
+          <span class="qid">${id}</span>
           <span class="path-q-title">${esc(q.title)}</span>
           <span class="badge ${st.cls}">${st.label}</span>
-        </div>`;
+        </a>`;
     }).join('');
     const ex = s.exercise || {};
     return `
@@ -427,7 +442,8 @@ const PathView = (() => {
         <details class="path-exercise">
           <summary>🛠 ${esc(ex.name || '迷你练习')}</summary>
           <pre class="code"><code>${esc(ex.code)}</code></pre>
-          ${ex.variant ? `<p class="muted small">${esc(ex.variant)}</p>` : ''}
+          ${(ex.run) ? `<p class="muted small">运行:${esc(ex.run)}</p>` : ''}
+          ${ex.variant ? renderVariant(ex.variant) : ''}
         </details>` : ''}
         <div class="path-stage-actions">
           ${(s.docs || []).map(did => Data.doc(did) ? `<a class="btn btn-small" href="#/docs/${did}">📖 章节阅读</a>` : '').join(' ')}

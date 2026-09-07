@@ -6,11 +6,11 @@
   "verified_total": 62,
   "verified_with_url_content_checked": 62,
   "partial_total": 244,
-  "partial_with_url_version_related_or_part": 69,
-  "partial_no_source_yet": 175,
+  "partial_with_url_version_related_or_part": 74,
+  "partial_no_source_yet": 170,
   "todo": 0,
   "basic_total": 52,
-  "basic_without_url": 14,
+  "basic_without_url": 9,
   "compare_vs_baseline": {
     "to_verified": 2,
     "list_up": [

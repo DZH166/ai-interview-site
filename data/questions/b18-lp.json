@@ -220,7 +220,7 @@
   "prerequisites": [
    "LP-003"
   ],
-  "answer": "复杂 schema 的实战要点:①扁平优先——嵌套深度是质量与延迟的敌人(LP-003 的追问),三级以上嵌套考虑拆分(多任务流水线)或扁平化(用点路径字段替代层级);②联合类型的处理——各平台对 anyOf/oneOf 的支持不同(没有 manyOf 这个关键字;以各家官方『支持的关键字列表』为准,如 OpenAI 结构化输出支持 anyOf、不支持 oneOf,其他平台自行核对),不支持时的降级(枚举+可选字段模拟);③数组策略——minItems/maxItems 显式、元素 schema 严格(数组元素的校验常是薄弱点);④渐进构建——复杂输出拆多步(先抽取主实体→再补关系),每步 schema 简单;⑤schema 的自我文档——字段 description 详细(约束解码与模型理解共用)、枚举完备(防造值);⑥验证闭环——真实输出跑 schema+语义双校验(LP-003 的闭环),失败样本反哺 schema 设计(过于复杂的 schema 是设计味道)。",
+  "answer": "复杂 schema 的实战要点:①扁平优先——深嵌套常推高延迟并让结构保持更难(程度取决于模型/任务/schema,以你的评测为准,LP-003 的追问),三级以上嵌套考虑拆分(多任务流水线)或扁平化(用点路径字段替代层级);②联合类型的处理——各平台对 anyOf/oneOf 的支持不同(没有 manyOf 这个关键字;以各家官方『支持的关键字列表』为准,如 OpenAI 结构化输出支持 anyOf、不支持 oneOf,其他平台自行核对),不支持时的降级(枚举+可选字段模拟);③数组策略——minItems/maxItems 显式、元素 schema 严格(数组元素的校验常是薄弱点);④渐进构建——复杂输出拆多步(先抽取主实体→再补关系),每步 schema 简单;⑤schema 的自我文档——字段 description 详细(约束解码与模型理解共用)、枚举完备(防造值);⑥验证闭环——真实输出跑 schema+语义双校验(LP-003 的闭环),失败样本反哺 schema 设计(过于复杂的 schema 是设计味道)。",
   "plain": "复杂 schema 像点菜系统的表单设计:嵌套=『表单里套表单』(填的人晕,系统校验慢);扁平化=『摊开来填』(字段名带路径,如 shipping_city);联合类型=『这部分可以是 A 型也可以是 B 型』(系统支持差异大——有的表单系统做不了);数组=『可增行区域』(不设上限用户能填一万行)。原则:表单为填的人设计(模型是填表人)——schema 越贴模型的能力,成功率越高。比喻局限:约束解码(schema 强制)在嵌套深时搜索空间大——延迟与质量的代价是技术性的,表单比喻没体现。",
   "deep": "1) 嵌套的代价与扁平化:\n   - 深嵌套(4 级+)的问题:约束解码的生成路径复杂(延迟)、模型的结构保持能力下降(深层字段漏填/错位)、错误定位难(哪层错了);\n   - 扁平化模式:点路径字段(shipping.address.city)或实体表(arrays of flat records);\n   - 判断:嵌套反映了真实领域结构(订单-明细)时保留(2~3 级),『为了组织而组织』的嵌套扁平化。\n2) 联合类型与兼容性:JSON Schema 只有 anyOf/oneOf(没有 manyOf);各平台对它们的支持不同(能力矩阵,LP-008 的矩阵维护——以官方支持列表为准,不要照搬经验);降级模式:联合→枚举字段+按枚举的条件字段(type: \"payment\" | \"refund\" + 各自的可选字段)——schema 简单但需要提示词说明约束;验证:条件字段的一致性校验(type=refund 时 refund_amount 必填——schema 外的业务校验,PY-031 的边界)。\n3) 数组的陷阱:minItems/maxItems(长度失控,LP-011 的 max_tokens 联动)、元素唯一性(uniqueItems 的支持)、嵌套数组(数组的数组——尽量避);大数组的生成质量(第 20 个元素的质量常低于第 1 个——长度与质量的权衡,分段生成 LP-011)。\n4) 渐进构建(multi-step):复杂抽取拆步骤:①抽取主实体列表(扁平)→②对每实体抽取详情(循环调用)→③关联组装(代码)——每步 schema 简单成功率高,代价是多次调用(延迟成本,EN-006 的预算);与单步复杂 schema 的取舍:实测成功率与总延迟(RG-009)。\n5) schema 的设计与文档:description 详细(字段含义/格式/示例——模型读它决定怎么填,RG-039 的 description 原则同源)、默认值与可选性显式、版本化(schema 变更=接口变更,LP-021)。schema 设计的评审:复杂度审视(每个嵌套层问『模型能稳定填吗』)。",
   "example": "```python\n# 扁平化 vs 深嵌套(示例)\nclass OrderDeep(BaseModel):\n    customer: Customer          # 嵌套 1\n        # address: Address      # 嵌套 2\n            # geo: Geo          # 嵌套 3 ← 深度风险\n\nclass OrderFlat(BaseModel):     # 扁平化\n    customer_name: str\n    shipping_city: str\n    shipping_lat: float | None\n# 抽取任务:扁平版通常更稳(是否『显著』取决于模型/任务/schema,以你的实测为准)\n```",
@@ -271,7 +271,7 @@
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "已修正:manyOf 不是 JSON Schema 关键字,anyOf/oneOf 的平台支持以官方文档为准;成功率为示意值已标注,非实测。"
+   "note": "已修正:manyOf 不是 JSON Schema 关键字;anyOf/oneOf 的平台支持以官方文档为准;嵌套的代价、拆步骤的收益均为条件化设计假设(以同模型/任务/样本的实测为准),非普适结论。"
   },
   "content_version": {
    "rev": "2026-09-07",
@@ -337,16 +337,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;记录模板为演示。"
+   "note": "实践类主题,内容为独立整理;experiment log 记录法:待核查项=与 ML 实验管理(如 W&B/MLflow 字段)的通行做法对照。不填首页链接凑数。"
   }
  },
  {
@@ -475,16 +475,28 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "OpenAI · Structured Outputs 常见问题(截断/refusal/不支持的关键字)",
+    "url": "https://platform.openai.com/docs/guides/structured-outputs",
+    "note": "对照要点:格式错误的平台侧成因"
+   },
+   {
+    "kind": "official-docs",
+    "name": "JSON Schema · 非法 JSON 与修复(repair)的社区讨论基准",
+    "url": "https://json-schema.org/learn/miscellaneous-integration",
+    "note": "对照要点:schema 与解析失败的分层"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理的修复策略"
+    "note": "repair 策略清单(剥离 markdown 围栏、json_repair、回喂重试)为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;示例为演示。"
+   "note": "格式错误的平台成因已对照 OpenAI 文档;repair 策略为工程实践整理,各策略成功率以自建评测为准。"
   }
  },
  {

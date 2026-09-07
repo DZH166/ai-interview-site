@@ -117,16 +117,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "Google ML 入门 · 生成式 vs 判别式模型的概念区分",
+    "url": "https://developers.google.com/machine-learning/generative-ai",
+    "note": "对照要点:两类模型的建模范式差异"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "对 LLM 选型的映射(P0 生成/P1 理解)为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理"
+   "note": "范式区分已对照 Google ML 课程;映射到 LLM 应用选型的准则为独立整理。"
   }
  },
  {
@@ -248,16 +254,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理;报告为演示。"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理。"
+   "note": "实践类主题,内容为独立整理;任务完成报告:待核查项=可观测性文献(如 LangSmith trace 字段)对照。不填首页链接凑数。"
   }
  }
 ]

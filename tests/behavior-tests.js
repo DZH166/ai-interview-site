@@ -280,6 +280,60 @@ console.log('== A1/A3: 导入入口统一校验 / 启动隔离 / 完整恢复 / 
   eq('无变化的更新不提升时间戳', Store.rec('PY-001')._updatedAt, tsBefore);
 }
 
+
+console.log('== R3-1/2/3: 隔离失败保原文 / 来源类型兼容 / pathProgress 合并 ==');
+{
+  /* 用独立沙箱跑,避免污染前面的测试状态 */
+  const sandboxStore = (() => {
+    const m2 = new Map();
+    let fq = false;
+    const ls = {
+      getItem: k => (m2.has(k) ? m2.get(k) : null),
+      setItem: (k, v) => { if (fq && k === 'aiiv:quarantine') throw new Error('QuotaExceededError'); m2.set(k, String(v)); },
+      removeItem: k => m2.delete(k),
+      clear: () => m2.clear()
+    };
+    Object.defineProperty(global, 'localStorage', { value: ls, configurable: true });
+    Store.load();
+    Store.data.ui.pathProgress = {};
+    return { get ls() { return ls; }, setFail: v => { fq = v; } };
+  })();
+
+  const badBank = JSON.stringify({ v: 1, saved_at: 1, questions: [
+    { id: 'ZZ-902', title: '自备题', tags: 'Python' },
+    { id: 'ZZ-903', topic: 'rag', type: 'concept', difficulty: 'basic', title: '合法题', tags: ['t'], answer: 'a', plain: 'p', deep: 'd', example: 'e', interview: 'i', followups: [{ q: 'x', a: 'y' }], pitfalls: ['p'], check: { q: 'q', a: 'a' }, sources: [{ kind: 'official', name: 'd', url: 'https://e.com' }], verify: { status: 'partial' } }
+  ]});
+  sandboxStore.ls.setItem('aiiv:bank-extra', badBank);
+  sandboxStore.setFail(true);
+  const got = Store.loadExtraBankSafe();
+  ok('隔离容量失败: 内存返回合法子集', got.length === 1 && got[0].id === 'ZZ-903');
+  ok('隔离容量失败: 原键字节未动', sandboxStore.ls.getItem('aiiv:bank-extra') === badBank);
+  ok('隔离容量失败: 无假成功(隔离为空)', Store.quarantineCount() === 0);
+  ok('原始内容可直接导出', Store.rawExtrasExport().includes('ZZ-902'));
+  sandboxStore.setFail(false);
+  Store.loadExtraBankSafe();
+  ok('重试(第二次启动): 隔离成功', Store.quarantineCount() === 1);
+  const q1 = Store.quarantineCount();
+  Store.loadExtraBankSafe();
+  ok('重复启动不累积隔离项', Store.quarantineCount() === q1);
+
+  const realKinds = ['official-docs', 'official-blog', 'website', 'official', 'paper', 'repo', 'independent'];
+  const batch = realKinds.map((k, i) => ({ id: 'ZZ-92' + i, topic: 'rag', type: 'concept', difficulty: 'basic', title: 'T' + i, tags: ['t'], answer: 'a', plain: 'p', deep: 'd', example: 'e', interview: 'i', followups: [{ q: 'x', a: 'y' }], pitfalls: ['p'], check: { q: 'q', a: 'a' }, sources: [{ kind: k, name: 'n', url: 'https://e.com' }], verify: { status: 'partial' } }));
+  const r2 = Store.importLibrary(JSON.stringify({ type: 'aiiv-library', v: 1, questions: batch, docs: [] }));
+  ok('真实题库 7 种来源类型全部接受', r2.questionsAdded === 7, JSON.stringify(r2));
+  ok('website 归一映射', Store.normalizeSourceKind('website') === 'web');
+
+  Store.data.ui.pathProgress = { s1: { done: 100, cancelled: 200 } };
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, ui: { pathProgress: { s1: { done: 150 } } } } }));
+  ok('阶段进度: 取消晚于备份done → 保留取消态', JSON.stringify(Store.data.ui.pathProgress.s1) === JSON.stringify({ done: 100, cancelled: 200 }));
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, ui: { pathProgress: { s2: { done: 300, cancelled: 400 } } } } }));
+  ok('阶段进度: 备份取消更晚 → 采用取消态', JSON.stringify(Store.data.ui.pathProgress.s2) === JSON.stringify({ done: 300, cancelled: 400 }));
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, ui: { pathProgress: { s3: 600 } } } }));
+  ok('阶段进度: 旧版 number 形状迁移', Store.data.ui.pathProgress.s3.done === 600);
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, ui: { docPos: { docId: 'doc-rag-1', secId: '6', y: 1056 } } } }));
+  ok('阅读位置: 本地为空才采用备份', Store.data.ui.docPos.y === 1056);
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');

@@ -10,6 +10,7 @@ const Data = (() => {
   function init() {
     const base = (window.APP_DATA && window.APP_DATA.questions) || [];
     /* 启动隔离:坏扩展数据移入隔离键(原始保留,维护页可导出),合法数据才进内存 */
+    if (Store.resetLoadIssues) Store.resetLoadIssues();
     const extra = Store.loadExtraBankSafe();
     questions = base.slice();
     /* 用本轮新建的 seen 判重:不能用上一轮的 byId,否则重复 init 会把
@@ -108,7 +109,7 @@ const QRender = (() => {
     const v = q.verify || {};
     const src = (q.sources || []).map(s => `
       <li>
-        <span class="src-kind">${esc(s.kind === 'official' ? '官方' : s.kind === 'paper' ? '论文' : s.kind === 'repo' ? '开源库' : s.kind === 'independent' ? '独立整理' : '网页')}</span>
+        <span class="src-kind">${esc(({ 'official': '官方', 'official-docs': '官方文档', 'official-blog': '官方博客', 'paper': '论文', 'repo': '开源库', 'independent': '独立整理', 'web': '网页', 'website': '网页' })[s.kind] || s.kind)}</span>
         ${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.name)}</a>` : `<span>${esc(s.name)}</span>`}
         ${s.note ? `<div class="src-note">${esc(s.note)}</div>` : ''}
       </li>`).join('');

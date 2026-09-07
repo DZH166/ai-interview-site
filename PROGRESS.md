@@ -128,3 +128,16 @@ FastAPI 流式与取消/Python asyncio-task/OpenAI function-calling 与 structur
 - C:data/paths.json 六阶段主线+PathView(#/path)+文档题序按路径重排;content_version 修订提醒(12 题,旧记录保留,用户自决)
 - CI:触发补 app/**+tests/**
 - 行为测试 62+mock 14 全过;浏览器回归 H~M 组全过;8765 数据完好
+
+## 第三修复轮(2026-09-07,基线 2be1168;工作树改动未提交)
+
+- 修复1:隔离失败保原文(quarantineAdd 返回结果/幂等去重/loadIssues/原始导出 rawExtrasExport/维护页重试 UI)
+- 修复2:来源枚举扩展到真实题库全集(official-docs/official-blog/website),website 归一映射,UI 标签 8 种
+- 修复3:备份含 pathProgress(done/cancelled 可追溯,晚者胜,旧 number 形状迁移)/docPos(本地空才采用)/pathVersion;mergeUi 供 importRecords+importFull 共用
+- 修复4:FD-027 重写(名字≠训练阶段/轮次;InstructGPT+Llama-3.1-Instruct 两个一手反例;查模型卡方法论)
+- 修复5:LP-003 三层(schema 表达力/平台子集/外部业务),amount 改 gt=0,业务分支改订单归属;本机验证 exclusiveMinimum
+- 修复6:mock 重写 18 断言(业务分支真实命中 u_99-1 订单);CI 接入 lp003_mock + path_exercise 两个 Python 测试
+- 修复7:LP-033 残留清零;14 道基础题 5 补官方文档/9 具体化待核查(基础无URL 9/52)
+- 修复8/9:paths.json 阶段6 完整工具循环(两轮/护栏/未知工具/异常包装),全变式结构化含参考答案,阶段2 预设错误修正;PathView 揭示界面;path_exercise_test.py 13 断言
+- 修复10:path-q 变真 <a>(单焦点)
+- 测试:74+18+13 全过;8765 数据完好;交付《修改说明-第三轮.md》

@@ -124,7 +124,9 @@ const Store = (() => {
   const Q_TYPES = ['concept', 'principle', 'comparison', 'code', 'debug', 'scenario'];
   const Q_DIFFS = ['basic', 'intermediate', 'advanced'];
   const Q_VERIFY = ['verified', 'partial', 'todo'];
-  const Q_SRC_KINDS = ['official', 'paper', 'repo', 'independent', 'web'];
+  /* 来源枚举以真实题库数据为事实基础(official-docs/official-blog/website 在库中广泛使用);
+     迁移映射:website 与 web 同义,读取时归一,原始字段保留不丢 */
+  const Q_SRC_KINDS = ['official', 'official-docs', 'official-blog', 'paper', 'repo', 'independent', 'web', 'website'];
   const MOJI_RE = /\ufffd|锟斤拷|烫烫|Ã[^\x00-\x7F]/;
 
   function topicIds() {
@@ -199,12 +201,20 @@ const Store = (() => {
 
   /* ---- 启动隔离:历史坏扩展数据不进入内存,原始内容保留在隔离键,可导出修复 ---- */
   const KEY_QUARANTINE = PREFIX + 'quarantine';
+  /* 隔离写入:返回 true=原文已安全保存到隔离区;false=保存失败(调用方必须保留原键)。
+     幂等:相同 kind+raw 不重复入队(重复启动不会累积)。 */
   function quarantineAdd(kind, reason, raw) {
     let arr = [];
     try { arr = JSON.parse(localStorage.getItem(KEY_QUARANTINE) || '[]'); if (!Array.isArray(arr)) arr = []; } catch (e) { arr = []; }
+    const fp = kind + '|' + (raw || '');
+    if (arr.some(e => (e.kind + '|' + (e.raw || '')) === fp)) return true;
     arr.push({ kind, reason, raw, ts: Date.now() });
-    try { localStorage.setItem(KEY_QUARANTINE, JSON.stringify(arr)); } catch (e) { /* 隔离写入失败不影响主流程 */ }
+    try { localStorage.setItem(KEY_QUARANTINE, JSON.stringify(arr)); return true; }
+    catch (e) { return false; }
   }
+  /* 本轮加载的隔离失败状态(Data.init 每轮重置):供维护页提示与重试 */
+  let loadIssues = { quarantineFailed: 0 };
+  function resetLoadIssues() { loadIssues = { quarantineFailed: 0 }; }
   function quarantineCount() {
     try { const a = JSON.parse(localStorage.getItem(KEY_QUARANTINE) || '[]'); return Array.isArray(a) ? a.length : 0; }
     catch (e) { return 0; }
@@ -218,33 +228,37 @@ const Store = (() => {
     let raw = null;
     try { raw = localStorage.getItem(KEY_EXTRA); } catch (e) { return []; }
     if (!raw) return [];
-    let obj;
-    try { obj = JSON.parse(raw); } catch (e) {
-      quarantineAdd('bank-extra', 'JSON 解析失败', raw);
-      localStorage.removeItem(KEY_EXTRA);
-      return [];
-    }
-    const qs = Array.isArray(obj && obj.questions) ? obj.questions : null;
-    if (!qs) {
-      quarantineAdd('bank-extra', 'questions 字段缺失', raw);
-      localStorage.removeItem(KEY_EXTRA);
+    let obj = null, parseFailed = false;
+    try { obj = JSON.parse(raw); } catch (e) { parseFailed = true; }
+    if (parseFailed || !obj || !Array.isArray(obj.questions)) {
+      const reason = parseFailed ? 'JSON 解析失败' : 'questions 字段缺失';
+      /* 只有确认原文已安全进入隔离区,才允许清理原键;失败则原键原样保留 */
+      if (quarantineAdd('bank-extra', reason, raw)) {
+        try { localStorage.removeItem(KEY_EXTRA); } catch (e) { /* 保留原键 */ }
+      } else {
+        loadIssues.quarantineFailed++;
+      }
       return [];
     }
     const seen = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
-    const good = [];
-    let dirty = false;
+    const qs = obj.questions;
+    const good = [], bads = [];
     qs.forEach(q => {
       const { errs } = validateQuestion(q, new Set(), seen);
-      if (errs.length) {
-        quarantineAdd('bank-extra', errs.slice(0, 3).join('; '), JSON.stringify(q));
-        dirty = true;
-      } else {
-        good.push(q);
-        seen.add(q.id);
-      }
+      if (errs.length) bads.push({ q, errs });
+      else { good.push(q); seen.add(q.id); }
     });
-    if (dirty) {
-      try { localStorage.setItem(KEY_EXTRA, JSON.stringify({ v: 1, saved_at: Date.now(), questions: good })); } catch (e) { /* 保持原样 */ }
+    if (bads.length) {
+      let allSaved = true;
+      bads.forEach(({ q, errs }) => {
+        if (!quarantineAdd('bank-extra', errs.slice(0, 3).join('; '), JSON.stringify(q))) allSaved = false;
+      });
+      /* 隔离全部成功才允许用合法子集重写原库;失败则原键保持原字节(下次启动幂等重试) */
+      if (allSaved && good.length !== qs.length) {
+        try { localStorage.setItem(KEY_EXTRA, JSON.stringify({ v: 1, saved_at: Date.now(), questions: good })); }
+        catch (e) { allSaved = false; }
+      }
+      if (!allSaved) loadIssues.quarantineFailed++;
     }
     return good;
   }
@@ -253,28 +267,43 @@ const Store = (() => {
     let raw = null;
     try { raw = localStorage.getItem(KEY_USERDOCS); } catch (e) { return []; }
     if (!raw) return [];
-    let arr;
-    try { arr = JSON.parse(raw); } catch (e) {
-      quarantineAdd('userdocs', 'JSON 解析失败', raw);
-      localStorage.removeItem(KEY_USERDOCS);
+    let arr = null, parseFailed = false;
+    try { arr = JSON.parse(raw); } catch (e) { parseFailed = true; }
+    if (parseFailed || !Array.isArray(arr)) {
+      const reason = parseFailed ? 'JSON 解析失败' : '不是数组';
+      if (quarantineAdd('userdocs', reason, raw)) {
+        try { localStorage.removeItem(KEY_USERDOCS); } catch (e) { /* 保留原键 */ }
+      } else {
+        loadIssues.quarantineFailed++;
+      }
       return [];
     }
-    if (!Array.isArray(arr)) {
-      quarantineAdd('userdocs', '不是数组', raw);
-      localStorage.removeItem(KEY_USERDOCS);
-      return [];
-    }
-    const good = [];
-    let dirty = false;
+    const good = [], bads = [];
     arr.forEach(d => {
       const err = validateDoc(d);
-      if (err) { quarantineAdd('userdocs', err, JSON.stringify(d)); dirty = true; }
+      if (err) bads.push({ d, err });
       else good.push(d);
     });
-    if (dirty) {
-      try { localStorage.setItem(KEY_USERDOCS, JSON.stringify(good)); } catch (e) { /* 保持原样 */ }
+    if (bads.length) {
+      let allSaved = true;
+      bads.forEach(({ d, err }) => {
+        if (!quarantineAdd('userdocs', err, JSON.stringify(d))) allSaved = false;
+      });
+      if (allSaved && good.length !== arr.length) {
+        try { localStorage.setItem(KEY_USERDOCS, JSON.stringify(good)); }
+        catch (e) { allSaved = false; }
+      }
+      if (!allSaved) loadIssues.quarantineFailed++;
     }
     return good;
+  }
+  /* 原始内容直接导出(隔离失败时用户仍可拿走原字节) */
+  function rawExtrasExport() {
+    return JSON.stringify({
+      type: 'aiiv-raw-extras', v: 1, exported_at: new Date().toISOString(),
+      bank_extra_raw: localStorage.getItem(KEY_EXTRA),
+      userdocs_raw: localStorage.getItem(KEY_USERDOCS),
+    }, null, 2);
   }
 
   function validateRecordsObj(incoming) {
@@ -319,7 +348,26 @@ const Store = (() => {
     }
     if (incoming.ui !== undefined && (!incoming.ui || typeof incoming.ui !== 'object' || Array.isArray(incoming.ui))) {
       errs.push('ui 必须是对象');
+      return errs;
     }
+    const ui = incoming.ui || {};
+    if (ui.pathProgress !== undefined) {
+      if (!ui.pathProgress || typeof ui.pathProgress !== 'object' || Array.isArray(ui.pathProgress)) {
+        errs.push('ui.pathProgress 必须是对象');
+      } else {
+        Object.keys(ui.pathProgress).forEach(sid => {
+          const e = ui.pathProgress[sid];
+          if (typeof e === 'number') return; /* 旧版形状 */
+          if (!e || typeof e !== 'object') { errs.push(`pathProgress.${sid} 非法`); return; }
+          if (e.done !== undefined && !(typeof e.done === 'number' && e.done >= 0)) errs.push(`pathProgress.${sid}.done 非法`);
+          if (e.cancelled !== undefined && !(typeof e.cancelled === 'number' && e.cancelled >= 0)) errs.push(`pathProgress.${sid}.cancelled 非法`);
+        });
+      }
+    }
+    if (ui.docPos !== undefined && ui.docPos !== null && (typeof ui.docPos !== 'object' || Array.isArray(ui.docPos))) {
+      errs.push('ui.docPos 必须是对象或 null');
+    }
+    if (ui.pathVersion !== undefined && typeof ui.pathVersion !== 'string') errs.push('ui.pathVersion 必须是字符串');
     return errs;
   }
 
@@ -330,6 +378,40 @@ const Store = (() => {
     let h = 5381;
     for (let i = 0; i < basis.length; i++) { h = ((h << 5) + h + basis.charCodeAt(i)) | 0; }
     return 'r' + rd.ts.toString(36) + '-' + (h >>> 0).toString(36);
+  }
+
+
+  /* ui 持久学习状态合并:阶段进度(含取消追溯)与阅读位置。
+     本地为空才采用备份;两者都有时按阶段比较最新事件,同刻本地胜。 */
+  function normStageEntry(e) {
+    if (typeof e === 'number') return { done: e };
+    return (e && typeof e === 'object') ? e : {};
+  }
+  function mergePathProgress(local, incoming) {
+    local = local || {}; incoming = incoming || {};
+    const out = {};
+    new Set([...Object.keys(local), ...Object.keys(incoming)]).forEach(id => {
+      const a = normStageEntry(local[id]), b = normStageEntry(incoming[id]);
+      const ta = Math.max(a.done || 0, a.cancelled || 0);
+      const tb = Math.max(b.done || 0, b.cancelled || 0);
+      if (tb > ta) { if (Object.keys(b).length) out[id] = b; }
+      else if (ta > 0 || Object.keys(a).length) { if (Object.keys(a).length) out[id] = a; }
+    });
+    return out;
+  }
+  function mergeUi(merged, incoming) {
+    if (!incoming.ui || typeof incoming.ui !== 'object') return;
+    if (typeof incoming.ui.lastHash === 'string' && incoming.ui.lastHash) merged.ui.lastHash = incoming.ui.lastHash;
+    if (incoming.ui.pathProgress !== undefined) {
+      merged.ui.pathProgress = mergePathProgress(merged.ui.pathProgress, incoming.ui.pathProgress);
+    }
+    if (incoming.ui.docPos && typeof incoming.ui.docPos === 'object'
+        && (!merged.ui.docPos || !merged.ui.docPos.docId)) {
+      merged.ui.docPos = incoming.ui.docPos; /* 本地无阅读位置才采用 */
+    }
+    if (typeof incoming.ui.pathVersion === 'string' && incoming.ui.pathVersion && !merged.ui.pathVersion) {
+      merged.ui.pathVersion = incoming.ui.pathVersion;
+    }
   }
 
   /* 合并导入个人记录。失败 throw(状态不变);成功返回 {qMerged, roundsAdded, notesUpdated} */
@@ -404,7 +486,7 @@ const Store = (() => {
     merged.mock.rounds = merged.mock.rounds.slice(0, 100);
     /* 草稿:已有草稿优先(本机更可能新鲜),备份草稿仅在本地没有时恢复 */
     if (!merged.mock.draft && incoming.mock && incoming.mock.draft) merged.mock.draft = incoming.mock.draft;
-    if (incoming.ui && typeof incoming.ui.lastHash === 'string' && incoming.ui.lastHash) merged.ui.lastHash = incoming.ui.lastHash;
+    mergeUi(merged, incoming);
 
     /* 原子写入:直接写 localStorage 成功后才替换内存 */
     try {
@@ -589,7 +671,7 @@ const Store = (() => {
     merged.mock.rounds.sort((a, b) => (b.ts || 0) - (a.ts || 0));
     merged.mock.rounds = merged.mock.rounds.slice(0, 100);
     if (!merged.mock.draft && incoming.mock && incoming.mock.draft) merged.mock.draft = incoming.mock.draft;
-    if (incoming.ui && typeof incoming.ui.lastHash === 'string' && incoming.ui.lastHash) merged.ui.lastHash = incoming.ui.lastHash;
+    mergeUi(merged, incoming);
 
     /* 三键原子写入:失败回滚已写键 */
     const prev = {
@@ -663,11 +745,15 @@ const Store = (() => {
     }
   }
 
+  /* 来源 kind 归一:website 与 web 同义(迁移映射),其余原样保留 */
+  function normalizeSourceKind(kind) { return kind === 'website' ? 'web' : kind; }
+
   return {
     STATUS, load, save, saveNow, rec, setStatus, toggleFav, setNote, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
-    validateQuestions, validateQuestion,
-    quarantineCount, quarantineExport,
+    validateQuestions, validateQuestion, normalizeSourceKind,
+    quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
+    get loadIssues() { return loadIssues; },
     extraBankLoad, extraBankSave, loadExtraBankSafe, userDocsLoad, userDocsSave, loadUserDocsSafe,
     get data() { return data; }
   };

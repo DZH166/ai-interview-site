@@ -38,8 +38,16 @@ jobs:
           done
           exit $fail
 
-      - name: 行为测试(Markdown/搜索/Store 迁移/计算例题)
+      - name: 行为测试(Markdown/搜索/Store 迁移/计算例题/隔离与恢复)
         run: node tests/behavior-tests.js
+
+      - name: LP-003 mock 分支测试(桩客户端,无真实 API)
+        run: |
+          python -m pip install --quiet 'openai>=2.0' 'pydantic>=2.5' || true
+          python tests/lp003_mock_test.py
+
+      - name: 路径练习自动化验证(阶段2/6 展示代码运行)
+        run: python tests/path_exercise_test.py
 
       - name: 校验题库(10 要素完整性 / 引号纪律 / ID 唯一)
         run: python tools/validate_bank.py

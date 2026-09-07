@@ -50,16 +50,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "OpenAI · 内容审核与拒答行为(refusal 字段说明)",
+    "url": "https://platform.openai.com/docs/guides/structured-outputs#refusals",
+    "note": "对照要点:平台会主动拒答,应用要给兜底话术"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "拒答话术模板与『诚实的不确定』三要素为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;话术为演示。"
+   "note": "平台拒答机制已对照官方文档;话术设计为产品实践整理,无统一官方规范。"
   },
   "example": "四种场景的拒答话术(示例):\n```\n知识缺口:「该主题的信息正在完善中,已记录您的需求。\n          您可以先看看这些相关内容:[链接]」\n\n超范围:「这个问题超出了我的服务范围。\n        建议联系 [相关部门/渠道] 获取帮助。」\n\n合规:「我无法协助该请求。\n      如有相关法律问题,建议咨询执业律师。」\n\n模糊:「您是想了解 A 方案还是 B 方案的退货流程?」\n     (选项化澄清,RG-035)\n```\n—— 四种场景,四种话术,共同点:诚实+有出口+不分原因细节"
  },
@@ -373,16 +379,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+   "note": "实践类主题,内容为独立整理;术语一致性:待核查项=本地化行业标准(术语库/TB)与提示词结合的公开案例。不填首页链接凑数。"
   }
  },
  {
@@ -437,16 +443,22 @@
   ],
   "sources": [
    {
+    "kind": "official-docs",
+    "name": "OpenAI · Structured Outputs 设计指引(字段越简单越好)",
+    "url": "https://platform.openai.com/docs/guides/structured-outputs",
+    "note": "对照要点:官方对 schema 复杂度的建议"
+   },
+   {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "『哪些字段该要』的业务判断为独立整理"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为演示。"
+   "note": "schema 复杂度建议已对照官方文档;字段取舍的业务准则为独立整理。"
   }
  },
  {

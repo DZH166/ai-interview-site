@@ -471,16 +471,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理(参照 OpenAI/Anthropic API 的设计模式)"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;示例为演示。"
+   "note": "实践类主题,内容为独立整理;LLM API 设计:待核查项=OpenAI/Anthropic API 形状(流式/批处理/错误码)的对照。不填首页链接凑数。"
   }
  },
  {
@@ -540,16 +540,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理;议程为演示。"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理。"
+   "note": "实践类主题,内容为独立整理;产品评审清单:待核查项=成熟 AI 团队公开的评审 checklist。不填首页链接凑数。"
   }
  },
  {
@@ -609,16 +609,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;路径为演示。"
+   "note": "实践类主题,内容为独立整理;知识传承:待核查项=团队工程实践(ADR/文档文化)的通行做法。不填首页链接凑数。"
   }
  }
 ]

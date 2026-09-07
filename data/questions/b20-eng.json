@@ -541,16 +541,16 @@
   ],
   "sources": [
    {
+    "kind": "independent",
     "name": "独立整理",
     "url": "",
-    "kind": "independent",
-    "note": "为独立整理"
+    "note": "独立整理(工程/产品实践主题,无单一官方来源页"
    }
   ],
   "verify": {
    "status": "partial",
    "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;对照示例为演示。"
+   "note": "实践类主题,内容为独立整理;期望管理:待核查项=人机交互文献(setpoint/expectation)的引用。不填首页链接凑数。"
   }
  }
 ]

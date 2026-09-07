@@ -275,7 +275,11 @@ const MaintainView = (() => {
           </div>
           ${(() => {
             const qc = Store.quarantineCount();
-            return qc ? `<div class="notice warn" style="margin-top:10px">检测到 ${qc} 条历史坏数据已被启动隔离(原始内容已保留,未影响你的记录)。<button class="btn btn-small" id="q-export" style="margin-left:8px">导出隔离数据</button></div>` : '';
+            const failed = Store.loadIssues && Store.loadIssues.quarantineFailed > 0;
+            let html = '';
+            if (qc) html += `<div class="notice warn" style="margin-top:10px">检测到 ${qc} 条历史坏数据已被启动隔离(原始内容已保留,未影响你的记录)。<button class="btn btn-small" id="q-export" style="margin-left:8px">导出隔离数据</button></div>`;
+            if (failed) html += `<div class="notice warn" style="margin-top:10px"><b>隔离写入失败</b>:本地存储空间不足,坏数据保留在原位未被修改、站点已跳过。可导出原始内容留底,或释放空间后重试。<button class="btn btn-small" id="q-export-raw" style="margin-left:8px">导出原始内容</button><button class="btn btn-small" id="q-retry" style="margin-left:8px">重试</button></div>`;
+            return html;
           })()}
         </div>
       </div>
@@ -383,6 +387,18 @@ const MaintainView = (() => {
     if (qBtn) qBtn.addEventListener('click', () => {
       download('aiiv-quarantine-' + dateStr() + '.json', Store.quarantineExport());
       toast('已导出隔离数据(原始内容)');
+    });
+    const rawBtn = $('#q-export-raw', root);
+    if (rawBtn) rawBtn.addEventListener('click', () => {
+      download('aiiv-raw-extras-' + dateStr() + '.json', Store.rawExtrasExport());
+      toast('已导出原始字节内容');
+    });
+    const retryBtn = $('#q-retry', root);
+    if (retryBtn) retryBtn.addEventListener('click', () => {
+      Data.init();
+      Search.build(StudyView.currentCtx());
+      render(root);
+      toast(Store.loadIssues.quarantineFailed > 0 ? '仍有隔离失败,原数据未动' : '重试成功');
     });
     $('#r-clear').addEventListener('click', () => {
       modal('确认清空全部记录?','<p>不可恢复,建议先导出备份。导入的题库与资料不受影响。</p>',[

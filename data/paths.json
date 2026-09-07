@@ -3,7 +3,7 @@
     {
       "id": "path-app-1",
       "name": "AI 应用开发主线(后端 → 模型 → RAG → Agent)",
-      "audience": "应届实习/校招;理解原理优先,面试表达其次。每阶段先自己想,再看答案。",
+      "audience": "应届实习/校招;理解原理优先,面试表达其次。每阶段先自己想,再看答案;变式参考答案默认折叠。",
       "stages": [
         {
           "id": "s1-python-core",
@@ -18,8 +18,13 @@
           "docs": ["doc-python-1"],
           "exercise": {
             "name": "迷你练习:安全的配置合并(本地可运行)",
-            "code": "def merge_config(base: dict, override: dict | None) -> dict:\n    \"\"\"返回合并后的新 dict;不修改入参;override 为 None 时返回 base 的浅拷贝。\"\"\"\n    result = dict(base)\n    if override:\n        result.update(override)\n    return result\n\nprint(merge_config({'model': 'gpt-4o-mini', 'temperature': 0.7}, {'temperature': 0.2}))\n# 期望: {'model': 'gpt-4o-mini', 'temperature': 0.2}\nprint(merge_config({'tags': []}, None))\n# 思考:调用方再对 merge_config 结果里的 tags 列表 append,会影响谁?",
-            "variant": "变式检查:①override=None 时返回的是新对象还是 base 本身?②如果 base 里有个列表,浅拷贝后 append 会影响原对象吗?怎么做深隔离?"
+            "code": "def merge_config(base: dict, override: dict | None) -> dict:\n    \"\"\"返回合并后的新 dict;不修改入参;override 为 None 时返回 base 的浅拷贝。\"\"\"\n    result = dict(base)\n    if override:\n        result.update(override)\n    return result\n\nprint(merge_config({'model': 'gpt-4o-mini', 'temperature': 0.7}, {'temperature': 0.2}))\n# 期望: {'model': 'gpt-4o-mini', 'temperature': 0.2}\n\n# 陷阱演示:浅拷贝的边界\nbase = {'tags': []}\nresult = merge_config(base, None)\nresult['tags'].append('new')\nprint(base)   # {'tags': ['new']} ← base 被改了!为什么?",
+            "variant": {
+              "question": "①override=None 时返回的是新对象还是 base 本身?②base 里有个列表时,浅拷贝后 append 会影响谁?③要彻底隔离怎么办?",
+              "reference": "①dict(base) 是浅拷贝,返回的是新对象,base 的顶层不受影响。②浅拷贝只复制第一层:嵌套列表仍是同一个引用——对 result['tags'].append 会直接改到 base 的列表(练习输出演示了这一点)。③用 copy.deepcopy(注意它有性能代价,内部用 memo 处理循环引用),或对已知的可变值逐个显式拷贝。",
+              "reason": "反例链:dict(base) → 改嵌套可变值 → 原对象被改。可变默认参数陷阱(见 PY-033)与此同源:默认值在函数定义时创建一次,所有调用共享同一个列表。",
+              "run": "保存为 merge_demo.py 后 python merge_demo.py,仅标准库。"
+            }
           },
           "review": "#/review"
         },
@@ -35,8 +40,14 @@
           "questions": ["PY-002", "PY-012", "PY-020", "PY-031", "PY-040"],
           "docs": ["doc-python-1"],
           "exercise": {
-            "name": "迷你练习:逐块流式生成器",
-            "code": "def stream_chunks(text: str, size: int):\n    \"\"\"把长文本按 size 切块逐个 yield(模拟 LLM 流式输出)。\"\"\"\n    for i in range(0, len(text), size):\n        yield text[i:i + size]\n\nfor chunk in stream_chunks('流式输出的本质是生成器', 4):\n    print(chunk, end='|')\n# 思考:如果 size=0 会发生什么?循环条件为什么必须是 range 而不是 while len?"
+            "name": "迷你练习:逐块流式生成器(两种写法对比)",
+            "code": "def stream_range(text: str, size: int):\n    \"\"\"range 版:由语言推进并检查终止。\"\"\"\n    if size <= 0:\n        raise ValueError('size 必须为正')\n    for i in range(0, len(text), size):\n        yield text[i:i + size]\n\ndef stream_while(text: str, size: int):\n    \"\"\"while 版:自己推进索引——同样正确,但终止要自己维护。\"\"\"\n    if size <= 0:\n        raise ValueError('size 必须为正')\n    i = 0\n    while i < len(text):\n        yield text[i:i + size]\n        i += size            # 忘记这行 → 死循环\n\nfor c in stream_range('流式输出的本质是生成器', 4):\n    print(c, end='|')\nprint()\nfor c in stream_while('流式输出的本质是生成器', 4):\n    print(c, end='|')\nprint()\ntry:\n    list(stream_range('abc', 0))   # size=0:快速失败\nexcept ValueError as e:\n    print('size=0 →', e)",
+            "variant": {
+              "question": "①range 版和 while 推进索引版,哪个更不容易写错终止?『必须用 range』对吗?②size=0 该静默返回还是抛错?③如果循环体忘记 i += size 会发生什么?",
+              "reference": "①两者完全等价——range 由语言替你推进并检查终止,while 靠自己维护 i。关键不是『必须用 range』,而是『每一轮必须向终止条件靠近』;while 写对了一样好,且某些场景(非均匀步长)只能 while。②抛 ValueError 快速失败。range(0, n, 0) 本身就会抛 ValueError(step 不能为 0),说明语言也是这么处理的;静默返回空序列会把调用方的参数 bug 掩盖到下游。③死循环:生成器永远不结束。在流式场景表现为客户端一直等不到结束帧——比崩溃更难排查。写完先用一个 3 行输入的用例验证。",
+              "reason": "反例:stream_while 去掉 i += size 后调用 list(stream_while('abc', 1)) 永远挂起(Ctrl+C 才能停)。对照:range 版在同样疏漏下不存在——推进是内建的。",
+              "run": "保存为 stream_demo.py 后 python stream_demo.py,仅标准库。"
+            }
           },
           "review": "#/review"
         },
@@ -46,7 +57,7 @@
           "prereq": "阶段 2(生成器是理解协程的前置)",
           "goals": [
             "讲清协作式并发:await 让出控制权;单线程仍有跨 await 竞争,临界区用 Lock",
-            "掌握 gather/TaskGroup 的失败语义",
+            "掌握 gather/TaskGroup 的失败语义差异",
             "理解 FastAPI 校验 422、流式响应与取消语义",
             "会为外部调用配超时/重试/退避"
           ],
@@ -54,7 +65,13 @@
           "docs": ["doc-python-1"],
           "exercise": {
             "name": "迷你练习:并发请求三家模型(本地可运行,无需网络)",
-            "code": "import asyncio\n\nasync def fake_call(name: str, delay: float, fail: bool = False):\n    await asyncio.sleep(delay)\n    if fail:\n        raise RuntimeError(name + ' 失败')\n    return name + ' 完成'\n\nasync def main():\n    results = await asyncio.gather(\n        fake_call('a', 0.1),\n        fake_call('b', 0.2, fail=True),\n        fake_call('c', 0.15),\n        return_exceptions=True,          # 收集失败不中断\n    )\n    print(results)  # ['a 完成', RuntimeError('b 失败'), 'c 完成']\n\nasyncio.run(main())\n# 变式:把 return_exceptions=True 去掉会怎样?换成 TaskGroup,b 的失败会把 a/c 怎么样?"
+            "code": "import asyncio\n\nasync def fake_call(name: str, delay: float, fail: bool = False):\n    await asyncio.sleep(delay)\n    if fail:\n        raise RuntimeError(name + ' 失败')\n    return name + ' 完成'\n\nasync def main():\n    results = await asyncio.gather(\n        fake_call('a', 0.1),\n        fake_call('b', 0.2, fail=True),\n        fake_call('c', 0.15),\n        return_exceptions=True,          # 收集失败不中断\n    )\n    print(results)  # ['a 完成', RuntimeError('b 失败'), 'c 完成']\n\nasyncio.run(main())",
+            "variant": {
+              "question": "①return_exceptions=True 时 b 失败,a、c 会怎样?②换成 TaskGroup 呢?③gather 不带任何参数(默认)呢?",
+              "reference": "①a、c 正常完成;结果列表里 b 的位置是 RuntimeError 对象——三个任务都跑完,失败被收集。②TaskGroup:b 失败会取消 a/c 中尚未完成的任务(已完成的保留结果),await 处抛 ExceptionGroup。③最危险:第一个异常立即抛出,但其余任务不会被取消——它们在后台继续跑完,结果被丢弃(孤儿任务,浪费资源)。失败发生时其他任务是『已完成』『被取消』还是『仍在跑』,完全取决于所选原语——面试要把三种都讲清。",
+              "reason": "实验:把练习里的 gather 分别改成 TaskGroup 和裸 gather,观察输出与是否提前返回。孤儿任务可以用 time.sleep 较长的 c 配合打印验证『它其实跑完了』。",
+              "run": "保存为 gather_demo.py 后 python gather_demo.py,仅标准库。"
+            }
           },
           "review": "#/review"
         },
@@ -63,7 +80,7 @@
           "name": "阶段 4 · 模型形态与提示词:模型 API、解码、结构化输出与拒答",
           "prereq": "阶段 1(基础编程);可与阶段 3 并行",
           "goals": [
-            "分清 base/instruct/chat 模型与 encoder/decoder 架构的取舍",
+            "分清 base/instruct/chat 的命名现实与 encoder/decoder 架构取舍(会查模型卡)",
             "temperature/top_p 与 max_tokens 各自在控制什么",
             "搭起结构化输出的工程闭环(五类失败分开处理)",
             "知道拒答是终态,会设计『诚实的不知道』"
@@ -71,9 +88,16 @@
           "questions": ["FD-027", "FD-025", "FD-016", "FD-024", "FD-012", "LP-001", "LP-011", "LP-003", "LP-036", "LP-032", "LP-038"],
           "docs": ["doc-llm-1"],
           "exercise": {
-            "name": "迷你练习:本地校验一个结构化输出(mock,无需 API)",
-            "code": "from pydantic import BaseModel\nfrom typing import Literal\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float\n    channel: Literal[\"alipay\", \"wechat\"]\n\nraw = '{\"order_id\": \"A1\", \"amount\": 12.5, \"channel\": \"cash\"}'  # 模型把渠道写错了\ntry:\n    Order.model_validate_json(raw)\nexcept Exception as e:\n    print('校验失败 → 把这条错误回喂给模型重试:', str(e)[:80])\n# 思考:拒答(refusal)和这种校验失败,处理方式为什么必须不同?"
+            "name": "迷你练习:本地校验一个结构化输出(mock,无需 API,需 pydantic)",
+            "code": "from typing import Literal\nfrom pydantic import BaseModel, Field\n\nclass Order(BaseModel):\n    order_id: str\n    amount: float = Field(gt=0)          # 数值约束:schema 层就能拒绝负数\n    channel: Literal[\"alipay\", \"wechat\"]\n\nraw = '{\"order_id\": \"A1\", \"amount\": -3, \"channel\": \"cash\"}'   # 模型输出:负数+错误渠道\ntry:\n    Order.model_validate_json(raw)\nexcept Exception as e:\n    print('校验失败 → 把这条错误回喂给模型重试:', str(e)[:100])\n# 思考:①如果 amount 没写 gt=0,负数会被拒吗?②『这笔订单是不是当前用户的』为什么 schema 管不了?"
           },
+          "variant": {
+            "question": "①Order 只声明 amount: float(无 gt=0)时,-3 能通过校验吗?②怎么让它在结构校验层就被拒绝?③『这笔订单是不是当前用户下的』为什么不能靠 schema?",
+            "reference": "①能——float 只约束类型,-3 是合法浮点数;没有数值约束时负数畅通无阻。②JSON Schema 的 exclusiveMinimum: 0(对应 Pydantic 的 Field(gt=0))在结构校验层直接拒绝。注意:某些模型 API 的结构化输出只支持 JSON Schema 的一个子集,gt=0 在你所用平台是否被支持要看官方文档——平台限制不等于 schema 表达力限制。③它依赖外部状态(订单归属在数据库里、库存余额实时变),schema 是纯结构声明;必须由应用层查询后校验,失败了也属于业务失败而不是 schema 失败。",
+            "reason": "三个对照:-3 通过『仅 float』的 schema(类型合法但缺数值约束)→ 加 gt=0 后结构层拒绝(数值约束生效)→ 归属/库存类规则连 schema 都写不出(外部状态)。把三层混为一谈,就会得出『schema 表达不了金额为正』这种错误结论。",
+            "run": "保存为 order_check.py 后 python order_check.py,需 pydantic(pip install pydantic)。"
+          }
+          ,
           "review": "#/review"
         },
         {
@@ -88,8 +112,14 @@
           "questions": ["RG-001", "RG-020", "RG-059", "RG-067"],
           "docs": ["doc-rag-1"],
           "exercise": {
-            "name": "迷你练习:给段落打检索标签(思考题 + 本地可运行)",
-            "code": "docs = [\n    '退款政策:下单 7 天内可无理由退款。',\n    '发货时间:现货 24 小时内发出。',\n    '发票:支持电子发票,下单时填写抬头。',\n]\nquery = '东西买错了想退,来得及吗?'\n# 不用向量库:写一个最朴素的检索(关键词重合打分),返回最相关的 1 条\n\ndef naive_search(query, docs):\n    q = set(query)\n    return max(docs, key=lambda d: len(q & set(d)))\n\nprint(naive_search(query, docs))\n# 思考:它为什么能工作?什么时候会彻底失效?(这就是 embedding 要解决的问题)"
+            "name": "迷你练习:给段落打检索标签(本地可运行,仅标准库)",
+            "code": "docs = [\n    '退款政策:下单 7 天内可无理由退款。',\n    '发货时间:现货 24 小时内发出。',\n    '发票:支持电子发票,下单时填写抬头。',\n]\nquery = '东西买错了想退,来得及吗?'\n# 不用向量库:写一个最朴素的检索(字符重合打分),返回最相关的 1 条\n\ndef naive_search(query, docs):\n    q = set(query)\n    return max(docs, key=lambda d: len(q & set(d)))\n\nprint(naive_search(query, docs))",
+            "variant": {
+              "question": "①这个关键词重合检索为什么能工作?②它什么时候彻底失效?③这和 embedding 是什么关系?",
+              "reference": "①query 与文档共享了字面字符(『退』字重合度最高)。②同义改写(问句与答案措辞完全不重叠)、多义词、长文档稀释重合度——字面匹配在这些场景失效。③embedding 把语义相近的文本映射到相近向量,弥补字面不重叠;但语义检索也有盲区(精确型号/编号常需要关键词),所以生产里混合检索(RG-020)是常态。",
+              "reason": "实验:把 query 改成『买了不想要的货七日内』再跑——字面几乎不重合,检索错到『发货』那条;这正是向量检索要解决的问题,也是评测(RG-059)要量化的差距。",
+              "run": "保存为 naive_search.py 后 python naive_search.py,仅标准库。"
+            }
           },
           "review": "#/review"
         },
@@ -98,15 +128,21 @@
           "name": "阶段 6 · Agent 循环与项目串联(测试/日志/配置/API/协作)",
           "prereq": "阶段 3 + 阶段 4",
           "goals": [
-            "分清工作流与 Agent;掌握工具调用循环与失败恢复",
+            "分清工作流与 Agent;跑通完整的工具调用循环(意图→执行→回传→终答)",
             "把测试、日志、配置、缓存串成一个能上线的最小项目",
             "会用期望管理与产品评审的语言与非技术同事协作"
           ],
           "questions": ["AG-001", "AG-002", "PY-011", "PY-009", "PY-010", "PY-017", "PY-036", "PY-028", "EN-040", "EN-033", "EN-036", "EN-041", "EN-042", "AG-056", "AG-058", "LP-034", "LP-044", "LP-029", "LP-043"],
           "docs": ["doc-agent-1", "doc-eng-1"],
           "exercise": {
-            "name": "迷你练习:最小工具调用循环(本地可运行,无需网络)",
-            "code": "import json\n\nTOOLS = {\n    'get_weather': lambda city: f'{city}:晴,25°C(示意数据)',\n}\n\ndef agent_turn(user_input: str, tell_model):\n    \"\"\"tell_model 是模型的替身:返回『工具调用意图』的 JSON(模拟 function calling)。\"\"\"\n    intent = tell_model(user_input)   # 如 {'tool':'get_weather','args':{'city':'北京'}}\n    tool = TOOLS.get(intent['tool'])\n    if not tool:\n        return '未知工具: ' + intent['tool']   # 模型点名了不存在的工具:回喂错误让它自愈\n    return tool(**intent['args'])\n\nprint(agent_turn('北京天气怎么样', lambda q: {'tool': 'get_weather', 'args': {'city': '北京'}}))\n# 思考:模型『执行』工具了吗?如果 tool 抛异常,循环该怎么把错误喂回去?"
+            "name": "迷你练习:完整的工具调用循环(本地可运行,无需网络)",
+            "code": "import json\n\nTOOLS = {\n    'get_weather': lambda city: {'city': city, 'weather': '晴 25°C', 'source': '示意数据'},\n}\n\ndef model_turn(messages):\n    \"\"\"替身模型:按对话历史决定『调用工具』还是『给最终回答』。\n    真实场景这一步是 LLM;这里用规则模拟,专注循环本身。\"\"\"\n    user_msg = [m for m in messages if m['role'] == 'user'][-1]['content']\n    tool_msgs = [m for m in messages if m['role'] == 'tool']\n    if '天气' in user_msg and not tool_msgs:\n        return {'type': 'tool_call', 'name': 'get_weather', 'args': {'city': '北京'}}\n    if tool_msgs:\n        return {'type': 'final', 'answer': '根据工具结果(' + tool_msgs[-1]['content'] + '),今天适合出行。'}\n    return {'type': 'final', 'answer': '这个问题不需要工具,我直接回答。'}\n\ndef run_agent(user_input, max_rounds=3):\n    \"\"\"完整循环:用户输入 → 模型意图 → 应用执行工具 → 结果回传 → 模型终答。\"\"\"\n    messages = [{'role': 'user', 'content': user_input}]\n    model_calls = 0\n    for _ in range(max_rounds):\n        model_calls += 1\n        decision = model_turn(messages)\n        if decision['type'] == 'final':\n            return decision['answer'], model_calls\n        name, args = decision['name'], decision['args']\n        try:\n            tool = TOOLS.get(name)\n            if tool is None:\n                result = {'error': '未知工具 ' + name}   # 回喂错误,让模型换路\n            else:\n                result = tool(**args)\n        except Exception as e:\n            result = {'error': '工具执行失败: ' + str(e)}   # 工具异常 ≠ 最终答案\n        messages.append({'role': 'assistant', 'content': json.dumps(decision, ensure_ascii=False)})\n        messages.append({'role': 'tool', 'content': json.dumps(result, ensure_ascii=False)})\n    return '达到最大轮次,已终止(护栏防死循环)', model_calls\n\nans, calls = run_agent('北京天气怎么样?')\nprint(ans, '| 模型调用', calls, '次')\nans2, calls2 = run_agent('1+1等于几?')\nprint(ans2, '| 模型调用', calls2, '次')",
+            "variant": {
+              "question": "①第二轮模型收到的 messages 里多了什么?它为什么需要?②工具抛异常时,把异常文本直接当最终回答给用户行不行?③去掉 max_rounds 会有什么风险?④把 TOOLS 里的 get_weather 改名后重跑,循环如何结束?",
+              "reference": "①多了一条 role='tool' 的消息(工具结果)和一条 role='assistant' 的意图记录——模型的下一次决策必须基于工具结果,没有它模型只能凭空编。②不行。异常是给模型的信息,应该包装后回喂,让模型决定重试/换工具/向用户道歉;把内部错误文本直接透出,等于把堆栈暴露给用户。③若模型反复要求调用工具就会无限循环烧钱——max_rounds 是护栏,超限返回明确的『已终止』提示而不是装作正常回答。④『未知工具』错误被回传给替身模型,替身第二轮看到 tool 结果后给出 final——真实模型会据此道歉或改用其他工具;循环不会死锁,也不会把错误当成功。",
+              "reason": "自动化验证:tests/path_exercise_test.py 从 paths.json 提取这段代码运行,断言模型调用至少 2 次、第二次请求包含工具结果、成功与不需工具的路径都正常终止——每一步是谁在执行(模型点名、应用执行)要能自己讲出来。",
+              "run": "保存为 agent_loop.py 后 python agent_loop.py,仅标准库。自动化验证:python tests/path_exercise_test.py。"
+            }
           },
           "review": "#/review"
         }
