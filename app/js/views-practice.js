@@ -483,7 +483,8 @@ const StudyView = (() => {
       userDocs: Data.allUserDocs(),
       records: Store.data,
       concepts: (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [],
-      projects: (window.APP_DATA.projects && window.APP_DATA.projects.projects) || []
+      projects: (window.APP_DATA.projects && window.APP_DATA.projects.projects) || [],
+      drills: (window.APP_DATA.paths.paths || []).flatMap(p => p.stages).flatMap(s => (s.drills || []).map(d => ({ ...d, stage: s.id })))
     };
   }
 

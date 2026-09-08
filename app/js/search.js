@@ -52,6 +52,16 @@ const Search = (() => {
         weight: 2.0, topic: c.topic || ''
       });
     });
+    /* 专项练习(题面+参考)与个人尝试记录进索引 */
+    ((ctx.drills || [])).forEach(d => {
+      if (!d || !d.id) return;
+      const body = [d.q, d.reference, d.reason].filter(Boolean).join('\n');
+      units.push({
+        kind: 'drill', drillId: d.id, stage: d.stage || '', field: 'drill', anchor: '',
+        text: norm(d.type + ' ' + body), raw: d.type + ' | ' + body,
+        weight: 1.6, topic: ''
+      });
+    });
     ((ctx.projects || [])).forEach(pr => {
       if (!pr || !pr.name) return;
       const body = [pr.goal, pr.expected, pr.debug_case, pr.deliverable, (pr.extensions || []).join('; ')]
