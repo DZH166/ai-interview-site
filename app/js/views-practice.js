@@ -273,14 +273,26 @@ const StudyView = (() => {
   /* 路由离开学习页时清理全局监听(App.route 调用) */
   function cleanup() { setKeyHandler(null); }
 
-  /* pagehide 兜底:输入框里尚未过防抖的笔记立即写入记录(防「打完字马上关页」丢失) */
+  /* 同页动作前同步:把文本框值写进内存+立即落盘(重渲染将读 Store 最新值) */
+  function captureNote(qid) {
+    const ta = $('#note-area');
+    if (!ta || !currentQid || qid !== currentQid) return;
+    if ((Store.rec(qid).note || '') !== ta.value) {
+      Store.setNote(qid, ta.value);
+      Store.saveNow();
+    }
+  }
+
+  /* pagehide/路由离开兜底:把文本框最新值写入内存并立即落盘。
+     由于每次击键已同步进内存,这里只在 DOM 领先内存时才写(输入中 Direct flush);
+     绝不把 DOM 的旧值回写覆盖内存的新值。 */
   function flushNote() {
     const ta = $('#note-area');
     if (!ta || !currentQid) return;
     if ((Store.rec(currentQid).note || '') !== ta.value) {
       Store.setNote(currentQid, ta.value);
       Store.saveNow();
-      Search.build(currentCtx()); /* 绕过了防抖路径,索引需手动重建 */
+      Search.build(currentCtx());
     }
   }
 
@@ -414,11 +426,13 @@ const StudyView = (() => {
     });
     $$('[data-status]', root).forEach(b => {
       b.addEventListener('click', () => {
+        captureNote(qid);              /* 重渲染前同步笔记(内存已最新,此处确保磁盘) */
         Store.setStatus(qid, b.dataset.status);
         render(root, qid);
       });
     });
     $('[data-fav]', root).addEventListener('click', () => {
+      captureNote(qid);
       Store.toggleFav(qid);
       render(root, qid);
     });
@@ -429,12 +443,17 @@ const StudyView = (() => {
       rv.textContent = box.classList.contains('hidden') ? '查看答案' : '收起答案';
     });
     const note = $('#note-area', root);
+    /* 每次击键同步进内存学习状态(Store),磁盘写入防抖(250ms);
+       这样任何后续重渲染读 Store 都是最新值,不会拿旧记录覆盖文本框。 */
+    note.addEventListener('input', () => {
+      const r = Store.rec(qid);
+      if (r.note !== note.value) { r.note = note.value; r._updatedAt = Date.now(); Store.save(); }
+    });
     note.addEventListener('input', debounce(() => {
-      Store.setNote(qid, note.value);
-      Search.build(currentCtx());
+      Search.build(currentCtx());   /* 索引重建可防抖;内存已同步 */
     }, 400));
     $$('[data-nav]', root).forEach(b => {
-      b.addEventListener('click', () => { if (b.dataset.nav) go('#/study/' + b.dataset.nav); });
+      b.addEventListener('click', () => { captureNote(qid); if (b.dataset.nav) go('#/study/' + b.dataset.nav); });
     });
     /* 修订提醒:重做 → 标待复习并记录已读新版;知道了 → 只记录已读,不清任何记录 */
     const revBox = $('[data-rev-notice]', root);
@@ -442,9 +461,9 @@ const StudyView = (() => {
       const cv = (Data.question(qid) || {}).content_version;
       const ack = () => { const r = Store.rec(qid); r.contentRev = cv.rev; r._updatedAt = Date.now(); Store.saveNow(); };
       $('[data-rev-redo]', revBox).addEventListener('click', () => {
-        ack(); Store.setStatus(qid, 'review'); toast('已标记待复习;你的笔记与历史保留'); render(root, qid);
+        captureNote(qid); ack(); Store.setStatus(qid, 'review'); toast('已标记待复习;你的笔记与历史保留'); render(root, qid);
       });
-      $('[data-rev-ack]', revBox).addEventListener('click', () => { ack(); render(root, qid); });
+      $('[data-rev-ack]', revBox).addEventListener('click', () => { captureNote(qid); ack(); render(root, qid); });
     }
     /* 键盘快捷键:← 上一题 → 下一题,空格展开全部。
        焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。 */

@@ -3,7 +3,7 @@
     {
       "id": "proj-a-model-client",
       "name": "项目A:可靠的模型调用层",
-      "goal": "把『调一次模型』写成生产可用的函数:校验/错误分类/超时/有限重试/日志,全部本地可运行(fake model)。",
+      "goal": "把『调一次模型』写成可验证的调用函数:校验/五类失败分支/超时/有限重试/回喂/日志。全部本地可运行(fake model 标为替身)。",
       "prereq": [
         "阶段3(PY-003/PY-022)",
         "阶段4(LP-003)"
@@ -22,18 +22,20 @@
       "files": [
         {
           "path": "projects/proj_a/model_client.py",
-          "desc": "主实现:fake 与真实 API 同签名"
+          "desc": "主实现:FakeModel 替身与 extract 主流程,真实 API 替换点已注释"
         }
       ],
-      "run": "python projects/proj_a/model_client.py",
-      "expected": "六种场景逐一打印:正常返回/拒答终态/截断终态/临时错误退避重试后成功/schema 错误回喂/业务错误终态;最后打印调用统计。",
-      "debug_case": "把 MAX_RETRY 改成 0:临时错误场景立即失败——体会『重试预算换可用性』的取舍。",
+      "run": "python projects/proj_a/model_client.py(仓库根目录;需 Python 3.10+,依赖 pydantic>=2.5)",
+      "expected": "六场景逐一输出:正常/拒答终态/截断终态(指向调大预算)/schema 回喂(第2次请求真的带错误)/临时退避/业务错误终态。",
+      "debug_case": "把 MAX_RETRY 改 0:临时错误立即失败——体会重试预算换可用性。截断场景演示重试无用、调预算才有用。",
       "extensions": [
         "接入真实 API(自备 key,可选)",
         "加 Semaphore 限流",
-        "把日志换成结构化 JSON(PY-009)"
+        "结构化 JSON 日志",
+        "超时控制接入真实 HTTP 客户端"
       ],
-      "deliverable": "能解释:六类情况为什么分别重试/终止;fake 与真实 API 的差异点。"
+      "deliverable": "能解释五类失败为什么分别重试/终止;回喂为什么能改变结果(验证版断言见 tests/proj_a_test.py)。",
+      "level": "最小教学骨架;验证版=tests/proj_a_test.py;工程扩展为可选"
     },
     {
       "id": "proj-b-streaming",
@@ -59,7 +61,7 @@
         }
       ],
       "run": "python projects/proj_b/stream_demo.py",
-      "expected": "逐块打印(带时间戳);取消后打印『清理执行』;最后输出 chunk 数与字符数(chunk≠token)。",
+      "expected": "逐块打印(带时间戳);取消后在 await 点感知并执行 finally 清理;输出 chunk 数与字符数(chunk≠token)。已实现:生成器模拟+取消传播;扩展项:HTTP/SSE 接口与真实客户端断开。",
       "debug_case": "把生成器里的 await 换成 time.sleep:取消永远到不了 except CancelledError——对照 PY-004 的取消语义。",
       "extensions": [
         "接入 FastAPI StreamingResponse(PY-004)",
@@ -71,7 +73,7 @@
     {
       "id": "proj-c-mini-rag",
       "name": "项目C:小型文档问答(本地检索)",
-      "goal": "用 3~5 段本地文档跑通 RAG 全流程:切分/检索/证据组织/引用/拒答;再做小评测集对比改动。",
+      "goal": "用 4 段本地文档跑通 RAG 流程:切分/可解释检索/证据组织/引用/拒答;四层失败可区分,变式实验真实可触发。",
       "prereq": [
         "阶段5(RG-001/RG-020)"
       ],
@@ -94,8 +96,8 @@
         }
       ],
       "run": "python projects/proj_c/mini_rag.py",
-      "expected": "评测集逐条打印:query/命中文档/是否该拒答;最后输出 recall 汇总;『库里没有』的 query 正确触发拒答。",
-      "debug_case": "把 top_k 从 2 改成 1:可回答的问题开始拒答——观察证据预算与召回的权衡(RG-018)。",
+      "expected": "评测样例 5/5(逐条打印 query/候选/采用/引用);变式实验1(同义词盲区:『退货』拒答 vs『退款』命中)与实验2(top-k 裁证据:2→1 差异)前后对比真实发生;样例集只证明流程,不代表一般正确率。",
+      "debug_case": "把 refuse_threshold 降到 0:无证据也作答——观察拒答门槛的作用;再用『退货』体验同义词盲区(不能断言库中没有)。",
       "extensions": [
         "接入向量检索(本地模型或自备 API,可选)",
         "加 rerank 对照",
@@ -128,8 +130,8 @@
         }
       ],
       "run": "python projects/proj_d/agent.py",
-      "expected": "多步任务(查天气→换算单位→生成报告)完成;未知工具/异常参数/重复动作各分支按规则处理;中断后从检查点恢复。",
-      "debug_case": "删除参数校验:模型传入非法参数直接崩——对照 AG-043 的失败分类,体会护栏在哪一层。",
+      "expected": "10°C→50.0°F 写入真实 report.txt;0°C→32.0°F(0 不是缺失);缺温度如实报错;检查点续跑只补 2 次调用(不重复 get_weather)。",
+      "debug_case": "删除参数校验:模型传入非法参数直接崩——对照 AG-043 失败分类,体会护栏在哪一层。",
       "extensions": [
         "接入真实 LLM 决策(自备 key,可选)",
         "加人工确认分支",

@@ -361,6 +361,71 @@ console.log('== R4-1.1: 阶段状态统一(最新事件判定/取消留痕/旧�
   ok('本地仅完成(无取消事件)且备份同刻 done → 本地保留 done', stageStatus(Store.data.ui.pathProgress.s9).state === 'done');
 }
 
+
+console.log('== R6-1.1: 阶段1 前两题参考答案的每条断言实际验证 ==');
+{
+  const { execFileSync } = require('child_process');
+  const os = require('os');
+  const paths = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/paths.json'), 'utf8')).paths[0];
+  const s1 = paths.stages.find(s => s.id === 's1-python-core');
+
+  /* 用例1:tuple 槽位赋值异常 + 副作用残留 */
+  const code1 = [
+    "import json, sys",
+    "t = ('a', ['x'])",
+    "out = {'raised': None, 't_after': None, 'printed': False}",
+    "try:",
+    "    t[1] += ['y']",
+    "    out['printed'] = True   # print(t) 在异常时不执行,这里若执行说明参考错了",
+    "except TypeError as e:",
+    "    out['raised'] = str(e)",
+    "out['t_after'] = t",
+    "print(json.dumps(out))"
+  ].join('\n');
+  const f1 = path.join(os.tmpdir(), '_r6_tuple.py');
+  fs.writeFileSync(f1, code1, 'utf8');
+  const r1 = JSON.parse(execFileSync('python', [f1], { encoding: 'utf8' }));
+  ok('题1:抛 TypeError(槽位赋值)', r1.raised === "'tuple' object does not support item assignment", r1.raised);
+  ok('题1:异常前列表已改(副作用)', JSON.stringify(r1.t_after) === JSON.stringify(['a', ['x', 'y']]), JSON.stringify(r1.t_after));
+  ok('题1:print 未执行', r1.printed === false);
+
+  /* 用例2:t += ('b',) 重绑定不抛 */
+  const f2 = path.join(os.tmpdir(), '_r6_tuple2.py');
+  fs.writeFileSync(f2, "t = ('a', ['x'])\nt += ('b',)\nprint(t)", 'utf8');
+  const r2 = execFileSync('python', [f2], { encoding: 'utf8' }).trim();
+  ok('题1对照:t += 重绑定不抛', r2 === "('a', ['x'], 'b')", r2);
+
+  /* 用例3:count_words 重复词 AttributeError;单词输入看似正常 */
+  const code3 = [
+    "import json, sys",
+    "def count_words(words):",
+    "    counters = {}",
+    "    for w in words:",
+    "        c = counters.get(w, [])",
+    "        c.append(1)",
+    "        counters[w] = len(c)",
+    "    return counters",
+    "out = {'single': None, 'dup_err': None}",
+    "out['single'] = count_words(['x'])",
+    "try:",
+    "    count_words(['x', 'x'])",
+    "except AttributeError as e:",
+    "    out['dup_err'] = str(e)",
+    "print(json.dumps(out, ensure_ascii=False))"
+  ].join('\n');
+  const f3 = path.join(os.tmpdir(), '_r6_count.py');
+  fs.writeFileSync(f3, code3, 'utf8');
+  const r3 = JSON.parse(execFileSync('python', [f3], { encoding: 'utf8' }));
+  ok('题2:单元素输入看似正常(陷阱)', JSON.stringify(r3.single) === '{"x":1}', JSON.stringify(r3.single));
+  ok('题2:重复词 AttributeError(int.append)', (r3.dup_err || '').includes("'int' object has no attribute 'append'"), r3.dup_err);
+
+  /* 参考文本与事实一致(不允许再出现"不会异常/逻辑能算对") */
+  ok('题1参考不再声称"没有异常"', !s1.drills[0].reference.includes('所以没有异常'));
+  ok('题2参考不再声称"逻辑能算对"', !s1.drills[1].reference.includes('逻辑能算对'));
+  ok('题2参考给出正确修复(get 0 + 1 / Counter / setdefault)',
+     s1.drills[1].reference.includes('get(w, 0) + 1') && s1.drills[1].reference.includes('Counter'));
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');

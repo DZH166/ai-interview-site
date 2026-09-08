@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """项目C:小型文档问答(本地检索,全部离线)
-流程:切分 → 可解释检索(词重合) → 证据组织+引用 → 拒答 → 小评测集。
+四层失败可区分:①库里没有 ②库里有但没检索到 ③检索到但证据组织错 ④生成不遵循证据。
+含可触发变式实验:同义词盲区 / top-k 证据预算 / 评测报告逐条明细。
 运行:python projects/proj_c/mini_rag.py
 """
 from __future__ import annotations
@@ -15,7 +16,7 @@ DOCS = [
 ]
 
 def tokenize(s: str):
-    """极简分词:按标点与空白切,再取 2-gram(演示用;真实场景用 jieba/分词器)"""
+    """极简分词:按标点与空白切,再取 2-gram(演示用;真实场景用分词器)"""
     parts = re.split(r'[;:,。;:, ]+', s)
     grams = []
     for p in parts:
@@ -23,7 +24,7 @@ def tokenize(s: str):
             grams.append(p[i:i+2])
     return grams
 
-# ---------- 2) 可解释检索:词重合打分(阶段5 练习的升级版) ----------
+# ---------- 2) 可解释检索 ----------
 def search(query: str, docs=None, top_k: int = 2):
     docs = docs if docs is not None else DOCS
     q = set(tokenize(query))
@@ -34,21 +35,25 @@ def search(query: str, docs=None, top_k: int = 2):
     scored.sort(key=lambda x: -x["score"])
     return scored[:top_k]
 
-# ---------- 3) 证据组织 + 引用 + 拒答 ----------
+# ---------- 3) 证据组织 + 引用 + 拒答(拒答原因区分四层) ----------
 def answer(query: str, top_k: int = 2, refuse_threshold: int = 2):
     hits = search(query, top_k=top_k)
+    best = hits[0]["score"] if hits else 0
+    if best == 0:
+        # 第①层:当前检索对任何文档零命中(可能是同义词盲区,不能断言库中没有)
+        return {"answer": None, "refused": True, "layer": 2,
+                "reason": f"当前检索未找到任何相关证据(全部 0 分)——可能是检索盲区(同义词/切分),不一定是知识库没有"}
     strong = [h for h in hits if h["score"] >= refuse_threshold]
     if not strong:
-        # 拒答:库里没有相关内容——如实说,不编造(RG-001 的 R/A/G 中 A 无证据时)
-        return {"answer": None, "refused": True,
-                "reason": f"知识库中没有与「{query}」相关的证据(最高分 {hits[0]['score'] if hits else 0})"}
+        # 第②层:有低分候选但没过证据门槛
+        return {"answer": None, "refused": True, "layer": 2,
+                "reason": f"检索到候选但证据不足(最高分 {best} < 门槛 {refuse_threshold})"}
     evidence = [f"[{h['doc']['id']}] {h['doc']['text']}" for h in strong]
-    # 生成阶段(fake):真实场景由 LLM 基于 evidence 回答;这里拼接演示引用格式
-    answer_text = f"根据知识库:{evidence[0]}"
-    return {"answer": answer_text, "refused": False, "evidence": evidence,
-            "citations": [h["doc"]["id"] for h in strong]}
+    # 第④层(生成不遵循证据)在本 fake 中不发生:拼接即引用;真实 LLM 场景需评测守住
+    return {"answer": f"根据知识库:{evidence[0]}", "refused": False, "layer": 0,
+            "evidence": evidence, "citations": [h["doc"]["id"] for h in strong]}
 
-# ---------- 4) 小评测集:每条标注期望(数据为演示) ----------
+# ---------- 4) 评测:逐条明细(query/目标/候选/采用/引用/结果) ----------
 EVAL = [
     {"q": "买错了想退货,七天内可以吗?", "expect_doc": "d1", "should_refuse": False},
     {"q": "预售的商品什么时候发货?",     "expect_doc": "d2", "should_refuse": False},
@@ -58,40 +63,60 @@ EVAL = [
 ]
 
 def evaluate():
-    print("== 评测(每次改动后重跑,RG-059 的最小版)==")
+    print("== 评测(样例集 5 条,只证明流程;不代表系统一般正确率)==")
     recall_hits, correct = 0, 0
     for e in EVAL:
         r = answer(e["q"])
+        cands = ",".join(h["doc"]["id"] for h in search(e["q"]))
         if e["should_refuse"]:
             ok = r["refused"]
             correct += ok
-            status = "PASS 拒答" if ok else "FAIL 该拒未拒"
+            print(f"  [{'PASS' if ok else 'FAIL'}] {e['q']} | 候选[{cands}] | 拒答({r.get('layer')}层): {r['reason'][:46]}")
         else:
             hit = (not r["refused"]) and e["expect_doc"] in r.get("citations", [])
             recall_hits += hit
             correct += hit
-            status = "PASS 命中" if hit else "FAIL 未命中/误拒"
-        print(f"  [{status}] {e['q']} → citations={r.get('citations') or '-'}")
-    n_ans = sum(1 for e in EVAL if not e["should_refuse"])
-    print(f"  检索 recall: {recall_hits}/{n_ans} | 含拒答总正确: {correct}/{len(EVAL)}")
+            print(f"  [{'PASS' if hit else 'FAIL'}] {e['q']} | 目标 {e['expect_doc']} | 候选[{cands}] | 采用 {r.get('citations')}")
+    n = sum(1 for e in EVAL if not e["should_refuse"])
+    print(f"  检索 recall: {recall_hits}/{n} | 含拒答总正确: {correct}/{len(EVAL)}")
+
+# ---------- 5) 可触发的变式实验(改动前后差异真实发生) ----------
+def experiments():
+    print("\n== 变式实验:每项差异都可复现 ==")
+    # 实验1:同义词盲区(②层触发)——『退货』与文档的『退款』在 2-gram 下仅共享『退』,阈值内不通过
+    q = "如何退货"
+    r = answer(q, refuse_threshold=2)
+    print(f"[实验1 同义词盲区] Q: {q}")
+    print(f"  → 拒答({r['layer']}层): {r['reason']}")
+    print(f"  → 教学点:不能说『知识库没有』——d1 里就有退款政策,是当前词项检索没连上『退货→退款』。")
+    # 实验1b:把『退货』改写为『退款』,同一条知识立刻命中——证明是检索盲区不是知识缺口
+    r2 = search("退款", top_k=1)
+    print(f"  → 对照(查询含『退款』二字): d1 得分 {r2[0]['score']}({','.join(r2[0]['hit'])} 重合)——同一条知识,检索词一变结果就变")
+    # 实验2:top_k 证据预算(②层触发对比)——需要两块证据的问题
+    q2 = "开发票和会员免运费怎么弄?"   # 需要 d3+d4 两块
+    two = answer(q2, top_k=2, refuse_threshold=1)
+    one = answer(q2, top_k=1, refuse_threshold=1)
+    print(f"[实验2 top-k 证据预算] Q: {q2}")
+    print(f"  → top_k=2: 引用 {two.get('citations')}(可答)")
+    print(f"  → top_k=1: 引用 {one.get('citations', [])}(证据被预算裁掉——改动前后差异真实发生)")
 
 def main():
     print("== 项目C:小型文档问答 ==\n")
     demo = [
-        ("七天内能退货吗?", 2, 1),          # (query, top_k, 阈值):阈值 1 演示正常回答
-        ("退货", 2, 1),                     # 故意模糊:观察证据不足
-        ("隔壁城市有门店吗?", 2, 3),        # 库里没有 → 用高阈值演示拒答
+        ("七天内能退货吗?", 2, 1),
+        ("隔壁城市有门店吗?", 2, 3),
     ]
     for q, k, thr in demo:
         r = answer(q, top_k=k, refuse_threshold=thr)
         print(f"Q: {q}  (阈值={thr})")
         if r["refused"]:
-            print(f"  → 拒答({r['reason']})\n")
+            print(f"  → 拒答({r['layer']}层): {r['reason']}\n")
         else:
-            print(f"  → {r['answer']}")
-            print(f"  → 引用: {r['citations']}\n")
+            print(f"  → {r['answer']}\n  → 引用: {r['citations']}\n")
     evaluate()
-    print("\n体会:①拒答要有证据分门槛(阈值=召回与误答的权衡);②top_k 是证据预算;③评测集让改动可对比(RG-059)。")
+    experiments()
+    print("\n四层失败对照:①库里没有=评测里『公司在哪个城市』;②没检索到/证据不足=同义词盲区实验;"
+          "③证据组织错=多证据问题 top_k 不足;④生成不遵循=fake 不发生,真实 LLM 场景由评测守住。")
 
 if __name__ == "__main__":
     main()
