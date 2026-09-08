@@ -412,6 +412,7 @@ const PathView = (() => {
         <div class="progress" style="max-width:420px"><div class="progress-in" style="width:${path.stages.length ? Math.round(doneCount / path.stages.length * 100) : 0}%"></div></div>
         <span class="muted small">${doneCount} / ${path.stages.length} 阶段已确认理解</span>
       </div>
+      ${renderConceptMap()}
       ${path.stages.map((s, si) => renderStage(s, si, prog)).join('')}
       ${path.optional ? `
       <div class="card" style="margin-top:14px">
@@ -429,6 +430,31 @@ const PathView = (() => {
   }
 
 
+
+  /* 概念导航:18 个核心概念(30 秒定义 + 关联题直达),按主题分组 */
+  function renderConceptMap() {
+    const cs = (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [];
+    if (!cs.length) return '';
+    const byTopic = {};
+    cs.forEach(c => { (byTopic[c.topic] = byTopic[c.topic] || []).push(c); });
+    return `<details class="card" style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-weight:600">📚 概念地图(${cs.length} 个核心概念 · 30 秒版定义,点击跳到对应题目)</summary>
+      <div style="margin-top:10px">
+        ${Object.entries(byTopic).map(([topic, list]) => `
+          <div style="margin-bottom:10px">
+            <div class="muted small">${esc(Data.topicName(topic))}</div>
+            ${list.map(c => `
+              <details style="margin:4px 0;border:1px solid var(--line);border-radius:6px;padding:4px 10px">
+                <summary style="cursor:pointer;font-size:13.5px">${esc(c.name)}</summary>
+                <div class="muted small" style="margin:4px 0">${esc(c.definition)}</div>
+                <div>${(c.questions || []).map(qid => `<a class="rel-link" href="#/study/${qid}">${qid}</a>`).join(' ')}
+                     ${(c.docs || []).map(d => `<a class="rel-link" href="#/docs/${d}">📖 章节</a>`).join(' ')}</div>
+              </details>`).join('')}
+          </div>`).join('')}
+      </div>
+    </details>`;
+  }
+
   /* 动手项目(来自 data/projects.json):每个项目展示目标/前置/运行/预期/排查/扩展/交付标准 */
   function renderProjects() {
     const projs = (window.APP_DATA.projects && window.APP_DATA.projects.projects) || [];
@@ -444,6 +470,18 @@ const PathView = (() => {
         <p><b>排查案例:</b>${esc(pr.debug_case)}</p>
         <p class="muted small"><b>扩展挑战:</b>${esc((pr.extensions || []).join('; '))}</p>
         <p><b>完成标准:</b>${esc(pr.deliverable)}</p>
+        <div class="path-variant-body" style="margin-top:6px">
+          <b>项目表达模板(面试口述,只填你真实做过的部分):</b><br>
+          ①需求:一句话说清要解决什么;<br>
+          ②方案:用了什么结构(如:超时+错误分类+有限重试);<br>
+          ③取舍:为什么这么选、放弃了什么;<br>
+          ④问题:踩过什么坑、怎么定位的;<br>
+          ⑤验证:怎么证明它可靠(测试/评测/监控);<br>
+          ⑥不足:哪些还没做、下一步。
+          <div class="muted small" style="margin-top:4px">
+          诚实分级:「我做过」= 你跑通并调试过;「我在练手项目里验证过」= 按 ${esc(pr.run)} 完成并排查过案例;「如果遇到我会这样设计」= 只讲方案。三者别混用。
+          </div>
+        </div>
       </details>`).join('')}</div>`;
   }
 
