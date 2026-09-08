@@ -440,6 +440,43 @@ console.log('== R7: reviewReasons 取消语义(整套覆盖,非并集)==');
   ok('更新备份新增原因 → 生效', JSON.stringify(Store.rec('PY-090').reviewReasons) === JSON.stringify(['causal', 'concept']));
 }
 
+
+console.log('== R9: 备份 round-trip(真实题库数据,非最小 fixture)==');
+{
+  /* 用真实题库的题目构造完整学习状态 */
+  const realQ = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/questions/python-backend.json'), 'utf8'))[0];
+  const full = JSON.stringify({
+    type: 'aiiv-full', v: 1,
+    records: {
+      v: 2,
+      questions: {
+        [realQ.id]: { note: 'round-trip 笔记', fav: true, status: 'weak', reviewReasons: ['causal', 'exec'],
+                      drillTries: [{ drillId: 'drill-1pred01', version: 1, ts: 111, myAnswer: '我的预测', observed: '实际输出', selfRating: 'partial', review: '槽位误解' }] },
+        'PY-099': { status: 'review', _updatedAt: 50 }
+      },
+      mock: { rounds: [{ ts: 88, id: 'rt-1', config: { label: 'rt' }, items: [{ qid: realQ.id, title: 't', self: '答', revealed: true, mark: 'weak' }] }], draft: null },
+      ui: { pathProgress: { 's1-python-core': { done: 111, cancelled: 222 } }, docPos: { docId: 'doc-python-1', secId: '5', y: 900 } }
+    },
+    questions: [realQ],
+    docs: [{ id: 'udoc-88', title: 'rt资料', text: 'rt_probe 内容', ts: 1, kind: 'md', parsed: true }]
+  });
+  /* 清空后恢复 */
+  Store.clearAll();
+  const r = Store.importFull(full);
+  ok('round-trip: 记录恢复(笔记/收藏/状态)', Store.rec(realQ.id).note === 'round-trip 笔记' && Store.rec(realQ.id).fav && Store.rec(realQ.id).status === 'weak');
+  ok('round-trip: drillTries 恢复', (Store.rec(realQ.id).drillTries || [])[0]?.drillId === 'drill-1pred01');
+  ok('round-trip: reviewReasons 恢复', JSON.stringify(Store.rec(realQ.id).reviewReasons) === JSON.stringify(['causal', 'exec']));
+  ok('round-trip: 轮次恢复', Store.data.mock.rounds.length === 1);
+  ok('round-trip: 阶段取消态恢复', JSON.stringify(Store.data.ui.pathProgress['s1-python-core']) === JSON.stringify({ done: 111, cancelled: 222 }));
+  ok('round-trip: 阅读位置恢复', Store.data.ui.docPos.y === 900);
+  ok('round-trip: 扩展题恢复(Store 层)', Store.loadExtraBankSafe().some(q => q.id === realQ.id));
+  ok('round-trip: 资料恢复(Store 层)', Store.userDocsLoad().some(d => d.id === 'udoc-88'));
+  /* 幂等 */
+  const r2 = Store.importFull(full);
+  ok('round-trip: 重复恢复幂等', r2.roundsAdded === 0 && r2.questionsAdded === 0 && r2.docsAdded === 0);
+  ok('round-trip: drillTries 不重复', (Store.rec(realQ.id).drillTries || []).length === 1);
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');
