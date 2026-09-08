@@ -326,11 +326,14 @@ const SearchView = (() => {
       box.innerHTML = `<div class="empty">没有找到与「${esc(q)}」相关的内容。<br><span class="muted">提示:换更短的关键词,或检查范围/专题筛选。</span></div>`;
       return;
     }
-    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习' };
+    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试' };
     box.innerHTML = results.map(r => {
       const u = r.unit;
       let href, title;
-      if (u.kind === 'drill') {
+      if (u.kind === 'try') {
+        href = '#/path';
+        title = '专项尝试(' + u.drillId + ')';
+      } else if (u.kind === 'drill') {
         href = '#/path';
         const dd = (window.APP_DATA.paths.paths || []).flatMap(p => p.stages).flatMap(s => s.drills || []).find(x => x.id === u.drillId);
         title = dd ? (dd.type + ':' + dd.q.slice(0, 40) + '…') : u.drillId;
@@ -354,7 +357,7 @@ const SearchView = (() => {
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
-      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习' }[u.field]) || u.field;
+      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘' }[u.field]) || u.field;
       return `
         <a class="search-item" href="${esc(href)}">
           <div class="si-head">

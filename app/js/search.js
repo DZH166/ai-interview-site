@@ -62,6 +62,23 @@ const Search = (() => {
         weight: 1.6, topic: ''
       });
     });
+    /* 个人专项尝试记录(myAnswer/observed/review)进索引 */
+    const NL = String.fromCharCode(10);
+    Object.values(ctx.records && ctx.records.questions || {}).forEach(r => {
+      (r.drillTries || []).forEach(t => {
+        if (!t.drillId) return;
+        const parts = [t.myAnswer && '我的回答:' + t.myAnswer,
+                       t.observed && '观察:' + t.observed,
+                       t.review && '复盘:' + t.review].filter(Boolean);
+        const body = parts.join(NL);
+        if (!body.trim()) return;
+        units.push({
+          kind: 'try', drillId: t.drillId, qid: null, field: 'try', anchor: '',
+          text: norm('专项尝试 ' + body), raw: '专项尝试(' + t.drillId + ')' + NL + body,
+          weight: 2.4, topic: ''
+        });
+      });
+    });
     ((ctx.projects || [])).forEach(pr => {
       if (!pr || !pr.name) return;
       const body = [pr.goal, pr.expected, pr.debug_case, pr.deliverable, (pr.extensions || []).join('; ')]
