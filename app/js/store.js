@@ -490,11 +490,16 @@ const Store = (() => {
       if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
       if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
-      if (Array.isArray(inc.reviewReasons) && inc.reviewReasons.length) {
-        const set = new Set(cur.reviewReasons || []);
-        let added = false;
-        inc.reviewReasons.forEach(x => { if (!set.has(x)) { set.add(x); added = true; } });
-        if (added) { cur.reviewReasons = [...set]; adopted = true; }
+      /* 复习原因:按更新时间取整套覆盖(当前状态),不是并集——
+         并集会让已取消的原因永远复活;历史原因由尝试记录/复盘事件承载 */
+      if (Array.isArray(inc.reviewReasons)) {
+        if (incAt > curAt) {
+          if (JSON.stringify(cur.reviewReasons || []) !== JSON.stringify(inc.reviewReasons)) {
+            cur.reviewReasons = inc.reviewReasons; adopted = true;
+          }
+        } else if (!(cur.reviewReasons || []).length && inc.reviewReasons.length) {
+          cur.reviewReasons = inc.reviewReasons; adopted = true;
+        }
       }
       /* 专项练习尝试:按 (drillId, ts) 幂等去重,新尝试追加(历史不覆盖) */
       if (Array.isArray(inc.drillTries) && inc.drillTries.length) {
@@ -697,11 +702,16 @@ const Store = (() => {
       if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
       if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
-      if (Array.isArray(inc.reviewReasons) && inc.reviewReasons.length) {
-        const set = new Set(cur.reviewReasons || []);
-        let added = false;
-        inc.reviewReasons.forEach(x => { if (!set.has(x)) { set.add(x); added = true; } });
-        if (added) { cur.reviewReasons = [...set]; adopted = true; }
+      /* 复习原因:按更新时间取整套覆盖(当前状态),不是并集——
+         并集会让已取消的原因永远复活;历史原因由尝试记录/复盘事件承载 */
+      if (Array.isArray(inc.reviewReasons)) {
+        if (incAt > curAt) {
+          if (JSON.stringify(cur.reviewReasons || []) !== JSON.stringify(inc.reviewReasons)) {
+            cur.reviewReasons = inc.reviewReasons; adopted = true;
+          }
+        } else if (!(cur.reviewReasons || []).length && inc.reviewReasons.length) {
+          cur.reviewReasons = inc.reviewReasons; adopted = true;
+        }
       }
       /* 专项练习尝试:按 (drillId, ts) 幂等去重,新尝试追加(历史不覆盖) */
       if (Array.isArray(inc.drillTries) && inc.drillTries.length) {

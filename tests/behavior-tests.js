@@ -426,6 +426,20 @@ console.log('== R6-1.1: 阶段1 前两题参考答案的每条断言实际验证
      s1.drills[1].reference.includes('get(w, 0) + 1') && s1.drills[1].reference.includes('Counter'));
 }
 
+
+console.log('== R7: reviewReasons 取消语义(整套覆盖,非并集)==');
+{
+  Store.data.ui.pathProgress = {};
+  Store.rec('PY-090').reviewReasons = ['causal', 'edge'];
+  Store.rec('PY-090')._updatedAt = 100;
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-090': { reviewReasons: ['causal'], _updatedAt: 200 } } } }));
+  ok('更新的备份取消原因 → 生效', JSON.stringify(Store.rec('PY-090').reviewReasons) === JSON.stringify(['causal']));
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-090': { reviewReasons: [] } } } }));
+  ok('旧备份空数组不清空当前', JSON.stringify(Store.rec('PY-090').reviewReasons) === JSON.stringify(['causal']));
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-090': { reviewReasons: ['causal', 'concept'], _updatedAt: 300 } } } }));
+  ok('更新备份新增原因 → 生效', JSON.stringify(Store.rec('PY-090').reviewReasons) === JSON.stringify(['causal', 'concept']));
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');
