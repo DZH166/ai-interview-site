@@ -326,6 +326,20 @@ const Store = (() => {
       });
       if (r.lastResult !== undefined && typeof r.lastResult !== 'string') errs.push(`题目记录 ${qid}: lastResult 必须是字符串`);
       if (r.contentRev !== undefined && typeof r.contentRev !== 'string') errs.push(`题目记录 ${qid}: contentRev 必须是字符串`);
+      if (r.drillTries !== undefined) {
+        if (!Array.isArray(r.drillTries)) { errs.push(`题目记录 ${qid}: drillTries 必须是数组`); }
+        else r.drillTries.forEach((t, i) => {
+          if (!t || typeof t !== 'object') { errs.push(`题目记录 ${qid}: drillTries[${i}] 非对象`); return; }
+          if (typeof t.drillId !== 'string' || !t.drillId) errs.push(`题目记录 ${qid}: drillTries[${i}] 缺 drillId`);
+          if (t.version !== undefined && !(typeof t.version === 'number' && t.version >= 1)) errs.push(`题目记录 ${qid}: drillTries[${i}].version 非法`);
+          if (t.myAnswer !== undefined && typeof t.myAnswer !== 'string') errs.push(`题目记录 ${qid}: drillTries[${i}].myAnswer 非文本`);
+          if (t.observed !== undefined && typeof t.observed !== 'string') errs.push(`题目记录 ${qid}: drillTries[${i}].observed 非文本`);
+          if (t.selfRating !== undefined && t.selfRating !== '' && !['solved', 'partial', 'unsolved'].includes(t.selfRating)) errs.push(`题目记录 ${qid}: drillTries[${i}].selfRating 非法`);
+          if (t.mistake !== undefined && typeof t.mistake !== 'string') errs.push(`题目记录 ${qid}: drillTries[${i}].mistake 非文本`);
+          if (t.review !== undefined && typeof t.review !== 'string') errs.push(`题目记录 ${qid}: drillTries[${i}].review 非文本`);
+          if (t.ts !== undefined && !(typeof t.ts === 'number' && t.ts >= 0)) errs.push(`题目记录 ${qid}: drillTries[${i}].ts 非法`);
+        });
+      }
       if (r.reviewReasons !== undefined) {
         const OK = ['concept', 'prereq', 'causal', 'exec', 'edge', 'expression'];
         if (!Array.isArray(r.reviewReasons) || r.reviewReasons.some(x => !OK.includes(x))) errs.push(`题目记录 ${qid}: reviewReasons 非法`);
@@ -481,6 +495,20 @@ const Store = (() => {
         let added = false;
         inc.reviewReasons.forEach(x => { if (!set.has(x)) { set.add(x); added = true; } });
         if (added) { cur.reviewReasons = [...set]; adopted = true; }
+      }
+      /* 专项练习尝试:按 (drillId, ts) 幂等去重,新尝试追加(历史不覆盖) */
+      if (Array.isArray(inc.drillTries) && inc.drillTries.length) {
+        cur.drillTries = cur.drillTries || [];
+        const exist = new Set(cur.drillTries.map(t => `${t.drillId}|${t.ts}`));
+        let added = false;
+        inc.drillTries.forEach(t => {
+          if (!t || !t.drillId) return;
+          const key = `${t.drillId}|${t.ts}`;
+          if (exist.has(key)) return;
+          cur.drillTries.push(JSON.parse(JSON.stringify(t)));
+          exist.add(key); added = true;
+        });
+        if (added) adopted = true;
       }
       if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;
@@ -674,6 +702,20 @@ const Store = (() => {
         let added = false;
         inc.reviewReasons.forEach(x => { if (!set.has(x)) { set.add(x); added = true; } });
         if (added) { cur.reviewReasons = [...set]; adopted = true; }
+      }
+      /* 专项练习尝试:按 (drillId, ts) 幂等去重,新尝试追加(历史不覆盖) */
+      if (Array.isArray(inc.drillTries) && inc.drillTries.length) {
+        cur.drillTries = cur.drillTries || [];
+        const exist = new Set(cur.drillTries.map(t => `${t.drillId}|${t.ts}`));
+        let added = false;
+        inc.drillTries.forEach(t => {
+          if (!t || !t.drillId) return;
+          const key = `${t.drillId}|${t.ts}`;
+          if (exist.has(key)) return;
+          cur.drillTries.push(JSON.parse(JSON.stringify(t)));
+          exist.add(key); added = true;
+        });
+        if (added) adopted = true;
       }
       if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;

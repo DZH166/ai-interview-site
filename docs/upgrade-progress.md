@@ -127,3 +127,11 @@
 - 2.2 项目A:回喂真的改变请求(FakeModel 校验第 2 次请求必须含『上次错误』,无反馈不放行——反向证明);补截断终态分支;六场景 8 项断言(tests/proj_a_test.py);目标层级诚实化(最小教学骨架/验证版/工程扩展)
 - 2.3 项目C:拒答原因分 2 层(零命中=可能检索盲区,低分=证据不足);变式实验真实可触发(『退货』vs『退款』对照;top_k 2→1 裁证据);评测逐条明细(query/候选/采用/引用);样例集标注只证明流程
 - 2.4 projects.json 与实际行为同步(目标/预期/排查/扩展/完成标准/层级)
+
+## 阶段3+4:统一学习记录与首条验收链 ✅
+
+- 18 专项练习稳定 ID(drill-<阶段><类型><序号>,如 drill-1pred01)+ version 字段;不再依赖数组下标
+- Store 新增 drillTries 尝试记录:myAnswer/observed/selfRating(枚举含空)/review/mistake 预留/version/ts;类型校验;备份合并按 (drillId,ts) 幂等追加
+- PathView 专项练习升级:先答(草稿=ui.drillDrafts,刷新不丢)→ 揭示参考 → 记录观察/自评/误解原因 → 保存尝试(历史保留);离开返回历史在
+- 修复 3 个实现 bug:自评按钮选择器错位(data-rate vs data-drill-rate)、selfRating 空串校验、data.js 未随 paths.json 重建(SW 旧缓存连锁)
+- **首条验收链全通**(浏览器实测):PY-001 概念 → 写预测 → 揭示参考 → 记录观察/自评 partial/复盘 → 保存(drillTries 落盘)→ 离开返回历史保留 → 清空+导入备份后尝试记录与复盘完整恢复
