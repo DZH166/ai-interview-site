@@ -164,3 +164,11 @@
 
 - 最终报告已更新(阶段0-10 完成状态 + 未完成清单)
 - 测试总量:behavior-tests 103 / lp003_mock 18 / path_exercise 19 / proj_a 8 = 148 项,全过
+
+## 阶段2/3 完成 ✅:完整草稿与稳定归属(浏览器验证)
+
+- 数据模型:顶层 drillAttempts(drillId → [attempt]);attempt 含 attemptId/status(draft|completed)/全字段/ts/updatedAt;validateAttempt 校验;两处合并点按 attemptId 幂等+updatedAt 新者胜
+- 迁移:旧 questions[qid].drillTries → drillAttempts(幂等,迁移后删除旧字段)
+- UI:草稿(全字段击键同步)→ 提交转 completed → 「开始新尝试」清空 draft(旧答案不显示)→ 历史回看 modal(次数/时间/版本/自评/预测/观察/复盘)
+- 浏览器实测:两次不同回答均可回看;新尝试不显示旧答案;草稿续写(3 次输入)只产生 1 条 draft;刷新草稿保留
+- 7 项断言入 behavior-tests(总 110 项)

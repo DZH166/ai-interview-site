@@ -347,8 +347,7 @@ const MaintainView = (() => {
           const t = JSON.parse(text);
           if (t && t.type === 'aiiv-full') { toast('这是完整备份:已改走「导入完整备份」入口,本次未做任何修改', 'err'); return; }
           const r = Store.importLibrary(text);
-          Data.init();
-          Search.build(StudyView.currentCtx());
+          window.rebuildIndex();
           toast(`导入成功:新增 ${r.questionsAdded} 题、${r.docsAdded} 篇资料(重复项自动跳过)`);
           App.route();
         }
@@ -375,8 +374,7 @@ const MaintainView = (() => {
             { label: '完整恢复', primary: true, onClick: () => {
                 try {
                   const r = Store.importFull(text);
-                  Data.init();
-                  Search.build(StudyView.currentCtx());
+                  window.rebuildIndex();
                   toast(`完整恢复成功:${r.qMerged} 条记录、${r.roundsAdded} 轮、${r.questionsAdded} 题、${r.docsAdded} 篇资料`);
                   App.route();
                 }
@@ -399,8 +397,7 @@ const MaintainView = (() => {
     });
     const retryBtn = $('#q-retry', root);
     if (retryBtn) retryBtn.addEventListener('click', () => {
-      Data.init();
-      Search.build(StudyView.currentCtx());
+      window.rebuildIndex();
       render(root);
       toast(Store.loadIssues.quarantineFailed > 0 ? '仍有隔离失败,原数据未动' : '重试成功');
     });
@@ -460,8 +457,7 @@ const MaintainView = (() => {
           { label: `导入 ${fresh.length} 题`, primary: true, onClick: () => {
               const merged = Store.extraBankLoad().concat(fresh);
               if (!Store.extraBankSave(merged)) { toast('保存失败:本地存储空间不足,导入未生效', 'err'); return false; }
-              Data.init();
-              Search.build(StudyView.currentCtx());
+              window.rebuildIndex();
               toast(`已导入 ${fresh.length} 题`);
               App.route();
             } }

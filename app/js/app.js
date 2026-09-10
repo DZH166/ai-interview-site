@@ -61,6 +61,14 @@ const App = (() => {
     document.title = 'AI 面试学习站';
   }
 
+  /* 统一索引变更入口:任何数据变更(题库导入/资料增删/尝试保存/备份恢复)都走这里。
+     重建 Data 内存(扩展题库/资料)并全量重建索引;失败抛错由调用方反馈真实结果。 */
+  function rebuildIndex() {
+    Data.init();
+    Search.build(StudyView.currentCtx());
+  }
+  window.rebuildIndex = rebuildIndex;
+
   function goToAnchor(anchor) { pendingAnchor = anchor; }
 
   function updateThemeIcon() {
@@ -71,8 +79,7 @@ const App = (() => {
 
   function init() {
     Store.load();
-    Data.init();
-    Search.build(StudyView.currentCtx());
+    rebuildIndex();
 
     /* 暗色模式 */
     const saved = localStorage.getItem('aiiv:theme');

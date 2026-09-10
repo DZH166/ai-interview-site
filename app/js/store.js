@@ -22,6 +22,7 @@ const Store = (() => {
       v: 2,
       questions: {},          // qid -> {status, fav, note, viewedAt, practiceCount, lastPracticedAt, lastResult, _updatedAt}
       mock: { rounds: [], draft: null },   // 模拟面试轮次 + 未完成草稿
+      drillAttempts: {},                    // drillId -> [attempt];attempt 稳定归属不依赖题目
       ui: { lastHash: '', browse: {}, docPos: {}, search: {} }
     };
   }
@@ -40,6 +41,7 @@ const Store = (() => {
           if (!Array.isArray(data.mock.rounds)) data.mock.rounds = [];
           if (!('draft' in data.mock)) data.mock.draft = null;
           data.ui = Object.assign(blank().ui, parsed.ui || {});
+          data.drillAttempts = (parsed.drillAttempts && typeof parsed.drillAttempts === 'object' && !Array.isArray(parsed.drillAttempts)) ? parsed.drillAttempts : {};
         }
       }
     } catch (e) {
@@ -345,6 +347,18 @@ const Store = (() => {
         if (!Array.isArray(r.reviewReasons) || r.reviewReasons.some(x => !OK.includes(x))) errs.push(`题目记录 ${qid}: reviewReasons 非法`);
       }
     });
+    /* 顶层专项尝试(drillAttempts)校验 */
+    if (incoming.drillAttempts !== undefined) {
+      if (!incoming.drillAttempts || typeof incoming.drillAttempts !== 'object' || Array.isArray(incoming.drillAttempts)) {
+        errs.push('drillAttempts 必须是对象');
+      } else {
+        Object.keys(incoming.drillAttempts).forEach(did => {
+          const list = incoming.drillAttempts[did];
+          if (!Array.isArray(list)) { errs.push(`drillAttempts.${did} 必须是数组`); return; }
+          list.forEach((a, i) => validateAttempt(a).forEach(e => errs.push(`drillAttempts.${did}[${i}]: ${e}`)));
+        });
+      }
+    }
     const mock = incoming.mock;
     if (mock !== undefined) {
       if (!mock || typeof mock !== 'object') errs.push('mock 必须是对象');
@@ -387,6 +401,50 @@ const Store = (() => {
     }
     if (ui.pathVersion !== undefined && typeof ui.pathVersion !== 'string') errs.push('ui.pathVersion 必须是字符串');
     return errs;
+  }
+
+  /* 专项尝试 attempt 结构校验 */
+  function validateAttempt(a) {
+    const errs = [];
+    if (!a || typeof a !== 'object' || Array.isArray(a)) { errs.push('attempt 不是对象'); return errs; }
+    if (typeof a.attemptId !== 'string' || !a.attemptId) errs.push('attempt 缺 attemptId');
+    if (typeof a.drillId !== 'string' || !a.drillId) errs.push('attempt 缺 drillId');
+    if (a.version !== undefined && !(typeof a.version === 'number' && a.version >= 1)) errs.push('attempt.version 非法');
+    if (!['draft', 'completed'].includes(a.status)) errs.push('attempt.status 必须是 draft/completed');
+    ['myAnswer', 'observed', 'review'].forEach(k => {
+      if (a[k] !== undefined && typeof a[k] !== 'string') errs.push(`attempt.${k} 必须是字符串`);
+    });
+    if (a.selfRating !== undefined && a.selfRating !== '' && !['solved', 'partial', 'unsolved'].includes(a.selfRating)) {
+      errs.push('attempt.selfRating 非法');
+    }
+    if (a.ts !== undefined && !(typeof a.ts === 'number' && a.ts >= 0)) errs.push('attempt.ts 非法');
+    if (a.updatedAt !== undefined && !(typeof a.updatedAt === 'number' && a.updatedAt >= 0)) errs.push('attempt.updatedAt 非法');
+    return errs;
+  }
+
+  /* 迁移:旧格式 questions[qid].drillTries → drillAttempts(幂等;按 drillId+ts 去重)。返回迁移条数 */
+  function migrateLegacyDrillTries() {
+    let moved = 0;
+    Object.keys(data.questions).forEach(qid => {
+      const r = data.questions[qid];
+      if (!Array.isArray(r.drillTries) || !r.drillTries.length) return;
+      r.drillTries.forEach(t => {
+        if (!t || !t.drillId) return;
+        const list = data.drillAttempts[t.drillId] = data.drillAttempts[t.drillId] || [];
+        const key = t.ts || 0;
+        if (list.some(x => (x.ts || 0) === key && x.myAnswer === (t.myAnswer || ''))) return;
+        list.push({
+          attemptId: 'at-' + (t.ts || Date.now()) + '-' + Math.random().toString(36).slice(2, 6),
+          drillId: t.drillId, version: t.version || 1, status: 'completed',
+          myAnswer: t.myAnswer || '', observed: t.observed || '', selfRating: t.selfRating || '',
+          review: t.review || '', ts: t.ts || Date.now(), updatedAt: t.ts || Date.now(),
+          _migratedFrom: qid,
+        });
+        moved++;
+      });
+      delete r.drillTries;   /* 迁出后删除旧字段(题目关联由尝试自身携带) */
+    });
+    return moved;
   }
 
   /* 轮次稳定 ID:内容哈希,重复导入幂等 */
@@ -534,6 +592,20 @@ const Store = (() => {
     merged.mock.rounds = merged.mock.rounds.slice(0, 100);
     /* 草稿:已有草稿优先(本机更可能新鲜),备份草稿仅在本地没有时恢复 */
     if (!merged.mock.draft && incoming.mock && incoming.mock.draft) merged.mock.draft = incoming.mock.draft;
+    /* 专项尝试:按 attemptId 幂等;两份都有时 updatedAt 新者胜 */
+    if (incoming.drillAttempts && typeof incoming.drillAttempts === 'object') {
+      Object.keys(incoming.drillAttempts).forEach(did => {
+        const incList = incoming.drillAttempts[did];
+        if (!Array.isArray(incList)) return;
+        const local = merged.drillAttempts[did] = merged.drillAttempts[did] || [];
+        incList.forEach(ia => {
+          if (!ia || !ia.attemptId) return;
+          const at = local.findIndex(x => x.attemptId === ia.attemptId);
+          if (at < 0) { local.push(JSON.parse(JSON.stringify(ia))); return; }
+          if ((ia.updatedAt || 0) > (local[at].updatedAt || 0)) local[at] = JSON.parse(JSON.stringify(ia));
+        });
+      });
+    }
     mergeUi(merged, incoming);
 
     /* 原子写入:直接写 localStorage 成功后才替换内存 */
@@ -744,6 +816,20 @@ const Store = (() => {
     merged.mock.rounds.sort((a, b) => (b.ts || 0) - (a.ts || 0));
     merged.mock.rounds = merged.mock.rounds.slice(0, 100);
     if (!merged.mock.draft && incoming.mock && incoming.mock.draft) merged.mock.draft = incoming.mock.draft;
+    /* 专项尝试:按 attemptId 幂等;两份都有时 updatedAt 新者胜 */
+    if (incoming.drillAttempts && typeof incoming.drillAttempts === 'object') {
+      Object.keys(incoming.drillAttempts).forEach(did => {
+        const incList = incoming.drillAttempts[did];
+        if (!Array.isArray(incList)) return;
+        const local = merged.drillAttempts[did] = merged.drillAttempts[did] || [];
+        incList.forEach(ia => {
+          if (!ia || !ia.attemptId) return;
+          const at = local.findIndex(x => x.attemptId === ia.attemptId);
+          if (at < 0) { local.push(JSON.parse(JSON.stringify(ia))); return; }
+          if ((ia.updatedAt || 0) > (local[at].updatedAt || 0)) local[at] = JSON.parse(JSON.stringify(ia));
+        });
+      });
+    }
     mergeUi(merged, incoming);
 
     /* 三键原子写入:失败回滚已写键 */
@@ -826,6 +912,7 @@ const Store = (() => {
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
     validateQuestions, validateQuestion, normalizeSourceKind,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
+    validateAttempt, migrateLegacyDrillTries,
     get loadIssues() { return loadIssues; },
     extraBankLoad, extraBankSave, loadExtraBankSafe, userDocsLoad, userDocsSave, loadUserDocsSafe,
     get data() { return data; }

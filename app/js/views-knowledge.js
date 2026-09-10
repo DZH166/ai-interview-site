@@ -273,7 +273,7 @@ const DocsView = (() => {
   }
 
   function rebuildSearch() {
-    Search.build(currentCtx());
+    window.rebuildIndex();
   }
 
   return { render, rebuildSearch, cleanup, _renderToken: 0, _activeDoc: null, _onScroll: null };
@@ -431,54 +431,71 @@ const PathView = (() => {
     $$('.path-stage-actions [data-done]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.done, true); render(root); toast('已确认本阶段理解;可随时取消'); });
     });
-    /* 专项练习交互 */
+    /* 专项练习交互:草稿(全部字段)→ 提交(completed)→ 新尝试(draft 清空)→ 历史回看 */
     $$('.path-drill', root).forEach(box => {
       const drillId = box.dataset.drill;
-      const qid = currentPathQid(drillId);
-      if (!qid) return;
-      /* 答案草稿:击键同步内存(与题目笔记同一时序纪律) */
-      const ans = box.querySelector(`[data-drill-answer="${drillId}"]`);
-      ans.addEventListener('input', () => {
-        Store.data.ui.drillDrafts = Store.data.ui.drillDrafts || {};
-        Store.data.ui.drillDrafts[drillId] = ans.value;
-        Store.save();
-      });
-      /* 揭示参考前也同步草稿 */
-      box.querySelector(`[data-drill-ref="${drillId}"]`).addEventListener('toggle', () => {
-        if (box.querySelector(`[data-drill-ref="${drillId}"]`).open) {
-          Store.data.ui.drillDrafts = Store.data.ui.drillDrafts || {};
-          Store.data.ui.drillDrafts[drillId] = ans.value;
-          Store.save();
+      const d = (window.APP_DATA.paths.paths || []).flatMap(p => p.stages)
+        .flatMap(s => s.drills || []).find(x => x.id === drillId);
+      if (!d) return;
+      const el = {
+        ans: box.querySelector(`[data-drill-answer="${drillId}"]`),
+        obs: box.querySelector(`[data-drill-obs="${drillId}"]`),
+        review: box.querySelector(`[data-drill-review="${drillId}"]`),
+      };
+      /* 草稿同步:任一字段击键即写入内存 draft(全部字段完整保留),磁盘防抖 */
+      function syncDraft() {
+        let draft = draftOf(drillId);
+        if (!draft) {
+          draft = { attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                    drillId, version: d.version || 1, status: 'draft', ts: Date.now() };
         }
-      });
-      /* 保存尝试:我的答案/观察/自评/误解原因 → drillTries */
-      const saveBtn = box.querySelector(`[data-drill-save="${drillId}"]`);
-      saveBtn.addEventListener('click', () => {
-        const myAnswer = box.querySelector(`[data-drill-answer="${drillId}"]`).value;
-        const observed = box.querySelector(`[data-drill-obs="${drillId}"]`).value;
-        const review = box.querySelector(`[data-drill-review="${drillId}"]`).value;
-        const selfRating = (box.querySelector('[data-rate].btn-primary') || {}).dataset?.rate || '';
-        const d = (window.APP_DATA.paths.paths.flatMap(p => p.stages).flatMap(s => s.drills || [])
-                   .find(x => x.id === drillId));
-        const r = Store.rec(qid);
-        r.drillTries = r.drillTries || [];
-        const ts = Date.now();
-        r.drillTries.push({
-          drillId, version: d?.version || 1, ts,
-          myAnswer, observed,
-          selfRating, review,
-        });
-        r._updatedAt = ts;
-        Store.saveNow();
-        toast('已保存本次尝试(历史保留)');
+        draft.myAnswer = el.ans.value;
+        draft.observed = el.obs.value;
+        draft.review = el.review.value;
+        draft.updatedAt = Date.now();
+        saveAttempt(draft);
+        return draft;
+      }
+      [el.ans, el.obs, el.review].forEach(t => t.addEventListener('input', syncDraft));
+      /* 提交:当前 draft 转 completed;下次练习自动建新 draft(不显示旧答案) */
+      box.querySelector(`[data-drill-save="${drillId}"]`).addEventListener('click', () => {
+        const draft = syncDraft();
+        draft.status = 'completed';
+        draft.selfRating = (box.querySelector('[data-rate].btn-primary') || {}).dataset?.rate || '';
+        draft.updatedAt = Date.now();
+        saveAttempt(draft);
+        toast('已保存本次尝试(历史保留;开始新尝试将不显示旧答案)');
         render(root);
       });
-      /* 自评按钮:即时高亮,保存时读取 */
+      /* 开始新尝试:直接把 draft 清成空(旧 completed 历史仍在) */
+      box.querySelector(`[data-drill-new="${drillId}"]`).addEventListener('click', () => {
+        el.ans.value = ''; el.obs.value = ''; el.review.value = '';
+        syncDraft();
+        render(root);
+        toast('已开始新尝试;旧答案已隐藏,历史保留');
+      });
+      /* 自评高亮 */
       $$('[data-rate]', box).forEach(btn => {
         btn.addEventListener('click', () => {
           $$('[data-rate]', box).forEach(b => b.classList.remove('btn-primary'));
           btn.classList.add('btn-primary');
         });
+      });
+      /* 历史回看 */
+      const hist = box.querySelector(`[data-drill-history="${drillId}"]`);
+      if (hist) hist.addEventListener('click', () => {
+        const list = attemptsOf(drillId).filter(a => a.status === 'completed');
+        modal(`「${drillId}」历史尝试(${list.length})`,
+          list.length ? list.map((a, i) => `
+            <div class="round-item">
+              <div class="round-head"><b>#${i + 1}</b>
+                <span class="muted small">${fmtTime(a.ts || a.updatedAt)} · v${a.version || 1}
+                ${a.selfRating ? '· ' + ({ solved: '已解决', partial: '部分', unsolved: '未解决' }[a.selfRating] || a.selfRating) : ''}</span></div>
+              <div class="round-title"><b>预测:</b>${esc(a.myAnswer || '(无)')}</div>
+              ${a.observed ? `<div class="round-self"><b>观察:</b>${esc(a.observed)}</div>` : ''}
+              ${a.review ? `<div class="round-self"><b>复盘:</b>${esc(a.review)}</div>` : ''}
+            </div>`).join('') : '<p class="muted">暂无完成尝试</p>',
+          [{ label: '关闭' }]);
       });
     });
     $$('.path-stage-actions [data-undone]', root).forEach(b => {
@@ -557,33 +574,36 @@ const PathView = (() => {
   }
 
 
-  /* 专项练习:稳定 ID + 先答(预测/修复/推演)→ 揭示参考 → 自评+复盘;尝试历史入 Store */
-  function drillTriesOf(drillId) {
-    return Store.rec(currentPathQid(drillId)).drillTries?.filter(t => t.drillId === drillId) || [];
+  /* 专项练习:稳定 ID + attempt 记录(drillAttempts 顶层存储,归属只由 drillId 决定) */
+  function attemptsOf(drillId) {
+    return (Store.data.drillAttempts[drillId] || []).slice()
+      .sort((a, b) => (a.ts || 0) - (b.ts || 0));
   }
-  /* 每个专项挂在阶段的第一道相关题上(记录载体);取阶段 questions[0] */
-  function currentPathQid(drillId) {
-    const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
-    for (const p of paths) for (const s of p.stages) {
-      if ((s.drills || []).some(d => d.id === drillId)) return (s.questions || [])[0];
-    }
-    return '';
+  function draftOf(drillId) {
+    return (Store.data.drillAttempts[drillId] || []).find(a => a.status === 'draft');
+  }
+  function saveAttempt(attempt) {
+    const list = Store.data.drillAttempts[attempt.drillId] = Store.data.drillAttempts[attempt.drillId] || [];
+    const idx = list.findIndex(x => x.attemptId === attempt.attemptId);
+    if (idx >= 0) list[idx] = attempt; else list.push(attempt);
+    Store.saveNow();
   }
   function renderDrill(stageId, di, d) {
     const drillId = d.id || `drill-${stageId}-${di}`;
-    const tries = Store.rec(currentPathQid(drillId)).drillTries?.filter(t => t.drillId === drillId) || [];
-    const last = tries[tries.length - 1];
+    const draft = draftOf(drillId);
+    const completed = attemptsOf(drillId).filter(a => a.status === 'completed');
+    const last = draft || completed[completed.length - 1];
     return `
       <div class="path-drill" data-drill="${drillId}">
         <div class="path-drill-q">
           <span class="badge b-tag">${esc(d.type)}</span>
           <span class="qid">${drillId}</span>
           ${d.version ? `<span class="badge b-tag" title="内容版本">v${d.version}</span>` : ''}
-          ${esc(d.q).split(String.fromCharCode(10)).map(esc).join('<br>')}
+          ${d.q.split(String.fromCharCode(10)).map(l => esc(l)).join('<br>')}
         </div>
         <textarea class="path-drill-answer" data-drill-answer="${drillId}"
-          placeholder="先写下你的预测/找出的错/推演结果(自动保存,刷新不丢)……">${esc((Store.data.ui.drillDrafts || {})[drillId] ?? last?.myAnswer ?? '')}</textarea>
-        ${last?.observed ? `<div class="muted small" style="margin:4px 0">上次实际观察:${esc(last.observed)}</div>` : ''}
+          placeholder="先写下你的预测/找出的错/推演结果(自动保存,刷新不丢)……">${esc(draft?.myAnswer ?? '')}</textarea>
+        ${completed.length ? `<div class="muted small" style="margin:4px 0">已完成 ${completed.length} 次;<a class="rel-link" data-drill-history="${drillId}" href="javascript:void(0)">查看历史</a></div>` : ''}
         <details class="path-variant-ref" data-drill-ref="${drillId}">
           <summary>展开参考要点(先自己作答)</summary>
           <div class="path-variant-body">${esc(d.reference)}</div>
@@ -593,16 +613,17 @@ const PathView = (() => {
           <summary>记录复盘(实际观察/自评/误解原因)</summary>
           <div style="margin-top:6px">
             <label class="muted small">实际运行观察(对照你的预测)</label>
-            <textarea class="path-drill-obs" data-drill-obs="${drillId}" placeholder="实际输出是什么?与预测差在哪?……">${esc(last?.observed || '')}</textarea>
+            <textarea class="path-drill-obs" data-drill-obs="${drillId}" placeholder="实际输出是什么?与预测差在哪?……">${esc(draft?.observed ?? '')}</textarea>
             <label class="muted small" style="display:block;margin-top:6px">自评</label>
             <div class="btn-row">
               ${[['solved', '已解决'], ['partial', '部分'], ['unsolved', '未解决']].map(([v, l]) =>
                 `<button class="btn btn-small ${last?.selfRating === v ? 'btn-primary' : ''}" data-rate="${v}" data-drill-rate="${drillId}">${l}</button>`).join('')}
             </div>
             <label class="muted small" style="display:block;margin-top:6px">误解原因(自己的话,进入复习)</label>
-            <textarea class="path-drill-review" data-drill-review="${drillId}" placeholder="我原来以为…现在知道…">${esc(last?.review || '')}</textarea>
-            <button class="btn btn-primary btn-small" style="margin-top:6px" data-drill-save="${drillId}">保存本次尝试</button>
-            ${tries.length ? `<span class="muted small" style="margin-left:8px">已有 ${tries.length} 次尝试</span>` : ''}
+            <textarea class="path-drill-review" data-drill-review="${drillId}" placeholder="我原来以为…现在知道…">${esc(draft?.review ?? '')}</textarea>
+            <button class="btn btn-primary btn-small" style="margin-top:6px" data-drill-save="${drillId}">提交本次尝试</button>
+            ${completed.length ? `<span class="muted small" style="margin-left:8px">已有 ${completed.length} 次完成</span>` : ''}
+            <button class="btn btn-small" data-drill-new="${drillId}" title="不看旧答案,开始全新一次">开始新尝试</button>
           </div>
         </details>
       </div>`;

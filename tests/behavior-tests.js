@@ -477,6 +477,31 @@ console.log('== R9: 备份 round-trip(真实题库数据,非最小 fixture)==');
   ok('round-trip: drillTries 不重复', (Store.rec(realQ.id).drillTries || []).length === 1);
 }
 
+
+console.log('== R6: drillAttempts 稳定归属(全链)==');
+{
+  Store.data.drillAttempts = {};
+  Store.data.drillAttempts['drill-1pred01'] = [{ attemptId: 'at-1', drillId: 'drill-1pred01', status: 'completed', myAnswer: 'A', updatedAt: 1 }];
+  Store.rec('PY-001').drillTries = [{ drillId: 'drill-1pred01', version: 1, ts: 200, myAnswer: '旧格式预测', observed: '旧观察', selfRating: 'solved', review: '旧复盘' }];
+  const moved = Store.migrateLegacyDrillTries();
+  ok('旧格式迁移 1 条', moved === 1);
+  ok('迁移后 2 条 attempt', Store.data.drillAttempts['drill-1pred01'].length === 2);
+  Store.migrateLegacyDrillTries();
+  ok('迁移幂等', Store.data.drillAttempts['drill-1pred01'].length === 2);
+  const exported = Store.exportFull();
+  Store.clearAll();
+  Store.importFull(exported);
+  ok('round-trip: attempts 恢复', Store.data.drillAttempts['drill-1pred01'].length === 2);
+  Store.importFull(exported);
+  ok('round-trip: 幂等', Store.data.drillAttempts['drill-1pred01'].length === 2);
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, drillAttempts: { 'drill-1pred01': [{ attemptId: 'at-1', drillId: 'drill-1pred01', status: 'completed', myAnswer: 'A-更新', updatedAt: 999 }] } } }));
+  ok('updatedAt 新者胜', Store.data.drillAttempts['drill-1pred01'][0].myAnswer === 'A-更新');
+  let threw = '';
+  try { Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: {}, drillAttempts: { x: [{ attemptId: 'a', drillId: 'd', status: 'bad' }] } } })); }
+  catch (e) { threw = e.message; }
+  ok('坏 attempt 整批拒绝', threw.includes('status'), threw);
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');

@@ -292,7 +292,7 @@ const StudyView = (() => {
     if ((Store.rec(currentQid).note || '') !== ta.value) {
       Store.setNote(currentQid, ta.value);
       Store.saveNow();
-      Search.build(currentCtx());
+      window.rebuildIndex();
     }
   }
 
@@ -450,7 +450,7 @@ const StudyView = (() => {
       if (r.note !== note.value) { r.note = note.value; r._updatedAt = Date.now(); Store.save(); }
     });
     note.addEventListener('input', debounce(() => {
-      Search.build(currentCtx());   /* 索引重建可防抖;内存已同步 */
+      window.rebuildIndex();   /* 索引重建可防抖;内存已同步 */
     }, 400));
     $$('[data-nav]', root).forEach(b => {
       b.addEventListener('click', () => { captureNote(qid); if (b.dataset.nav) go('#/study/' + b.dataset.nav); });
