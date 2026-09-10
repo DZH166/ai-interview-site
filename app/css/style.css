@@ -748,3 +748,6 @@ textarea:focus-visible {
 
 /* ---- 复盘原因 ---- */
 .reason-group { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 4px; }
+
+/* ---- 搜索命中定位高亮 ---- */
+.drill-focus { border: 2px solid var(--warn); }

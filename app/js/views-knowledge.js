@@ -331,10 +331,10 @@ const SearchView = (() => {
       const u = r.unit;
       let href, title;
       if (u.kind === 'try') {
-        href = '#/path';
+        href = `#/path?d=${encodeURIComponent(u.drillId)}`;
         title = '专项尝试(' + u.drillId + ')';
       } else if (u.kind === 'drill') {
-        href = '#/path';
+        href = `#/path?d=${encodeURIComponent(u.drillId)}`;
         const dd = (window.APP_DATA.paths.paths || []).flatMap(p => p.stages).flatMap(s => s.drills || []).find(x => x.id === u.drillId);
         title = dd ? (dd.type + ':' + dd.q.slice(0, 40) + '…') : u.drillId;
       } else if (u.kind === 'concept') {
@@ -411,6 +411,7 @@ const PathView = (() => {
     if (!paths.length) { root.innerHTML = '<div class="empty">暂无路径定义</div>'; return; }
     const path = paths[0];
     const prog = progress();
+    const focusDrill = (parseHash().query.d || '');   /* 搜索命中:定位到具体专项 */
     const doneCount = path.stages.filter(s => stageStatus(prog[s.id]).state === 'done').length;
     root.innerHTML = `
       <div class="path-head">
@@ -428,6 +429,16 @@ const PathView = (() => {
           ? `<a class="rel-link" href="#/study/${id}">${id}</a>` : '').join(' ')}</div>
       </div>` : ''}
       ${renderProjects()}`;
+    if (focusDrill) {
+      const el = document.getElementById('drill-' + focusDrill);
+      if (el) {
+        el.scrollIntoView({ behavior: 'instant', block: 'start' });
+        const ref = el.querySelector('[data-drill-ref]');
+        if (ref) ref.open = true;
+        el.classList.add('flash');
+        setTimeout(() => el.classList.remove('flash'), 2000);
+      }
+    }
     $$('.path-stage-actions [data-done]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.done, true); render(root); toast('已确认本阶段理解;可随时取消'); });
     });
@@ -590,11 +601,12 @@ const PathView = (() => {
   }
   function renderDrill(stageId, di, d) {
     const drillId = d.id || `drill-${stageId}-${di}`;
+    const focusDrillId = (parseHash().query.d || '');
     const draft = draftOf(drillId);
     const completed = attemptsOf(drillId).filter(a => a.status === 'completed');
     const last = draft || completed[completed.length - 1];
     return `
-      <div class="path-drill" data-drill="${drillId}">
+      <div class="path-drill ${focusDrillId === drillId ? 'drill-focus' : ''}" id="drill-${drillId}" data-drill="${drillId}">
         <div class="path-drill-q">
           <span class="badge b-tag">${esc(d.type)}</span>
           <span class="qid">${drillId}</span>
