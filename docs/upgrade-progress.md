@@ -186,3 +186,9 @@
 - 阶段6:四项目个人工作区——步骤状态(未开始/尝试中/已验证/自评理解)、运行输出摘录、排查记录、未完成项、口述六段草稿(需求/方案/取舍/问题/验证/不足)+ 诚实分级;草稿击键同步、提交入 ui.projectRuns 历史;网页不实时执行 Python 已明示
 - 阶段7:项目C debug_case 修正(阈值降 0 不会无证据作答——best==0 硬拒答是防幻觉底线);改为真实可触发实验(同义词盲区『如何退货』vs『退款』对照;证据预算 top_k 2→1 裁剪);expected 同步
 - 阶段8:R9b 项目记录+口述草稿 round-trip 7 项断言;CI 触发补 projects/**
+
+## 阶段6 补完 ✅(选择器修复后全链验证)
+
+- 修复 wireProjectRecords 选择器错误:记录字段用 [data-proj-field][data-proj],口述字段用 [data-proj-speak-field][data-proj-speak](原选择器 [data-proj] 无法匹配口述字段)
+- 移除 projWired 守卫(render 重建 DOM 后必须重新绑定)
+- 浏览器全链验证:填运行输出/排查/未完成项 → 步骤状态 verified → 保存记录 → 口述 ask/plan 填写 → 保存口述 → 刷新后内存与 DOM 全部恢复

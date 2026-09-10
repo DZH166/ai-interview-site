@@ -445,13 +445,24 @@ const PathView = (() => {
   
   /* 项目个人记录交互:草稿击键同步 ui.projectDrafts;提交写入 ui.projectRuns(幂等按 attemptId) */
   function wireProjectRecords(root) {
-    if (root.dataset.projWired) return;
-    root.dataset.projWired = '1';
     const drafts = Store.data.ui.projectDrafts = Store.data.ui.projectDrafts || {};
-    $$('[data-proj]', root).forEach(el => {
+    /* 记录字段:textarea[data-proj-field][data-proj] */
+    $$('textarea[data-proj-field][data-proj]', root).forEach(el => {
       const pid = el.dataset.proj;
-      const field = el.dataset.projField || ('speak_' + el.dataset.projSpeakField);
-      if (!field || field === 'speak_') return;
+      const field = el.dataset.projField;
+      drafts[pid] = drafts[pid] || {};
+      el.value = drafts[pid][field] || '';
+      el.addEventListener('input', () => {
+        drafts[pid] = drafts[pid] || {};
+        drafts[pid][field] = el.value;
+        drafts[pid].updatedAt = Date.now();
+        Store.save();
+      });
+    });
+    /* 口述字段:textarea[data-proj-speak-field][data-proj-speak] */
+    $$('textarea[data-proj-speak-field][data-proj-speak]', root).forEach(el => {
+      const pid = el.dataset.projSpeak;
+      const field = 'speak_' + el.dataset.projSpeakField;
       drafts[pid] = drafts[pid] || {};
       el.value = drafts[pid][field] || '';
       el.addEventListener('input', () => {
