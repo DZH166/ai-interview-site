@@ -423,14 +423,15 @@ const Store = (() => {
   }
 
   /* 迁移:旧格式 questions[qid].drillTries → drillAttempts(幂等;按 drillId+ts 去重)。返回迁移条数 */
-  function migrateLegacyDrillTries() {
+  function migrateLegacyDrillTries(target) {
+    const t0 = target || data;
     let moved = 0;
-    Object.keys(data.questions).forEach(qid => {
-      const r = data.questions[qid];
+    Object.keys(t0.questions).forEach(qid => {
+      const r = t0.questions[qid];
       if (!Array.isArray(r.drillTries) || !r.drillTries.length) return;
       r.drillTries.forEach(t => {
         if (!t || !t.drillId) return;
-        const list = data.drillAttempts[t.drillId] = data.drillAttempts[t.drillId] || [];
+        const list = t0.drillAttempts[t.drillId] = t0.drillAttempts[t.drillId] || [];
         const key = t.ts || 0;
         if (list.some(x => (x.ts || 0) === key && x.myAnswer === (t.myAnswer || ''))) return;
         list.push({
@@ -546,6 +547,8 @@ const Store = (() => {
         else if (inc.fav === true && !cur.fav) { cur.fav = true; adopted = true; }
       }
       if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
+      /* 旧字段 drillTries 原样带入(由 migrateLegacyDrillTries 统一迁移) */
+      if (Array.isArray(inc.drillTries)) cur.drillTries = JSON.parse(JSON.stringify(inc.drillTries));
       if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       /* 复习原因:按更新时间取整套覆盖(当前状态),不是并集——
@@ -555,24 +558,13 @@ const Store = (() => {
           if (JSON.stringify(cur.reviewReasons || []) !== JSON.stringify(inc.reviewReasons)) {
             cur.reviewReasons = inc.reviewReasons; adopted = true;
           }
-        } else if (!(cur.reviewReasons || []).length && inc.reviewReasons.length) {
+        } else if (cur.reviewReasons === undefined && inc.reviewReasons.length) {
+          /* 仅「从未设置」才补;空数组=明确清空,旧备份不得复活 */
           cur.reviewReasons = inc.reviewReasons; adopted = true;
         }
       }
-      /* 专项练习尝试:按 (drillId, ts) 幂等去重,新尝试追加(历史不覆盖) */
-      if (Array.isArray(inc.drillTries) && inc.drillTries.length) {
-        cur.drillTries = cur.drillTries || [];
-        const exist = new Set(cur.drillTries.map(t => `${t.drillId}|${t.ts}`));
-        let added = false;
-        inc.drillTries.forEach(t => {
-          if (!t || !t.drillId) return;
-          const key = `${t.drillId}|${t.ts}`;
-          if (exist.has(key)) return;
-          cur.drillTries.push(JSON.parse(JSON.stringify(t)));
-          exist.add(key); added = true;
-        });
-        if (added) adopted = true;
-      }
+      /* 专项尝试旧字段(drillTries)不再写入题目记录:导入时统一由
+         migrateLegacyDrillTries() 迁到顶层 drillAttempts(见下方调用) */
       if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;
       qMerged++;
@@ -607,6 +599,9 @@ const Store = (() => {
       });
     }
     mergeUi(merged, incoming);
+
+    /* 迁移:旧格式题目记录里的 drillTries → 顶层 drillAttempts */
+    migrateLegacyDrillTries();
 
     /* 原子写入:直接写 localStorage 成功后才替换内存 */
     try {
@@ -772,6 +767,8 @@ const Store = (() => {
         else if (inc.fav === true && !cur.fav) { cur.fav = true; adopted = true; }
       }
       if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
+      /* 旧字段 drillTries 原样带入(由 migrateLegacyDrillTries 统一迁移) */
+      if (Array.isArray(inc.drillTries)) cur.drillTries = JSON.parse(JSON.stringify(inc.drillTries));
       if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       else if (inc.contentRev !== undefined && !cur.contentRev && inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }
       /* 复习原因:按更新时间取整套覆盖(当前状态),不是并集——
@@ -781,24 +778,13 @@ const Store = (() => {
           if (JSON.stringify(cur.reviewReasons || []) !== JSON.stringify(inc.reviewReasons)) {
             cur.reviewReasons = inc.reviewReasons; adopted = true;
           }
-        } else if (!(cur.reviewReasons || []).length && inc.reviewReasons.length) {
+        } else if (cur.reviewReasons === undefined && inc.reviewReasons.length) {
+          /* 仅「从未设置」才补;空数组=明确清空,旧备份不得复活 */
           cur.reviewReasons = inc.reviewReasons; adopted = true;
         }
       }
-      /* 专项练习尝试:按 (drillId, ts) 幂等去重,新尝试追加(历史不覆盖) */
-      if (Array.isArray(inc.drillTries) && inc.drillTries.length) {
-        cur.drillTries = cur.drillTries || [];
-        const exist = new Set(cur.drillTries.map(t => `${t.drillId}|${t.ts}`));
-        let added = false;
-        inc.drillTries.forEach(t => {
-          if (!t || !t.drillId) return;
-          const key = `${t.drillId}|${t.ts}`;
-          if (exist.has(key)) return;
-          cur.drillTries.push(JSON.parse(JSON.stringify(t)));
-          exist.add(key); added = true;
-        });
-        if (added) adopted = true;
-      }
+      /* 专项尝试旧字段(drillTries)不再写入题目记录:导入时统一由
+         migrateLegacyDrillTries() 迁到顶层 drillAttempts(见下方调用) */
       if (adopted && incAt > (cur._updatedAt || 0)) cur._updatedAt = incAt;
       merged.questions[qid] = cur;
       qMerged++;
@@ -831,6 +817,8 @@ const Store = (() => {
       });
     }
     mergeUi(merged, incoming);
+
+    migrateLegacyDrillTries(merged);
 
     /* 三键原子写入:失败回滚已写键 */
     const prev = {
