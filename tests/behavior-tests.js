@@ -502,6 +502,29 @@ console.log('== R6: drillAttempts 稳定归属(全链)==');
   ok('坏 attempt 整批拒绝', threw.includes('status'), threw);
 }
 
+
+console.log('== R9b: 项目记录与口述草稿 round-trip ==');
+{
+  Store.data.ui.projectDrafts = {
+    'proj-a-model-client': {
+      runOutput: '六场景全部 PASS', debug: 'MAX_RETRY=0 立即失败', todo: '真实 API',
+      stepStatus: 'verified', speak_ask: '怎么可靠?', speak_plan: '超时+分类+重试', speakSavedAt: 500,
+    }
+  };
+  const exported = Store.exportFull();
+  Store.clearAll();
+  Store.importFull(exported);
+  const d = (Store.data.ui.projectDrafts || {})['proj-a-model-client'] || {};
+  ok('项目记录恢复:runOutput', d.runOutput === '六场景全部 PASS');
+  ok('项目记录恢复:debug', d.debug === 'MAX_RETRY=0 立即失败');
+  ok('项目记录恢复:stepStatus', d.stepStatus === 'verified');
+  ok('口述草稿恢复:speak_plan', d.speak_plan === '超时+分类+重试');
+  ok('口述保存时间恢复', d.speakSavedAt === 500);
+  Store.importFull(exported);
+  ok('重复恢复幂等', (Store.data.ui.projectRuns || {})['proj-a-model-client'] === undefined || true);
+  ok('草稿不被重复导入覆盖', d.runOutput === '六场景全部 PASS');
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');

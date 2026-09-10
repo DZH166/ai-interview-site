@@ -7,6 +7,7 @@ on:
       - 'tools/**'
       - 'app/**'
       - 'tests/**'
+      - 'projects/**'
       - '.github/workflows/**'
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - 'tools/**'
       - 'app/**'
       - 'tests/**'
+      - 'projects/**'
   workflow_dispatch:
 
 jobs:

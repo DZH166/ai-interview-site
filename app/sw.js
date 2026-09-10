@@ -6,7 +6,7 @@
  * CACHE_VERSION 由 tools/build.py 按内容哈希自动盖章,数据一变缓存名即变。
  */
 'use strict';
-const CACHE_VERSION = 'shell-e1116c4993db';
+const CACHE_VERSION = 'shell-f00bbf01e567';
 const APP_SHELL = [
   './',
   './index.html',
