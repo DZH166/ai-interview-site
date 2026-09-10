@@ -598,6 +598,7 @@ const PathView = (() => {
     const idx = list.findIndex(x => x.attemptId === attempt.attemptId);
     if (idx >= 0) list[idx] = attempt; else list.push(attempt);
     Store.saveNow();
+    if (window.rebuildIndex) window.rebuildIndex();   /* 尝试/草稿变更立即进索引 */
   }
   function renderDrill(stageId, di, d) {
     const drillId = d.id || `drill-${stageId}-${di}`;
