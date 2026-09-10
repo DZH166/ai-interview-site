@@ -442,7 +442,63 @@ const PathView = (() => {
     $$('.path-stage-actions [data-done]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.done, true); render(root); toast('已确认本阶段理解;可随时取消'); });
     });
-    /* 专项练习交互:草稿(全部字段)→ 提交(completed)→ 新尝试(draft 清空)→ 历史回看 */
+  
+  /* 项目个人记录交互:草稿击键同步 ui.projectDrafts;提交写入 ui.projectRuns(幂等按 attemptId) */
+  function wireProjectRecords(root) {
+    if (root.dataset.projWired) return;
+    root.dataset.projWired = '1';
+    const drafts = Store.data.ui.projectDrafts = Store.data.ui.projectDrafts || {};
+    $$('[data-proj]', root).forEach(el => {
+      const pid = el.dataset.proj;
+      const field = el.dataset.projField || ('speak_' + el.dataset.projSpeakField);
+      if (!field || field === 'speak_') return;
+      drafts[pid] = drafts[pid] || {};
+      el.value = drafts[pid][field] || '';
+      el.addEventListener('input', () => {
+        drafts[pid] = drafts[pid] || {};
+        drafts[pid][field] = el.value;
+        drafts[pid].updatedAt = Date.now();
+        Store.save();
+      });
+    });
+    $$('[data-proj-step]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.proj;
+        drafts[pid] = drafts[pid] || {};
+        drafts[pid].stepStatus = btn.dataset.projStep;
+        drafts[pid].updatedAt = Date.now();
+        Store.save();
+        $$(`[data-proj-step][data-proj="${pid}"]`, root).forEach(b => b.classList.remove('btn-primary'));
+        btn.classList.add('btn-primary');
+        toast('步骤状态已保存');
+      });
+    });
+    $$('[data-proj-save]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.projSave;
+        const d = drafts[pid] || {};
+        const runs = Store.data.ui.projectRuns = Store.data.ui.projectRuns || {};
+        runs[pid] = runs[pid] || [];
+        runs[pid].push({ ts: Date.now(), runOutput: d.runOutput || '', debug: d.debug || '', todo: d.todo || '', stepStatus: d.stepStatus || '' });
+        toast('项目记录已保存(历史保留)');
+      });
+    });
+    $$('[data-proj-save-speak]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.projSaveSpeak;
+        const d = drafts[pid] || {};
+        drafts[pid] = drafts[pid] || {};
+        ['ask', 'plan', 'tradeoff', 'pain', 'verify', 'lack'].forEach(k => {
+          drafts[pid]['speak_' + k] = d['speak_' + k] || '';
+        });
+        drafts[pid].speakSavedAt = Date.now();
+        Store.save();
+        toast('口述草稿已保存');
+      });
+    });
+  }
+
+  /* 专项练习交互:草稿(全部字段)→ 提交(completed)→ 新尝试(draft 清空)→ 历史回看 */
     $$('.path-drill', root).forEach(box => {
       const drillId = box.dataset.drill;
       const d = (window.APP_DATA.paths.paths || []).flatMap(p => p.stages)
@@ -492,6 +548,8 @@ const PathView = (() => {
           btn.classList.add('btn-primary');
         });
       });
+      /* 项目记录与口述草稿 */
+      wireProjectRecords(root);
       /* 历史回看 */
       const hist = box.querySelector(`[data-drill-history="${drillId}"]`);
       if (hist) hist.addEventListener('click', () => {
@@ -546,28 +604,60 @@ const PathView = (() => {
     if (!projs.length) return '';
     return `<div style="margin-top:18px"><h2 style="font-size:17px;margin:0 0 10px">🛠 动手项目(本地可运行,无需 API)</h2>
       ${projs.map(pr => `
-      <details class="path-exercise proj-card">
+      <details class="path-exercise proj-card" data-proj="${pr.id}">
         <summary><b>${esc(pr.name)}</b> <span class="muted small">${esc((pr.questions || []).join(' · '))}</span></summary>
         <p><b>目标:</b>${esc(pr.goal)}</p>
         <p class="muted small"><b>前置:</b>${esc((pr.prereq || []).join('; '))}</p>
+        <p class="muted small"><b>源码:</b>${(pr.files || []).map(f => `<code>${esc(f.path)}</code> ${esc(f.desc || '')}`).join('; ')}</p>
         <pre class="code"><code>${esc(pr.run)}</code></pre>
+        <p class="muted small">预期输出是预先验证过的内容(见「排查案例」),网页不实时执行 Python;你本地运行后把实际输出粘贴到下面的记录里。</p>
         <p><b>预期输出:</b>${esc(pr.expected)}</p>
         <p><b>排查案例:</b>${esc(pr.debug_case)}</p>
         <p class="muted small"><b>扩展挑战:</b>${esc((pr.extensions || []).join('; '))}</p>
         <p><b>完成标准:</b>${esc(pr.deliverable)}</p>
-        <div class="path-variant-body" style="margin-top:6px">
-          <b>项目表达模板(面试口述,只填你真实做过的部分):</b><br>
-          ①需求:一句话说清要解决什么;<br>
-          ②方案:用了什么结构(如:超时+错误分类+有限重试);<br>
-          ③取舍:为什么这么选、放弃了什么;<br>
-          ④问题:踩过什么坑、怎么定位的;<br>
-          ⑤验证:怎么证明它可靠(测试/评测/监控);<br>
-          ⑥不足:哪些还没做、下一步。
-          <div class="muted small" style="margin-top:4px">
-          诚实分级:「我做过」= 你跑通并调试过;「我在练手项目里验证过」= 按 ${esc(pr.run)} 完成并排查过案例;「如果遇到我会这样设计」= 只讲方案。三者别混用。
-          </div>
-        </div>
+        ${renderProjectRecord(pr)}
       </details>`).join('')}</div>`;
+  }
+
+  /* 项目个人记录:运行输出/定位/修改/验证/未完成项 + 口述草稿(30秒/2分钟)。
+     草稿字段击键同步 Store(ui.projectDrafts);提交转 projectRuns(历史,幂等)。 */
+  function renderProjectRecord(pr) {
+    const rec = Store.data.ui.projectRecords || {};
+    const draft = rec[pr.id] || {};
+    const runs = Store.data.ui.projectRuns && Store.data.ui.projectRuns[pr.id] || [];
+    const L = k => esc(draft[k] || '');
+    return `
+      <details class="path-variant-ref" data-proj-record="${pr.id}">
+        <summary>我的实现记录(草稿自动保存)</summary>
+        <div style="margin-top:8px">
+          <label class="muted small">步骤状态</label>
+          <div class="btn-row">
+            ${[['none', '未开始'], ['trying', '尝试中'], ['verified', '已验证'], ['understood', '自评理解']].map(([v, l]) =>
+              `<button class="btn btn-small ${draft.stepStatus === v ? 'btn-primary' : ''}" data-proj-step="${v}" data-proj="${pr.id}">${l}</button>`).join('')}
+          </div>
+          <label class="muted small" style="display:block;margin-top:6px">实际运行版本/命令输出摘录</label>
+          <textarea class="input" data-proj-field="runOutput" data-proj="${pr.id}" style="min-height:60px">${L('runOutput')}</textarea>
+          <label class="muted small" style="display:block;margin-top:6px">遇到的问题 → 定位 → 修改 → 验证证据</label>
+          <textarea class="input" data-proj-field="debug" data-proj="${pr.id}" style="min-height:60px">${L('debug')}</textarea>
+          <label class="muted small" style="display:block;margin-top:6px">未完成项</label>
+          <textarea class="input" data-proj-field="todo" data-proj="${pr.id}" style="min-height:40px">${L('todo')}</textarea>
+          <button class="btn btn-primary btn-small" style="margin-top:6px" data-proj-save="${pr.id}">保存项目记录</button>
+          ${runs.length ? `<span class="muted small" style="margin-left:8px">已提交 ${runs.length} 次运行记录</span>` : ''}
+        </div>
+      </details>
+      <details class="path-variant-ref" data-proj-speak="${pr.id}">
+        <summary>面试口述草稿(需求/方案/取舍/问题/验证/不足)</summary>
+        <div style="margin-top:8px">
+          ${[['ask', '需求(一句话)'], ['plan', '方案(结构)'], ['tradeoff', '取舍'], ['pain', '问题与定位'], ['verify', '验证证据'], ['lack', '不足与下一步']].map(([k, label]) =>
+            `<label class="muted small" style="display:block;margin-top:6px">${label}</label>
+             <textarea class="input" data-proj-speak-field="${k}" data-proj-speak="${pr.id}" style="min-height:40px">${L('speak_' + k)}</textarea>`).join('')}
+          <div class="muted small" style="margin-top:6px">
+            诚实分级:「我做过」= 你跑通并调试过;「我在练手项目里验证过」= 按上面命令完成并排查过;「如果遇到我会这样设计」= 只讲方案。三者别混用。
+          </div>
+          <button class="btn btn-primary btn-small" style="margin-top:6px" data-proj-save-speak="${pr.id}">保存口述草稿</button>
+          ${runs.length ? `<span class="muted small" style="margin-left:8px">已提交 ${runs.length} 次运行记录</span>` : ''}
+        </div>
+      </details>`;
   }
 
   /* 变式检查:问题直接可见;参考答案与原因默认折叠(先自己回答再展开) */
