@@ -12,10 +12,15 @@ import inspect
 import io
 import json
 import os
+import re
 import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(_HERE)
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from _absence_claim import asserts_absence  # noqa: E402
 
 _passed = 0
 _failed = 0
@@ -59,32 +64,68 @@ ok("存在唯一固定配置 CONFIG", isinstance(getattr(M, "CONFIG", None), dic
 DOCS = list(getattr(M, "DOCS", []))
 D5 = {"id": "d5", "text": "公司地址:上海市浦东新区张江路 100 号,工作日 9:00-18:00 接待。"}
 
+# ---------- G-0 检查器自身的反向对照(避免「恒真断言」) ----------
+print("== G-0 越权归因检查器的反向对照 ==")
+_flat = [
+    "拒答:库里没有相关内容。",
+    "该主题不在库中,请补充资料。",
+    "检索零召回,说明知识库里不存在这个知识点。",
+]
+_disclaimed = [
+    "证据不足,拒答:检索零召回。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。",
+    "零召回只说明本次没拿到证据,不能据此断定素材里不存在该主题。",
+]
+ok("G-0a 裸断言「库里没有」会被检查器判为越权",
+   all(asserts_absence(t)[0] for t in _flat),
+   "漏判:%r" % [t for t in _flat if not asserts_absence(t)[0]])
+ok("G-0b 否定/悬置语气的文案不会被误判",
+   not any(asserts_absence(t)[0] for t in _disclaimed),
+   "误判:%r" % [t for t in _disclaimed if asserts_absence(t)[0]])
+
 # ---------- G-1 运行侧不得自行宣称「库里没有」 ----------
 print("\n== G-1 「库里到底有没有」不能由运行侧的关键词表决定 ==")
 if has("diagnose"):
     sig = inspect.signature(M.diagnose)
     ok("G-1 diagnose() 可换库(docs 参数)", "docs" in sig.parameters,
        "参数=%s → 无法做『同一问题、不同库』的对照实验" % list(sig.parameters))
-    # 库里有该知识 → 必须能答出;且运行侧任何路径都不得声称「库里没有」
+    # 库里有该知识 → 必须能答出;且运行侧任何路径都不得**断言**「库里没有」
     try:
         r = M.diagnose("公司地址在哪里?", docs=DOCS + [D5])
         reason = str(r.get("reason", ""))
         ok("G-1a 库里存在该知识时必须答出(引用 d5)",
            r.get("outcome") == "answered" and "d5" in (r.get("citations") or []),
            "outcome=%r citations=%r reason=%r" % (r.get("outcome"), r.get("citations"), reason))
-        ok("G-1b 运行侧不得出现「库里没有」式断言(它无从知道)",
-           ("库里没有" not in reason) and ("库中没有" not in reason),
-           "reason=%r → 运行侧把关键词表当成了知识覆盖判定" % reason[:70])
+        bad_ans, hits_ans = asserts_absence(reason)
+        ok("G-1b 答出路径不得断言「库里没有」",
+           not bad_ans,
+           "越权片段=%r reason=%r" % (hits_ans[:1], reason[:70]))
+
+        # 拒答路径才是「越权归因」真正的风险点:这里必须留悬置,
+        # 而不是把「这次没检索到」直接说成「库里没有」。
+        r_out = M.diagnose("公司年会在哪里办?")
+        reason_out = str(r_out.get("reason", ""))
+        bad_out, hits_out = asserts_absence(reason_out)
+        ok("G-1c 拒答路径不得断言「库里没有」(只能报证据不足)",
+           bool(r_out.get("refused")) and not bad_out,
+           "refused=%r 越权片段=%r reason=%r" % (r_out.get("refused"), hits_out[:1], reason_out[:70]))
+        ok("G-1d 拒答时明确把「是否真没有」交给评测侧标注",
+           ("标注" in reason_out) or ("对照" in reason_out),
+           "reason=%r → 运行侧自己把库覆盖判定的活干了" % reason_out[:70])
     except TypeError as e:
         ok("G-1a 库里存在该知识时必须答出(引用 d5)", False, "调用方式不兼容:%s" % e)
-        ok("G-1b 运行侧不得出现「库里没有」式断言(它无从知道)", False, "同上")
+        ok("G-1b 答出路径不得断言「库里没有」", False, "同上")
+        ok("G-1c 拒答路径不得断言「库里没有」(只能报证据不足)", False, "同上")
+        ok("G-1d 拒答时明确把「是否真没有」交给评测侧标注", False, "同上")
 else:
     ok("G-1a 库里存在该知识时必须答出(引用 d5)", False, "无 diagnose()")
-    ok("G-1b 运行侧不得出现「库里没有」式断言(它无从知道)", False, "无 diagnose()")
+    ok("G-1b 答出路径不得断言「库里没有」", False, "无 diagnose()")
+    ok("G-1c 拒答路径不得断言「库里没有」(只能报证据不足)", False, "无 diagnose()")
+    ok("G-1d 拒答时明确把「是否真没有」交给评测侧标注", False, "无 diagnose()")
 
 # ---------- G-2 库外主题必须归因第①层(由独立 oracle 判定) ----------
 print("\n== G-2 库外主题的层级归因(评测侧独立 oracle)==")
 OUT_OF_LIB = ["公司年会在哪里办?", "你们支持比特币支付吗?", "怎么改绑手机号?"]
+_key = lambda s: str(s).strip().rstrip("?？。.!！")   # 与实现同一套归一化,避免标点造成的假失败
 if has("coverage_oracle") and has("evaluate"):
     for q in OUT_OF_LIB:
         ok("G-2 oracle 判定「库里确实没有」: " + q, M.coverage_oracle(q) is False,
@@ -98,9 +139,9 @@ if has("coverage_oracle") and has("evaluate"):
         byq = {}
         for r in rows:
             if isinstance(r, dict) and "q" in r:
-                byq[r["q"]] = r
+                byq[_key(r["q"])] = r
         for q in OUT_OF_LIB:
-            r = byq.get(q)
+            r = byq.get(_key(q))
             ok("G-2 评测归因第①层: " + q,
                r is not None and r.get("layer") == 1,
                "评测行=%r → 库外主题被归因成「检索没命中」,会把学习者引向改检索而不是补文档"
@@ -115,8 +156,8 @@ else:
 print("\n== G-3 第③层(证据组织不完整)必须被真实检出 ==")
 TWO_EVIDENCE_Q = "开发票和会员免运费怎么弄?"
 src = open(os.path.join(ROOT, "projects", "proj_c", "mini_rag.py"), encoding="utf-8").read()
-ok("G-3 源码中存在第③层的产出路径", ('"layer": 3' in src) or ("'layer': 3" in src),
-   "源码里没有任何 layer=3 → 第③层只是打印对照,从未被系统诊断出来")
+ok("G-3 源码中存在第③层的产出路径", re.search(r"layer\s*[:=]\s*3", src) is not None,
+   "源码里没有任何 layer=3 的产出 → 第③层只是打印对照,从未被系统诊断出来")
 if has("diagnose"):
     cfg = dict(getattr(M, "CONFIG", {}) or {})
     cfg.update({"top_k": 1, "min_score": 1})
