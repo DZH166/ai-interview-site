@@ -118,9 +118,9 @@
   "sources": [
    {
     "kind": "official-docs",
-    "name": "Google ML 入门 · 生成式 vs 判别式模型的概念区分",
-    "url": "https://developers.google.com/machine-learning/generative-ai",
-    "note": "对照要点:两类模型的建模范式差异"
+    "name": "Google ML 术语表 · generative model / discriminative model",
+    "url": "https://developers.google.com/machine-learning/glossary",
+    "note": "2026-09-11 核验可达;原 generative-ai 学习路径页已 404,改引术语表(含两类模型的官方定义)"
    },
    {
     "kind": "independent",
@@ -131,8 +131,8 @@
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "范式区分已对照 Google ML 课程;映射到 LLM 应用选型的准则为独立整理。"
+   "checked_date": "2026-09-11",
+   "note": "范式区分已对照 Google ML 术语表(generative / discriminative model);2026-09-11 复验时原 generative-ai 课程页已 404,已换为术语表;映射到 LLM 应用选型的准则为独立整理。"
   }
  },
  {

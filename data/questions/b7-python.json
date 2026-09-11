@@ -497,10 +497,16 @@
   ],
   "sources": [
    {
+    "name": "FastAPI 官方文档 · Server Workers(uvicorn + gunicorn)",
+    "url": "https://fastapi.tiangolo.com/deployment/server-workers/",
+    "kind": "official-docs",
+    "note": "2026-09-11 核验可达;worker 数与 gunicorn 管理的官方说明"
+   },
+   {
     "name": "Uvicorn / Gunicorn 官方文档(部署)",
     "url": "https://www.uvicorn.org/deployment/",
     "kind": "official-docs",
-    "note": "服务器配置参考(未逐页抓取,标注)"
+    "note": "2026-09-11 本机 DNS 无法解析 uvicorn.org(域名本身有效,是本地网络问题),未能在此环境复核;配置语义另有 FastAPI 官方页佐证"
    },
    {
     "name": "独立整理",
@@ -511,8 +517,8 @@
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "服务器参数以官方文档为准;决策框架为独立整理。"
+   "checked_date": "2026-09-11",
+   "note": "服务器参数以 FastAPI 官方 Server Workers 页为准(2026-09-11 核验可达);uvicorn.org 本机 DNS 解析失败未能复核,已在该来源的 note 里标明;决策框架为独立整理。"
   }
  },
  {

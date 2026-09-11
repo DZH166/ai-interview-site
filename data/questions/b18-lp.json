@@ -489,8 +489,8 @@
    {
     "kind": "official-docs",
     "name": "JSON Schema · 非法 JSON 与修复(repair)的社区讨论基准",
-    "url": "https://json-schema.org/learn/miscellaneous-integration",
-    "note": "对照要点:schema 与解析失败的分层"
+    "url": "https://json-schema.org/learn/miscellaneous-examples",
+    "note": "2026-09-11 核验可达;原 miscellaneous-integration 路径已 404,改引同站 learn 章节"
    },
    {
     "kind": "independent",
@@ -501,8 +501,8 @@
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "格式错误的平台成因已对照 OpenAI 文档;repair 策略为工程实践整理,各策略成功率以自建评测为准。"
+   "checked_date": "2026-09-11",
+   "note": "格式错误的平台成因已对照 OpenAI 文档;2026-09-11 复验时发现 json-schema.org/learn/miscellaneous-integration 已 404,已换为同站 learn 章节;repair 策略为工程实践整理,各策略成功率以自建评测为准。"
   }
  },
  {

@@ -202,9 +202,9 @@
   "sources": [
    {
     "name": "vLLM 文档(LoRA 支持)",
-    "url": "https://docs.vllm.ai/en/latest/models/lora.html",
+    "url": "https://docs.vllm.ai/en/latest/features/lora.html",
     "kind": "official-docs",
-    "note": "引擎能力以官方文档为准(未逐页抓取,标注)"
+    "note": "2026-09-11 核验可达;原 models/lora.html 已 404,现址为 features/lora.html"
    },
    {
     "name": "独立整理",
@@ -215,8 +215,8 @@
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "vLLM 的 LoRA 能力以官方文档为准;部署模式为独立整理。"
+   "checked_date": "2026-09-11",
+   "note": "vLLM 的 LoRA 能力以官方文档为准;2026-09-11 复验时 models/lora.html 已 404,已换为 features/lora.html;部署模式为独立整理。"
   }
  },
  {

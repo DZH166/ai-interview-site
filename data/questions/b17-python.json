@@ -206,9 +206,9 @@
    },
    {
     "kind": "official",
-    "name": "Pydantic · 校验概念",
-    "url": "https://docs.pydantic.dev/latest/concepts/validation/",
-    "note": "对照要点:模型校验语义"
+    "name": "Pydantic · 校验概念(validators)",
+    "url": "https://docs.pydantic.dev/latest/concepts/validators/",
+    "note": "2026-09-11 核验可达;原 concepts/validation/ 已 404,官方现址为 concepts/validators/"
    },
    {
     "kind": "independent",
@@ -219,8 +219,8 @@
   ],
   "verify": {
    "status": "verified",
-   "checked_date": "2026-09-07",
-   "note": "已对照 Pydantic 校验器装饰器官方文档;分层原则为独立整理(已标注)。"
+   "checked_date": "2026-09-11",
+   "note": "已对照 Pydantic 校验器装饰器官方文档;2026-09-11 复验时发现 concepts/validation/ 已 404,已换为官方现址 concepts/validators/,分层原则为独立整理(已标注)。"
   }
  },
  {

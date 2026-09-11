@@ -1,0 +1,2252 @@
+{
+ "checked_date": "2026-09-11",
+ "network": true,
+ "total": 126,
+ "reachable": 109,
+ "blocked": [
+  "https://developers.openai.com/api/docs/error-codes",
+  "https://developers.openai.com/api/docs/guides/batch",
+  "https://developers.openai.com/api/docs/guides/embeddings",
+  "https://developers.openai.com/api/docs/guides/function-calling",
+  "https://developers.openai.com/api/docs/guides/images-vision",
+  "https://developers.openai.com/api/docs/guides/prompt-caching",
+  "https://developers.openai.com/api/docs/guides/prompt-engineering",
+  "https://developers.openai.com/api/docs/guides/structured-outputs",
+  "https://developers.openai.com/api/docs/guides/text-generation",
+  "https://developers.openai.com/api/docs/pricing",
+  "https://developers.openai.com/api/docs/safety",
+  "https://platform.openai.com/docs/api-reference/chat",
+  "https://platform.openai.com/docs/guides/language",
+  "https://platform.openai.com/docs/guides/rate-limits",
+  "https://platform.openai.com/docs/guides/structured-outputs",
+  "https://platform.openai.com/docs/guides/structured-outputs#refusals"
+ ],
+ "dead": [],
+ "unreachable": [
+  "https://www.uvicorn.org/deployment/"
+ ],
+ "suspect": [],
+ "items": [
+  {
+   "url": "https://12factor.net/zh_cn/config",
+   "status": 200,
+   "final": "https://12factor.net/zh_cn/config",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-036"
+   ],
+   "declared": {
+    "name": "The Twelve-Factor App(配置原则)",
+    "kind": "official-docs",
+    "note": "方法论参考"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arq-docs.helpmanual.io/",
+   "status": 200,
+   "final": "https://arq-docs.helpmanual.io/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-024"
+   ],
+   "declared": {
+    "name": "arq 文档 / FastAPI BackgroundTasks 文档",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/1503.02531",
+   "status": 200,
+   "final": "https://arxiv.org/abs/1503.02531",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Distilling the Knowledge in a Neural Network",
+   "refs": [
+    "FD-011"
+   ],
+   "declared": {
+    "name": "论文 · Distilling the Knowledge in a Neural Network(Hinton 等, 2015)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/1706.03762",
+   "status": 200,
+   "final": "https://arxiv.org/abs/1706.03762",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Attention Is All You Need",
+   "refs": [
+    "来源表:src-paper-attention",
+    "FD-003",
+    "FD-001"
+   ],
+   "declared": {
+    "name": "论文 · Attention Is All You Need (NeurIPS 2017)",
+    "license": "论文版权归作者/出版方;引用标题与核心结论属学术合理使用",
+    "kind": "paper",
+    "note": "2026-09-06 已核验"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/1810.04805",
+   "status": 200,
+   "final": "https://arxiv.org/abs/1810.04805",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:BERT: Pre-training of Deep Bidirectional Transformers for Language Und",
+   "refs": [
+    "FD-016"
+   ],
+   "declared": {
+    "name": "BERT(Devlin 等 2018)——encoder-only 双向预训练",
+    "kind": "paper",
+    "note": "对照要点:双向注意力、理解类任务"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/1904.09751",
+   "status": 200,
+   "final": "https://arxiv.org/abs/1904.09751",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:The Curious Case of Neural Text Degeneration",
+   "refs": [
+    "FD-012"
+   ],
+   "declared": {
+    "name": "论文 · The Curious Case of Neural Text Degeneration(Holtzman 等, 2019, top-p)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/1910.10683",
+   "status": 200,
+   "final": "https://arxiv.org/abs/1910.10683",
+   "error": "",
+   "check": "unknown",
+   "detail": "标题词太少,无法比对;页面标题:Exploring the Limits of Transfer Learning with a Unified Tex",
+   "refs": [
+    "FD-016"
+   ],
+   "declared": {
+    "name": "T5(Raffel 等 2019)——encoder-decoder 文本到文本统一框架",
+    "kind": "paper",
+    "note": "对照要点:编码-解码结构与适用形态"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2005.11401",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2005.11401",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+   "refs": [
+    "来源表:src-paper-rag",
+    "FD-002",
+    "RG-001"
+   ],
+   "declared": {
+    "name": "论文 · Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (NeurIPS 2020)",
+    "license": "论文版权归作者/出版方;引用标题与核心结论属学术合理使用",
+    "kind": "paper",
+    "note": "2026-09-06 已核验:论文报告 RAG 生成『更具体、多样、更符合事实』"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2005.14165",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2005.14165",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Language Models are Few-Shot Learners",
+   "refs": [
+    "FD-024"
+   ],
+   "declared": {
+    "name": "Language Models are Few-Shot Learners(GPT-3, Brown 等 2020)——提出并实证 in-context learning",
+    "kind": "paper",
+    "note": "对照要点:ICL 定义(few-shot 提示、无梯度更新)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2104.09864",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2104.09864",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:roformer,rope;页面标题:RoFormer: Enhanced Transformer with Rotary Positio",
+   "refs": [
+    "FD-009"
+   ],
+   "declared": {
+    "name": "论文 · RoFormer/RoPE(Su 等, 2021)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2106.09685",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2106.09685",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:lora;页面标题:LoRA: Low-Rank Adaptation of Large Language Models",
+   "refs": [
+    "AD-004",
+    "AD-001"
+   ],
+   "declared": {
+    "name": "论文 · LoRA(AD-001 已引)与 LoRA 实践文献",
+    "kind": "paper",
+    "note": "概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2203.02155",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2203.02155",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:instructgpt,instruct,ouyang;页面标题:Training language models to follow instructions wi",
+   "refs": [
+    "FD-027"
+   ],
+   "declared": {
+    "name": "InstructGPT(Ouyang 等 2022):SFT→RLHF 训练,名字仍为 Instruct",
+    "kind": "paper",
+    "note": "一手反例:名称不对应训练阶段"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2203.15556",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2203.15556",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:hoffmann,chinchilla;页面标题:Training Compute-Optimal Large Language Models",
+   "refs": [
+    "FD-014"
+   ],
+   "declared": {
+    "name": "论文 · Chinchilla(Hoffmann 等, 2022)/Kaplan 等, 2020",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;常识为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2205.14135",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2205.14135",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awar",
+   "refs": [
+    "FD-007"
+   ],
+   "declared": {
+    "name": "FlashAttention: Fast and Memory-Efficient Exact Attention(Dao 等, 2022)",
+    "kind": "paper",
+    "note": "原始 FlashAttention 论文"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2206.07682",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2206.07682",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:abilities,emergent;页面标题:Emergent Abilities of Large Language Models",
+   "refs": [
+    "FD-017"
+   ],
+   "declared": {
+    "name": "Emergent Abilities of LLMs(Wei 等 2022)——涌现能力的提出",
+    "kind": "paper",
+    "note": "对照要点:涌现能力的定义与度量争议"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2211.17192",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2211.17192",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Fast Inference from Transformers via Speculative Decoding",
+   "refs": [
+    "AD-010"
+   ],
+   "declared": {
+    "name": "论文 · Fast Inference from Transformers via Speculative Decoding(Leviathan 等, 2023)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2212.10496",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2212.10496",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Precise Zero-Shot Dense Retrieval without Relevance Labels",
+   "refs": [
+    "RG-021"
+   ],
+   "declared": {
+    "name": "论文 · Precise Zero-Shot Dense Retrieval without Relevance Labels(Gao 等, 2022,HyDE 原论文)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2304.15004",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2304.15004",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Are Emergent Abilities of Large Language Models a Mirage?",
+   "refs": [
+    "FD-017"
+   ],
+   "declared": {
+    "name": "Are Emergent Abilities a Mirage?(Schaeffer 等 2023)——对涌现度量的质疑",
+    "kind": "paper",
+    "note": "对照要点:指标选择造成的『涌现』假象"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2305.13245",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2305.13245",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:GQA: Training Generalized Multi-Query Transformer Models from Multi-He",
+   "refs": [
+    "FD-007"
+   ],
+   "declared": {
+    "name": "GQA: Training Generalized Multi-Query Transformer(Ainslie 等, 2023)",
+    "kind": "paper",
+    "note": "GQA 原论文"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2305.14314",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2305.14314",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:dettmers,qlora;页面标题:QLoRA: Efficient Finetuning of Quantized LLMs",
+   "refs": [
+    "AD-005"
+   ],
+   "declared": {
+    "name": "论文 · QLoRA(Dettmers 等, 2023)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2305.18290",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2305.18290",
+   "error": "",
+   "check": "match",
+   "detail": "标题为简写引用,但页面含声明的作者/关键词:rafailov;页面标题:Direct Preference Optimization: Your Language Mode",
+   "refs": [
+    "AD-003"
+   ],
+   "declared": {
+    "name": "论文 · DPO(Rafailov 等, 2023)/PPO(Schulman 等, 2017)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2305.20050",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2305.20050",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Let&#39;s Verify Step by Step",
+   "refs": [
+    "AD-009"
+   ],
+   "declared": {
+    "name": "论文 · Let's Verify Step by Step(OpenAI, PRM 代表作, 2023)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2306.01708",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2306.01708",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:TIES-Merging: Resolving Interference When Merging Models",
+   "refs": [
+    "AD-013"
+   ],
+   "declared": {
+    "name": "论文 · TIES-Merging(Yadav 等, 2023)/任务算术(Ilharco 等, 2022)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2307.08691",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2307.08691",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:FlashAttention-2: Faster Attention with Better Parallelism and Work Pa",
+   "refs": [
+    "FD-007"
+   ],
+   "declared": {
+    "name": "FlashAttention-2: Faster Attention with Better Parallelism(Dao, 2023)",
+    "kind": "paper",
+    "note": "此前误将本链接同时标注为 GQA 出处,已更正"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2309.00267",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2309.00267",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:RLAIF vs. RLHF: Scaling Reinforcement Learning from Human Feedback wit",
+   "refs": [
+    "AD-021"
+   ],
+   "declared": {
+    "name": "论文 · RLAIF(Lee 等, 2023)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2309.06180",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2309.06180",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Efficient Memory Management for Large Language Model Serving with Page",
+   "refs": [
+    "AD-011"
+   ],
+   "declared": {
+    "name": "论文 · Efficient Memory Management for LLM Serving with PagedAttention(vLLM, 2023)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2401.04088",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2401.04088",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:Mixtral of Experts",
+   "refs": [
+    "FD-010"
+   ],
+   "declared": {
+    "name": "论文 · Mixtral of Experts(架构参考)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://arxiv.org/abs/2402.03300",
+   "status": 200,
+   "final": "https://arxiv.org/abs/2402.03300",
+   "error": "",
+   "check": "match",
+   "detail": "页面标题:DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Lan",
+   "refs": [
+    "AD-008"
+   ],
+   "declared": {
+    "name": "论文 · DeepSeekMath(GRPO 原始出处, 2024)",
+    "kind": "paper",
+    "note": "原论文未逐页抓取;概念为公开稳定知识(标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events",
+   "status": 200,
+   "final": "https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-005"
+   ],
+   "declared": {
+    "name": "MDN · Server-Sent Events",
+    "kind": "official-docs",
+    "note": "SSE 语义稳定参考(未逐页抓取)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://developers.google.com/machine-learning/glossary",
+   "status": 200,
+   "final": "https://developers.google.com/machine-learning/glossary",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "FD-025"
+   ],
+   "declared": {
+    "name": "Google ML 术语表 · generative model / discriminative model",
+    "kind": "official-docs",
+    "note": "2026-09-11 核验可达;原 generative-ai 学习路径页已 404,改引术语表(含两类模型的官方定义)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://developers.google.com/machine-learning/guides/rules-of-ml",
+   "status": 200,
+   "final": "https://developers.google.com/machine-learning/guides/rules-of-ml",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "EN-036",
+    "AG-056"
+   ],
+   "declared": {
+    "name": "Google · Rules of Machine Learning(ML 工程化最佳实践)",
+    "kind": "official",
+    "note": "对照要点:ML 系统从 demo 到生产的工程纪律"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/error-codes",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/error-codes",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-004"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · 错误码与速率限制",
+    "kind": "official",
+    "note": "错误码语义本次未逐页抓取,属平台公开稳定信息;退避与抖动为业界通行做法"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/batch",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/batch",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-012"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Batch API",
+    "kind": "official",
+    "note": "未逐页抓取,标注;折扣比例版本相关"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/embeddings",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/embeddings",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-openai-embeddings",
+    "RG-003"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Embeddings",
+    "license": "文档版权归 OpenAI",
+    "kind": "official-docs",
+    "note": "『语义相近则向量相近』属平台公开稳定表述;本页本次未逐句抓取,待复核"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/function-calling",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/function-calling",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-openai-func",
+    "AG-002"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Function Calling(Responses API)",
+    "license": "文档版权归 OpenAI;引用事实与短语属合理使用",
+    "kind": "official-docs",
+    "note": "2026-09-06 已核验:五步流程、call_id/function_call_output、并行调用、strict、<20 工具建议"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/images-vision",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/images-vision",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-010"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Vision/Images(输入格式与成本规则)",
+    "kind": "official",
+    "note": "未逐页抓取,标注;工程要点为独立整理"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/prompt-caching",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "EN-001"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Prompt Caching",
+    "kind": "official",
+    "note": "平台机制本次未逐页抓取,属公开稳定特性,细节(折扣比例/最短前缀)以最新文档为准"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/prompt-engineering",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/prompt-engineering",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-006"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Prompt Engineering 指南",
+    "kind": "official",
+    "note": "通用指引(未逐页抓取,标注);具体技巧为社区共识的独立整理"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/structured-outputs",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-openai-structured",
+    "LP-003"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Structured Outputs",
+    "license": "文档版权归 OpenAI;引用事实属合理使用",
+    "kind": "official-docs",
+    "note": "2026-09-06 已核验:json_schema/strict 语义、与 JSON mode 对比、refusal、限制条款"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/guides/text-generation",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/guides/text-generation",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-openai-textgen",
+    "FD-005",
+    "LP-011",
+    "LP-001",
+    "LP-002"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Text Generation(temperature/top_p)",
+    "license": "文档版权归 OpenAI",
+    "kind": "official-docs",
+    "note": "token 概念参考(未逐页抓取,标注)"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/pricing",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/pricing",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "EN-003"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Pricing/Batch(批处理折扣机制)",
+    "kind": "official",
+    "note": "价格机制版本相关,未逐页抓取;策略部分为独立整理"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://developers.openai.com/api/docs/safety",
+   "status": 403,
+   "final": "https://developers.openai.com/api/docs/safety",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-009"
+   ],
+   "declared": {
+    "name": "OpenAI 官方文档 · Safety(使用政策与审核 API 定位)",
+    "kind": "official",
+    "note": "未逐页抓取,标注;防线设计为独立整理"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts",
+   "status": 200,
+   "final": "https://claude.com/app-unavailable-in-region",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-032"
+   ],
+   "declared": {
+    "name": "Anthropic · System Prompts(角色设定的官方指引)",
+    "kind": "official",
+    "note": "对照要点:角色设定对输出风格/质量的官方建议"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.pydantic.dev/latest/concepts/pydantic_settings/",
+   "status": 200,
+   "final": "https://pydantic.dev/docs/validation/latest/concepts/pydantic_settings/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-010"
+   ],
+   "declared": {
+    "name": "pydantic-settings 官方文档",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.pydantic.dev/latest/concepts/validation_decorator/",
+   "status": 200,
+   "final": "https://pydantic.dev/docs/validation/latest/concepts/validation_decorator/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-031"
+   ],
+   "declared": {
+    "name": "Pydantic · @validate_decorator(声明式运行时校验)",
+    "kind": "official",
+    "note": "对照要点:装饰器运行时校验的官方用法与前置条件"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.pydantic.dev/latest/concepts/validators/",
+   "status": 200,
+   "final": "https://pydantic.dev/docs/validation/latest/concepts/validators/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-031",
+    "PY-013"
+   ],
+   "declared": {
+    "name": "Pydantic · 校验概念(validators)",
+    "kind": "official",
+    "note": "2026-09-11 核验可达;原 concepts/validation/ 已 404,官方现址为 concepts/validators/"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.pytest.org/",
+   "status": 200,
+   "final": "https://docs.pytest.org/en/stable/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-011"
+   ],
+   "declared": {
+    "name": "pytest 官方文档",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/glossary.html#term-duck-typing",
+   "status": 200,
+   "final": "https://docs.python.org/3/glossary.html#term-duck-typing",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-043"
+   ],
+   "declared": {
+    "name": "Python 官方术语表 · duck typing / EAFP",
+    "kind": "official",
+    "note": "对照要点:鸭子类型定义与 EAFP 风格"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/library/asyncio-task.html",
+   "status": 200,
+   "final": "https://docs.python.org/3/library/asyncio-task.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-py-asyncio",
+    "PY-022",
+    "PY-003"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · asyncio 与 Coroutines and Tasks",
+    "license": "PSF 文档许可",
+    "kind": "official-docs",
+    "note": "2026-09-06 已核验 gather/create_task/to_thread;TaskGroup 语义同源"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/library/asyncio.html",
+   "status": 200,
+   "final": "https://docs.python.org/3/library/asyncio.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-003"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · asyncio 概览",
+    "kind": "official",
+    "note": "『用 async/await 写并发代码、适合 I/O 型网络程序』的官方表述"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/library/concurrent.futures.html",
+   "status": 200,
+   "final": "https://docs.python.org/3/library/concurrent.futures.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-007"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · concurrent.futures / GIL 术语",
+    "kind": "official",
+    "note": "稳定语义"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/library/functools.html#functools.singledispatch",
+   "status": 200,
+   "final": "https://docs.python.org/3/library/functools.html#functools.singledispatch",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-043"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · functools.singledispatch",
+    "kind": "official",
+    "note": "对照要点:基于类型的分派官方设施"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/reference/import.html",
+   "status": 200,
+   "final": "https://docs.python.org/3/reference/import.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-040"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · import 系统(模块缓存与部分初始化)",
+    "kind": "official",
+    "note": "对照要点:循环导入时模块可能处于部分初始化状态,属性访问失败"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/3/tutorial/controlflow.html#keyword-arguments",
+   "status": 200,
+   "final": "https://docs.python.org/3/tutorial/controlflow.html#keyword-arguments",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-039"
+   ],
+   "declared": {
+    "name": "Python 官方教程 · 关键字参数与 **kwargs 语义",
+    "kind": "official",
+    "note": "对照要点:kwargs 打包/解包与形参匹配"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/faq/programming.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/faq/programming.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-033"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 默认参数求值(FAQ)",
+    "kind": "official",
+    "note": "语言语义,长期稳定"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/glossary.html#term-decorator",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/glossary.html#term-decorator",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-006"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · Decorators(术语表)",
+    "kind": "official",
+    "note": "稳定语义"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/contextvars.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/contextvars.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-032"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · contextvars",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/copy.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/copy.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-042"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · copy 模块",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/dataclasses.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/dataclasses.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-029"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · dataclasses / typing.TypedDict",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/exceptions.html#exception-groups",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/exceptions.html#exception-groups",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-038"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · ExceptionGroup 与 except*",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/logging.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/logging.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-009"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · logging",
+    "kind": "official",
+    "note": "库语义稳定(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/stdtypes.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/stdtypes.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-001"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 内置类型(hashable 定义)",
+    "kind": "official",
+    "note": "hashable 的官方定义:生命周期内哈希值不变"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/stdtypes.html#common-sequence-operations",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/stdtypes.html#common-sequence-operations",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-044"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 序列类型(切片语义)",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/library/weakref.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/library/weakref.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-035"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · weakref",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/reference/datamodel.html#context-managers",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/reference/datamodel.html#context-managers",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-012"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · with 语句与上下文管理器",
+    "kind": "official",
+    "note": "语言核心语义,长期稳定"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#asynchronous-generator-functions",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/reference/expressions.html#asynchronous-generator-functions",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-037"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 异步生成器",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#generator-methods",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/reference/expressions.html#generator-methods",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-021"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 生成器(yield from/send/close)",
+    "kind": "official",
+    "note": "语言核心语义,长期稳定"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/reference/expressions.html#yieldexpr",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/reference/expressions.html#yieldexpr",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-002"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 生成器(yield 语义)",
+    "kind": "official",
+    "note": "语言参考,稳定语义"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/reference/lexical_analysis.html#f-strings",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/reference/lexical_analysis.html#f-strings",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-041"
+   ],
+   "declared": {
+    "name": "PEP 701(f-string 语法, 3.12)与官方文档",
+    "kind": "official",
+    "note": "语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/tutorial/datastructures.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/tutorial/datastructures.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-001"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · 数据结构(list/tuple 语义)",
+    "kind": "official",
+    "note": "语言核心语义,跨版本稳定;建议复核时重点看 5.3 节 Tuples and Sequences"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.python.org/zh-cn/3/tutorial/errors.html",
+   "status": 200,
+   "final": "https://docs.python.org/zh-cn/3/tutorial/errors.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-005"
+   ],
+   "declared": {
+    "name": "Python 官方文档 · Errors and Exceptions",
+    "kind": "official",
+    "note": "语言核心语义,长期稳定"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.ragas.io/",
+   "status": 200,
+   "final": "https://docs.ragas.io/en/stable/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-ragas",
+    "RG-009",
+    "RG-029",
+    "RG-030",
+    "AG-027",
+    "AG-028",
+    "AG-029"
+   ],
+   "declared": {
+    "name": "RAGAS 评估框架文档",
+    "license": "Apache-2.0(项目)",
+    "kind": "official-docs",
+    "note": "指标术语参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.ragas.io/en/stable/",
+   "status": 200,
+   "final": "https://docs.ragas.io/en/stable/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "RG-059"
+   ],
+   "declared": {
+    "name": "RAGAS · 评估指标与结果分析(官方文档)",
+    "kind": "official-docs",
+    "note": "对照要点:指标口径与可视化起点"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html",
+   "status": 200,
+   "final": "https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-016"
+   ],
+   "declared": {
+    "name": "SQLAlchemy 官方文档(async/连接池)",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.stripe.com/api/pagination",
+   "status": 200,
+   "final": "https://docs.stripe.com/api/pagination",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-026"
+   ],
+   "declared": {
+    "name": "Stripe API · 游标分页(以对象位置为游标,稳定不重不漏)",
+    "kind": "official",
+    "note": "对照要点:cursor 分页的稳定性设计"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.vllm.ai/",
+   "status": 200,
+   "final": "https://docs.vllm.ai/en/latest/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AD-014",
+    "AD-002"
+   ],
+   "declared": {
+    "name": "vLLM / SGLang / TensorRT-LLM 官方文档",
+    "kind": "official-docs",
+    "note": "引擎能力以官方文档为准(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://docs.vllm.ai/en/latest/features/lora.html",
+   "status": 200,
+   "final": "https://docs.vllm.ai/en/latest/features/lora/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AD-020"
+   ],
+   "declared": {
+    "name": "vLLM 文档(LoRA 支持)",
+    "kind": "official-docs",
+    "note": "2026-09-11 核验可达;原 models/lora.html 已 404,现址为 features/lora.html"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/advanced/custom-response/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/advanced/custom-response/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-fastapi-streaming",
+    "LP-005",
+    "PY-002",
+    "PY-004"
+   ],
+   "declared": {
+    "name": "FastAPI 官方文档 · Custom Response / StreamingResponse 与 SSE",
+    "license": "文档内容 MIT(FastAPI 项目),引用事实不受限",
+    "kind": "official-docs",
+    "note": "2026-09-06 已核验:SSE 有专门教程与 EventSourceResponse"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/advanced/events/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/advanced/events/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-015"
+   ],
+   "declared": {
+    "name": "FastAPI 官方文档 · Lifespan Events",
+    "kind": "official-docs",
+    "note": "框架语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/deployment/server-workers/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/deployment/server-workers/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-019"
+   ],
+   "declared": {
+    "name": "FastAPI 官方文档 · Server Workers(uvicorn + gunicorn)",
+    "kind": "official-docs",
+    "note": "2026-09-11 核验可达;worker 数与 gunicorn 管理的官方说明"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/tutorial/bigger-applications/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/tutorial/bigger-applications/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-028"
+   ],
+   "declared": {
+    "name": "FastAPI · Bigger Applications(router 组织的官方方案)",
+    "kind": "official",
+    "note": "对照要点:APIRouter 的分层用法"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/tutorial/body/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/tutorial/body/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-fastapi-validation",
+    "PY-004"
+   ],
+   "declared": {
+    "name": "FastAPI 官方文档 · 请求体校验(Pydantic)",
+    "license": "文档内容 MIT(FastAPI 项目)",
+    "kind": "official-docs",
+    "note": "Pydantic 校验与 422 为框架稳定行为(本页未单独抓取,标注为稳定常识)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/tutorial/dependencies/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/tutorial/dependencies/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-006"
+   ],
+   "declared": {
+    "name": "FastAPI 官方文档 · Dependencies",
+    "kind": "official",
+    "note": "框架稳定行为(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://fastapi.tiangolo.com/tutorial/middleware/",
+   "status": 200,
+   "final": "https://fastapi.tiangolo.com/tutorial/middleware/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-014"
+   ],
+   "declared": {
+    "name": "FastAPI 官方文档 · Middleware",
+    "kind": "official-docs",
+    "note": "框架语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/KalyanKS-NLP/RAG-Interview-Questions-and-Answers-Hub",
+   "status": 200,
+   "final": "https://github.com/KalyanKS-NLP/RAG-Interview-Questions-and-Answers-Hub",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-kalyanks",
+    "RG-038",
+    "RG-019",
+    "RG-020",
+    "RG-021",
+    "RG-022",
+    "RG-023",
+    "RG-024",
+    "RG-025",
+    "RG-026",
+    "RG-027",
+    "RG-028",
+    "RG-029",
+    "RG-034",
+    "RG-035"
+   ],
+   "declared": {
+    "name": "KalyanKS-NLP/RAG-Interview-Questions-and-Answers-Hub",
+    "license": "Apache-2.0",
+    "kind": "repo",
+    "note": "标题索引,解析独立撰写"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/Lau-Jonathan/LLM-Agent-Interview-Guide",
+   "status": 200,
+   "final": "https://github.com/Lau-Jonathan/LLM-Agent-Interview-Guide",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-laujonathan"
+   ],
+   "declared": {
+    "name": "Lau-Jonathan/LLM-Agent-Interview-Guide",
+    "license": "Apache-2.0(仓库内 LICENSE 为修改版副本,GitHub 标记 NOASSERTION;缺专利报复条款)",
+    "kind": "repo"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/MisterBooo/llm-interview-questions",
+   "status": 200,
+   "final": "https://github.com/MisterBooo/llm-interview-questions",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-misterbooo",
+    "RG-004"
+   ],
+   "declared": {
+    "name": "MisterBooo/llm-interview-questions",
+    "license": "CC-BY-SA-4.0",
+    "kind": "repo",
+    "note": "CC-BY-SA-4.0;仅佐证该考点存在,未改编原文"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/adongwanai/AgentGuide",
+   "status": 200,
+   "final": "https://github.com/adongwanai/AgentGuide",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-agentguide"
+   ],
+   "declared": {
+    "name": "adongwanai/AgentGuide",
+    "license": "无许可证(默认保留所有权利)",
+    "kind": "repo"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/ather-techie/rag-interview-system",
+   "status": 200,
+   "final": "https://github.com/ather-techie/rag-interview-system",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-athertechie",
+    "来源表:src-ather-tech-categories",
+    "RG-005",
+    "RG-031",
+    "RG-032",
+    "RG-033",
+    "RG-002",
+    "RG-004"
+   ],
+   "declared": {
+    "name": "ather-techie/rag-interview-system",
+    "license": "MIT",
+    "kind": "repo",
+    "note": "rerank 为高频考点(公开标题索引),解析独立撰写"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/atryx/ai-engineer-interview-questions",
+   "status": 200,
+   "final": "https://github.com/atryx/ai-engineer-interview-questions",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-atryx",
+    "EN-017"
+   ],
+   "declared": {
+    "name": "atryx/ai-engineer-interview-questions",
+    "license": "MIT",
+    "kind": "repo",
+    "note": "MIT;标题索引,解析独立撰写"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/benfred/py-spy",
+   "status": 200,
+   "final": "https://github.com/benfred/py-spy",
+   "error": "",
+   "check": "unknown",
+   "detail": "声明里没有 owner/repo 形式的名字",
+   "refs": [
+    "PY-018"
+   ],
+   "declared": {
+    "name": "py-spy 文档",
+    "kind": "official-docs",
+    "note": "工具用法参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/embeddings-benchmark/mteb",
+   "status": 200,
+   "final": "https://github.com/embeddings-benchmark/mteb",
+   "error": "",
+   "check": "unknown",
+   "detail": "声明里没有 owner/repo 形式的名字",
+   "refs": [
+    "RG-051"
+   ],
+   "declared": {
+    "name": "MTEB 基准(参考)",
+    "kind": "official-docs",
+    "note": "基准参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/guocong-bincai/ai-interview-guide",
+   "status": 200,
+   "final": "https://github.com/guocong-bincai/ai-interview-guide",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-guocong"
+   ],
+   "declared": {
+    "name": "guocong-bincai/ai-interview-guide",
+    "license": "MIT",
+    "kind": "repo"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/landedjobs/awesome-ai-engineer-interview",
+   "status": 200,
+   "final": "https://github.com/landedjobs/awesome-ai-engineer-interview",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-landedjobs"
+   ],
+   "declared": {
+    "name": "landedjobs/awesome-ai-engineer-interview",
+    "license": "MIT",
+    "kind": "repo"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/nageoffer/ai-handbook",
+   "status": 200,
+   "final": "https://github.com/nageoffer/ai-handbook",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-nageoffer"
+   ],
+   "declared": {
+    "name": "nageoffer/ai-handbook",
+    "license": "Apache-2.0",
+    "kind": "repo"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/openai/openai-cookbook",
+   "status": 200,
+   "final": "https://github.com/openai/openai-cookbook",
+   "error": "",
+   "check": "unknown",
+   "detail": "声明里没有 owner/repo 形式的名字",
+   "refs": [
+    "LP-034"
+   ],
+   "declared": {
+    "name": "OpenAI Cookbook · Prompt engineering 实践(评估迭代)",
+    "kind": "official-docs",
+    "note": "对照要点:提示词迭代与评估的工程框架"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://github.com/wdndev/llm_interview_note",
+   "status": 200,
+   "final": "https://github.com/wdndev/llm_interview_note",
+   "error": "",
+   "check": "match",
+   "detail": "仓库地址与声明一致",
+   "refs": [
+    "来源表:src-wdndev"
+   ],
+   "declared": {
+    "name": "wdndev/llm_interview_note",
+    "license": "无许可证(默认保留所有权利)",
+    "kind": "repo"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://huggingface.co/docs/transformers/tokenizer_summary",
+   "status": 200,
+   "final": "https://huggingface.co/docs/transformers/tokenizer_summary",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "FD-015"
+   ],
+   "declared": {
+    "name": "HuggingFace · Tokenizer 总结(BPE 等算法)",
+    "kind": "official",
+    "note": "对照要点:BPE 按频率合并的机制"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct",
+   "status": 200,
+   "final": "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "FD-027"
+   ],
+   "declared": {
+    "name": "Meta Llama-3.1-8B-Instruct 模型卡:官方多轮对话模型",
+    "kind": "official-docs",
+    "note": "一手反例:名字带 Instruct 且支持多轮对话"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://json-schema.org/learn/miscellaneous-examples",
+   "status": 200,
+   "final": "https://json-schema.org/learn/miscellaneous-examples",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-036"
+   ],
+   "declared": {
+    "name": "JSON Schema · 非法 JSON 与修复(repair)的社区讨论基准",
+    "kind": "official-docs",
+    "note": "2026-09-11 核验可达;原 miscellaneous-integration 路径已 404,改引同站 learn 章节"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://langchain-ai.github.io/langgraph/",
+   "status": 200,
+   "final": "https://langchain-ai.github.io/langgraph/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AG-022"
+   ],
+   "declared": {
+    "name": "LangGraph 官方文档(概念参考)",
+    "kind": "official-docs",
+    "note": "框架 API 演进快,以官方文档为准(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://microsoft.github.io/graphrag/",
+   "status": 200,
+   "final": "https://microsoft.github.io/graphrag/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "RG-044",
+    "RG-013"
+   ],
+   "declared": {
+    "name": "Microsoft GraphRAG(社区摘要机制参考)",
+    "kind": "official-docs",
+    "note": "机制参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://modelcontextprotocol.io/docs/2026-07-28/develop/build-client",
+   "status": 200,
+   "final": "https://modelcontextprotocol.io/docs/2026-07-28/develop/build-client",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AG-018"
+   ],
+   "declared": {
+    "name": "MCP 官方文档 · Build a Client(架构与能力参考)",
+    "kind": "official-docs",
+    "note": "AG-004 已核验协议定位;SDK 细节版本相关,以官方文档为准"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://modelcontextprotocol.io/docs/2026-07-28/develop/build-server",
+   "status": 200,
+   "final": "https://modelcontextprotocol.io/docs/2026-07-28/develop/build-server",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AG-011"
+   ],
+   "declared": {
+    "name": "MCP 官方文档 · Build a Server / SDK",
+    "kind": "official-docs",
+    "note": "SDK API 版本相关,以官方文档为准;AG-004 已核验协议定位"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+   "status": 200,
+   "final": "https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-mcp",
+    "AG-004",
+    "AG-019"
+   ],
+   "declared": {
+    "name": "Model Context Protocol 官方文档 · Introduction",
+    "license": "开放协议文档(MIT 系),引用事实属合理使用",
+    "kind": "official-docs",
+    "note": "2026-09-06 已核验:开放标准定位、USB-C 类比、生态支持、文档版本化(2026-07-28)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://mypy.readthedocs.io/",
+   "status": 200,
+   "final": "https://mypy.readthedocs.io/en/stable/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-020"
+   ],
+   "declared": {
+    "name": "mypy 官方文档",
+    "kind": "official-docs",
+    "note": "工具语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+   "status": 200,
+   "final": "https://owasp.github.io/www-project-top-10-for-large-language-model-applications/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AG-038",
+    "AG-006"
+   ],
+   "declared": {
+    "name": "OWASP Top 10 for LLM Applications(攻击面参考)",
+    "kind": "official-docs",
+    "note": "AG-006 已引;攻击面分类参考"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://peps.python.org/pep-0544/",
+   "status": 200,
+   "final": "https://peps.python.org/pep-0544/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-034"
+   ],
+   "declared": {
+    "name": "PEP 544 · Protocols(结构化子类型)",
+    "kind": "official-docs",
+    "note": "语言语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://peps.python.org/pep-3102/",
+   "status": 200,
+   "final": "https://peps.python.org/pep-3102/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-039"
+   ],
+   "declared": {
+    "name": "PEP 3102 · Keyword-Only Arguments",
+    "kind": "official",
+    "note": "对照要点:* 之后参数必须按关键字传递(互斥参数显式化的语言支撑)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://platform.openai.com/docs/api-reference/chat",
+   "status": 403,
+   "final": "https://platform.openai.com/docs/api-reference/chat",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "EN-040"
+   ],
+   "declared": {
+    "name": "OpenAI API Reference · Chat completions(usage/finish_reason/stream)",
+    "kind": "official-docs",
+    "note": "对照要点:usage 透明、流式 SSE、finish_reason 语义"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://platform.openai.com/docs/guides/language",
+   "status": 403,
+   "final": "https://platform.openai.com/docs/guides/language",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-029"
+   ],
+   "declared": {
+    "name": "OpenAI · Language models are multilingual(多语言能力与指令)",
+    "kind": "official-docs",
+    "note": "对照要点:多语言指令跟随"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://platform.openai.com/docs/guides/rate-limits",
+   "status": 403,
+   "final": "https://platform.openai.com/docs/guides/rate-limits",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "EN-040"
+   ],
+   "declared": {
+    "name": "OpenAI · Rate limits(429 与重试指引)",
+    "kind": "official-docs",
+    "note": "对照要点:429 语义与退避建议"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://platform.openai.com/docs/guides/structured-outputs",
+   "status": 403,
+   "final": "https://platform.openai.com/docs/guides/structured-outputs",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-036",
+    "LP-044"
+   ],
+   "declared": {
+    "name": "OpenAI · Structured Outputs 常见问题(截断/refusal/不支持的关键字)",
+    "kind": "official-docs",
+    "note": "对照要点:格式错误的平台侧成因"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://platform.openai.com/docs/guides/structured-outputs#refusals",
+   "status": 403,
+   "final": "https://platform.openai.com/docs/guides/structured-outputs#refusals",
+   "error": "HTTP 403",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-038"
+   ],
+   "declared": {
+    "name": "OpenAI · 内容审核与拒答行为(refusal 字段说明)",
+    "kind": "official-docs",
+    "note": "对照要点:平台会主动拒答,应用要给兜底话术"
+   },
+   "bucket": "blocked"
+  },
+  {
+   "url": "https://python.langchain.com/",
+   "status": 200,
+   "final": "https://docs.langchain.com/oss/python/langchain/overview",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "AG-010"
+   ],
+   "declared": {
+    "name": "LangChain / LlamaIndex 官方文档(定位参考)",
+    "kind": "official-docs",
+    "note": "框架能力以官方文档为准(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://qdrant.tech/documentation/concepts/collections/",
+   "status": 200,
+   "final": "https://qdrant.tech/documentation/manage-data/collections/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "RG-067"
+   ],
+   "declared": {
+    "name": "Qdrant · Collections 与别名(不停服切换索引的机制)",
+    "kind": "official",
+    "note": "对照要点:别名指向切换实现零停机"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://redis.io/docs/latest/",
+   "status": 200,
+   "final": "https://redis.io/docs/latest/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-017"
+   ],
+   "declared": {
+    "name": "Redis 官方文档(数据结构与模式)",
+    "kind": "official-docs",
+    "note": "命令语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://tenacity.readthedocs.io/",
+   "status": 200,
+   "final": "https://tenacity.readthedocs.io/en/latest/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-023"
+   ],
+   "declared": {
+    "name": "tenacity 文档",
+    "kind": "official-docs",
+    "note": "库语义参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.anthropic.com/research/building-effective-agents",
+   "status": 200,
+   "final": "https://www.anthropic.com/engineering/building-effective-agents",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-anthropic-agents",
+    "AG-001",
+    "AG-003",
+    "AG-007",
+    "AG-008"
+   ],
+   "declared": {
+    "name": "Anthropic · Building Effective Agents",
+    "license": "版权归 Anthropic;引用定义与短语属合理使用",
+    "kind": "official-blog",
+    "note": "2026-09-06 已核验:workflow/agent 定义、simple first 原则、五种模式原文表述"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.mianshiya.com/?category=ai",
+   "status": 200,
+   "final": "https://www.mianshiya.com/?category=ai",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-mianshiya-category"
+   ],
+   "declared": {
+    "name": "面试鸭 · ?category=ai 入口",
+    "license": "站点内容版权归面试鸭;答案需 VIP,未获取",
+    "kind": "website"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.mianshiya.com/category/ai_choice",
+   "status": 200,
+   "final": "https://www.mianshiya.com/category/ai_choice",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-mianshiya-ai-choice"
+   ],
+   "declared": {
+    "name": "面试鸭 · /category/ai_choice 入口",
+    "license": "未知(未能访问)",
+    "kind": "website"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.mianshiya.com/tag/AI",
+   "status": 200,
+   "final": "https://www.mianshiya.com/tag/AI",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "来源表:src-mianshiya-tag-ai",
+    "RG-043",
+    "RG-007",
+    "RG-010"
+   ],
+   "declared": {
+    "name": "面试鸭 · AI 面试题标签页",
+    "license": "站点内容版权归面试鸭;答案需 VIP,未获取",
+    "kind": "website",
+    "note": "公开标题索引;解析独立撰写"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.postgresql.org/docs/current/queries-limit.html",
+   "status": 200,
+   "final": "https://www.postgresql.org/docs/current/queries-limit.html",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-026"
+   ],
+   "declared": {
+    "name": "PostgreSQL · LIMIT/OFFSET(跳过行仍被计算,深 offset 性能差)",
+    "kind": "official",
+    "note": "对照要点:OFFSET 行为与性能特征"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.python-httpx.org/",
+   "status": 200,
+   "final": "https://www.python-httpx.org/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-008"
+   ],
+   "declared": {
+    "name": "httpx 官方文档(超时/连接池/流式)",
+    "kind": "official-docs",
+    "note": "库语义稳定参考(未逐页抓取,标注)"
+   },
+   "bucket": "ok"
+  },
+  {
+   "url": "https://www.uvicorn.org/deployment/",
+   "status": "",
+   "final": "https://www.uvicorn.org/deployment/",
+   "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "PY-019"
+   ],
+   "declared": {
+    "name": "Uvicorn / Gunicorn 官方文档(部署)",
+    "kind": "official-docs",
+    "note": "2026-09-11 本机 DNS 无法解析 uvicorn.org(域名本身有效,是本地网络问题),未能在此环境复核;配置语义另有 FastAPI 官方页佐证"
+   },
+   "bucket": "unreachable"
+  },
+  {
+   "url": "https://www.w3.org/International/",
+   "status": 200,
+   "final": "https://www.w3.org/International/",
+   "error": "",
+   "check": "skipped",
+   "detail": "",
+   "refs": [
+    "LP-043"
+   ],
+   "declared": {
+    "name": "W3C · 国际化术语与最佳实践",
+    "kind": "official-docs",
+    "note": "对照要点:术语一致性的本地化通用原则"
+   },
+   "bucket": "ok"
+  }
+ ]
+}
