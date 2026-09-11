@@ -55,7 +55,7 @@ const App = (() => {
           setTimeout(() => el.classList.remove('flash'), 1600);
         }
       }, 80);
-    } else if (view !== 'docs' && !(view === 'study' && query.a)) {
+    } else if (view !== 'docs' && !(view === 'study' && query.a) && !(view === 'path' && query.d)) {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
     document.title = 'AI 面试学习站';

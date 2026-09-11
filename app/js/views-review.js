@@ -335,6 +335,7 @@ const MaintainView = (() => {
           const t = JSON.parse(text);
           if (t && t.type === 'aiiv-full') { toast('这是完整备份:已改走「导入完整备份」入口,本次未做任何修改', 'err'); return; }
           const r = Store.importRecords(text);
+          window.rebuildIndex();
           toast(`导入成功:合并 ${r.qMerged} 题记录、新增 ${r.roundsAdded} 轮${r.notesUpdated ? `、更新 ${r.notesUpdated} 条笔记` : ''}`);
           App.route();
         }
