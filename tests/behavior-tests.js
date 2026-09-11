@@ -520,8 +520,12 @@ console.log('== R9b: 项目记录与口述草稿 round-trip ==');
   ok('项目记录恢复:stepStatus', d.stepStatus === 'verified');
   ok('口述草稿恢复:speak_plan', d.speak_plan === '超时+分类+重试');
   ok('口述保存时间恢复', d.speakSavedAt === 500);
+  /* R9b-2:重复恢复幂等——用真实语义断言(此前是一条恒真断言,等于没测)。
+     先放进一条带 runId 的运行记录,然后连续恢复两次,条数必须保持 1。 */
+  Store.data.ui.projectRuns = { 'proj-a-model-client': [{ runId: 'r9b-1', ts: 1, runOutput: '九场景 PASS' }] };
   Store.importFull(exported);
-  ok('重复恢复幂等', (Store.data.ui.projectRuns || {})['proj-a-model-client'] === undefined || true);
+  Store.importFull(exported);
+  eq('重复恢复幂等:运行记录不翻倍', (Store.data.ui.projectRuns['proj-a-model-client'] || []).length, 1);
   ok('草稿不被重复导入覆盖', d.runOutput === '六场景全部 PASS');
 }
 

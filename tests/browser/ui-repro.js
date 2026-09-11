@@ -219,6 +219,85 @@ async function expandRecord(page, drillId) {
         !!href && /proj-c-mini-rag/.test(href), 'href=' + href + ' → 只落到路径页顶部,四个项目全折叠');
     }
 
+    /* ================= 阶段5/6:深锚点必须真的落到那条记录 ================= */
+    console.log('\n== 深锚点落点:项目运行记录 / 概念 / 项目草稿 ==');
+    {
+      const RUN_TEXT = '深锚点唯一标记_召回排序踩坑';
+      const RUN_ID = 'run-anchor-1';
+      await seed(page, blankRec({
+        drillAttempts: {},
+        ui: {
+          lastHash: '', browse: {}, docPos: {}, search: {},
+          projectRuns: { 'proj-c-mini-rag': [{ runId: RUN_ID, ts: 1000, updatedAt: 1000,
+            runOutput: RUN_TEXT, debug: '定位过程唯一标记', todo: '未完成项唯一标记', stepStatus: 'trying' }] },
+          projectDrafts: { 'proj-c-mini-rag': { runOutput: '草稿唯一标记内容', updatedAt: 1000 } }
+        }
+      }));
+      /* 直接访问带锚点的地址(等价于搜索结果被点击) */
+      await open(page, `#/path?p=proj-c-mini-rag&r=${RUN_ID}`);
+      await sleep(400);
+      const land = await page.evaluate(() => {
+        const proj = document.querySelector('details[data-proj="proj-c-mini-rag"]');
+        const run = document.querySelector('[data-proj-runbox="run-anchor-1"]');
+        return {
+          projOpen: !!(proj && proj.open),
+          runExists: !!run,
+          runOpen: !!(run && run.open),
+          runVisible: !!(run && run.innerText.includes('深锚点唯一标记')),
+          scrolled: window.scrollY > 0
+        };
+      });
+      console.log('    [观测]', JSON.stringify(land));
+      ok('锚点:项目卡片被展开', land.projOpen, '项目仍是折叠的 → 等于只是跳到路径页顶部');
+      ok('锚点:目标运行记录存在且被展开', land.runExists && land.runOpen,
+        'runExists=' + land.runExists + ' runOpen=' + land.runOpen);
+      ok('锚点:页面确实滚到了该记录(不是停在顶部)', land.scrolled && land.runVisible,
+        'scrolled=' + land.scrolled + ' runVisible=' + land.runVisible);
+
+      /* 概念锚点 */
+      const cid = await page.evaluate(() => {
+        const cs = (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [];
+        return cs.length ? cs[0].id : '';
+      });
+      if (cid) {
+        await open(page, `#/path?c=${encodeURIComponent(cid)}`);
+        await sleep(400);
+        const cOpen = await page.evaluate(id => {
+          const el = document.querySelector(`details[data-cid="${id}"]`);
+          return !!(el && el.open);
+        }, cid);
+        ok('锚点:概念条目被展开而不是跳到某道题冒充命中', cOpen, 'data-cid=' + cid + ' 未展开');
+      } else {
+        ok('锚点:概念条目被展开而不是跳到某道题冒充命中', false, '题库没有概念数据,无法验证');
+      }
+
+      /* 草稿锚点 */
+      await open(page, '#/path?p=proj-c-mini-rag&tab=draft');
+      await sleep(400);
+      const draftOpen = await page.evaluate(() => {
+        const el = document.querySelector('[data-proj="proj-c-mini-rag"] [data-proj-record]');
+        return !!(el && el.open);
+      });
+      ok('锚点:带 tab=draft 时项目实现记录区被展开', draftOpen, '记录区仍是折叠的');
+    }
+
+    /* ================= H-2 端到端:清空记录后搜索不再返回已删数据 ================= */
+    console.log('\n== 清空记录后检索(真实应用接线)==');
+    {
+      await seed(page, blankRec({
+        questions: { 'PY-001': { status: 'review', fav: false, note: '清空前笔记唯一标记', viewedAt: 1, practiceCount: 1, lastPracticedAt: 1 } }
+      }));
+      await open(page, '#/maintain');
+      await sleep(300);
+      const before = await page.evaluate(() => Search.query('清空前笔记唯一标记').length);
+      await page.evaluate(() => Store.clearAll());
+      await sleep(600);
+      const after = await page.evaluate(() => Search.query('清空前笔记唯一标记').length);
+      console.log('    [观测] 清空前命中', before, '清空后命中', after);
+      ok('H-2 端到端:清空后搜索不再返回已清空的笔记', before >= 1 && after === 0,
+        `清空前=${before} 清空后=${after}`);
+    }
+
     const realErrors = pageErrors.filter(m => !/Failed to load resource/.test(m)); /* /__seed__ 与 favicon 的 404 属预期 */
     if (realErrors.length) console.log('\n    [观测] 页面异常 =', JSON.stringify(realErrors.slice(0, 3)));
     ok('页面无 JS 异常', realErrors.length === 0, realErrors.slice(0, 3).join(' | '));

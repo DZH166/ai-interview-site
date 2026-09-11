@@ -55,19 +55,27 @@ const App = (() => {
           setTimeout(() => el.classList.remove('flash'), 1600);
         }
       }, 80);
-    } else if (view !== 'docs' && !(view === 'study' && query.a) && !(view === 'path' && query.d)) {
+    } else if (view !== 'docs' && !(view === 'study' && query.a)
+               && !(view === 'path' && (query.d || query.p || query.c))) {
+      /* 路径页带深锚点(d 专项 / p 项目 / c 概念)时不回顶,交给 PathView.applyFocus 定位 */
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
     document.title = 'AI 面试学习站';
   }
 
-  /* 统一索引变更入口:任何数据变更(题库导入/资料增删/尝试保存/备份恢复)都走这里。
-     重建 Data 内存(扩展题库/资料)并全量重建索引;失败抛错由调用方反馈真实结果。 */
+  /* 统一索引变更入口:任何数据变更(题库导入/资料增删/尝试保存/备份恢复/清空)都走这里。
+     重建 Data 内存(扩展题库/资料)并全量重建索引;失败抛错由调用方反馈真实结果。
+     另外把上下文提供者交给 Search:数据版本变化时索引会按需自动重建,
+     这样「某个调用点忘了重建索引」不再是一类可能的 bug。 */
   function rebuildIndex() {
     Data.init();
     Search.build(StudyView.currentCtx());
   }
   window.rebuildIndex = rebuildIndex;
+  Search.setContextProvider(() => {
+    Data.init();                     /* 保证题库/资料内存与存储一致 */
+    return StudyView.currentCtx();
+  });
 
   function goToAnchor(anchor) { pendingAnchor = anchor; }
 

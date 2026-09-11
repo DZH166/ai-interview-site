@@ -216,7 +216,13 @@ console.log('\n== 问题 F:个人项目运行/排查记录不可检索 ==');
 
 console.log('\n== 问题 H-1:测试中的恒真断言 ==');
 {
-  const src = fs.readFileSync(path.join(ROOT, 'tests/behavior-tests.js'), 'utf8');
+  /* 只在「代码」里找恒真断言:先剥掉块注释与行注释(保留 https:// 里的双斜线) */
+  const stripComments = s => s
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map(l => { const i = l.indexOf('//'); return (i >= 0 && l[i - 1] !== ':') ? l.slice(0, i) : l; })
+    .join('\n');
+  const src = stripComments(fs.readFileSync(path.join(ROOT, 'tests/behavior-tests.js'), 'utf8'));
   const vacuous = (src.match(/\|\|\s*true\b/g) || []);
   const lineHits = src.split('\n').map((l, i) => [i + 1, l]).filter(([, l]) => /\|\|\s*true\b/.test(l));
   note('恒真断言所在行', lineHits.map(([n]) => n));

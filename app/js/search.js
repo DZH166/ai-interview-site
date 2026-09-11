@@ -1,14 +1,34 @@
-/* 本地全文搜索:覆盖题干/答案/解析/例子/追问/误区/理解检查/个人笔记 + 文档章节 + 导入文档。
-   纯前端子串匹配 + 加权评分,无任何在线依赖。 */
+/* 本地全文搜索:覆盖题干/答案/解析/例子/追问/误区/理解检查/个人笔记 + 文档章节 + 导入文档
+   + 概念 + 专项题面 + 个人专项尝试 + 项目定义 + 个人项目运行/草稿记录。
+   纯前端子串匹配 + 加权评分,无任何在线依赖。
+
+   索引新鲜度:索引记录构建时的 Store.rev(数据版本号,任何写入都会自增),
+   查询时若发现数据已变,自动用上下文提供者重建。这样「忘记重建索引」不再是一类
+   可能的 bug(清空记录后还能搜到旧数据、导入了新笔记搜不到等)。 */
 'use strict';
 
 const Search = (() => {
   let units = [];
+  let builtRev = -1;
+  let ctxProvider = null;
 
   function norm(s) { return String(s || '').toLowerCase(); }
 
+  /* 由 App.init 注入:返回最新检索上下文(题库/文档/资料/记录/概念/专项/项目) */
+  function setContextProvider(fn) { ctxProvider = typeof fn === 'function' ? fn : null; }
+  function curRev() { return (typeof Store !== 'undefined' && Store.rev !== undefined) ? Store.rev : builtRev; }
+  /* 数据一变就作废旧索引。宁可空着等下一次重建,也不返回已经不存在的内容
+     (清空记录后还能搜到已删笔记,就是这么来的)。 */
+  function invalidate() { units = []; builtRev = -1; }
+  function ensureFresh() {
+    if (curRev() === builtRev) return;
+    const ctx = ctxProvider ? ctxProvider() : null;
+    if (ctx) build(ctx);   /* 没有上下文提供者时保持空索引:安全优于陈旧 */
+  }
+  if (typeof Store !== 'undefined' && Store.onInvalidate) Store.onInvalidate(invalidate);
+
   function build(ctx) {
-    /* ctx: {questions, docs, userDocs, records} */
+    /* ctx: {questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
     units = [];
     const qs = ctx.questions || [];
     qs.forEach(q => {
@@ -63,40 +83,36 @@ const Search = (() => {
       });
     });
     /* 个人专项尝试记录(myAnswer/observed/review)进索引:
-       主来源=顶层 drillAttempts(新模型);兼容旧题目记录 drillTries */
+       主来源=顶层 drillAttempts(新模型);兼容旧题目记录 drillTries。
+       每条尝试带 attemptId 身份与状态标签——搜索命中的是「哪一次尝试」,
+       而不是只能跳到专项页顶部。 */
     const NL = String.fromCharCode(10);
+    const STATE_LABEL = { draft: '草稿', completed: '已完成', abandoned: '已放弃' };
     const seenTries = new Set();
-    Object.values(ctx.drillAttempts || {}).forEach(list => {
-      (list || []).forEach(t => {
-        if (!t || !t.drillId) return;
-        const parts = [t.myAnswer && '我的回答:' + t.myAnswer,
-                       t.observed && '观察:' + t.observed,
-                       t.review && '复盘:' + t.review].filter(Boolean);
-        const body = parts.join(NL);
-        if (!body.trim()) return;
-        seenTries.add(t.drillId + '|' + (t.myAnswer || '') + '|' + (t.observed || '') + '|' + (t.review || ''));
-        units.push({
-          kind: 'try', drillId: t.drillId, qid: null, field: 'try', anchor: '',
-          text: norm('专项尝试 ' + body), raw: '专项尝试(' + t.drillId + ')' + NL + body,
-          weight: 2.4, topic: ''
-        });
+    const pushTry = (t) => {
+      if (!t || !t.drillId) return;
+      const parts = [t.myAnswer && '我的回答:' + t.myAnswer,
+                     t.observed && '观察:' + t.observed,
+                     t.review && '复盘:' + t.review].filter(Boolean);
+      const body = parts.join(NL);
+      if (!body.trim()) return;
+      seenTries.add(t.drillId + '|' + (t.myAnswer || '') + '|' + (t.observed || '') + '|' + (t.review || ''));
+      const stName = STATE_LABEL[t.status] || t.status || '';
+      units.push({
+        kind: 'try', drillId: t.drillId, attemptId: t.attemptId || '', status: t.status || '',
+        qid: null, field: 'try', anchor: '',
+        text: norm('专项尝试 ' + stName + ' ' + body),
+        raw: '专项尝试(' + t.drillId + (stName ? ' · ' + stName : '') + ')' + NL + body,
+        weight: 2.4, topic: ''
       });
-    });
+    };
+    Object.values(ctx.drillAttempts || {}).forEach(list => { (list || []).forEach(pushTry); });
     Object.values(ctx.records && ctx.records.questions || {}).forEach(r => {
       (r.drillTries || []).forEach(t => {
         if (!t.drillId) return;
         const key = t.drillId + '|' + (t.myAnswer || '') + '|' + (t.observed || '') + '|' + (t.review || '');
         if (seenTries.has(key)) return;   /* 已由顶层 drillAttempts 索引 */
-        const parts = [t.myAnswer && '我的回答:' + t.myAnswer,
-                       t.observed && '观察:' + t.observed,
-                       t.review && '复盘:' + t.review].filter(Boolean);
-        const body = parts.join(NL);
-        if (!body.trim()) return;
-        units.push({
-          kind: 'try', drillId: t.drillId, qid: null, field: 'try', anchor: '',
-          text: norm('专项尝试 ' + body), raw: '专项尝试(' + t.drillId + ')' + NL + body,
-          weight: 2.4, topic: ''
-        });
+        pushTry(t);
       });
     });
     ((ctx.projects || [])).forEach(pr => {
@@ -107,6 +123,47 @@ const Search = (() => {
         kind: 'project', pid: pr.id, field: 'project', anchor: '',
         text: norm(pr.name + ' ' + body), raw: pr.name + '\n' + body,
         weight: 1.8, topic: ''
+      });
+    });
+    /* 个人项目运行记录与草稿:用户自己写下的证据必须能被检索到,
+       并且要能定位到「哪一次运行」而不只是项目说明。 */
+    const ui = (ctx.records && ctx.records.ui) || {};
+    Object.keys(ui.projectRuns || {}).forEach(pid => {
+      (ui.projectRuns[pid] || []).forEach(r => {
+        if (!r || typeof r !== 'object') return;
+        const parts = [r.runOutput && '输出:' + r.runOutput,
+                       r.debug && '定位:' + r.debug,
+                       r.todo && '未完成:' + r.todo,
+                       r.stepStatus && '步骤:' + r.stepStatus].filter(Boolean);
+        if (!parts.length) return;
+        const body = parts.join(NL);
+        units.push({
+          kind: 'run', pid, runId: r.runId || '', field: 'run', anchor: '', topic: '',
+          text: norm('项目运行记录 ' + body),
+          raw: '项目运行记录 ' + NL + body,
+          weight: 2.4
+        });
+      });
+    });
+    Object.keys(ui.projectDrafts || {}).forEach(pid => {
+      const d = ui.projectDrafts[pid];
+      if (!d || typeof d !== 'object') return;
+      const parts = [d.runOutput && '输出:' + d.runOutput,
+                     d.debug && '定位:' + d.debug,
+                     d.todo && '未完成:' + d.todo,
+                     d.speak_ask && '需求:' + d.speak_ask,
+                     d.speak_plan && '方案:' + d.speak_plan,
+                     d.speak_tradeoff && '取舍:' + d.speak_tradeoff,
+                     d.speak_pain && '问题:' + d.speak_pain,
+                     d.speak_verify && '验证:' + d.speak_verify,
+                     d.speak_lack && '不足:' + d.speak_lack].filter(Boolean);
+      if (!parts.length) return;
+      const body = parts.join(NL);
+      units.push({
+        kind: 'draft', pid, field: 'draft', anchor: '', topic: '',
+        text: norm('项目草稿 ' + body),
+        raw: '项目草稿 ' + NL + body,
+        weight: 2.0
       });
     });
     (ctx.userDocs || []).forEach(d => {
@@ -121,6 +178,8 @@ const Search = (() => {
         }
       });
     });
+    /* 索引构建完成:记下数据版本,后续任何写入都会让它过期并按需自动重建 */
+    builtRev = curRev();
   }
 
   function tokenize(q) {
@@ -129,6 +188,7 @@ const Search = (() => {
 
   /* 返回 [{unit, score, snippetHtml}] */
   function query(q, opt) {
+    ensureFresh();   /* 数据已变则先重建,避免返回陈旧内容 */
     opt = opt || {};
     const terms = tokenize(q);
     if (!terms.length) return [];
@@ -183,7 +243,7 @@ const Search = (() => {
     return html;
   }
 
-  function count() { return units.length; }
+  function count() { ensureFresh(); return units.length; }
 
-  return { build, query, tokenize, count };
+  return { build, query, tokenize, count, setContextProvider, ensureFresh, invalidate };
 })();

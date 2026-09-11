@@ -23,21 +23,43 @@ const ReviewView = (() => {
     });
   }
 
-  /* 专项未解决/部分解决的尝试(最新一次)→ 复习提醒列表(带依据) */
-  function getUnsolvedDrills() {
-    const out = [];
+  /* 专项「待消化」:取**按时间最新的一次完成尝试**判定(不看数组顺序,也不看放弃记录)。
+     已解决 → 移出;未解决/部分 → 留下并带上依据(自评 + 误解原因 + 时间)。
+     另有两条同样重要的提醒:
+       - 有草稿但一直没提交(内容写了却没归档);
+       - 提交失败未落盘的记录(磁盘上没有,重开会丢)。 */
+  function getDrillState() {
+    const out = { unsolved: [], drafts: [], abandoned: [] };
+    const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
+    const drillIndex = paths.flatMap(p => p.stages).flatMap(s => s.drills || []);
     Object.keys(Store.data.drillAttempts || {}).forEach(drillId => {
-      const done = (Store.data.drillAttempts[drillId] || []).filter(a => a.status === 'completed');
-      if (!done.length) return;
-      const last = done[done.length - 1];
-      if (last.selfRating === 'solved') return;   /* 已解决的不进队列 */
-      const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
-      const d = paths.flatMap(p => p.stages).flatMap(s => s.drills || []).find(x => x.id === drillId);
-      out.push({ drillId, selfRating: last.selfRating, review: last.review || '',
-                 q: d ? d.q.slice(0, 60) : drillId, updatedAt: last.updatedAt || last.ts || 0 });
+      const list = Store.data.drillAttempts[drillId] || [];
+      const d = drillIndex.find(x => x.id === drillId);
+      const q = d ? d.q.slice(0, 60) : drillId;
+      const lastDone = Store.latestOf(list, a => a.status === Store.STATE.COMPLETED);
+      const draft = Store.latestOf(list, a => a.status === Store.STATE.DRAFT);
+      const lastAbandoned = Store.latestOf(list, a => a.status === Store.STATE.ABANDONED);
+      if (lastDone && lastDone.selfRating !== 'solved') {
+        out.unsolved.push({ drillId, q, selfRating: lastDone.selfRating, review: lastDone.review || '',
+                            attemptId: lastDone.attemptId, updatedAt: Store.recTime(lastDone),
+                            doneCount: list.filter(a => a.status === Store.STATE.COMPLETED).length });
+      }
+      if (draft && ((draft.myAnswer || '').trim() || (draft.observed || '').trim() || (draft.review || '').trim())) {
+        out.drafts.push({ drillId, q, attemptId: draft.attemptId, updatedAt: Store.recTime(draft),
+                          failed: !!draft.saveError, error: draft.saveError || '',
+                          preview: (draft.myAnswer || draft.observed || draft.review || '').slice(0, 50) });
+      }
+      if (lastAbandoned && (!lastDone || Store.recTime(lastAbandoned) > Store.recTime(lastDone))) {
+        out.abandoned.push({ drillId, q, updatedAt: Store.recTime(lastAbandoned), attemptId: lastAbandoned.attemptId });
+      }
     });
-    return out.sort((a, b) => a.updatedAt - b.updatedAt);
+    out.unsolved.sort((a, b) => a.updatedAt - b.updatedAt);
+    out.drafts.sort((a, b) => a.updatedAt - b.updatedAt);
+    out.abandoned.sort((a, b) => a.updatedAt - b.updatedAt);
+    return out;
   }
+  /* 兼容旧调用点(tests / 其他视图):只返回待消化清单 */
+  function getUnsolvedDrills() { return getDrillState().unsolved; }
 
   /* ---- 错题本:模拟面试中标记"还不熟"的 ---- */
   function getMistakes() {
@@ -49,10 +71,12 @@ const ReviewView = (() => {
 
   function render(root) {
     const tq = getTodayQueue(), mk = getMistakes();
+    const drillCt = (() => { const s = getDrillState(); return s.unsolved.length + s.drafts.length; })();
+    const todayCt = tq.length + drillCt;
     root.innerHTML = `
       <div class="review-tabs">
         ${[
-          ['today',   `📌 今日复习${tq.length ? ` (${tq.length})` : ''}`],
+          ['today',   `📌 今日复习${todayCt ? ` (${todayCt})` : ''}`],
           ['mistakes',`❌ 错题本${mk.length ? ` (${mk.length})` : ''}`],
           ['fav',     '★ 收藏'],
           ['weak',    '还不熟'],
@@ -62,18 +86,19 @@ const ReviewView = (() => {
           ['rounds',  '模拟面试历史'],
         ].map(([id, label]) => `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}">${label}</button>`).join('')}
       </div>
-      ${tab === 'today' ? renderTodayIntro(tq) : ''}
+      ${tab === 'today' ? renderTodayIntro(tq, drillCt) : ''}
       <div id="review-body"></div>`;
     $$('.rtab', root).forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(root); }));
     renderBody(root);
   }
 
-  function renderTodayIntro(tq) {
-    if (!tq.length) return '';
+  function renderTodayIntro(tq, drillCt) {
+    if (!tq.length && !drillCt) return '';
     return `<div class="card" style="padding:12px 16px;margin-bottom:12px;">
       <b>📌 今日复习队列</b>
       <span style="margin-left:8px;color:var(--muted);font-size:13px">
-        待复习 + 还不熟,按最久未练排序。复习中标记「基本掌握」才移出队列;标「还不熟/待复习」保留,不会自动消失。
+        待复习 + 还不熟(按最久未练排序),以及需要收尾的专项:待消化、写了没提交的草稿。
+        复习中标记「基本掌握」才移出队列;标「还不熟/待复习」保留,不会自动消失。
       </span>
     </div>`;
   }
@@ -127,9 +152,12 @@ const ReviewView = (() => {
     }));
   }
 
-  /* 列表项:点击 / Enter / Space 打开题目(键盘可达) */
+  /* 列表项:点击 / Enter / Space 打开题目(键盘可达)。
+     只对自己绑定了 data-qid 的元素接管;其余(专项、项目等)保持原生链接行为——
+     之前对没有 data-qid 的链接也接管,导致键盘 Enter 跳到 #/study/undefined。 */
   function wireItems(box) {
     $$('.ri-main', box).forEach(el => {
+      if (!el.dataset.qid) return;                 /* 原生 <a href> 自己会导航 */
       const open = () => go('#/study/' + el.dataset.qid);
       el.addEventListener('click', open);
       el.addEventListener('keydown', e => {
@@ -140,25 +168,24 @@ const ReviewView = (() => {
     });
   }
 
-  /* ---- 今日复习(定向会话入口) ---- */
+  /* ---- 今日复习(定向会话入口) ----
+     题目队列与专项清单是**两块独立的内容**,各自有自己的空状态;
+     任何一块为空都不得让另一块消失(之前 !queue.length 直接早退,
+     把「专项待消化」整块吞掉了)。 */
   function renderToday(box) {
     const queue = getTodayQueue();
-    const unsolved = getUnsolvedDrills();
-    if (!queue.length) {
-      box.innerHTML = '<div class="empty">🎉 今日没有待复习的题目!<br><span class="muted">去学新题或做一轮自测吧。</span><br><br><a class="btn btn-primary" href="#/mock">开始自测</a></div>';
-      return;
-    }
+    const drills = getDrillState();
     box.innerHTML = `
       <div class="card" style="margin-bottom:12px">
         <b>📌 今日复习</b>
         <span style="margin-left:8px;color:var(--muted);font-size:13px">
-          ${queue.length} 题 · 按最久未练排序 · 复习中标记「基本掌握」移出,「还不熟/待复习」保留
+          ${queue.length ? `${queue.length} 题 · 按最久未练排序 · 标记「基本掌握」移出,「还不熟/待复习」保留` : '没有待复习的题目'}
         </span>
-        <div style="margin-top:8px">
+        ${queue.length ? `<div style="margin-top:8px">
           <button class="btn btn-primary btn-small" id="start-today">开始复习</button>
-        </div>
+        </div>` : `<div style="margin-top:8px"><a class="btn btn-small" href="#/mock">做一轮自测</a></div>`}
       </div>
-      <div class="review-list">${queue.map(q => {
+      ${queue.length ? `<div class="review-list">${queue.map(q => {
         const r = Store.rec(q.id);
         const st = Data.statusInfo(q.id);
         return `
@@ -173,27 +200,64 @@ const ReviewView = (() => {
               </div>
             </div>
           </div>`;
-      }).join('')}</div>`;
-    $('#start-today', box).addEventListener('click', () => {
+      }).join('')}</div>` : ''}
+      ${renderDrillReminders(drills)}`;
+    const startBtn = $('#start-today', box);
+    if (startBtn) startBtn.addEventListener('click', () => {
       MockView.startDirected(queue.map(q => q.id), '今日复习');
     });
-    if (unsolved.length) {
-      box.innerHTML += `<div class="card" style="margin-top:12px">
-        <b>🧩 专项练习待消化</b>
+    wireItems(box);
+  }
+
+  function renderDrillReminders(drills) {
+    const { unsolved, drafts, abandoned } = drills;
+    if (!unsolved.length && !drafts.length && !abandoned.length) {
+      return `<div class="card" style="margin-top:12px">
+        <b>🧩 专项练习</b>
+        <p class="muted small">没有待消化的专项。完成一次专项并在「自评」里选「已解决」,它就会从这里移出。</p>
+      </div>`;
+    }
+    const link = (drillId, extra) => `#/path?d=${encodeURIComponent(drillId)}${extra || ''}`;
+    return `
+      ${unsolved.length ? `<div class="card" style="margin-top:12px">
+        <b>🧩 专项练习待消化(${unsolved.length})</b>
         <div class="review-list" style="margin-top:8px">${unsolved.map(u => `
           <div class="review-item">
-            <a class="ri-main" role="button" tabindex="0" href="#/path?d=${encodeURIComponent(u.drillId)}" style="text-decoration:none;color:inherit">
+            <a class="ri-main" href="${esc(link(u.drillId, '&at=' + encodeURIComponent(u.attemptId || '')))}" style="text-decoration:none;color:inherit">
               <div class="q-item-title">${esc(u.q)}…</div>
               <div class="q-item-meta">
                 <span class="badge b-tag">${u.selfRating === 'partial' ? '部分解决' : '未解决'}</span>
-                ${u.review ? `<span class="muted" style="font-size:12px">${esc(u.review.slice(0, 40))}</span>` : ''}
+                <span class="muted" style="font-size:12px">已完成 ${u.doneCount} 次 · 最近 ${fmtTime(u.updatedAt)}</span>
+                ${u.review ? `<div class="ri-note">${esc(u.review.slice(0, 60))}</div>` : ''}
               </div>
             </a>
           </div>`).join('')}</div>
-        <p class="muted small">依据:最近一次专项自评为未解决/部分解决。重新练习并自评「已解决」后自动移出。</p>
-      </div>`;
-    }
-    wireItems(box);
+        <p class="muted small">依据:<b>按时间最新的一次完成尝试</b>自评为未解决/部分。重新练习并自评「已解决」后自动移出。</p>
+      </div>` : ''}
+      ${drafts.length ? `<div class="card" style="margin-top:12px">
+        <b>✍️ 写了但没提交的专项草稿(${drafts.length})</b>
+        <div class="review-list" style="margin-top:8px">${drafts.map(d => `
+          <div class="review-item">
+            <a class="ri-main" href="${esc(link(d.drillId))}" style="text-decoration:none;color:inherit">
+              <div class="q-item-title">${esc(d.q)}…</div>
+              <div class="q-item-meta">
+                ${d.failed ? '<span class="badge st-weak">未落盘</span>' : '<span class="badge b-tag">草稿</span>'}
+                <span class="muted" style="font-size:12px">${fmtTime(d.updatedAt)}</span>
+                ${d.preview ? `<div class="ri-note">${esc(d.preview)}…</div>` : ''}
+              </div>
+            </a>
+          </div>`).join('')}</div>
+        <p class="muted small">${drafts.some(d => d.failed)
+          ? '有草稿未成功写入本地存储:打开后会看到失败提示与重试入口,先处理它再继续。'
+          : '这些内容已保存但还没归档为一次完成记录;决定「提交」或「放弃」,别让它一直悬着。'}</p>
+      </div>` : ''}
+      ${abandoned.length ? `<div class="card" style="margin-top:12px">
+        <b>⭕ 已放弃的专项尝试(${abandoned.length})</b>
+        <div class="rel-row" style="margin-top:6px">
+          ${abandoned.map(a => `<a class="rel-link" href="${esc(link(a.drillId))}">${esc(a.q.slice(0, 24))}…</a>`).join(' ')}
+        </div>
+        <p class="muted small">放弃记录不计入完成次数,也不进待消化队列——它们只是留痕,方便你回顾当时为什么停下。</p>
+      </div>` : ''}`;
   }
 
   function renderMistakes(box) {
@@ -263,7 +327,7 @@ const ReviewView = (() => {
   function getMistakesList() { return getMistakes(); }
   function getTodayList() { return getTodayQueue(); }
 
-  return { render, getTodayQueue, getMistakes, getUnsolvedDrills };
+  return { render, getTodayQueue, getMistakes, getUnsolvedDrills, getDrillState };
 })();
 
 
@@ -298,7 +362,10 @@ const MaintainView = (() => {
         </div>
         <div class="card">
           <h3>个人记录备份</h3>
-          <p class="muted small">备份范围:「个人记录」= 状态/收藏/笔记/轮次;「题库与资料」= 你导入的题目和文档;「完整备份」= 两者。恢复规则:整体校验后原子写入;记录字段按更新时间合并——<b>更新的备份可以恢复被清空的笔记/状态</b>,旧备份只补空不覆盖;重复导入幂等。</p>
+          <p class="muted small">备份范围:「个人记录」= 状态/收藏/笔记/轮次/专项尝试/项目草稿与运行记录;「题库与资料」= 你导入的题目和文档;「完整备份」= 两者。</p>
+          <p class="muted small"><b>恢复规则(确定、可解释):</b>整体校验后原子写入,失败全部不生效。题目记录按字段的 <code>_updatedAt</code> 判定——备份更新则采用(含明确清空),备份不更新则只补空不覆盖。
+          项目草稿按<b>整份文档</b>判定:备份更新时间更新则整份采用,否则只补本机没有的字段,绝不复活你已清空的内容。
+          项目运行记录先给旧版缺 ID 的记录补齐确定性 ID,再按 ID 幂等去重。重复导入不会翻倍。</p>
           <div class="btn-row">
             <button class="btn btn-primary" id="r-export">导出个人记录</button>
             <button class="btn" id="l-export">导出题库与资料</button>
@@ -369,7 +436,7 @@ const MaintainView = (() => {
           if (t && t.type === 'aiiv-full') { toast('这是完整备份:已改走「导入完整备份」入口,本次未做任何修改', 'err'); return; }
           const r = Store.importRecords(text);
           window.rebuildIndex();
-          toast(`导入成功:合并 ${r.qMerged} 题记录、新增 ${r.roundsAdded} 轮${r.notesUpdated ? `、更新 ${r.notesUpdated} 条笔记` : ''}`);
+          modal('导入完成(记录合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
           App.route();
         }
         catch(e) { toast('导入失败(记录未变动): ' + e.message, 'err'); }
@@ -409,7 +476,7 @@ const MaintainView = (() => {
                 try {
                   const r = Store.importFull(text);
                   window.rebuildIndex();
-                  toast(`完整恢复成功:${r.qMerged} 条记录、${r.roundsAdded} 轮、${r.questionsAdded} 题、${r.docsAdded} 篇资料`);
+                  modal('完整恢复完成(合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
                   App.route();
                 }
                 catch(e) { toast('完整恢复失败(全部未生效): ' + e.message, 'err'); return false; }
@@ -438,9 +505,29 @@ const MaintainView = (() => {
     $('#r-clear').addEventListener('click', () => {
       modal('确认清空全部记录?','<p>不可恢复,建议先导出备份。导入的题库与资料不受影响。</p>',[
         {label:'取消'},
-        {label:'确认清空',danger:true,onClick:()=>{Store.clearAll();toast('已清空,建议刷新');}}
+        {label:'确认清空',danger:true,onClick:()=>{
+          Store.clearAll();
+          window.rebuildIndex();   /* 让检索索引随清空立即失效,搜索不再返回已删数据 */
+          toast('已清空');
+          App.route();
+        }}
       ]);
     });
+  }
+
+  /* 把合并报告说成人话:恢复了什么、跳过了什么、为什么 */
+  function mergeReportHtml(r) {
+    const rows = [
+      ['题目记录', `${r.qMerged} 条`],
+      ['笔记更新', `${r.notesUpdated} 条`],
+      ['模拟面试轮次', `新增 ${r.roundsAdded} 轮`],
+      ['项目草稿', `采用 ${r.draftsAdopted} 个项目 · 保留本机 ${r.draftsKept} 个`],
+      ['项目运行记录', `新增 ${r.runsAdded} 条${r.runsMigrated ? ` · 补齐旧记录 ID ${r.runsMigrated} 条` : ''}`],
+      ['阅读位置', r.docPosAdopted ? '采用备份' : (r.docPosKept ? '保留本机' : '无变化')],
+    ];
+    const notes = (r.draftNotes || []).slice(0, 6);
+    return `<div class="kv" style="margin-top:8px">${rows.map(([k, v]) => `<div class="kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}</div>
+      ${notes.length ? `<div class="muted small" style="margin-top:6px">项目草稿判定依据:<br>${notes.map(n => esc(n)).join('<br>')}</div>` : ''}`;
   }
 
   function dateStr() { const d=new Date(),p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`; }

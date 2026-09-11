@@ -326,22 +326,35 @@ const SearchView = (() => {
       box.innerHTML = `<div class="empty">没有找到与「${esc(q)}」相关的内容。<br><span class="muted">提示:换更短的关键词,或检查范围/专题筛选。</span></div>`;
       return;
     }
-    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试' };
+    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿' };
     box.innerHTML = results.map(r => {
       const u = r.unit;
-      let href, title;
+      let href, title, sub = '';
       if (u.kind === 'try') {
-        href = `#/path?d=${encodeURIComponent(u.drillId)}`;
+        /* 命中「哪一次尝试」:带上 attemptId,落到该专项并展开复盘区 */
+        href = `#/path?d=${encodeURIComponent(u.drillId)}` + (u.attemptId ? `&at=${encodeURIComponent(u.attemptId)}` : '');
+        const stName = { draft: '草稿', completed: '已完成', abandoned: '已放弃' }[u.status] || '';
         title = '专项尝试(' + u.drillId + ')';
+        sub = stName ? `<span class="badge b-tag">${esc(stName)}</span>` : '';
       } else if (u.kind === 'drill') {
         href = `#/path?d=${encodeURIComponent(u.drillId)}`;
         const dd = (window.APP_DATA.paths.paths || []).flatMap(p => p.stages).flatMap(s => s.drills || []).find(x => x.id === u.drillId);
         title = dd ? (dd.type + ':' + dd.q.slice(0, 40) + '…') : u.drillId;
+      } else if (u.kind === 'run') {
+        /* 命中「某一次运行记录」:落到该项目并展开那一条 */
+        href = `#/path?p=${encodeURIComponent(u.pid)}` + (u.runId ? `&r=${encodeURIComponent(u.runId)}` : '');
+        title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
+        sub = '<span class="badge b-tag">运行记录</span>';
+      } else if (u.kind === 'draft') {
+        href = `#/path?p=${encodeURIComponent(u.pid)}&tab=draft`;
+        title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
+        sub = '<span class="badge b-tag">草稿</span>';
       } else if (u.kind === 'concept') {
-        href = `#/study/${(window.APP_DATA.concepts.concepts.find(c => c.id === u.cid)?.questions || [])[0] || ''}`;
+        /* 概念有身份:落到概念地图并展开该条,而不是跳到「关联题的第一题」冒充命中 */
+        href = `#/path?c=${encodeURIComponent(u.cid)}`;
         title = (window.APP_DATA.concepts.concepts.find(c => c.id === u.cid) || {}).name || u.cid;
       } else if (u.kind === 'project') {
-        href = '#/path';
+        href = `#/path?p=${encodeURIComponent(u.pid)}`;
         title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
       } else if (u.kind === 'q' || u.kind === 'note') {
         /* 带上命中的区块锚点:学习页会按需展开并定位到该层级(检查题同时揭示答案) */
@@ -357,12 +370,13 @@ const SearchView = (() => {
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
-      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘' }[u.field]) || u.field;
+      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿' }[u.field]) || u.field;
       return `
         <a class="search-item" href="${esc(href)}">
           <div class="si-head">
             <span class="badge b-topic">${kindName[u.kind] || u.kind}</span>
             <span class="badge b-tag">${esc(fieldLabel)}</span>
+            ${sub}
             ${u.qid ? `<span class="qid">${esc(u.qid)}</span>` : ''}
             <span class="si-title">${esc(title)}</span>
           </div>
@@ -406,12 +420,62 @@ const PathView = (() => {
     Store.save();
   }
 
+  /* 深锚点定位:把 ?d/?at/?p/?r/?c 对应的条目展开、滚动、闪烁标记。
+     任何一条都找不到时不做任何滚动(App.route 的常规返回顶部仍然生效)。 */
+  function applyFocus(root) {
+    const q = parseHash().query || {};
+    const targets = [];
+    if (q.d) {
+      const box = root.querySelector(`.path-drill[data-drill="${cssEsc(q.d)}"]`);
+      if (box) {
+        targets.push(box);
+        const ref = box.querySelector('[data-drill-ref]');
+        if (ref) ref.open = true;
+        if (q.at) {
+          const rec = box.querySelector('[data-drill-record]');
+          if (rec) rec.open = true;
+        }
+      }
+    }
+    if (q.p) {
+      const box = root.querySelector(`details[data-proj="${cssEsc(q.p)}"]`);
+      if (box) {
+        targets.push(box);
+        box.open = true;
+        if (q.r) {
+          const runBox = box.querySelector(`[data-proj-runbox="${cssEsc(q.r)}"]`);
+          if (runBox) { runBox.open = true; targets.push(runBox); }
+        }
+        if (q.tab === 'draft') {
+          const rec = box.querySelector('[data-proj-record]');
+          if (rec) rec.open = true;
+        }
+      }
+    }
+    if (q.c) {
+      const box = root.querySelector(`details[data-cid="${cssEsc(q.c)}"]`);
+      if (box) { box.open = true; targets.push(box); }
+    }
+    if (!targets.length) return;
+    const el = targets[targets.length - 1];
+    /* 目标可能被若干层折叠容器包着(例如运行记录在「我的运行记录」里):
+       逐层打开祖先 <details>,否则内容未渲染、innerText 为空、滚动也不生效。 */
+    for (let p = el.parentElement; p && p !== root; p = p.parentElement) {
+      if (p.tagName === 'DETAILS') p.open = true;
+    }
+    el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    targets.forEach(t => {
+      t.classList.add('flash');
+      setTimeout(() => t.classList.remove('flash'), 2000);
+    });
+  }
+  function cssEsc(s) { return String(s || '').replace(/["\\]/g, '\\$&'); }
+
   function render(root) {
     const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
     if (!paths.length) { root.innerHTML = '<div class="empty">暂无路径定义</div>'; return; }
     const path = paths[0];
     const prog = progress();
-    const focusDrill = (parseHash().query.d || '');   /* 搜索命中:定位到具体专项 */
     const doneCount = path.stages.filter(s => stageStatus(prog[s.id]).state === 'done').length;
     root.innerHTML = `
       <div class="path-head">
@@ -429,21 +493,15 @@ const PathView = (() => {
           ? `<a class="rel-link" href="#/study/${id}">${id}</a>` : '').join(' ')}</div>
       </div>` : ''}
       ${renderProjects()}`;
-    if (focusDrill) {
-      const el = document.getElementById('drill-' + focusDrill);
-      if (el) {
-        el.scrollIntoView({ behavior: 'instant', block: 'start' });
-        const ref = el.querySelector('[data-drill-ref]');
-        if (ref) ref.open = true;
-        el.classList.add('flash');
-        setTimeout(() => el.classList.remove('flash'), 2000);
-      }
-    }
+    /* 深锚点:搜索/复习入口带 d(专项)/ at(具体尝试)/ p(项目)/ r(某次运行)/ c(概念),
+       落到具体条目并展开,而不是把用户丢在页面顶部。 */
+    applyFocus(root);
     $$('.path-stage-actions [data-done]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.done, true); render(root); toast('已确认本阶段理解;可随时取消'); });
     });
   
-  /* 项目个人记录交互:草稿击键同步 ui.projectDrafts;提交写入 ui.projectRuns(幂等按 attemptId) */
+  /* 项目个人记录交互:草稿击键同步 ui.projectDrafts;提交写入 ui.projectRuns(幂等按 runId)。
+     所有落盘动作都以真实结果为准:写失败必须说出来并给出重试,不说「已保存」。 */
   function wireProjectRecords(root) {
     const drafts = Store.data.ui.projectDrafts = Store.data.ui.projectDrafts || {};
     /* 记录字段:textarea[data-proj-field][data-proj] */
@@ -456,6 +514,7 @@ const PathView = (() => {
         drafts[pid] = drafts[pid] || {};
         drafts[pid][field] = el.value;
         drafts[pid].updatedAt = Date.now();
+        delete drafts[pid].saveError;
         Store.save();
       });
     });
@@ -469,7 +528,41 @@ const PathView = (() => {
         drafts[pid] = drafts[pid] || {};
         drafts[pid][field] = el.value;
         drafts[pid].updatedAt = Date.now();
+        delete drafts[pid].saveError;
         Store.save();
+      });
+    });
+    /* 诚实分级:选「只讲设计」时明确警告不能在面试里说成「我做过」 */
+    $$('[data-proj-level]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.proj;
+        drafts[pid] = drafts[pid] || {};
+        drafts[pid].speakLevel = btn.dataset.projLevel;
+        drafts[pid].updatedAt = Date.now();
+        if (Store.saveNow() === false) { toast('保存失败:' + (Store.lastSaveError || ''), 'err'); return; }
+        render(root);
+      });
+    });
+    /* 30 秒 / 2 分钟计时:对着钟念一遍,才是最接近面试的表达练习 */
+    $$('[data-proj-timer]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.proj;
+        const total = parseInt(btn.dataset.projTimer, 10) || 30;
+        const out = root.querySelector(`[data-proj-clock="${pid}"]`);
+        if (!out) return;
+        let left = total;
+        if (btn.__timer) clearInterval(btn.__timer);
+        const tick = () => {
+          out.textContent = `⏱ 剩余 ${left} 秒`;
+          if (left <= 0) {
+            clearInterval(btn.__timer); btn.__timer = null;
+            out.textContent = `⏱ ${total} 秒到——说完了吗?没说完就精简结构,别靠语速。`;
+            return;
+          }
+          left--;
+        };
+        tick();
+        btn.__timer = setInterval(tick, 1000);
       });
     });
     $$('[data-proj-step]', root).forEach(btn => {
@@ -478,34 +571,44 @@ const PathView = (() => {
         drafts[pid] = drafts[pid] || {};
         drafts[pid].stepStatus = btn.dataset.projStep;
         drafts[pid].updatedAt = Date.now();
-        Store.save();
+        if (Store.saveNow() === false) { toast('保存失败:' + (Store.lastSaveError || ''), 'err'); return; }
         $$(`[data-proj-step][data-proj="${pid}"]`, root).forEach(b => b.classList.remove('btn-primary'));
         btn.classList.add('btn-primary');
         toast('步骤状态已保存');
       });
     });
-    /* 保存项目记录:恰好一条 run 记录(带 runId),立即落盘并反馈真实结果 */
+    /* 保存运行记录:恰好一条记录(带 runId),立即落盘并按真实结果反馈 */
     $$('[data-proj-save]', root).forEach(btn => {
       if (btn.dataset.wired) return;
       btn.dataset.wired = '1';
       btn.addEventListener('click', () => {
         const pid = btn.dataset.projSave;
         const d = drafts[pid] || {};
+        if (!((d.runOutput || '').trim() || (d.debug || '').trim() || (d.todo || '').trim())) {
+          toast('先写下运行输出或排查过程,再保存为记录', 'err');
+          return;
+        }
         const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
         const runs = Store.data.ui.projectRuns = Store.data.ui.projectRuns || {};
         runs[pid] = runs[pid] || [];
         runs[pid].push({
-          runId, ts: Date.now(),
+          runId, ts: Date.now(), updatedAt: Date.now(),
           runOutput: d.runOutput || '', debug: d.debug || '', todo: d.todo || '',
-          stepStatus: d.stepStatus || '',
+          stepStatus: d.stepStatus || '', speakLevel: d.speakLevel || '',
         });
-        const saved = Store.saveNow();
-        if (saved === false) {
-          toast('保存失败:本地存储不可用,草稿保留在表单', 'err');
+        const ok = Store.saveNow() !== false;
+        if (!ok) {
+          runs[pid].pop();                       /* 回滚:内存不得比磁盘多一条 */
+          drafts[pid].saveError = Store.lastSaveError || '写入未成功';
+          render(root);
+          toast('保存失败,记录未写入:' + drafts[pid].saveError, 'err');
           return;
         }
+        drafts[pid].lastRunAt = Date.now();
         window.rebuildIndex();
-        toast(`已保存 1 条运行记录(${runId})`);
+        /* 重新渲染:新记录立刻出现在「我的运行记录」里,可点开核对自己的原话 */
+        render(root);
+        toast(`已保存 1 条运行记录(可在「我的运行记录」里回看)`);
       });
     });
     /* 保存口述草稿 */
@@ -519,9 +622,36 @@ const PathView = (() => {
           drafts[pid]['speak_' + k] = drafts[pid]['speak_' + k] || '';
         });
         drafts[pid].speakSavedAt = Date.now();
-        Store.saveNow();
+        if (Store.saveNow() === false) {
+          delete drafts[pid].speakSavedAt;
+          toast('口述草稿保存失败:' + (Store.lastSaveError || ''), 'err');
+          return;
+        }
         window.rebuildIndex();
+        render(root);
         toast('口述草稿已保存');
+      });
+    });
+    /* 比较最近两次运行:把「上次与本次」并排,便于发现自己是否真的改进了 */
+    $$('[data-proj-cmp]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.projCmp;
+        const list = ((Store.data.ui.projectRuns || {})[pid] || []).slice()
+          .sort((a, b) => Store.recTime(a) - Store.recTime(b));
+        if (list.length < 2) { toast('需要至少两条运行记录', 'err'); return; }
+        const a = list[list.length - 2], b = list[list.length - 1];
+        const row = (label, va, vb) => `
+          <div class="round-item">
+            <div class="round-head"><b>${esc(label)}</b></div>
+            <div class="round-self"><b>上次(${fmtTime(Store.recTime(a))}):</b>${esc(va || '(无)')}</div>
+            <div class="round-self"><b>本次(${fmtTime(Store.recTime(b))}):</b>${esc(vb || '(无)')}</div>
+          </div>`;
+        modal('最近两次运行记录比较',
+          row('运行输出', a.runOutput, b.runOutput) +
+          row('问题→定位→验证', a.debug, b.debug) +
+          row('未完成项', a.todo, b.todo) +
+          '<p class="muted small">对照:上次卡住的地方这次解决了吗?遗留项真的减少了吗?</p>',
+          [{ label: '关闭' }]);
       });
     });
   }
@@ -541,65 +671,89 @@ const PathView = (() => {
       function syncDraft() {
         let draft = draftOf(drillId);
         if (!draft) {
-          draft = { attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-                    drillId, version: d.version || 1, status: 'draft', ts: Date.now() };
+          draft = { attemptId: newAttemptId(), drillId, version: d.version || 1, status: Store.STATE.DRAFT, ts: Date.now() };
         }
         draft.myAnswer = el.ans.value;
         draft.observed = el.obs.value;
         draft.review = el.review.value;
         draft.updatedAt = Date.now();
+        delete draft.saveError;         /* 用户继续编辑:上一次的失败提示不再挂在这里 */
         saveAttempt(draft);
         return draft;
       }
       [el.ans, el.obs, el.review].forEach(t => t.addEventListener('input', syncDraft));
-      /* 提交:当前 draft 转 completed;下次练习自动建新 draft(不显示旧答案) */
+
+      /* 提交:草稿 → completed。写盘失败时**回滚状态**并明确告知,
+         绝不出现「界面说已保存、磁盘其实没写」的分叉。 */
       box.querySelector(`[data-drill-save="${drillId}"]`).addEventListener('click', () => {
         const draft = syncDraft();
-        draft.status = 'completed';
+        draft.status = Store.STATE.COMPLETED;
         draft.selfRating = (box.querySelector('[data-rate].btn-primary') || {}).dataset?.rate || '';
         draft.updatedAt = Date.now();
-        saveAttempt(draft);
+        const res = saveAttempt(draft);
+        if (!res.ok) {
+          draft.status = Store.STATE.DRAFT;   /* 回滚:内存不得比磁盘更「完成」 */
+          render(root);
+          toast('提交未落盘:' + res.error, 'err');
+          return;
+        }
         toast('已保存本次尝试(历史保留;开始新尝试将不显示旧答案)');
         render(root);
       });
-      /* 开始新尝试:直接把 draft 清成空(旧 completed 历史仍在) */
+
+      /* 开始新尝试。三种收尾语义必须**可区分**:
+         提交后另开 → 当前草稿转 completed(计完成);
+         放弃草稿   → 当前草稿转 abandoned(留痕,不计完成、不进待消化队列);
+         空草稿     → 直接丢弃,不产生任何无内容的记录。 */
       box.querySelector(`[data-drill-new="${drillId}"]`).addEventListener('click', () => {
         const draft = draftOf(drillId);
-        const hasContent = draft && ((draft.myAnswer || '').trim() || (draft.observed || '').trim() || (draft.review || '').trim());
-        const startNew = () => {
-          /* 把未完成草稿转为 completed(保留痕迹),再开一个空 draft */
-          if (draft) {
-            draft.status = 'completed';
-            draft.selfRating = draft.selfRating || 'unsolved';
-            draft.updatedAt = Date.now();
-            saveAttempt(draft);
-          }
-          saveAttempt({ attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-                        drillId, version: d.version || 1, status: 'draft',
-                        myAnswer: '', observed: '', review: '', ts: Date.now(), updatedAt: Date.now() });
-          render(root);
-          toast('已开始新尝试;旧答案已隐藏,历史保留');
-        };
-        if (hasContent) {
-          modal('当前有未完成草稿', '<p>提交当前草稿为一条记录后另开新尝试,还是放弃草稿直接开?</p>', [
-            { label: '取消' },
-            { label: '放弃草稿', danger: true, onClick: () => { startNew(); } },
-            { label: '提交后另开', primary: true, onClick: () => {
-                draft.status = 'completed';
-                draft.selfRating = draft.selfRating || 'unsolved';
-                draft.updatedAt = Date.now();
-                saveAttempt(draft);
-                saveAttempt({ attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-                              drillId, version: d.version || 1, status: 'draft',
-                              myAnswer: '', observed: '', review: '', ts: Date.now(), updatedAt: Date.now() });
+        const canFinish = hasContent(draft);
+        const startNew = (mode) => {       /* mode: 'abandon' | 'complete' | 'drop' */
+          const cur = draftOf(drillId);
+          if (cur) {
+            if (mode === 'drop' || !canFinish) {
+              if (mode === 'complete' && !canFinish) {
+                /* 没有内容的「提交」没有意义:按丢弃处理,不留空记录 */
+              }
+              dropAttempt(drillId, cur.attemptId);
+            } else {
+              cur.status = mode === 'abandon' ? Store.STATE.ABANDONED : Store.STATE.COMPLETED;
+              cur.selfRating = cur.selfRating || 'unsolved';
+              if (mode === 'abandon') cur.abandonedAt = Date.now();
+              cur.updatedAt = Date.now();
+              const res = saveAttempt(cur);
+              if (!res.ok) {
+                cur.status = Store.STATE.DRAFT;
+                delete cur.abandonedAt;
                 render(root);
-                toast('草稿已提交为记录;新尝试开始');
-              } },
-          ]);
+                toast('操作未落盘:' + res.error, 'err');
+                return;
+              }
+            }
+          }
+          const fresh = { attemptId: newAttemptId(), drillId, version: d.version || 1,
+                          status: Store.STATE.DRAFT, myAnswer: '', observed: '', review: '',
+                          ts: Date.now(), updatedAt: Date.now() };
+          const res2 = saveAttempt(fresh);
+          render(root);
+          if (!res2.ok) { toast('新尝试未落盘:' + res2.error, 'err'); return; }
+          toast(mode === 'abandon' ? '已放弃这次草稿(留痕,不计入完成);新尝试开始'
+              : mode === 'complete' ? '草稿已提交为完成记录;新尝试开始'
+              : '已开始新尝试;旧答案已隐藏,历史保留');
+        };
+        if (canFinish) {
+          modal('当前有未完成草稿',
+            '<p><b>放弃</b>:草稿标记为「已放弃」保留痕迹,不计入完成次数,也不会出现在待消化的专项里。<br><b>提交后另开</b>:把当前草稿记为一次完成记录(计入完成次数),再开新的一次。</p>',
+            [
+              { label: '取消' },
+              { label: '放弃草稿(留痕)', onClick: () => { startNew('abandon'); } },
+              { label: '提交后另开', primary: true, onClick: () => { startNew('complete'); } },
+            ]);
         } else {
-          startNew();
+          startNew('drop');
         }
       });
+
       /* 自评:点击立即写入当前草稿(selfRating 进 draft,刷新不丢) */
       $$('[data-rate]', box).forEach(btn => {
         btn.addEventListener('click', () => {
@@ -607,23 +761,25 @@ const PathView = (() => {
           btn.classList.add('btn-primary');
           let draft = draftOf(drillId);
           if (!draft) {
-            draft = { attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-                      drillId, version: d.version || 1, status: 'draft', ts: Date.now() };
+            draft = { attemptId: newAttemptId(), drillId, version: d.version || 1, status: Store.STATE.DRAFT, ts: Date.now() };
           }
           draft.selfRating = btn.dataset.rate;
           draft.updatedAt = Date.now();
           saveAttempt(draft);
         });
       });
-      /* 历史回看 + 前后比较 */
+
+      /* 历史回看:按时间升序展示(可解释的时间轴),并区分「已完成 / 已放弃」 */
       const hist = box.querySelector(`[data-drill-history="${drillId}"]`);
       if (hist) hist.addEventListener('click', () => {
-        const list = attemptsOf(drillId).filter(a => a.status === 'completed');
-        modal(`「${drillId}」历史尝试(${list.length})`,
-          list.length ? list.map((a, i) => `
+        const all = attemptsOf(drillId).filter(a => a.status !== Store.STATE.DRAFT);
+        const done = all.filter(a => a.status === Store.STATE.COMPLETED);
+        modal(`「${drillId}」历史尝试(${done.length} 次完成${all.length - done.length ? ` · ${all.length - done.length} 次放弃` : ''})`,
+          all.length ? all.map((a, i) => `
             <div class="round-item">
               <div class="round-head"><b>#${i + 1}</b>
-                <span class="muted small">${fmtTime(a.ts || a.updatedAt)} · v${a.version || 1}
+                <span class="badge ${a.status === 'completed' ? 'st-ok' : 'st-none'}">${Store.STATE_LABEL[a.status] || a.status}</span>
+                <span class="muted small">${fmtTime(Store.recTime(a))} · v${a.version || 1}
                 ${a.selfRating ? '· ' + ({ solved: '已解决', partial: '部分', unsolved: '未解决' }[a.selfRating] || a.selfRating) : ''}</span></div>
               <div class="round-title"><b>预测:</b>${esc(a.myAnswer || '(无)')}</div>
               ${a.observed ? `<div class="round-self"><b>观察:</b>${esc(a.observed)}</div>` : ''}
@@ -631,19 +787,21 @@ const PathView = (() => {
             </div>`).join('') : '<p class="muted">暂无完成尝试</p>',
           [{ label: '关闭' }]);
       });
+
+      /* 前后比较:取按时间排序的最后两次**完成**尝试(不看数组顺序) */
       const cmp = box.querySelector(`[data-drill-compare="${drillId}"]`);
       if (cmp) cmp.addEventListener('click', () => {
-        const list = attemptsOf(drillId).filter(a => a.status === 'completed');
+        const list = completedOf(drillId);
         if (list.length < 2) { toast('需要至少两次完成记录', 'err'); return; }
         const a = list[list.length - 2], b = list[list.length - 1];
         const rateName = v => ({ solved: '已解决', partial: '部分', unsolved: '未解决' }[v] || v || '未评');
         const row = (label, va, vb) => `
           <div class="round-item">
             <div class="round-head"><b>${esc(label)}</b></div>
-            <div class="round-self"><b>上次:</b>${esc(va || '(无)')}</div>
-            <div class="round-self"><b>本次:</b>${esc(vb || '(无)')}</div>
+            <div class="round-self"><b>上次(${fmtTime(Store.recTime(a))}):</b>${esc(va || '(无)')}</div>
+            <div class="round-self"><b>本次(${fmtTime(Store.recTime(b))}):</b>${esc(vb || '(无)')}</div>
           </div>`;
-        modal(`两次尝试比较`,
+        modal(`最近两次完成尝试比较`,
           row('预测', a.myAnswer, b.myAnswer) +
           row('实际观察', a.observed, b.observed) +
           row('自评', rateName(a.selfRating), rateName(b.selfRating)) +
@@ -674,7 +832,7 @@ const PathView = (() => {
           <div style="margin-bottom:10px">
             <div class="muted small">${esc(Data.topicName(topic))}</div>
             ${list.map(c => `
-              <details style="margin:4px 0;border:1px solid var(--line);border-radius:6px;padding:4px 10px">
+              <details data-cid="${esc(c.id)}" style="margin:4px 0;border:1px solid var(--line);border-radius:6px;padding:4px 10px">
                 <summary style="cursor:pointer;font-size:13.5px">${esc(c.name)}</summary>
                 <div class="muted small" style="margin:4px 0">${esc(c.definition)}</div>
                 <div>${(c.questions || []).map(qid => `<a class="rel-link" href="#/study/${qid}">${qid}</a>`).join(' ')}
@@ -707,11 +865,18 @@ const PathView = (() => {
   }
 
   /* 项目个人记录:运行输出/定位/修改/验证/未完成项 + 口述草稿(30秒/2分钟)。
-     草稿字段击键同步 Store(ui.projectDrafts);提交转 projectRuns(历史,幂等)。 */
+     草稿字段击键同步 Store(ui.projectDrafts);提交转 projectRuns(历史,幂等)。
+     每次提交是一条**可回看、可比较、可检索**的证据记录(带 runId)。 */
   function renderProjectRecord(pr) {
     const draft = (Store.data.ui.projectDrafts || {})[pr.id] || {};
-    const runs = Store.data.ui.projectRuns && Store.data.ui.projectRuns[pr.id] || [];
+    const runs = (Store.data.ui.projectRuns && Store.data.ui.projectRuns[pr.id] || []).slice()
+      .sort((a, b) => (Store.recTime(b)) - (Store.recTime(a)));
     const L = k => esc(draft[k] || '');
+    const SPEAK_FIELDS = [['ask', '需求(一句话)'], ['plan', '方案(结构)'], ['tradeoff', '取舍'],
+                          ['pain', '问题与定位'], ['verify', '验证证据'], ['lack', '不足与下一步']];
+    const LEVELS = [['did', '我做过(跑通并调试过)'],
+                    ['tried', '我在练手项目里验证过'],
+                    ['design', '如果遇到我会这样设计']];
     return `
       <details class="path-variant-ref" data-proj-record="${pr.id}">
         <summary>我的实现记录(草稿自动保存)</summary>
@@ -727,21 +892,69 @@ const PathView = (() => {
           <textarea class="input" data-proj-field="debug" data-proj="${pr.id}" style="min-height:60px">${L('debug')}</textarea>
           <label class="muted small" style="display:block;margin-top:6px">未完成项</label>
           <textarea class="input" data-proj-field="todo" data-proj="${pr.id}" style="min-height:40px">${L('todo')}</textarea>
-          <button class="btn btn-primary btn-small" style="margin-top:6px" data-proj-save="${pr.id}">保存项目记录</button>
-          ${runs.length ? `<span class="muted small" style="margin-left:8px">已提交 ${runs.length} 次运行记录</span>` : ''}
+          <button class="btn btn-primary btn-small" style="margin-top:6px" data-proj-save="${pr.id}">保存为一条运行记录</button>
+          <span class="muted small" style="margin-left:8px">${runs.length ? `已提交 ${runs.length} 次运行记录` : '还没有提交过运行记录'}</span>
+          ${draft.saveError ? saveFailureHtml(draft.saveError) : ''}
         </div>
       </details>
+      ${runs.length ? renderRunHistory(pr, runs) : ''}
       <details class="path-variant-ref" data-proj-speak="${pr.id}">
-        <summary>面试口述草稿(需求/方案/取舍/问题/验证/不足)</summary>
+        <summary>面试口述草稿(30 秒 / 2 分钟)</summary>
         <div style="margin-top:8px">
-          ${[['ask', '需求(一句话)'], ['plan', '方案(结构)'], ['tradeoff', '取舍'], ['pain', '问题与定位'], ['verify', '验证证据'], ['lack', '不足与下一步']].map(([k, label]) =>
-            `<label class="muted small" style="display:block;margin-top:6px">${label}</label>
-             <textarea class="input" data-proj-speak-field="${k}" data-proj-speak="${pr.id}" style="min-height:40px">${L('speak_' + k)}</textarea>`).join('')}
-          <div class="muted small" style="margin-top:6px">
-            诚实分级:「我做过」= 你跑通并调试过;「我在练手项目里验证过」= 按上面命令完成并排查过;「如果遇到我会这样设计」= 只讲方案。三者别混用。
+          <div class="muted small" style="margin-bottom:6px">
+            <b>怎么算准备好了:</b>30 秒能说清「要解决什么 + 用什么方案 + 结果如何」;
+            2 分钟能把「取舍、踩坑、验证证据、不足」讲完整。先按下面的骨架写,再对着计时器念一遍。
           </div>
-          <button class="btn btn-primary btn-small" style="margin-top:6px" data-proj-save-speak="${pr.id}">保存口述草稿</button>
-          ${runs.length ? `<span class="muted small" style="margin-left:8px">已提交 ${runs.length} 次运行记录</span>` : ''}
+          <label class="muted small" style="display:block;margin-top:6px">诚实分级(选最贴近事实的一档)</label>
+          <div class="btn-row">
+            ${LEVELS.map(([v, l]) => `<button class="btn btn-small ${draft.speakLevel === v ? 'btn-primary' : ''}" data-proj-level="${v}" data-proj="${pr.id}">${l}</button>`).join('')}
+          </div>
+          ${draft.speakLevel === 'design' ? '<div class="notice warn" style="margin:6px 0">这一档只能在面试里讲方案设计,不能说「我做过」。有运行记录后再回到上面两档。</div>' : ''}
+          ${(draft.speakLevel === 'did' || draft.speakLevel === 'tried') && !runs.length
+            ? '<div class="notice warn" style="margin:6px 0">你选了「' + (draft.speakLevel === 'did' ? '我做过' : '我在练手项目里验证过') + '」,但还没有任何运行记录。先去跑一次、把输出粘进「我的实现记录」并保存,再回来讲——表达要和证据对得上。</div>'
+            : ''}
+          ${runs.length >= 2 && draft.speakLevel === 'design'
+            ? '<div class="notice warn" style="margin:6px 0">你已经有 ' + runs.length + ' 条运行记录了,可以放心往「我跑通过/验证过」这两档走,不必自我压低。</div>'
+            : ''}
+          ${SPEAK_FIELDS.map(([k, label]) => `
+            <label class="muted small" style="display:block;margin-top:6px">${label}</label>
+            <textarea class="input" data-proj-speak-field="${k}" data-proj-speak="${pr.id}" style="min-height:40px">${L('speak_' + k)}</textarea>`).join('')}
+          <div class="btn-row" style="margin-top:6px">
+            <button class="btn btn-primary btn-small" data-proj-save-speak="${pr.id}">保存口述草稿</button>
+            <button class="btn btn-small" data-proj-timer="30" data-proj="${pr.id}">⏱ 30 秒计时</button>
+            <button class="btn btn-small" data-proj-timer="120" data-proj="${pr.id}">⏱ 2 分钟计时</button>
+            <span class="muted small" data-proj-clock="${pr.id}"></span>
+          </div>
+          <div class="muted small" style="margin-top:6px">
+            <b>证据对照:</b>下面列出你自己的运行记录,讲的时候尽量引用其中的真实输出与踩坑,
+            而不是凭印象描述。
+          </div>
+          <div class="rel-row">
+            ${runs.length ? runs.map((r, i) => `<a class="rel-link" href="#/path?p=${encodeURIComponent(pr.id)}&r=${encodeURIComponent(r.runId || '')}">第 ${runs.length - i} 次运行 · ${fmtTime(Store.recTime(r))}</a>`).join(' ')
+              : '<span class="muted small">还没有运行记录——先跑一次并把输出粘到上面,再回来练口述。</span>'}
+          </div>
+        </div>
+      </details>`;
+  }
+
+  /* 运行历史:每条记录独立可展开(带身份 runId),并给出与上一次的对照 */
+  function renderRunHistory(pr, runs) {
+    return `
+      <details class="path-variant-ref" data-proj-history="${pr.id}">
+        <summary>我的运行记录(${runs.length} 条 · 可回看与比较)</summary>
+        <div style="margin-top:8px">
+          ${runs.map((r, i) => `
+            <details class="round-item" data-proj-runbox="${esc(r.runId || '')}" style="padding:6px 10px;margin:4px 0">
+              <summary style="cursor:pointer">
+                <b>第 ${runs.length - i} 次</b>
+                <span class="muted small">${fmtTime(Store.recTime(r))}${r.stepStatus ? ' · 步骤:' + esc(r.stepStatus) : ''}${r._legacy ? ' · 旧版记录(已补齐 ID)' : ''}</span>
+              </summary>
+              <div class="round-self"><b>运行输出:</b>${esc(r.runOutput || '(无)')}</div>
+              <div class="round-self"><b>问题→定位→验证:</b>${esc(r.debug || '(无)')}</div>
+              <div class="round-self"><b>未完成项:</b>${esc(r.todo || '(无)')}</div>
+              <div class="muted small">记录 ID:<code>${esc(r.runId || '')}</code></div>
+            </details>`).join('')}
+          ${runs.length >= 2 ? `<button class="btn btn-small" data-proj-cmp="${pr.id}">比较最近两次</button>` : ''}
         </div>
       </details>`;
   }
@@ -761,41 +974,77 @@ const PathView = (() => {
   }
 
 
-  /* 专项练习:稳定 ID + attempt 记录(drillAttempts 顶层存储,归属只由 drillId 决定) */
+  /* 专项练习:稳定 ID + attempt 记录(drillAttempts 顶层存储,归属只由 drillId 决定)
+     状态语义见 Store.STATE:draft(编辑中)/ completed(提交成功)/ abandoned(明确放弃)。
+     「最新一次」只走 Store.latestOf(按时间,不看数组顺序)。 */
   function attemptsOf(drillId) {
-    return (Store.data.drillAttempts[drillId] || []).slice()
-      .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    return Store.sortedByTime(Store.data.drillAttempts[drillId] || []);
+  }
+  /* 参与「完成历史」的记录(放弃的不算完成) */
+  function completedOf(drillId) {
+    return attemptsOf(drillId).filter(a => a.status === 'completed');
+  }
+  function abandonedOf(drillId) {
+    return attemptsOf(drillId).filter(a => a.status === 'abandoned');
   }
   function draftOf(drillId) {
-    return (Store.data.drillAttempts[drillId] || []).find(a => a.status === 'draft');
+    return Store.latestOf(Store.data.drillAttempts[drillId] || [], a => a.status === 'draft');
   }
+  function hasContent(a) {
+    return !!a && !!((a.myAnswer || '').trim() || (a.observed || '').trim() || (a.review || '').trim());
+  }
+  function newAttemptId() {
+    return 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  }
+  /* 保存一条尝试。返回 {ok, error}——调用方必须据此给出真实反馈,
+     绝不能出现「磁盘写失败但界面说已保存」。 */
   function saveAttempt(attempt) {
     const list = Store.data.drillAttempts[attempt.drillId] = Store.data.drillAttempts[attempt.drillId] || [];
     const idx = list.findIndex(x => x.attemptId === attempt.attemptId);
     if (idx >= 0) list[idx] = attempt; else list.push(attempt);
+    const ok = Store.saveNow() !== false;
+    if (ok) { delete attempt.saveError; window.rebuildIndex && window.rebuildIndex(); }
+    else { attempt.saveError = Store.lastSaveError || '写入未成功'; }
+    return { ok, error: attempt.saveError || null };
+  }
+  /* 删除一条尝试(仅用于「空草稿不留痕」) */
+  function dropAttempt(drillId, attemptId) {
+    const list = Store.data.drillAttempts[drillId] || [];
+    const i = list.findIndex(x => x.attemptId === attemptId);
+    if (i >= 0) list.splice(i, 1);
     Store.saveNow();
-    if (window.rebuildIndex) window.rebuildIndex();   /* 尝试/草稿变更立即进索引 */
+  }
+  /* 保存失败时的就地反馈:说明原因 + 提供重试,不假装成功 */
+  function saveFailureHtml(err) {
+    return `<div class="notice warn" style="margin:4px 0">
+      <b>本次提交未落盘</b>:${esc(err || '写入未成功')}。
+      内容仍在下面,可修改后重试;若持续失败请到<a href="#/maintain">维护页</a>导出记录并腾出空间。
+    </div>`;
   }
   function renderDrill(stageId, di, d) {
     const drillId = d.id || `drill-${stageId}-${di}`;
     const focusDrillId = (parseHash().query.d || '');
     const draft = draftOf(drillId);
-    const completed = attemptsOf(drillId).filter(a => a.status === 'completed');
+    const completed = completedOf(drillId);
+    const abandoned = abandonedOf(drillId);
+    const focusAt = (parseHash().query.at || '');
     const last = draft || completed[completed.length - 1];
     return `
-      <div class="path-drill ${focusDrillId === drillId ? 'drill-focus' : ''}" id="drill-${drillId}" data-drill="${drillId}">
+      <div class="path-drill ${focusDrillId === drillId ? 'drill-focus' : ''}" data-drill="${drillId}">
         <div class="path-drill-q">
           <span class="badge b-tag">${esc(d.type)}</span>
           <span class="qid">${drillId}</span>
           ${d.version ? `<span class="badge b-tag" title="内容版本">v${d.version}</span>` : ''}
           ${d.q.split(String.fromCharCode(10)).map(l => esc(l)).join('<br>')}
         </div>
-        ${completed.length ? `<div class="muted small" style="margin:4px 0">
-          已完成 ${completed.length} 次;
-          <a class="rel-link" data-drill-history="${drillId}" href="javascript:void(0)">查看历史</a>
-          ${completed.length >= 2 ? `<a class="rel-link" data-drill-compare="${drillId}" href="javascript:void(0)">比较两次</a>` : ''}
+        ${completed.length || abandoned.length ? `<div class="muted small" style="margin:4px 0">
+          ${completed.length ? `已完成 ${completed.length} 次` : '还没有完成的尝试'}
+          ${abandoned.length ? `<span class="muted">· 放弃 ${abandoned.length} 次</span>` : ''}
+          ${completed.length ? `<a class="rel-link" data-drill-history="${drillId}" href="javascript:void(0)">查看历史</a>` : ''}
+          ${completed.length >= 2 ? `<a class="rel-link" data-drill-compare="${drillId}" href="javascript:void(0)">比较最近两次</a>` : ''}
         </div>` : ''}
         ${draft ? '<div class="muted small" style="margin:2px 0">⏸ 有未完成草稿(已自动恢复,可继续编辑)</div>' : ''}
+        ${draft && draft.saveError ? saveFailureHtml(draft.saveError) : ''}
         <textarea class="path-drill-answer" data-drill-answer="${drillId}"
           placeholder="先写下你的预测/找出的错/推演结果(自动保存,刷新不丢)……">${esc(draft?.myAnswer ?? '')}</textarea>
         <details class="path-variant-ref" data-drill-ref="${drillId}">
