@@ -64,6 +64,7 @@ const Search = (() => {
     });
     /* 个人专项尝试记录(myAnswer/observed/review)进索引:
        主来源=顶层 drillAttempts(新模型);兼容旧题目记录 drillTries */
+    const NL = String.fromCharCode(10);
     const seenTries = new Set();
     Object.values(ctx.drillAttempts || {}).forEach(list => {
       (list || []).forEach(t => {

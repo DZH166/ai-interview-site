@@ -525,6 +525,42 @@ console.log('== R9b: 项目记录与口述草稿 round-trip ==');
   ok('草稿不被重复导入覆盖', d.runOutput === '六场景全部 PASS');
 }
 
+
+console.log('== R8: 项目草稿/运行备份矩阵 + 迁移三入口 ==');
+{
+  /* 先访问路径(空壳)→ 恢复真实备份 → 草稿不漏 */
+  localStorage.setItem('aiiv:records', JSON.stringify({ v: 2, questions: {}, mock: { rounds: [], draft: null },
+    drillAttempts: {}, ui: { projectDrafts: { 'proj-a-model-client': {} }, pathProgress: {} } }));
+  Store.load();
+  const full = JSON.stringify({ type: 'aiiv-full', v: 1, records: {
+    questions: {}, mock: { rounds: [] },
+    ui: { projectDrafts: { 'proj-a-model-client': { runOutput: '六场景 PASS', debug: 'MAX_RETRY=0 教训', stepStatus: 'verified', speak_plan: '超时+分类+重试', speakSavedAt: 500 } },
+          projectRuns: { 'proj-b-streaming': [{ runId: 'rb-1', ts: 1, runOutput: 'B 输出' }] } } },
+    questions: [], docs: [] });
+  Store.clearAll();
+  Store.importFull(full);
+  const d = (Store.data.ui.projectDrafts['proj-a-model-client'] || {});
+  ok('先访问路径后恢复:runOutput 不漏', d.runOutput === '六场景 PASS');
+  ok('口述恢复', d.speak_plan === '超时+分类+重试');
+  ok('项目B 历史不因 A 跳过', (Store.data.ui.projectRuns['proj-b-streaming'] || []).length === 1);
+  /* 本地A + 备份B */
+  Store.clearAll();
+  Store.importFull(JSON.stringify({ type: 'aiiv-full', v: 1, records: { questions: {}, mock: { rounds: [] },
+    ui: { projectDrafts: { 'proj-a-model-client': { runOutput: 'A 本地' } },
+          projectRuns: { 'proj-a-model-client': [{ runId: 'ra-1', ts: 1, runOutput: 'A运行' }] } } } }));
+  Store.importFull(JSON.stringify({ type: 'aiiv-full', v: 1, records: { questions: {}, mock: { rounds: [] },
+    ui: { projectRuns: { 'proj-b-streaming': [{ runId: 'rb-1', ts: 2, runOutput: 'B运行' }] } } } }));
+  ok('本地A + 备份B 共存', (Store.data.ui.projectRuns['proj-b-streaming'] || []).length === 1 && (Store.data.ui.projectRuns['proj-a-model-client'] || []).length === 1);
+  Store.importFull(JSON.stringify({ type: 'aiiv-full', v: 1, records: { questions: {}, mock: { rounds: [] },
+    ui: { projectRuns: { 'proj-b-streaming': [{ runId: 'rb-1', ts: 2, runOutput: 'B运行' }] } } } }));
+  ok('同 runId 幂等', (Store.data.ui.projectRuns['proj-b-streaming'] || []).length === 1);
+  /* importRecords 迁移(副本) */
+  Store.clearAll();
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { drillTries: [{ drillId: 'drill-1pred01', version: 1, ts: 111, myAnswer: '我的预测' }] } }, mock: { rounds: [] } } }));
+  ok('importRecords 迁移到顶层', (Store.data.drillAttempts['drill-1pred01'] || []).length === 1);
+  ok('旧题目记录 drillTries 已迁出', !Store.rec('PY-001').drillTries);
+}
+
 console.log('== B1: PY-003 展示代码从题库字段提取并实际运行 ==');
 {
   const { execFileSync } = require('child_process');

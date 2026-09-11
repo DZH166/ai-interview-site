@@ -484,26 +484,43 @@ const PathView = (() => {
         toast('步骤状态已保存');
       });
     });
+    /* 保存项目记录:恰好一条 run 记录(带 runId),立即落盘并反馈真实结果 */
     $$('[data-proj-save]', root).forEach(btn => {
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = '1';
       btn.addEventListener('click', () => {
         const pid = btn.dataset.projSave;
         const d = drafts[pid] || {};
+        const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
         const runs = Store.data.ui.projectRuns = Store.data.ui.projectRuns || {};
         runs[pid] = runs[pid] || [];
-        runs[pid].push({ ts: Date.now(), runOutput: d.runOutput || '', debug: d.debug || '', todo: d.todo || '', stepStatus: d.stepStatus || '' });
-        toast('项目记录已保存(历史保留)');
+        runs[pid].push({
+          runId, ts: Date.now(),
+          runOutput: d.runOutput || '', debug: d.debug || '', todo: d.todo || '',
+          stepStatus: d.stepStatus || '',
+        });
+        const saved = Store.saveNow();
+        if (saved === false) {
+          toast('保存失败:本地存储不可用,草稿保留在表单', 'err');
+          return;
+        }
+        window.rebuildIndex();
+        toast(`已保存 1 条运行记录(${runId})`);
       });
     });
+    /* 保存口述草稿 */
     $$('[data-proj-save-speak]', root).forEach(btn => {
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = '1';
       btn.addEventListener('click', () => {
         const pid = btn.dataset.projSaveSpeak;
-        const d = drafts[pid] || {};
         drafts[pid] = drafts[pid] || {};
         ['ask', 'plan', 'tradeoff', 'pain', 'verify', 'lack'].forEach(k => {
-          drafts[pid]['speak_' + k] = d['speak_' + k] || '';
+          drafts[pid]['speak_' + k] = drafts[pid]['speak_' + k] || '';
         });
         drafts[pid].speakSavedAt = Date.now();
-        Store.save();
+        Store.saveNow();
+        window.rebuildIndex();
         toast('口述草稿已保存');
       });
     });
@@ -552,15 +569,21 @@ const PathView = (() => {
         render(root);
         toast('已开始新尝试;旧答案已隐藏,历史保留');
       });
-      /* 自评高亮 */
+      /* 自评:点击立即写入当前草稿(selfRating 进 draft,刷新不丢) */
       $$('[data-rate]', box).forEach(btn => {
         btn.addEventListener('click', () => {
           $$('[data-rate]', box).forEach(b => b.classList.remove('btn-primary'));
           btn.classList.add('btn-primary');
+          let draft = draftOf(drillId);
+          if (!draft) {
+            draft = { attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                      drillId, version: d.version || 1, status: 'draft', ts: Date.now() };
+          }
+          draft.selfRating = btn.dataset.rate;
+          draft.updatedAt = Date.now();
+          saveAttempt(draft);
         });
       });
-      /* 项目记录与口述草稿 */
-      wireProjectRecords(root);
       /* 历史回看 */
       const hist = box.querySelector(`[data-drill-history="${drillId}"]`);
       if (hist) hist.addEventListener('click', () => {
@@ -581,6 +604,8 @@ const PathView = (() => {
     $$('.path-stage-actions [data-undone]', root).forEach(b => {
       b.addEventListener('click', () => { markStage(b.dataset.undone, false); render(root); });
     });
+    /* 项目记录与口述草稿:整个页面只绑定一次(不随专项数增长) */
+    wireProjectRecords(root);
   }
 
 
@@ -633,8 +658,7 @@ const PathView = (() => {
   /* 项目个人记录:运行输出/定位/修改/验证/未完成项 + 口述草稿(30秒/2分钟)。
      草稿字段击键同步 Store(ui.projectDrafts);提交转 projectRuns(历史,幂等)。 */
   function renderProjectRecord(pr) {
-    const rec = Store.data.ui.projectRecords || {};
-    const draft = rec[pr.id] || {};
+    const draft = (Store.data.ui.projectDrafts || {})[pr.id] || {};
     const runs = Store.data.ui.projectRuns && Store.data.ui.projectRuns[pr.id] || [];
     const L = k => esc(draft[k] || '');
     return `

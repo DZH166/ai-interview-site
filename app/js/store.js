@@ -42,12 +42,14 @@ const Store = (() => {
           if (!('draft' in data.mock)) data.mock.draft = null;
           data.ui = Object.assign(blank().ui, parsed.ui || {});
           data.drillAttempts = (parsed.drillAttempts && typeof parsed.drillAttempts === 'object' && !Array.isArray(parsed.drillAttempts)) ? parsed.drillAttempts : {};
+          /* 启动即迁移旧题目记录里的 drillTries(幂等) */
         }
       }
     } catch (e) {
       console.warn('记录读取失败,使用全新记录', e);
       data = blank();
     }
+    migrateLegacyDrillTries();
     return data;
   }
 
@@ -58,8 +60,10 @@ const Store = (() => {
     try {
       data.ui.savedAt = Date.now();
       localStorage.setItem(KEY_RECORDS, JSON.stringify(data));
+      return true;
     } catch (e) {
       toast('保存失败:本地存储空间不足或被禁用', 'err');
+      return false;
     }
   }
 
@@ -489,9 +493,38 @@ const Store = (() => {
     if (typeof incoming.ui.pathVersion === 'string' && incoming.ui.pathVersion && !merged.ui.pathVersion) {
       merged.ui.pathVersion = incoming.ui.pathVersion;
     }
+    /* 项目草稿:按 projectId 字段级合并;本地为空对象/空字段时采用备份(先访问路径页建的空壳不算主动清空) */
+    if (incoming.ui.projectDrafts && typeof incoming.ui.projectDrafts === 'object') {
+      merged.ui.projectDrafts = merged.ui.projectDrafts || {};
+      Object.keys(incoming.ui.projectDrafts).forEach(pid => {
+        const inc = incoming.ui.projectDrafts[pid] || {};
+        const cur = merged.ui.projectDrafts[pid] = merged.ui.projectDrafts[pid] || {};
+        Object.keys(inc).forEach(k => {
+          if (cur[k] === undefined || cur[k] === '' ||
+              ((inc.updatedAt || 0) > (cur.updatedAt || 0) && cur[k] !== inc[k])) {
+            cur[k] = inc[k];
+          }
+        });
+      });
+    }
+    /* 项目运行历史:按 runId 幂等(本地 A 不阻止备份 B 恢复) */
+    if (incoming.ui.projectRuns && typeof incoming.ui.projectRuns === 'object') {
+      merged.ui.projectRuns = merged.ui.projectRuns || {};
+      Object.keys(incoming.ui.projectRuns).forEach(pid => {
+        const incList = incoming.ui.projectRuns[pid];
+        if (!Array.isArray(incList)) return;
+        const local = merged.ui.projectRuns[pid] = merged.ui.projectRuns[pid] || [];
+        incList.forEach(ir => {
+          if (!ir || !ir.runId) return;
+          if (local.some(x => x.runId === ir.runId)) return;
+          local.push(JSON.parse(JSON.stringify(ir)));
+        });
+      });
+    }
     /* 其他 ui 偏好(drillsOpened 等):本地为空的键才采用备份,不覆盖本地已有 */
     Object.keys(incoming.ui).forEach(k => {
-      if (['lastHash', 'pathProgress', 'docPos', 'pathVersion', 'savedAt', 'browse', 'search'].includes(k)) return;
+      if (['lastHash', 'pathProgress', 'docPos', 'pathVersion', 'savedAt', 'browse', 'search',
+           'projectDrafts', 'projectRuns'].includes(k)) return;
       if (merged.ui[k] === undefined) merged.ui[k] = incoming.ui[k];
     });
   }
@@ -600,8 +633,8 @@ const Store = (() => {
     }
     mergeUi(merged, incoming);
 
-    /* 迁移:旧格式题目记录里的 drillTries → 顶层 drillAttempts */
-    migrateLegacyDrillTries();
+    /* 迁移:旧格式题目记录里的 drillTries → 顶层 drillAttempts(作用于待提交副本) */
+    migrateLegacyDrillTries(merged);
 
     /* 原子写入:直接写 localStorage 成功后才替换内存 */
     try {
