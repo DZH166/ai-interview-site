@@ -564,10 +564,41 @@ const PathView = (() => {
       });
       /* 开始新尝试:直接把 draft 清成空(旧 completed 历史仍在) */
       box.querySelector(`[data-drill-new="${drillId}"]`).addEventListener('click', () => {
-        el.ans.value = ''; el.obs.value = ''; el.review.value = '';
-        syncDraft();
-        render(root);
-        toast('已开始新尝试;旧答案已隐藏,历史保留');
+        const draft = draftOf(drillId);
+        const hasContent = draft && ((draft.myAnswer || '').trim() || (draft.observed || '').trim() || (draft.review || '').trim());
+        const startNew = () => {
+          /* 把未完成草稿转为 completed(保留痕迹),再开一个空 draft */
+          if (draft) {
+            draft.status = 'completed';
+            draft.selfRating = draft.selfRating || 'unsolved';
+            draft.updatedAt = Date.now();
+            saveAttempt(draft);
+          }
+          saveAttempt({ attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                        drillId, version: d.version || 1, status: 'draft',
+                        myAnswer: '', observed: '', review: '', ts: Date.now(), updatedAt: Date.now() });
+          render(root);
+          toast('已开始新尝试;旧答案已隐藏,历史保留');
+        };
+        if (hasContent) {
+          modal('当前有未完成草稿', '<p>提交当前草稿为一条记录后另开新尝试,还是放弃草稿直接开?</p>', [
+            { label: '取消' },
+            { label: '放弃草稿', danger: true, onClick: () => { startNew(); } },
+            { label: '提交后另开', primary: true, onClick: () => {
+                draft.status = 'completed';
+                draft.selfRating = draft.selfRating || 'unsolved';
+                draft.updatedAt = Date.now();
+                saveAttempt(draft);
+                saveAttempt({ attemptId: 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                              drillId, version: d.version || 1, status: 'draft',
+                              myAnswer: '', observed: '', review: '', ts: Date.now(), updatedAt: Date.now() });
+                render(root);
+                toast('草稿已提交为记录;新尝试开始');
+              } },
+          ]);
+        } else {
+          startNew();
+        }
       });
       /* 自评:点击立即写入当前草稿(selfRating 进 draft,刷新不丢) */
       $$('[data-rate]', box).forEach(btn => {
@@ -584,7 +615,7 @@ const PathView = (() => {
           saveAttempt(draft);
         });
       });
-      /* 历史回看 */
+      /* 历史回看 + 前后比较 */
       const hist = box.querySelector(`[data-drill-history="${drillId}"]`);
       if (hist) hist.addEventListener('click', () => {
         const list = attemptsOf(drillId).filter(a => a.status === 'completed');
@@ -598,6 +629,26 @@ const PathView = (() => {
               ${a.observed ? `<div class="round-self"><b>观察:</b>${esc(a.observed)}</div>` : ''}
               ${a.review ? `<div class="round-self"><b>复盘:</b>${esc(a.review)}</div>` : ''}
             </div>`).join('') : '<p class="muted">暂无完成尝试</p>',
+          [{ label: '关闭' }]);
+      });
+      const cmp = box.querySelector(`[data-drill-compare="${drillId}"]`);
+      if (cmp) cmp.addEventListener('click', () => {
+        const list = attemptsOf(drillId).filter(a => a.status === 'completed');
+        if (list.length < 2) { toast('需要至少两次完成记录', 'err'); return; }
+        const a = list[list.length - 2], b = list[list.length - 1];
+        const rateName = v => ({ solved: '已解决', partial: '部分', unsolved: '未解决' }[v] || v || '未评');
+        const row = (label, va, vb) => `
+          <div class="round-item">
+            <div class="round-head"><b>${esc(label)}</b></div>
+            <div class="round-self"><b>上次:</b>${esc(va || '(无)')}</div>
+            <div class="round-self"><b>本次:</b>${esc(vb || '(无)')}</div>
+          </div>`;
+        modal(`两次尝试比较`,
+          row('预测', a.myAnswer, b.myAnswer) +
+          row('实际观察', a.observed, b.observed) +
+          row('自评', rateName(a.selfRating), rateName(b.selfRating)) +
+          row('误解原因/复盘', a.review, b.review) +
+          '<p class="muted small">对照:误解是否消除?还缺什么?</p>',
           [{ label: '关闭' }]);
       });
     });
@@ -739,9 +790,14 @@ const PathView = (() => {
           ${d.version ? `<span class="badge b-tag" title="内容版本">v${d.version}</span>` : ''}
           ${d.q.split(String.fromCharCode(10)).map(l => esc(l)).join('<br>')}
         </div>
+        ${completed.length ? `<div class="muted small" style="margin:4px 0">
+          已完成 ${completed.length} 次;
+          <a class="rel-link" data-drill-history="${drillId}" href="javascript:void(0)">查看历史</a>
+          ${completed.length >= 2 ? `<a class="rel-link" data-drill-compare="${drillId}" href="javascript:void(0)">比较两次</a>` : ''}
+        </div>` : ''}
+        ${draft ? '<div class="muted small" style="margin:2px 0">⏸ 有未完成草稿(已自动恢复,可继续编辑)</div>' : ''}
         <textarea class="path-drill-answer" data-drill-answer="${drillId}"
           placeholder="先写下你的预测/找出的错/推演结果(自动保存,刷新不丢)……">${esc(draft?.myAnswer ?? '')}</textarea>
-        ${completed.length ? `<div class="muted small" style="margin:4px 0">已完成 ${completed.length} 次;<a class="rel-link" data-drill-history="${drillId}" href="javascript:void(0)">查看历史</a></div>` : ''}
         <details class="path-variant-ref" data-drill-ref="${drillId}">
           <summary>展开参考要点(先自己作答)</summary>
           <div class="path-variant-body">${esc(d.reference)}</div>
@@ -750,7 +806,7 @@ const PathView = (() => {
         <details class="path-variant-ref" data-drill-record="${drillId}">
           <summary>记录复盘(实际观察/自评/误解原因)</summary>
           <div style="margin-top:6px">
-            <label class="muted small">实际运行观察(对照你的预测)</label>
+            <label class="muted small">实际运行观察(对照你的预测;新尝试时为空,不继承旧答案)</label>
             <textarea class="path-drill-obs" data-drill-obs="${drillId}" placeholder="实际输出是什么?与预测差在哪?……">${esc(draft?.observed ?? '')}</textarea>
             <label class="muted small" style="display:block;margin-top:6px">自评</label>
             <div class="btn-row">
