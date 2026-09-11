@@ -9,8 +9,13 @@
 const path = require('path');
 const { spawn, execFileSync } = require('child_process');
 
+/* 浏览器来源:本地默认用机器上已装好的 Playwright 与 Chromium;
+   CI 里设 PW=playwright 让它用自己安装的一套,CHROME=default 走 Playwright 自带的浏览器。 */
 const PW = process.env.PW || 'E:/WorkBuddyproject/溯知Rag-Agent项目/AI Knowledge OS Pro/frontend/node_modules/playwright';
-const CHROME = process.env.CHROME || 'E:/PlaywrightBrowsers/chromium-1223/chrome-win64/chrome.exe';
+const CHROME = process.env.CHROME !== undefined
+  ? process.env.CHROME
+  : (process.env.CI ? 'default' : 'E:/PlaywrightBrowsers/chromium-1223/chrome-win64/chrome.exe');
+const LAUNCH = (CHROME && CHROME !== 'default') ? { headless: true, executablePath: CHROME } : { headless: true };
 const PY = process.env.AIIV_PYTHON || 'python';
 const PORT = process.env.PORT || '8931';
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -87,7 +92,7 @@ async function expandRecord(page, drillId) {
 
 (async () => {
   const server = await startServer();
-  const browser = await chromium.launch({ headless: true, executablePath: CHROME });
+  const browser = await chromium.launch(LAUNCH);
   const ctx = await browser.newContext({ viewport: { width: 420, height: 900 } });
   const page = await ctx.newPage();
   await page.addInitScript(INJECT);

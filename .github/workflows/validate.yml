@@ -43,6 +43,9 @@ jobs:
       - name: 行为测试(Markdown/搜索/Store 迁移/计算例题/隔离与恢复)
         run: node tests/behavior-tests.js
 
+      - name: 回归测试(记录层/界面层问题 B/C/E4/F/H1/H2 的复现断言)
+        run: node tests/regression-tests.js
+
       - name: LP-003 mock 分支测试(桩客户端,无真实 API)
         run: |
           python -m pip install --quiet 'openai>=2.0' 'pydantic>=2.5' || true
@@ -56,6 +59,20 @@ jobs:
 
       - name: 项目C 四层失败验证(拒答/检索漏/证据预算/错误 fake)
         run: python tests/proj_c_test.py
+
+      - name: 项目C 四层诊断真实性(职责分离/固定配置/独立 oracle)
+        run: python tests/proj_c_layers_test.py
+
+      - name: 审计器自检(占位符与越权断言的检查器本身必须是可信的)
+        run: |
+          python tools/content_audit.py --selftest
+          python tools/verify_sources.py --selftest
+
+      - name: 内容审计(十要素/交叉引用/学习路径引用)
+        run: python tools/content_audit.py --strict
+
+      - name: 来源结构检查(不联网,只验证链接可枚举)
+        run: python tools/verify_sources.py --no-network
 
       - name: 校验题库(10 要素完整性 / 引号纪律 / ID 唯一)
         run: python tools/validate_bank.py
@@ -78,3 +95,37 @@ jobs:
             echo '::error::build.py 产生了改动,仓库内的 app/data.js 或 sw.js 与 data/ 不同步,请重新构建并提交';
             exit 1;
           }
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装 Playwright 与 Chromium
+        run: |
+          npm install --no-save playwright@1.61.1
+          npx playwright install --with-deps chromium
+
+      # 真浏览器回归:界面层行为 + 窄屏/键盘可达性。
+      # 两个脚本自己会起隔离端口的本地静态服务(见 startServer),这里不用另起。
+      - name: 界面层真浏览器回归(记录状态机/保存失败/深链落点)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8931'
+        run: node tests/browser/ui-repro.js
+
+      - name: 窄屏(360px)与键盘可达性回归
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8933'
+        run: node tests/browser/a11y-360.js

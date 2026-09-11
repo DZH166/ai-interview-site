@@ -41,7 +41,11 @@ const App = (() => {
     Store.data.ui.lastHash = location.hash || '#/home';
     Store.save();
     $$('.nav-link').forEach(a => {
-      a.classList.toggle('active', a.dataset.view === view);
+      const on = a.dataset.view === view;
+      a.classList.toggle('active', on);
+      /* 视觉上的高亮读屏读不到,必须同时标 aria-current */
+      if (on) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
     });
     const anchor = query.a || pendingAnchor;
     pendingAnchor = '';
@@ -82,12 +86,31 @@ const App = (() => {
   function updateThemeIcon() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = $('#theme-toggle');
-    if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+    if (!btn) return;
+    btn.textContent = isDark ? '☀️' : '🌙';
+    /* emoji 图标本身没有语义,读屏需要一句能听懂的状态描述 */
+    btn.setAttribute('aria-label', isDark ? '切换到亮色模式' : '切换到暗色模式');
+    btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
   }
 
   function init() {
     Store.load();
     rebuildIndex();
+
+    /* 跳过导航。href="#view" 只是语义上的落点,必须阻止默认行为:
+       本站用 hash 路由,#view 会被 parseHash 当成一个视图名,
+       跟着默认跳转会把用户带到首页。 */
+    const skip = $('#skip-to-main');
+    if (skip) {
+      skip.addEventListener('click', e => {
+        e.preventDefault();
+        const main = $('#view');
+        if (main) { main.focus(); if (main.scrollIntoView) main.scrollIntoView({ block: 'start' }); }
+      });
+    }
+
+    /* 提示条容器提前建好:live region 必须在内容插入前就在 DOM 里,读屏才会播报 */
+    ensureToastBox();
 
     /* 暗色模式 */
     const saved = localStorage.getItem('aiiv:theme');

@@ -290,6 +290,10 @@ def main():
     print("标题可疑 : %d" % len(mismatch))
 
     out_json = ROOT / "delivery" / "来源核查.json"
+    if args.no_network:
+        # 结构性检查不写报告:CI 里跑一次只想确认脚本没坏,不想产生待提交的文件
+        print("结构性检查完成(%d 个链接可枚举),--no-network 不写报告" % len(results))
+        return
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(
         {"checked_date": today, "network": not args.no_network, "total": len(results),
@@ -303,8 +307,7 @@ def main():
 
     md = [("# 来源核查 %s" % today), "",
           "由 `tools/verify_sources.py` 真实请求生成,非人工声明。" if not args.no_network
-          else "本次为结构性检查(`--no-network`),未联网。", "",
-          "- 唯一链接:%d" % len(results),
+          else "本次为结构性检查(`--no-network`),未联网。", "",          "- 唯一链接:%d" % len(results),
           "- 状态 200:%d" % len([r for r in results if r["bucket"] == "ok"]),
           "- 被拦截(403/401/429,反爬;链接不一定失效):%d" % len(blocked),
           "- 已失效(404/410/5xx):%d" % len(dead),

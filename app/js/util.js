@@ -35,13 +35,23 @@ function fmtTime(ts) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function toast(msg, type) {
+/* 提示条。live region 必须在内容插入**之前**就存在于 DOM 里,否则读屏不会播报
+   ——所以这里在首次使用时把容器建好并标注 role/aria-live,而不是每次新建容器。 */
+function ensureToastBox() {
   let box = $('#toast-box');
   if (!box) {
     box = document.createElement('div');
     box.id = 'toast-box';
+    box.setAttribute('role', 'status');
+    box.setAttribute('aria-live', 'polite');
+    box.setAttribute('aria-atomic', 'false');
     document.body.appendChild(box);
   }
+  return box;
+}
+
+function toast(msg, type) {
+  const box = ensureToastBox();
   const t = document.createElement('div');
   t.className = 'toast ' + (type || '');
   t.textContent = msg;
@@ -117,12 +127,21 @@ function go(hash) {
   }
 }
 
+/* 对话框。键盘可用的四件事缺一不可:
+   ① 打开时把焦点送进对话框(否则读屏与键盘用户还停在背景页面);
+   ② Tab 在对话框内循环(不用把整个背景页面一串按钮都 Tab 一遍);
+   ③ Esc 可关闭;
+   ④ 关闭后焦点回到打开它的那个按钮(否则焦点掉到 body,后续 Tab 从头开始)。 */
+let modalSeq = 0;
+let modalReturnFocus = null;
+
 function modal(title, bodyHtml, buttons) {
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
+  const titleId = 'modal-title-' + (++modalSeq);
   wrap.innerHTML = `
-    <div class="modal" role="dialog">
-      <div class="modal-head"><strong>${esc(title)}</strong><button class="icon-btn" data-close>✕</button></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="${titleId}">
+      <div class="modal-head"><strong id="${titleId}">${esc(title)}</strong><button class="icon-btn" data-close aria-label="关闭" title="关闭">✕</button></div>
       <div class="modal-body">${bodyHtml}</div>
       <div class="modal-foot"></div>
     </div>`;
@@ -134,9 +153,34 @@ function modal(title, bodyHtml, buttons) {
     btn.onclick = () => { if (!b.onClick || b.onClick(wrap) !== false) closeModal(wrap); };
     foot.appendChild(btn);
   });
-  function closeModal(w) { w.remove(); }
+  function closeModal(w) {
+    document.removeEventListener('keydown', onKey, true);
+    w.remove();
+    const back = modalReturnFocus;
+    modalReturnFocus = null;
+    if (back && document.contains(back) && typeof back.focus === 'function') back.focus();
+  }
+  function focusables() {
+    return Array.from(wrap.querySelectorAll(
+      'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])'))
+      .filter(el => !el.disabled && el.offsetParent !== null);
+  }
+  function onKey(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeModal(wrap); return; }
+    if (e.key !== 'Tab') return;
+    const list = focusables();
+    if (!list.length) return;
+    const first = list[0], last = list[list.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && (active === first || !wrap.contains(active))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (active === last || !wrap.contains(active))) { e.preventDefault(); first.focus(); }
+  }
   $('[data-close]', wrap).onclick = () => closeModal(wrap);
   wrap.addEventListener('click', e => { if (e.target === wrap) closeModal(wrap); });
+  modalReturnFocus = document.activeElement;
   document.body.appendChild(wrap);
+  document.addEventListener('keydown', onKey, true);
+  const firstTarget = foot.firstElementChild || $('[data-close]', wrap);
+  if (firstTarget) firstTarget.focus();
   return wrap;
 }

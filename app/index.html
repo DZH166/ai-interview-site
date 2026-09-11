@@ -11,10 +11,11 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 </head>
 <body>
+  <a class="skip-link" href="#view" id="skip-to-main">跳到主内容</a>
   <header class="site-head">
     <div class="head-inner">
       <a class="brand" href="#/home">🤖 AI 面试学习站</a>
-      <nav class="site-nav">
+      <nav class="site-nav" aria-label="主导航">
         <a class="nav-link" data-view="home" href="#/home">首页</a>
         <a class="nav-link" data-view="path" href="#/path">路径</a>
         <a class="nav-link" data-view="browse" href="#/browse">练习</a>
@@ -23,14 +24,14 @@
         <a class="nav-link" data-view="review" href="#/review">复习</a>
         <a class="nav-link" data-view="maintain" href="#/maintain">维护</a>
       </nav>
-      <form id="global-search" class="global-search">
-        <input id="global-search-input" class="input" placeholder="全文搜索:题目 / 解析 / 笔记…" autocomplete="off">
+      <form id="global-search" class="global-search" role="search">
+        <input id="global-search-input" class="input" placeholder="全文搜索:题目 / 解析 / 笔记…" autocomplete="off" aria-label="全文搜索:题目、解析、笔记">
       </form>
-      <button class="theme-toggle" id="theme-toggle" title="切换暗色模式">🌙</button>
+      <button class="theme-toggle" id="theme-toggle" title="切换暗色模式" aria-label="切换暗色模式" aria-pressed="false">🌙</button>
     </div>
   </header>
 
-  <main id="view" class="view"></main>
+  <main id="view" class="view" tabindex="-1"></main>
 
   <footer class="site-foot">
     <div>内容为结合公开资料的独立整理,题目均标注核查状态与出处;来源与许可见<a href="#/maintain">维护页</a>。个人记录仅保存在本机浏览器。</div>
