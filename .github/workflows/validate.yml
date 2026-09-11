@@ -51,6 +51,12 @@ jobs:
       - name: 路径练习自动化验证(阶段2/6 展示代码运行)
         run: python tests/path_exercise_test.py
 
+      - name: 项目A 调用层验证(回喂/六场景)
+        run: python tests/proj_a_test.py
+
+      - name: 项目C 四层失败验证(拒答/检索漏/证据预算/错误 fake)
+        run: python tests/proj_c_test.py
+
       - name: 校验题库(10 要素完整性 / 引号纪律 / ID 唯一)
         run: python tools/validate_bank.py
 

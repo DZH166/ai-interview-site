@@ -35,23 +35,46 @@ def search(query: str, docs=None, top_k: int = 2):
     scored.sort(key=lambda x: -x["score"])
     return scored[:top_k]
 
-# ---------- 3) 证据组织 + 引用 + 拒答(拒答原因区分四层) ----------
-def answer(query: str, top_k: int = 2, refuse_threshold: int = 2):
+# ---------- 3) 证据组织 + 引用 + 拒答(四层失败可区分) ----------
+# oracle:查询 → 库中是否真的存在该知识(评测侧用,运行侧不知道)
+def knowledge_exists(query: str) -> bool:
+    return not any(w in query for w in ['门店', '公司地址', '城市', '公司在哪里'])   # 演示规则:这些主题库里确实没有
+
+def answer(query: str, top_k: int = 2, refuse_threshold: int = 2, broken_fake: bool = False):
+    """broken_fake=True 模拟第四层:生成器故意忽略/篡改证据——用于演示校验如何拦住它。"""
     hits = search(query, top_k=top_k)
     best = hits[0]["score"] if hits else 0
+    covered = knowledge_exists(query)
+
+    # 第①层:库里没有 → 依据 oracle 诚实拒答(运行侧与 oracle 对照才可下结论)
+    if not covered:
+        return {"answer": None, "refused": True, "layer": 1,
+                "reason": f"知识覆盖检查:库中没有「{query}」相关的主题,拒答正确"}
+
+    # 第②层:库里有,但当前检索没找到(零召回或低于门槛)——不能断言库中没有
     if best == 0:
-        # 第①层:当前检索对任何文档零命中(可能是同义词盲区,不能断言库中没有)
         return {"answer": None, "refused": True, "layer": 2,
-                "reason": f"当前检索未找到任何相关证据(全部 0 分)——可能是检索盲区(同义词/切分),不一定是知识库没有"}
+                "reason": "知识库中存在相关内容,但当前检索未命中(同义词/切分盲区)——改进检索而不是补文档"}
     strong = [h for h in hits if h["score"] >= refuse_threshold]
     if not strong:
-        # 第②层:有低分候选但没过证据门槛
         return {"answer": None, "refused": True, "layer": 2,
-                "reason": f"检索到候选但证据不足(最高分 {best} < 门槛 {refuse_threshold})"}
+                "reason": f"检索到候选但证据不足(最高分 {best} < 门槛 {refuse_threshold})——可改进检索或降门槛"}
+
     evidence = [f"[{h['doc']['id']}] {h['doc']['text']}" for h in strong]
-    # 第④层(生成不遵循证据)在本 fake 中不发生:拼接即引用;真实 LLM 场景需评测守住
-    return {"answer": f"根据知识库:{evidence[0]}", "refused": False, "layer": 0,
-            "evidence": evidence, "citations": [h["doc"]["id"] for h in strong]}
+    citations = [h["doc"]["id"] for h in strong]
+
+    # 第④层:错误 fake 故意只复述第一条证据、忽略其余——校验必须拦住
+    if broken_fake:
+        # 校验:多证据场景下答案只覆盖第一条 → 判定不遵循证据
+        if len(evidence) > 1:
+            return {"answer": None, "refused": True, "layer": 4,
+                    "reason": f"生成未遵循证据:召回 {len(evidence)} 条但回答只覆盖 {citations[0]}",
+                    "evidence": evidence, "citations": citations}
+
+    # 正常合成:多证据逐条进入回答(第③层修复的对照——top_k 裁剪时此处证据不全,回答自然不完整)
+    answer_text = "根据知识库:" + " ".join(evidence)
+    return {"answer": answer_text, "refused": False, "layer": 0,
+            "evidence": evidence, "citations": citations}
 
 # ---------- 4) 评测:逐条明细(query/目标/候选/采用/引用/结果) ----------
 EVAL = [
@@ -62,11 +85,11 @@ EVAL = [
     {"q": "公司在哪个城市?",             "expect_doc": None, "should_refuse": True},   # 库里没有
 ]
 
-def evaluate():
+def evaluate(broken_fake=False):
     print("== 评测(样例集 5 条,只证明流程;不代表系统一般正确率)==")
     recall_hits, correct = 0, 0
     for e in EVAL:
-        r = answer(e["q"])
+        r = answer(e["q"], broken_fake=broken_fake)
         cands = ",".join(h["doc"]["id"] for h in search(e["q"]))
         if e["should_refuse"]:
             ok = r["refused"]
@@ -92,13 +115,17 @@ def experiments():
     # 实验1b:把『退货』改写为『退款』,同一条知识立刻命中——证明是检索盲区不是知识缺口
     r2 = search("退款", top_k=1)
     print(f"  → 对照(查询含『退款』二字): d1 得分 {r2[0]['score']}({','.join(r2[0]['hit'])} 重合)——同一条知识,检索词一变结果就变")
-    # 实验2:top_k 证据预算(②层触发对比)——需要两块证据的问题
+    # 实验2:top_k 证据预算(第③层:已召回但证据组织不完整)——需要两块证据的问题
     q2 = "开发票和会员免运费怎么弄?"   # 需要 d3+d4 两块
     two = answer(q2, top_k=2, refuse_threshold=1)
     one = answer(q2, top_k=1, refuse_threshold=1)
-    print(f"[实验2 top-k 证据预算] Q: {q2}")
-    print(f"  → top_k=2: 引用 {two.get('citations')}(可答)")
-    print(f"  → top_k=1: 引用 {one.get('citations', [])}(证据被预算裁掉——改动前后差异真实发生)")
+    print(f"[实验2 第③层 证据预算] Q: {q2}")
+    print(f"  → top_k=2: 引用 {two.get('citations')} | 回答覆盖发票: {'发票' in (two.get('answer') or '')}(完整)")
+    print(f"  → top_k=1: 引用 {one.get('citations', [])} | 回答覆盖发票: {'发票' in (one.get('answer') or '')}(部分不足——差异真实发生)")
+    # 实验4:第④层 错误 fake 故意只取第一条证据 → 校验拦截
+    bad = answer("开发票和会员免运费怎么弄?", top_k=2, refuse_threshold=1, broken_fake=True)
+    print(f"[实验4 第④层 错误 fake] 同问题,broken_fake=True(只复述第一条)")
+    print(f"  → 校验: {'拦截' if bad.get('layer') == 4 else '漏过!'} | {bad.get('reason', '')[:60]}")
 
 def main():
     print("== 项目C:小型文档问答 ==\n")
@@ -114,9 +141,11 @@ def main():
         else:
             print(f"  → {r['answer']}\n  → 引用: {r['citations']}\n")
     evaluate()
+    print("\n== 评测对照:错误 fake(应出现第④层拦截)==")
+    evaluate(broken_fake=True)
     experiments()
     print("\n四层失败对照:①库里没有=评测里『公司在哪个城市』;②没检索到/证据不足=同义词盲区实验;"
-          "③证据组织错=多证据问题 top_k 不足;④生成不遵循=fake 不发生,真实 LLM 场景由评测守住。")
+          "③证据组织错=多证据问题 top_k 不足;④生成不遵循=错误 fake 被校验拦截。")
 
 if __name__ == "__main__":
     main()

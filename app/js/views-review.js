@@ -23,6 +23,22 @@ const ReviewView = (() => {
     });
   }
 
+  /* 专项未解决/部分解决的尝试(最新一次)→ 复习提醒列表(带依据) */
+  function getUnsolvedDrills() {
+    const out = [];
+    Object.keys(Store.data.drillAttempts || {}).forEach(drillId => {
+      const done = (Store.data.drillAttempts[drillId] || []).filter(a => a.status === 'completed');
+      if (!done.length) return;
+      const last = done[done.length - 1];
+      if (last.selfRating === 'solved') return;   /* 已解决的不进队列 */
+      const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
+      const d = paths.flatMap(p => p.stages).flatMap(s => s.drills || []).find(x => x.id === drillId);
+      out.push({ drillId, selfRating: last.selfRating, review: last.review || '',
+                 q: d ? d.q.slice(0, 60) : drillId, updatedAt: last.updatedAt || last.ts || 0 });
+    });
+    return out.sort((a, b) => a.updatedAt - b.updatedAt);
+  }
+
   /* ---- 错题本:模拟面试中标记"还不熟"的 ---- */
   function getMistakes() {
     const ids = new Set();
@@ -127,6 +143,24 @@ const ReviewView = (() => {
   /* ---- 今日复习(定向会话入口) ---- */
   function renderToday(box) {
     const queue = getTodayQueue();
+    const unsolved = getUnsolvedDrills();
+    if (!queue.length && unsolved.length) {
+      box.innerHTML = `<div class="card" style="margin-bottom:12px">
+        <b>🧩 专项练习待消化</b>
+        <div class="review-list" style="margin-top:8px">${unsolved.map(u => `
+          <div class="review-item">
+            <div class="ri-main" role="button" tabindex="0">
+              <div class="q-item-title">${esc(u.q)}…</div>
+              <div class="q-item-meta">
+                <span class="badge b-tag">${u.selfRating === 'partial' ? '部分解决' : '未解决'}</span>
+                ${u.review ? `<span class="muted" style="font-size:12px">${esc(u.review.slice(0, 40))}</span>` : ''}
+              </div>
+            </div>
+          </div>`).join('')}</div>
+        <p class="muted small">依据:最近一次专项自评为未解决/部分解决。重新练习并自评「已解决」后自动移出。</p>
+      </div>`;
+      return;
+    }
     if (!queue.length) {
       box.innerHTML = '<div class="empty">🎉 今日没有待复习的题目!<br><span class="muted">去学新题或做一轮自测吧。</span><br><br><a class="btn btn-primary" href="#/mock">开始自测</a></div>';
       return;
@@ -230,7 +264,7 @@ const ReviewView = (() => {
   function getMistakesList() { return getMistakes(); }
   function getTodayList() { return getTodayQueue(); }
 
-  return { render, getTodayQueue, getMistakes };
+  return { render, getTodayQueue, getMistakes, getUnsolvedDrills };
 })();
 
 
