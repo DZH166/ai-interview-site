@@ -1204,6 +1204,9 @@ const HomeView = (() => {
 
     /* ---- 今天的三件事 ---- */
     const todayQueue = ReviewView.getTodayQueue();
+    const dueSug = ReviewView.getDueSuggestions();
+    /* 注意:下方统计区另有一个 reviewCt(状态「待复习」的题数),这里别重名 */
+    const todayReviewCt = todayQueue.length + dueSug.length;
     const drill = ReviewView.getDrillState();
     const draftCt = drill.drafts.length;
     const failedCt = drill.drafts.filter(d => d.failed).length;
@@ -1244,13 +1247,13 @@ const HomeView = (() => {
 
       <h2 class="desk-title">今天的三件事</h2>
       <div class="desk-todos">
-        <div class="desk-todo ${todayQueue.length ? '' : 'is-done'}">
+        <div class="desk-todo ${todayReviewCt ? '' : 'is-done'}">
           <span class="dt-num">1</span>
           <div class="dt-body">
-            <b>复习 ${todayQueue.length} 题</b>
-            <span class="muted">待复习 + 还不熟,按最久没练的排前面${todayQueue.length ? '' : ' —— 今天这项清空了'}</span>
+            <b>复习 ${todayReviewCt} 题</b>
+            <span class="muted">${todayQueue.length ? `还不熟/待复习 ${todayQueue.length} 条` : ''}${dueSug.length ? `${todayQueue.length ? ' · ' : ''}到期建议 ${dueSug.length} 条(间隔重复,可无视)` : ''}${todayReviewCt ? '' : ' —— 今天这项清空了'}</span>
           </div>
-          <a class="btn ${todayQueue.length ? 'btn-primary' : ''}" href="#/review">${todayQueue.length ? '去复习' : '去看看'}</a>
+          <a class="btn ${todayReviewCt ? 'btn-primary' : ''}" href="#/review">${todayReviewCt ? '去复习' : '去看看'}</a>
         </div>
         <div class="desk-todo ${wrapUpCt ? '' : 'is-done'}">
           <span class="dt-num">2</span>

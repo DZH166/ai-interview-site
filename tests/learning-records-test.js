@@ -16,7 +16,7 @@ function environment() {
   vm.createContext(c);
   const util = fs.readFileSync(path.join(ROOT, 'app/js/util.js'), 'utf8');
   vm.runInContext(util.slice(util.indexOf('function fmtTime('), util.indexOf('function toast(')), c);
-  ['app/data.js', 'app/js/store.js', 'app/js/common.js', 'app/js/markdown.js', 'app/js/search.js',
+  ['app/data.js', 'app/js/srs.js', 'app/js/store.js', 'app/js/common.js', 'app/js/markdown.js', 'app/js/search.js',
     'app/js/views-knowledge.js', 'app/js/views-review.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c));
   vm.runInContext('Store.load(); Data.init(); this.store=Store; this.view=PathView;', c);
   return { c, store: c.store, get choices() { return choices; } };

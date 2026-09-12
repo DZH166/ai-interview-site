@@ -56,7 +56,7 @@ test('built application retains the full bank and Pi Agent without touching pers
   const c = { window: {}, console, toast() {}, debounce: f => f, esc: String,
     localStorage: { getItem: k => disk.get(k) || null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) } };
   vm.createContext(c);
-  ['app/data.js', 'app/js/store.js', 'app/js/common.js', 'app/js/markdown.js', 'app/js/search.js', 'app/js/express.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c));
+  ['app/data.js', 'app/js/srs.js', 'app/js/store.js', 'app/js/common.js', 'app/js/markdown.js', 'app/js/search.js', 'app/js/express.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c));
   vm.runInContext('Store.load(); Data.init(); this.S=Store; this.D=Data; this.Search=Search; this.Card=ExpressCard;', c);
   assert.strictEqual(c.D.allQuestions().length, sourceTotal); assert.strictEqual(c.D.topic('pi-agent').name, 'Pi Agent');
   for(const q of questions) assert.strictEqual(c.D.question(q.id).metadata.pi_agent.source_hash, q.metadata.pi_agent.source_hash);

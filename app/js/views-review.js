@@ -61,6 +61,25 @@ const ReviewView = (() => {
   /* 兼容旧调用点(tests / 其他视图):只返回待消化清单 */
   function getUnsolvedDrills() { return getDrillState().unsolved; }
 
+  /* ---- 到期建议(间隔重复,算法层) ----
+     手动队列(还不熟/待复习)永远优先且不看排期;这里只收「当前状态不是
+     还不熟/待复习、但间隔重复排期已到期」的题——标「基本掌握」的题到期后
+     回到这里,而不是被当成永远掌握。判定统一走 SRS.isDue,不在这里另抄一份。 */
+  function getDueSuggestions(now) {
+    const t = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
+    return Data.allQuestions().filter(q => {
+      const r = Store.rec(q.id);
+      const st = r.status || '';
+      if (st === 'weak' || st === 'review') return false;   /* 已在手动队列,不重复 */
+      return SRS.isDue(r, t);
+    }).sort((a, b) => ((Store.rec(a.id).srs.due || 0) - (Store.rec(b.id).srs.due || 0)));
+  }
+
+  /* 工作台首页「今天的三件事」与复习中心共用同一套口径(抄两份迟早不一致) */
+  function getTodayOverview() {
+    return { queue: getTodayQueue(), due: getDueSuggestions(), drillState: getDrillState() };
+  }
+
   /* ---- 错题本:模拟面试中标记"还不熟"的 ---- */
   function getMistakes() {
     const ids = new Set();
@@ -71,8 +90,9 @@ const ReviewView = (() => {
 
   function render(root) {
     const tq = getTodayQueue(), mk = getMistakes();
+    const dueCt = getDueSuggestions().length;
     const drillCt = (() => { const s = getDrillState(); return s.unsolved.length + s.drafts.length; })();
-    const todayCt = tq.length + drillCt;
+    const todayCt = tq.length + dueCt + drillCt;
     root.innerHTML = `
       <div class="review-tabs">
         ${[
@@ -86,26 +106,29 @@ const ReviewView = (() => {
           ['rounds',  '模拟面试历史'],
         ].map(([id, label]) => `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}">${label}</button>`).join('')}
       </div>
-      ${tab === 'today' ? renderTodayIntro(tq, drillCt) : ''}
+      ${tab === 'today' ? renderTodayIntro(tq, dueCt, drillCt) : ''}
       <div id="review-body"></div>`;
     $$('.rtab', root).forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(root); }));
     renderBody(root);
   }
 
-  function renderTodayIntro(tq, drillCt) {
-    if (!tq.length && !drillCt) return '';
+  function renderTodayIntro(tq, dueCt, drillCt) {
+    if (!tq.length && !drillCt && !dueCt) return '';
+    const parts = [];
+    if (tq.length) parts.push('待复习 + 还不熟');
+    if (dueCt) parts.push('到期建议 ' + dueCt + ' 条(间隔重复)');
+    if (drillCt) parts.push('需要收尾的专项');
     return `<div class="card" style="padding:12px 16px;margin-bottom:12px;">
       <b>📌 今日复习队列</b>
       <span style="margin-left:8px;color:var(--muted);font-size:13px">
-        待复习 + 还不熟(按最久未练排序),以及需要收尾的专项:待消化、写了没提交的草稿。
-        复习中标记「基本掌握」才移出队列;标「还不熟/待复习」保留,不会自动消失。
+        ${parts.join(' · ')}。手动状态永远优先;到期建议只是算法提醒,可以无视。
       </span>
     </div>`;
   }
 
   function renderBody(root) {
     const box = $('#review-body', root);
-    if (tab === 'today') { renderToday(box); return; }
+    if (tab === 'today') { renderToday(root); return; }
     if (tab === 'mistakes') { renderMistakes(box); return; }
     if (tab === 'rounds') { renderRounds(box); return; }
     const qs = Data.allQuestions();
@@ -172,17 +195,23 @@ const ReviewView = (() => {
      题目队列与专项清单是**两块独立的内容**,各自有自己的空状态;
      任何一块为空都不得让另一块消失(之前 !queue.length 直接早退,
      把「专项待消化」整块吞掉了)。 */
-  function renderToday(box) {
+  function renderToday(root) {
+    const box = $('#review-body', root);
     const queue = getTodayQueue();
+    const due = getDueSuggestions();
     const drills = getDrillState();
+    /* 开始复习的会话队列 = 手动队列在前 + 到期建议补后(去重) */
+    const combined = queue.concat(due.filter(d => !queue.some(q => q.id === d.id)));
     box.innerHTML = `
       <div class="card" style="margin-bottom:12px">
         <b>📌 今日复习</b>
         <span style="margin-left:8px;color:var(--muted);font-size:13px">
-          ${queue.length ? `${queue.length} 题 · 按最久未练排序 · 标记「基本掌握」移出,「还不熟/待复习」保留` : '没有待复习的题目'}
+          ${queue.length ? `${queue.length} 题手动队列(还不熟/待复习,按最久未练排序)` : '没有手动标记的待复习题目'}
+          ${due.length ? ` · 另有 ${due.length} 条到期建议` : ''}
         </span>
-        ${queue.length ? `<div style="margin-top:8px">
-          <button class="btn btn-primary btn-small" id="start-today">开始复习</button>
+        ${combined.length ? `<div style="margin-top:8px">
+          <button class="btn btn-primary btn-small" id="start-today">开始复习(${combined.length})</button>
+          <span class="muted small" style="margin-left:8px">手动队列在前;复盘标记会自动重排间隔重复的到期日</span>
         </div>` : `<div style="margin-top:8px"><a class="btn btn-small" href="#/mock">做一轮自测</a></div>`}
       </div>
       ${queue.length ? `<div class="review-list">${queue.map(q => {
@@ -201,12 +230,57 @@ const ReviewView = (() => {
             </div>
           </div>`;
       }).join('')}</div>` : ''}
+      ${renderDueSuggestions(due)}
       ${renderDrillReminders(drills)}`;
     const startBtn = $('#start-today', box);
     if (startBtn) startBtn.addEventListener('click', () => {
-      MockView.startDirected(queue.map(q => q.id), '今日复习');
+      MockView.startDirected(combined.map(q => q.id), '今日复习');
     });
+    /* 到期建议的快捷回应:「还记得」= 重排到下一轮间隔(状态仍是基本掌握);
+       「忘了」= 转还不熟,回到手动队列。两个出口都复用 Store.setStatus,
+       不在这里另写一套排期逻辑。 */
+    $$('[data-due-ok]', box).forEach(b => b.addEventListener('click', () => {
+      Store.setStatus(b.dataset.dueOk, 'ok', { reschedule: true });
+      toast('已排到下一轮间隔;状态仍是「基本掌握」');
+      render(root);
+    }));
+    $$('[data-due-again]', box).forEach(b => b.addEventListener('click', () => {
+      Store.setStatus(b.dataset.dueAgain, 'weak');
+      toast('已标记「还不熟」;留在今天的复习队列里');
+      render(root);
+    }));
     wireItems(box);
+  }
+
+  /* 到期建议卡片。空状态不渲染(不是「今日复习」的必需块,与手动队列互不吞没)。 */
+  function renderDueSuggestions(due) {
+    if (!due.length) return '';
+    return `<div class="card" style="margin-top:12px">
+      <b>🔁 到期建议(间隔重复 · ${due.length})</b>
+      <p class="muted small" style="margin:4px 0 8px">标过「基本掌握」的题按间隔重复排期到期后回到这里。
+      手动状态永远优先——这不改变任何题的状态,只提醒你「该再看一眼了」。</p>
+      <div class="review-list">${due.map(q => {
+        const r = Store.rec(q.id);
+        const srs = r.srs || {};
+        const ratingLabel = SRS.RATING_LABEL[srs.lastRating] || '';
+        return `
+          <div class="review-item">
+            <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
+              <div class="q-item-title">${esc(q.title)}</div>
+              <div class="q-item-meta">
+                <span class="qid">${q.id}</span>
+                ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
+                <span class="badge b-tag">上次复盘:${esc(ratingLabel || '—')}</span>
+                <span class="muted" style="font-size:12px">间隔 ${srs.ivl || 1} 天 · 已到期</span>
+              </div>
+            </div>
+            <span class="btn-row">
+              <button class="btn btn-small" data-due-ok="${q.id}" title="还记得:排到下一轮间隔,状态不变">还记得</button>
+              <button class="btn btn-small st-weak" data-due-again="${q.id}" title="忘了:标为还不熟,回到手动队列">忘了</button>
+            </span>
+          </div>`;
+      }).join('')}</div>
+    </div>`;
   }
 
   function renderDrillReminders(drills) {
@@ -334,9 +408,9 @@ const ReviewView = (() => {
   function getMistakesList() { return getMistakes(); }
   function getTodayList() { return getTodayQueue(); }
 
-  /* getTodayQueue / getDrillState 对外导出:工作台首页的「今天的三件事」要用同一套规则。
-     复用而不是另抄一份——抄一份迟早两边不一致。 */
-  return { render, getTodayQueue, getMistakes, getUnsolvedDrills, getDrillState };
+  /* getTodayQueue / getDrillState / getDueSuggestions 对外导出:工作台首页的
+     「今天的三件事」要用同一套规则。复用而不是另抄一份——抄一份迟早两边不一致。 */
+  return { render, getTodayQueue, getMistakes, getUnsolvedDrills, getDrillState, getDueSuggestions, getTodayOverview };
 })();
 
 

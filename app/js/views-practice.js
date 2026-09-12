@@ -713,7 +713,9 @@ const MockView = (() => {
     $$('[data-mark]', root).forEach(b => b.addEventListener('click', () => {
       captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { mark: b.dataset.mark });
-      Store.setStatus(qid, b.dataset.mark);
+      /* 复盘标记是真实的练习信号:即使状态与上次相同(如连着两轮都标「基本掌握」),
+         也要重排间隔重复的到期日——否则「到期建议」里的题复习完永远出不去。 */
+      Store.setStatus(qid, b.dataset.mark, { reschedule: true });
       draftSave();
       renderRun(root);
     }));
@@ -743,7 +745,9 @@ const MockView = (() => {
       })
     };
     Store.data.mock.rounds.unshift(round);
-    Store.data.mock.rounds = Store.data.mock.rounds.slice(0, 50);
+    /* 上限只有一份:Store.MAX_ROUNDS(备份合并 mergeRounds 用同一个数,
+       此前两处各写一个数字导致 50/100 不一致,长期用会静默丢历史轮次) */
+    Store.data.mock.rounds = Store.data.mock.rounds.slice(0, Store.MAX_ROUNDS);
     endSession(); /* 会话终结:挂起的防抖回调不得再写回草稿 */
     Store.save();
     state.round = round;

@@ -229,12 +229,15 @@ const QRender = (() => {
   function recordBar(qid) {
     const r = Store.rec(qid);
     const cur = r.status || '';
+    /* 间隔重复建议的到期日(只读提示,不参与手动状态判定) */
+    const due = (r.srs && typeof r.srs.due === 'number') ? SRS.dueLabel(r.srs.due) : '';
     return `
       <div class="record-bar">
         <div class="rb-status">
           ${Store.STATUS.map(s => `
             <button class="status-btn ${s.cls} ${cur === s.id ? 'active' : ''}" data-status="${s.id}">${s.label}</button>`).join('')}
         </div>
+        ${due ? `<span class="muted" style="font-size:12px" title="间隔重复建议的下一次复习时间;手动状态永远优先">🔁 建议:${esc(due)}</span>` : ''}
         <button class="btn btn-small ${r.fav ? 'faved' : ''}" data-fav>${r.fav ? '★ 已收藏' : '☆ 收藏'}</button>
       </div>`;
   }

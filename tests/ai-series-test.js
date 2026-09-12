@@ -40,7 +40,7 @@ test('built data and fused search do not create answers or erase existing user s
   const disk = new Map([['aiiv:records', JSON.stringify(records)]]);
   const c = { window: {}, console, toast() {}, debounce: f => f, esc: String, localStorage: { getItem: k => disk.get(k) || null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) } };
   vm.createContext(c);
-  for(const f of ['app/data.js','app/js/store.js','app/js/common.js','app/js/markdown.js','app/js/search.js','app/js/express.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c);
+  for(const f of ['app/data.js','app/js/srs.js','app/js/store.js','app/js/common.js','app/js/markdown.js','app/js/search.js','app/js/express.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c);
   vm.runInContext('Store.load(); Data.init(); this.S=Store;this.D=Data;this.Search=Search;this.Card=ExpressCard;', c);
   assert.strictEqual(c.D.allQuestions().length, qs.length);
   assert.strictEqual(JSON.stringify(c.S.data.questions), JSON.stringify(records.questions));

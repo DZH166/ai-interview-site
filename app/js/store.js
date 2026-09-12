@@ -17,6 +17,10 @@ const Store = (() => {
   ];
   const STATUS_IDS = STATUS.map(s => s.id);
 
+  /* 模拟面试轮次保留上限。上限必须只有一份:本地完成轮次的截断(store)与
+     备份合并的截断(mergeRounds)各自写一个数字,迟早两边不一致。 */
+  const MAX_ROUNDS = 100;
+
   function blank() {
     return {
       v: 3,
@@ -146,7 +150,30 @@ const Store = (() => {
   /* 记录级更新时间:合并导入时用于判定谁更新(见 importRecords 规则) */
   function touch(r) { r._updatedAt = Date.now(); }
 
-  function setStatus(qid, status) { const r = rec(qid); r.status = status; touch(r); save(); }
+  /* 设置题目状态。
+     opts.reschedule:true 表示这次点击本身是一次练习信号(模拟面试的复盘标记),
+     即使状态没变也重新排期;浏览/学习页的状态按钮不带此标记——重复点击同一
+     状态是无效操作,不该偷偷把到期日往后推。 */
+  function setStatus(qid, status, opts) {
+    const r = rec(qid);
+    const prev = r.status || '';
+    r.status = status;
+    touch(r);
+    /* 间隔重复建议排期:只在状态真正变化(或明确要求重排)时进行。
+       SRS 是可选模块(Node 旧测试桩可能没加载):没有就跳过,不影响状态保存。 */
+    if (prev !== status || (opts && opts.reschedule)) {
+      if (status === '' || status === undefined) {
+        if (r.srs) delete r.srs;   /* 手动清空状态 = 撤出一切建议 */
+      } else if (typeof SRS !== 'undefined' && SRS.ratingFromStatus) {
+        const rating = SRS.ratingFromStatus(status);
+        if (rating) {
+          try { r.srs = SRS.schedule(r.srs, rating, Date.now()); }
+          catch (e) { console.warn('SRS 排期失败(不影响状态保存)', e); }
+        }
+      }
+    }
+    save();
+  }
   function toggleFav(qid) { const r = rec(qid); r.fav = !r.fav; touch(r); save(); return r.fav; }
   function setNote(qid, text) { const r = rec(qid); r.note = text; touch(r); save(); }
   function markViewed(qid) { const r = rec(qid); r.viewedAt = Date.now(); save(); }
@@ -404,6 +431,22 @@ const Store = (() => {
       });
       if (r.lastResult !== undefined && typeof r.lastResult !== 'string') errs.push(`题目记录 ${qid}: lastResult 必须是字符串`);
       if (r.contentRev !== undefined && typeof r.contentRev !== 'string') errs.push(`题目记录 ${qid}: contentRev 必须是字符串`);
+      /* 间隔重复排期字段(可选;由 SRS 模块写入) */
+      if (r.srs !== undefined && r.srs !== null) {
+        const s = r.srs;
+        if (typeof s !== 'object' || Array.isArray(s)) {
+          errs.push(`题目记录 ${qid}: srs 必须是对象或 null`);
+        } else {
+          ['due', 'ivl', 'ease', 'streak', 'lapses', 'lastAt'].forEach(k => {
+            if (s[k] !== undefined && !(typeof s[k] === 'number' && isFinite(s[k]) && s[k] >= 0)) {
+              errs.push(`题目记录 ${qid}: srs.${k} 必须是非负数字`);
+            }
+          });
+          if (s.lastRating !== undefined && !['again', 'hard', 'good', 'easy'].includes(s.lastRating)) {
+            errs.push(`题目记录 ${qid}: srs.lastRating 非法(${JSON.stringify(s.lastRating)})`);
+          }
+        }
+      }
       if (r.drillTries !== undefined) {
         if (!Array.isArray(r.drillTries)) { errs.push(`题目记录 ${qid}: drillTries 必须是数组`); }
         else r.drillTries.forEach((t, i) => {
@@ -686,8 +729,22 @@ const Store = (() => {
       else if ((cur.note === undefined || (!curAt && !cur.note)) && inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; }
     }
     if (inc.status !== undefined) {
-      if (incAt > curAt) { if (cur.status !== inc.status) { cur.status = inc.status; adopted = true; } }
+      if (incAt > curAt) {
+        if (cur.status !== inc.status) {
+          cur.status = inc.status; adopted = true;
+          /* 状态被备份清空时,由状态转换派生的 SRS 排期一并清(与 setStatus('') 语义一致) */
+          if (inc.status === '' && cur.srs) delete cur.srs;
+        }
+      }
       else if ((cur.status === undefined || (!curAt && !cur.status)) && inc.status) { cur.status = inc.status; adopted = true; }
+    }
+    if (inc.srs !== undefined) {
+      /* srs 是派生数据,整体作为一个单元随 _updatedAt 走:备份更新则整份采用,不逐字段拼 */
+      if (incAt > curAt) {
+        if (JSON.stringify(cur.srs || null) !== JSON.stringify(inc.srs)) { cur.srs = inc.srs; adopted = true; }
+      } else if (cur.srs === undefined && inc.srs && typeof inc.srs === 'object') {
+        cur.srs = inc.srs; adopted = true;
+      }
     }
     if (inc.fav !== undefined) {
       if (incAt > curAt) { if (cur.fav !== inc.fav) { cur.fav = inc.fav; adopted = true; } }
@@ -738,7 +795,7 @@ const Store = (() => {
       report.roundsAdded++;
     });
     merged.mock.rounds.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-    merged.mock.rounds = merged.mock.rounds.slice(0, 100);
+    merged.mock.rounds = merged.mock.rounds.slice(0, MAX_ROUNDS);
     /* 草稿:已有草稿优先(本机更可能新鲜),备份草稿仅在本地没有时恢复 */
     if (!merged.mock.draft && incomingMock && incomingMock.draft) merged.mock.draft = incomingMock.draft;
   }
@@ -1037,10 +1094,10 @@ const Store = (() => {
   function normalizeSourceKind(kind) { return kind === 'website' ? 'web' : kind; }
 
   return {
-    STATUS, STATE, STATE_IDS, STATE_LABEL,
+    STATUS, STATE, STATE_IDS, STATE_LABEL, MAX_ROUNDS,
     load, save, saveNow, rec, setStatus, toggleFav, setNote, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
-    validateQuestions, validateQuestion, normalizeSourceKind,
+    validateQuestions, validateQuestion, validateRecordsObj, normalizeSourceKind,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
     validateAttempt, migrateLegacyDrillTries, migrateLegacyRuns,
     recTime, latestOf, sortedByTime, onInvalidate,

@@ -82,7 +82,7 @@ function load(file) {
   const src = fs.readFileSync(path.join(ROOT, file), 'utf8');
   vm.runInThisContext(src, { filename: file });
 }
-['app/js/util.js', 'app/js/markdown.js', 'app/js/store.js', 'app/js/search.js', 'app/js/views-review.js'].forEach(load);
+['app/js/srs.js', 'app/js/util.js', 'app/js/markdown.js', 'app/js/store.js', 'app/js/search.js', 'app/js/views-review.js'].forEach(load);
 
 /* ---- 断言工具 ---- */
 let passed = 0, failed = 0;
