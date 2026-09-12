@@ -433,6 +433,9 @@ const MaintainView = (() => {
           <div class="kv"><span>已核查 / 部分 / 待核查</span><b>${byStatus.verified} / ${byStatus.partial} / ${byStatus.todo}</b></div>
           <div class="kv"><span>文档章节(内置/导入)</span><b>${Data.allDocs().length} / ${Data.allUserDocs().length}</b></div>
           <div class="kv"><span>来源 / 候选</span><b>${(window.APP_DATA.sources.sources||[]).length} / ${(window.APP_DATA.candidates.candidates||[]).length}</b></div>
+          <div class="kv"><span>个人记录占用</span><b id="st-size">…</b></div>
+          <div class="kv"><span>浏览器存储用量估计</span><b id="st-quota">…</b></div>
+          <p class="muted small">多标签页同时打开时,一页的修改会按备份合并规则同步到另一页(逐记录新者胜),不会整份覆盖。</p>
           <p class="muted small">数据与界面分离:编辑 <code>data/</code> 后运行 <code>python tools/build.py</code> 重建。</p>
         </div>
         <div class="card">
@@ -496,6 +499,20 @@ const MaintainView = (() => {
         </div>
       </div>`;
     $('#b-import').addEventListener('click', importBank);
+    /* 存储健康度:记录体积同步可算;浏览器整体用量估计是异步的,回来再填 */
+    const stSize = $('#st-size', root);
+    if (stSize) stSize.textContent = Store.recordsSizeKB() + ' KB(本地预算约 5MB)';
+    const stQuota = $('#st-quota', root);
+    if (stQuota) {
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(est => {
+          if (!est) return;
+          stQuota.textContent = '已用 ' + Math.round((est.usage || 0) / 1024) + ' KB / 配额约 ' + Math.round((est.quota || 0) / 1024 / 1024) + ' MB';
+        }).catch(() => { stQuota.textContent = '(估计失败)'; });
+      } else {
+        stQuota.textContent = '(浏览器不支持估计)';
+      }
+    }
     $('#b-export').addEventListener('click', () => {
       download('ai-interview-bank-' + dateStr() + '.json',
         JSON.stringify({type:'aiiv-bank',exported_at:new Date().toISOString(),questions:Data.allQuestions()},null,2));

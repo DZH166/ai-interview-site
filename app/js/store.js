@@ -1052,6 +1052,57 @@ const Store = (() => {
     return true;
   }
 
+  /* ---- 多标签页并发:另一个标签页写入时的合并策略 ----
+     localStorage 同源共享,每个标签页各持一份内存副本,谁后写谁整份覆盖——
+     这会静默丢掉另一页刚写的内容(「多标签页并发未测」是诚实边界上挂着的已知风险)。
+     策略:storage 事件只发给非写入方;收到后不做整份覆盖,而是复用备份导入的
+     同一套合并规则(逐记录 _updatedAt 新者胜、轮次按内容去重、项目草稿整份判定、
+     pathProgress 晚者胜),把对方的修改合并进本页内存。两个标签页最终收敛到同一份数据。
+     只合并内存、不回写磁盘:本页下次保存时自然把合并结果带上,不会形成写回循环。
+     冲突窗口:本页防抖(250ms)内尚未落盘的击键可能被对方版本盖掉——
+     笔记每次击键都先进内存,真实丢失上限是一次防抖窗口。 */
+  function adoptRemoteRecords(jsonText) {
+    let incoming;
+    try { incoming = JSON.parse(jsonText); } catch (e) { return { ok: false, error: 'JSON 解析失败' }; }
+    if (!incoming || typeof incoming !== 'object') return { ok: false, error: '记录必须是对象' };
+    const errs = validateRecordsObj(incoming);
+    if (errs.length) return { ok: false, error: '校验未通过:' + errs.slice(0, 3).join(';') };
+    const merged = JSON.parse(JSON.stringify(data));
+    merged.mock.rounds = merged.mock.rounds.slice();
+    if (!merged.ui.projectRuns) merged.ui.projectRuns = {};
+    const report = newReport();
+    migrateLegacyRuns({ ui: { projectRuns: incoming.ui && incoming.ui.projectRuns } });
+    mergeQuestions(merged, incoming.questions || {}, report);
+    mergeRounds(merged, incoming.mock, report);
+    mergeAttempts(merged, incoming.drillAttempts);
+    mergeUi(merged, incoming, report);
+    migrateLegacyDrillTries(merged);
+    data = merged;
+    bumpRev();
+    notifyInvalidate();
+    return { ok: true, report };
+  }
+
+  /* 当前个人记录的序列化体积(KB):维护页存储健康度用 */
+  function recordsSizeKB() {
+    try { return Math.round(JSON.stringify(data).length / 1024 * 10) / 10; }
+    catch (e) { return -1; }
+  }
+
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', e => {
+      if (!e || e.key !== KEY_RECORDS || e.newValue == null) return;   /* 清空/无关键:不动 */
+      const res = adoptRemoteRecords(e.newValue);
+      if (!res.ok) { console.warn('另一标签页的记录未通过校验,本页未合并', res.error); return; }
+      const r = res.report || {};
+      const changed = r.qMerged > 0 || r.roundsAdded > 0 || r.notesUpdated > 0
+        || r.draftsAdopted > 0 || r.runsAdded > 0 || r.docPosAdopted;
+      if (changed && typeof toast === 'function') toast('已合并另一个标签页的修改');
+      /* 当前视图带着旧数据时重渲染,让合并结果立即可见 */
+      if (changed && typeof App !== 'undefined' && App.route) { try { App.route(); } catch (err) { /* 渲染失败不打断 */ } }
+    });
+  }
+
   /* ---- 扩展题库(导入的题目) ---- */
   function extraBankLoad() {
     try {
@@ -1098,6 +1149,7 @@ const Store = (() => {
     load, save, saveNow, rec, setStatus, toggleFav, setNote, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
     validateQuestions, validateQuestion, validateRecordsObj, normalizeSourceKind,
+    adoptRemoteRecords, recordsSizeKB,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
     validateAttempt, migrateLegacyDrillTries, migrateLegacyRuns,
     recTime, latestOf, sortedByTime, onInvalidate,

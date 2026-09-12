@@ -49,6 +49,9 @@ jobs:
       - name: SRS 间隔重复调度(调度数学/唯一排期入口/备份合并/到期建议)
         run: node tests/srs-test.js
 
+      - name: 多标签页远程合并(内存合并不回写/新者胜/幂等/非法拒绝)
+        run: node tests/remote-merge-test.js
+
       - name: Pi Agent 题库完整性与幂等适配
         run: |
           node tools/import-pi-agent.js --check
@@ -204,3 +207,10 @@ jobs:
           CHROME: default
           PORT: '8939'
         run: node tests/browser/followup.js
+
+      - name: 多标签页并发(两页互写收敛/同一题新者胜/存储健康度)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8940'
+        run: node tests/browser/multitab.js
