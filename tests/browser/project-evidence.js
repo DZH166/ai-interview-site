@@ -16,8 +16,15 @@ async function downloaded(download) {
 }
 async function open(page, hash) {
   await page.goto(BASE + '/index.html' + hash);
+  await page.waitForFunction(hash => typeof Store !== 'undefined' && location.hash === hash && Store.data.ui.lastHash === hash, hash);
   await page.locator('#view > *').first().waitFor();
   await page.locator('body').ariaSnapshot();
+}
+async function followLink(page, locator) {
+  const hash = await locator.getAttribute('href');
+  await locator.click();
+  // Hash navigation can finish before the application's hashchange handler runs.
+  await page.waitForFunction(hash => location.hash === hash && Store.data.ui.lastHash === hash, hash);
 }
 async function importFull(page, buffer) {
   await open(page, '#/maintain');
@@ -91,7 +98,8 @@ async function importFull(page, buffer) {
 
     await page.locator('#global-search-input').fill('详述独特词');
     await page.locator('#global-search-input').press('Enter'); await page.locator('body').ariaSnapshot();
-    await page.locator('a[href*="tab=speak&field=long"]').click();
+    await followLink(page, page.locator('a[href*="tab=speak&field=long"]'));
+    await page.locator('#pitch-long-' + PROJECT).waitFor({ state: 'visible' });
     check('search opens the exact long-pitch field', await page.locator('#pitch-long-' + PROJECT).isVisible());
     check('search target is visible below navigation', await page.locator('#pitch-long-' + PROJECT).evaluate(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; }));
 
@@ -121,13 +129,18 @@ async function importFull(page, buffer) {
     await fresh.locator(`[data-drill-record="${did}"] > summary`).click();
     await fresh.locator(`[data-drill-save="${did}"]`).click();
     check('submitting B never fills the editor with old A', await fresh.locator(`[data-drill-answer="${did}"]`).inputValue() === '');
-    await fresh.locator('a[href="#/path?d=' + did + '&at=draft-A"]').click();
+    await followLink(fresh, fresh.locator('a[href="#/path?d=' + did + '&at=draft-A"]'));
     check('older draft remains available by explicit choice', await fresh.locator(`[data-drill-answer="${did}"]`).inputValue() === '旧草稿A');
     await fresh.locator('#global-search-input').fill('新草稿B');
     await fresh.locator('#global-search-input').press('Enter');
-    await fresh.locator('a[href="#/path?d=' + did + '&at=draft-B"]').click();
+    await followLink(fresh, fresh.locator('a[href="#/path?d=' + did + '&at=draft-B"]'));
     check('completed-attempt search displays that exact historic answer', (await fresh.locator('[data-selected-attempt="draft-B"]').innerText()).includes('新草稿B'));
     check('reading a historic answer does not fill the new attempt', await fresh.locator(`[data-drill-answer="${did}"]`).inputValue() === '');
+    await open(fresh, '#/review');
+    const unrated = fresh.locator('.review-item').filter({ has: fresh.locator('a[href="#/path?d=' + did + '&at=draft-B"]') });
+    check('review labels a completed record without a rating honestly', (await unrated.innerText()).includes('未自评') && !(await unrated.innerText()).includes('未解决'));
+    await followLink(fresh, fresh.locator('a[href="#/path?d=' + did + '&at=draft-A"]'));
+    check('review draft link resumes the specified older draft', await fresh.locator(`[data-drill-answer="${did}"]`).inputValue() === '旧草稿A');
 
     await fresh.evaluate(() => { Store.data.mock.rounds = [{ ts: Date.now() - 86400000, items: [{ qid: 'PY-001', self: '昨天的回答' }] }]; Store.saveNow(); });
     await open(fresh, '#/home');

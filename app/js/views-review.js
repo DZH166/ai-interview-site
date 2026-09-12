@@ -44,7 +44,7 @@ const ReviewView = (() => {
                             attemptId: lastDone.attemptId, updatedAt: Store.recTime(lastDone),
                             doneCount: list.filter(a => a.status === Store.STATE.COMPLETED).length });
       }
-      if (draft && ((draft.myAnswer || '').trim() || (draft.observed || '').trim() || (draft.review || '').trim())) {
+      if (draft && ((draft.myAnswer || '').trim() || (draft.observed || '').trim() || (draft.review || '').trim() || draft.selfRating)) {
         out.drafts.push({ drillId, q, attemptId: draft.attemptId, updatedAt: Store.recTime(draft),
                           failed: !!draft.saveError, error: draft.saveError || '',
                           preview: (draft.myAnswer || draft.observed || draft.review || '').slice(0, 50) });
@@ -226,19 +226,19 @@ const ReviewView = (() => {
             <a class="ri-main" href="${esc(link(u.drillId, '&at=' + encodeURIComponent(u.attemptId || '')))}" style="text-decoration:none;color:inherit">
               <div class="q-item-title">${esc(u.q)}…</div>
               <div class="q-item-meta">
-                <span class="badge b-tag">${u.selfRating === 'partial' ? '部分解决' : '未解决'}</span>
+                <span class="badge b-tag">${u.selfRating === 'partial' ? '部分解决' : u.selfRating === 'unsolved' ? '未解决' : '未自评'}</span>
                 <span class="muted" style="font-size:12px">已完成 ${u.doneCount} 次 · 最近 ${fmtTime(u.updatedAt)}</span>
                 ${u.review ? `<div class="ri-note">${esc(u.review.slice(0, 60))}</div>` : ''}
               </div>
             </a>
           </div>`).join('')}</div>
-        <p class="muted small">依据:<b>按时间最新的一次完成尝试</b>自评为未解决/部分。重新练习并自评「已解决」后自动移出。</p>
+        <p class="muted small">依据:<b>按时间最新的一次完成尝试</b>尚未明确解决。未选择自评的记录标为「未自评」,不会替你判断。重新练习并自评「已解决」后自动移出。</p>
       </div>` : ''}
       ${drafts.length ? `<div class="card" style="margin-top:12px">
         <b>✍️ 写了但没提交的专项草稿(${drafts.length})</b>
         <div class="review-list" style="margin-top:8px">${drafts.map(d => `
           <div class="review-item">
-            <a class="ri-main" href="${esc(link(d.drillId))}" style="text-decoration:none;color:inherit">
+            <a class="ri-main" href="${esc(link(d.drillId, '&at=' + encodeURIComponent(d.attemptId || '')))}" style="text-decoration:none;color:inherit">
               <div class="q-item-title">${esc(d.q)}…</div>
               <div class="q-item-meta">
                 ${d.failed ? '<span class="badge st-weak">未落盘</span>' : '<span class="badge b-tag">草稿</span>'}
@@ -254,7 +254,7 @@ const ReviewView = (() => {
       ${abandoned.length ? `<div class="card" style="margin-top:12px">
         <b>⭕ 已放弃的专项尝试(${abandoned.length})</b>
         <div class="rel-row" style="margin-top:6px">
-          ${abandoned.map(a => `<a class="rel-link" href="${esc(link(a.drillId))}">${esc(a.q.slice(0, 24))}…</a>`).join(' ')}
+          ${abandoned.map(a => `<a class="rel-link" href="${esc(link(a.drillId, '&at=' + encodeURIComponent(a.attemptId || '')))}">${esc(a.q.slice(0, 24))}…</a>`).join(' ')}
         </div>
         <p class="muted small">放弃记录不计入完成次数,也不进待消化队列——它们只是留痕,方便你回顾当时为什么停下。</p>
       </div>` : ''}`;
