@@ -373,7 +373,7 @@ const SearchView = (() => {
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
-      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿', speak_short: '30 秒口述', speak_long: '2 分钟口述' }[u.field]) || u.field;
+      const fieldLabel = ({ title: '题名', prompt: '完整题干', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿', speak_short: '30 秒口述', speak_long: '2 分钟口述' }[u.field]) || u.field;
       return `
         <a class="search-item" href="${esc(href)}">
           <div class="si-head">

@@ -38,6 +38,7 @@ const Search = (() => {
         }
       };
       add('title', q.title, 3.0, 'top');
+      add('prompt', q.prompt, 2.5, 'top');
       add('tags', (q.tags || []).join(' '), 2.2, 'top');
       add('answer', q.answer, 1.6, 'answer');
       add('plain', q.plain, 1.0, 'plain');

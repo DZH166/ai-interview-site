@@ -1,0 +1,177 @@
+{
+  "bank_id": "pi-agent-interview-30",
+  "content_version": "1.0.0",
+  "topic_id": "pi-agent",
+  "topic_name": "Pi Agent",
+  "source_tag": "v0.85.1",
+  "source_commit": "d981de1229ef899957bbe968bc8dcda02a21f477",
+  "question_count": 30,
+  "follow_up_count": 90,
+  "first_run": {
+    "insert": 30,
+    "conflict": 0,
+    "update": 0,
+    "skip": 0
+  },
+  "identical_rerun": {
+    "insert": 0,
+    "conflict": 0,
+    "update": 0,
+    "skip": 30
+  },
+  "personal_state_written": false,
+  "verified_source_files": 51,
+  "tests": 479,
+  "questions": [
+    {
+      "external_id": "pi-agent-interview-30:PI-001",
+      "order": 1,
+      "content_hash": "e53f07b862d5f0d89daf8a6bdce30f234c5cc173652641f20f6eb1ddcff0da79"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-002",
+      "order": 2,
+      "content_hash": "d15669280ef4cc5b057a842a0eafa463f7054c3a1ec76d483cf92fbec0c7803e"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-003",
+      "order": 3,
+      "content_hash": "3f8be1dd56311c683a5552b0dec3608900638bccec06140c401aac10ea0f3be4"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-004",
+      "order": 4,
+      "content_hash": "958634d705ef2c84e957f28f2634303ada3396f4bf3ee378016f04880488853e"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-005",
+      "order": 5,
+      "content_hash": "ae1c4ae82fffab281fe137d22d65bf009a9443cf25e6e8a9802e893b85495b6f"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-006",
+      "order": 6,
+      "content_hash": "5d747eb249e92cf076d43831c37261c19a89f7f3348c2ce43ee9f14f0d608789"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-007",
+      "order": 7,
+      "content_hash": "f5c28cae0172d39c4144bdcbfa9ab7935d22a319d9d49fb6974e88c79dd8d0a6"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-008",
+      "order": 8,
+      "content_hash": "12e09c6c8e224ca27042d89e63f4b4ff86b3927121fae0702e714370a175889c"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-009",
+      "order": 9,
+      "content_hash": "e7e368f993135d6614d612fffeefe2f3ded5349049b81e69dfd9e2fa66f8f38b"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-010",
+      "order": 10,
+      "content_hash": "6988f81e45074467899ca400490de8da954bf934d7169e828cbba979f4882ff8"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-011",
+      "order": 11,
+      "content_hash": "5ce449eb49ff08aa54ce64064cee682fe3a0afe0476f091e5af07470de9172f3"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-012",
+      "order": 12,
+      "content_hash": "a6895a5b4aec4272c2239799868403b3046df41ebc960ce4f10cf88b3e7b68fc"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-013",
+      "order": 13,
+      "content_hash": "89575c2334df63e78d6026abb09c7227b4db1cf40814ba339d2dbc81cc928739"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-014",
+      "order": 14,
+      "content_hash": "aa3821fe924d28f4048463c44ede9a4faa56975b6001c36cf1e78bbc0afcf232"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-015",
+      "order": 15,
+      "content_hash": "234ec6ca359f0881360060a03af1f667583f06d5ce6cc6ab06b96b1dc40feb38"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-016",
+      "order": 16,
+      "content_hash": "7b5b23d256b225084f8656d93c00c1af283b9b4c7051a14be71a5586e498ffcd"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-017",
+      "order": 17,
+      "content_hash": "370bd849d14d50b5776a0d56b446ca4755b540ebbab539e631443283bd95d627"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-018",
+      "order": 18,
+      "content_hash": "af152691cc4cb423152805279a14c58f41dd837a9b415e5aafd1c3ee657f3a60"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-019",
+      "order": 19,
+      "content_hash": "4328b51e4e91d0f125c4fecc4a7b3d05ec4b7949be4b5b8d88eb4fea9f5ffd5a"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-020",
+      "order": 20,
+      "content_hash": "3f8ebcdc6f649fccae0f4ab35ebad7ae95e25aea346b33a5a6ed6beb6b14bcfb"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-021",
+      "order": 21,
+      "content_hash": "721388f40f9e32ef64f4415ca396b8c3372e4e88ac8267743aca801aa3430ffe"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-022",
+      "order": 22,
+      "content_hash": "1e892ee81e86bdfe229d0336c350bdc9df7738015c4edfbdd2ab128edeaa546c"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-023",
+      "order": 23,
+      "content_hash": "6335cc13e10c15fca75a66d7d96902f0503300e0dba2e6840259cd714b6aacb4"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-024",
+      "order": 24,
+      "content_hash": "fe96549af615aa4c0c8d3996b228c141e3fc368b9338925cd7a4dfb3fc4883e0"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-025",
+      "order": 25,
+      "content_hash": "ae76ce5a637c13a3b3882b9a59ad4588277290b508f7743125fa61dbdb4eb102"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-026",
+      "order": 26,
+      "content_hash": "4cf73898936aaceb36c572642c5d40748cfa7e5241f68524f13541909038ef27"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-027",
+      "order": 27,
+      "content_hash": "6d0f6b1f25761df6dc44f604d79dad3ce3aa30184f131a048f3590dfaeb7e916"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-028",
+      "order": 28,
+      "content_hash": "b6acd3ee2a9bc18a49a6341a759345572e25add794c61ab974a98eb433c0dd7b"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-029",
+      "order": 29,
+      "content_hash": "05383f6f94b3b1c467496a1cc1301bbd4f2c4af04340e4979964144374097bbe"
+    },
+    {
+      "external_id": "pi-agent-interview-30:PI-030",
+      "order": 30,
+      "content_hash": "240534da7711f593765ffb043e5198acc2e3470e85228221d1465e9778f4e449"
+    }
+  ]
+}

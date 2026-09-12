@@ -158,6 +158,11 @@ const QRender = (() => {
     return Markdown.render(text || '');
   }
 
+  /* Optional full scenario prompt stays visible before any reference answer is opened. */
+  function promptHtml(q) {
+    return q.prompt ? `<div class="q-prompt" data-question-prompt="${esc(q.id)}">${mdHtml(q.prompt)}</div>` : '';
+  }
+
   /* 概念(来自 data/concepts.json):题目→概念的正查与反查 */
   function conceptsOf(qid) {
     const cs = (window.APP_DATA.concepts && window.APP_DATA.concepts.concepts) || [];
@@ -198,6 +203,7 @@ const QRender = (() => {
     return `
       ${metaLine(q)}
       <h1 class="q-title">${esc(q.title)}</h1>
+      ${promptHtml(q)}
       ${relLinks(q)}
       <div class="q-secs">
         ${section('answer', '直接答案', mdHtml(q.answer), false)}
@@ -230,5 +236,5 @@ const QRender = (() => {
       </div>`;
   }
 
-  return { badge, metaLine, studyBody, recordBar, verifyBlock, relLinks, mdHtml, section };
+  return { badge, metaLine, studyBody, recordBar, verifyBlock, relLinks, mdHtml, promptHtml, section };
 })();

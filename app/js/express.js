@@ -82,6 +82,7 @@ const ExpressCard = (() => {
       items.push({
         qid: qid,
         title: (q && q.title) || it.title || qid,
+        prompt: q ? String(q.prompt || '') : '',
         topic: q ? q.topic : '',
         difficulty: q ? q.difficulty : '',
         status: it.mark || '',
@@ -106,6 +107,7 @@ const ExpressCard = (() => {
       items.push({
         qid: m.qid,
         title: q.title || m.qid,
+        prompt: String(q.prompt || ''),
         topic: q.topic, difficulty: q.difficulty,
         status: m.status || 'weak',
         self: String(m.note || ''),
@@ -159,6 +161,7 @@ const ExpressCard = (() => {
       meta.push('状态:' + statusLabel(it.status));
       L.push(meta.join(' · '));
       L.push('');
+      if (it.prompt) L.push('### 完整题干', '', quote(it.prompt), '');
       const selfHead = it.selfKind === 'note' ? '我的笔记' : '我的回答';
       if (it.self.trim()) {
         L.push('### ' + selfHead);
@@ -205,6 +208,7 @@ const ExpressCard = (() => {
     <section class="card">
       <h2><span class="num">${i + 1}</span>${esc(oneLine(it.title, 200))}</h2>
       <p class="meta">${esc(it.qid)}${it.topic ? ' · ' + esc(it.topic) : ''}${it.difficulty ? ' · ' + esc(it.difficulty) : ''} · 状态:${esc(statusLabel(it.status))}</p>
+      ${it.prompt ? '<h3>完整题干</h3><pre>' + esc(it.prompt) + '</pre>' : ''}
       ${it.self.trim() ? '<h3>' + (it.selfKind === 'note' ? '我的笔记' : '我的回答') + '</h3><pre class="self">' + esc(clip(it.self, MAX_SELF)) + '</pre>' : ''}
       ${(!it.self.trim() && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
       ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}

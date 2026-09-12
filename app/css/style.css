@@ -258,6 +258,8 @@ select.input { cursor: pointer; }
 .q-meta { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
 .q-title { font-size: 21px; margin: 8px 0 4px; line-height: 1.45; }
 .q-title-sm { font-size: 18px; margin: 8px 0 4px; line-height: 1.45; }
+.q-prompt { margin: 12px 0; line-height: 1.75; overflow-wrap: anywhere; }
+.q-prompt p { margin: 6px 0; }
 .rel-links { margin: 10px 0; }
 .rel-row { margin: 4px 0; font-size: 13.5px; }
 .rel-label { color: var(--muted); margin-right: 6px; }

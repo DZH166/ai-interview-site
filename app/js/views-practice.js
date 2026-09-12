@@ -24,7 +24,7 @@ const BrowseView = (() => {
       const r = Store.rec(q.id);
       if (f.fav && !r.fav) return false;
       if (kw) {
-        const hay = (q.title + ' ' + q.answer + ' ' + (q.tags || []).join(' ') + ' ' + q.id).toLowerCase();
+        const hay = (q.title + ' ' + (q.prompt || '') + ' ' + q.answer + ' ' + (q.tags || []).join(' ') + ' ' + q.id).toLowerCase();
         if (!kw.split(/\s+/).every(t => hay.includes(t))) return false;
       }
       return true;
@@ -198,6 +198,7 @@ const BrowseView = (() => {
       ${QRender.recordBar(qid)}
       ${QRender.metaLine(q)}
       <h2 class="q-title-sm">${esc(q.title)}</h2>
+      ${QRender.promptHtml(q)}
       <div class="rel-links">${QRender.relLinks(q)}</div>
       <div class="q-secs">
         ${QRender.section('answer', '直接答案', QRender.mdHtml(q.answer), false)}
@@ -372,6 +373,7 @@ const StudyView = (() => {
         ${QRender.recordBar(qid)}
         ${QRender.metaLine(q)}
         <h1 class="q-title">${esc(q.title)}</h1>
+        ${QRender.promptHtml(q)}
         <div class="rel-links">${QRender.relLinks(q)}</div>
         <div class="q-secs">
           ${QRender.section('answer', '直接答案', QRender.mdHtml(q.answer), false)}
@@ -664,6 +666,7 @@ const MockView = (() => {
         </div>
         ${QRender.metaLine(q)}
         <h2 class="q-title-sm">${esc(q.title)}</h2>
+        ${QRender.promptHtml(q)}
         <label class="note-label">你的回答(先自己写,再对照)</label>
         <textarea id="m-self" class="mock-self" placeholder="像面试口述一样,写下你的答案要点……">${esc(ans.self || '')}</textarea>
         <div class="mock-actions">
