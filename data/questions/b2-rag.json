@@ -80,7 +80,8 @@
   "tags": [
    "混合检索",
    "BM25",
-   "RRF"
+   "RRF",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-003"
@@ -121,7 +122,8 @@
    "RG-007"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -129,12 +131,37 @@
     "url": "",
     "kind": "independent",
     "note": "BM25/RRF 为检索领域通行知识(原论文:Robertson 等的 BM25;Cormack 等的 RRF),独立撰写"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 稀疏与稠密检索",
+    "url": "https://xiaolinnote.com/ai/rag/11_retrieval_types.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:算法为公开稳定知识;各引擎实现细节版本相关。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 稀疏与稠密检索\n\n关键词对编号、术语和精确匹配有价值，稠密检索更擅长语义联系；混合效果由数据与融合评测决定。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-11"
+    ],
+    "before_hash": "ea5c090b869b24704e8169ab1657f85825c44a7d4eeecd3b9acded2ae9154652",
+    "output_hash": "7f377d6c17a22d08ab2109c5c280d6f620a2211913ec534861d4a6610521f932"
+   }
   }
  },
  {
@@ -146,7 +173,8 @@
   "tags": [
    "查询改写",
    "多轮检索",
-   "查询路由"
+   "查询路由",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-001",
@@ -188,7 +216,8 @@
    "LP-002"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -202,12 +231,37 @@
     "url": "",
     "kind": "independent",
     "note": "四类手段与工程要点为独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 查询改写",
+    "url": "https://xiaolinnote.com/ai/rag/12_query_rewrite.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
-   "status": "verified",
-   "checked_date": "2026-09-06",
-   "note": "方法为 RAG 社区通行实践;术语(condense/multi-query/self-query)与主流框架一致。"
+   "status": "partial",
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 查询改写\n\n补全会话指代与表达方式，但保留实体、时间和业务约束；改写错意图可能比不改更差。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-12"
+    ],
+    "before_hash": "66b474e812b1e04ecc8c20ad618be68c4ec796cb8e44277e9f51abb77f70836f",
+    "output_hash": "756ef46dd9daca60a09c3708ced1dc8d6e8ae1f20695758bbca42a1b6fb61e64"
+   }
   }
  },
  {
@@ -220,7 +274,8 @@
    "向量数据库",
    "HNSW",
    "ANN",
-   "选型"
+   "选型",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-003"
@@ -261,7 +316,8 @@
    "EN-004"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -269,12 +325,44 @@
     "url": "",
     "kind": "independent",
     "note": "HNSW/IVF/PQ 为 ANN 领域公开算法知识(原论文:Malkov & Yashunin HNSW;Jégou 等 Product Quantization),独立撰写"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 向量数据库",
+    "url": "https://xiaolinnote.com/ai/rag/8_vectordb.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 容量与性能口径",
+    "url": "https://xiaolinnote.com/ai/rag/9_vectordb_practice.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:算法原理为公开稳定知识;具体引擎参数与产品能力版本相关。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 向量数据库\n\n比较召回质量、更新一致性、过滤能力、备份和运维，而不仅是ANN算法名称或单次延迟。\n\n### 容量与性能口径\n\n描述数据量时给出向量数、维度、索引和过滤条件；报告并发、召回目标及p95，不借用他人项目规模当经历。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-08",
+     "XL-RAG-09"
+    ],
+    "before_hash": "e2c58a81913b8ee485fb898e240b3529d381b29e57d63a3849d5c7bc4cdcd7cf",
+    "output_hash": "48f730c3d24e11aa6fd1325d6099b8be3d83e060de507edca3fdd465637c64e6"
+   }
   }
  },
  {
@@ -287,7 +375,8 @@
    "评估",
    "RAGAS",
    "评测集",
-   "指标"
+   "指标",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-004",
@@ -329,7 +418,8 @@
    "EN-002"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -343,12 +433,37 @@
     "url": "",
     "kind": "independent",
     "note": "评估体系与流程为独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 评测分工",
+    "url": "https://xiaolinnote.com/ai/rag/18_evaluation.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
-   "status": "verified",
-   "checked_date": "2026-09-06",
-   "note": "指标定义为评估领域通行术语(与 RAGAS 一致);流程与阈值校准为独立整理。"
+   "status": "partial",
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 评测分工\n\nContext Recall关注参考信息覆盖，Precision关注相关内容排序，Faithfulness关注上下文支持；它们不能统称准确率。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-18"
+    ],
+    "before_hash": "7dd0b520999aa10fa5e3fe1c5f653e5906a4c5239d1ee76bd19f261734d0ae2c",
+    "output_hash": "842d763694903c3ca5ec0a62e696024910be2a1f468babbc79d5aaa978893dbc"
+   }
   }
  }
 ]

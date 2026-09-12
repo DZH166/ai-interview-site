@@ -313,6 +313,18 @@
       "language": "英文",
       "summary": "temperature 与 top_p 的官方说明;本次会话未单独抓取核验,待复核。",
       "usage": "LP-001 参考依据。"
+    },
+    {
+      "id": "src-xiaolin-ai-series",
+      "name": "小林面试笔记 · AI系列",
+      "url": "https://xiaolinnote.com/ai/agent/agent_info.html",
+      "kind": "website",
+      "license": "网站内容版权归原作者；本项目未复制其正文、对话或图片",
+      "stars": null,
+      "status": "partial",
+      "language": "中文",
+      "summary": "2026-09-12备课提取对应Agent 24、RAG 21、工具18、模型23、LangChain 12，共98个参考选题；2026-09-13结合公开目录完成站内映射。",
+      "usage": "仅作考点发现与对照索引；短标签及本站答案独立整理。重点结论对照一手资料校正，不声称本轮重读并逐句核验全部98篇原文。逐题映射见data/imports/ai-series/fusion-plan.json。"
     }
   ]
 }

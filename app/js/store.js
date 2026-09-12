@@ -223,6 +223,7 @@ const Store = (() => {
       if (typeof q[k] !== 'string' || !q[k].trim()) push(`缺字段或非文本 ${k}`);
     });
     if (q.prompt !== undefined && typeof q.prompt !== 'string') push('prompt 需为文本');
+    if (q.fusion_notes !== undefined && typeof q.fusion_notes !== 'string') push('fusion_notes 需为文本');
     if (!Array.isArray(q.tags) || !q.tags.length) push('tags 需为非空数组');
     else q.tags.forEach((t, i) => { if (typeof t !== 'string') push(`tags[${i}] 非文本`); });
     if (!Array.isArray(q.followups) || !q.followups.length) push('followups 需为非空数组');

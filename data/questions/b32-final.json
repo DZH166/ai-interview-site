@@ -8,7 +8,8 @@
   "tags": [
    "评估",
    "基准",
-   "局限"
+   "局限",
+   "AI系列融合"
   ],
   "prerequisites": [
    "FD-014"
@@ -45,7 +46,8 @@
    "LP-008"
   ],
   "doc_refs": [
-   "doc-fund-1"
+   "doc-fund-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -53,12 +55,37 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 能力评估",
+    "url": "https://xiaolinnote.com/ai/llm/evaluation_metrics.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 能力评估\n\n基准、指标、业务测试集与线上信号分开；排查污染、任务分布和评审偏差，不从榜单单分推出全部应用效果。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-LLM-21"
+    ],
+    "before_hash": "a1c250aa44dfe2215552398c8dc5d70c31794e254ab632a7f793819cae2aaec5",
+    "output_hash": "0eee42904ddaa898a26118eb2355ec6954e05401eb7e817e4f8f5b994de644ee"
+   }
   }
  },
  {
@@ -200,37 +227,36 @@
   "tags": [
    "推理引擎",
    "生态",
-   "部署"
+   "部署",
+   "AI系列融合"
   ],
   "prerequisites": [
    "AD-013",
    "AD-011"
   ],
-  "answer": "除性能外的关键维度:①API 兼容——OpenAI 兼容模式(vLLM/SGLang/TGI 都支持)让你的代码零改动切换;非标 API(如 TensorRT-LLM 的自定义接口)需要适配层;②模型覆盖——你的模型架构是否被支持(新架构的支持滞后);量化格式的支持(AD-002 的 GPTQ/AWQ/FP8);③功能面——结构化输出(guided decoding,LP-003 的自托管版)、多 LoRA(AD-020)、投机解码(AD-010)、前缀共享(AD-011);④社区与文档——问题的解决速度、示例的丰富度、版本的稳定性;⑤部署复杂度——Docker 镜像的成熟度、K8s 的集成、监控的集成(EN-002)。选型方法:短期用 OpenAI 兼容模式快速验证(vLLM 最简单),长期按场景深度优化(SGLang 的多轮/TRT-LLM 的极限性能,AD-013 的引擎选型)。",
-  "plain": "推理引擎的生态像『手机操作系统』:vLLM 像 Android(开放、生态大、兼容广),TensorRT-LLM 像 iOS(封闭但优化深),SGLang 像新兴系统(某个场景特别强)。API 兼容=『App 的跨平台』——OpenAI 兼容模式让你的代码像跨平台 App(一套代码跑多个系统)。选型:先看你的 App(模型与场景)需要什么,再看哪个系统的生态最匹配。比喻局限:推理引擎的性能差异可达数倍(不止是生态偏好——是真的影响成本与延迟)。",
-  "deep": "1) OpenAI 兼容模式的价值:\n   - 零改动迁移(代码从 OpenAI SDK 切到自托管,只改 base_url);\n   - 生态复用(OpenAI 生态的工具/LangChain/评测框架直接可用);\n   - 多引擎切换(兼容模式的引擎间切换=改 base_url);\n   - 限制:兼容模式可能缺少引擎的特有功能(高级采样/投机解码的细粒度控制);\n2) 功能面的检查清单:\n   - 结构化输出(guided decoding 的 schema 支持,LP-003);\n   - 多 LoRA(动态加载,AD-020);\n   - 投机解码(AD-010 的加速);\n   - 流式(SSE 的帧格式与取消,LP-005);\n   - 嵌入(如果同时需要 embedding 服务,RG-003);\n   - 量化(GPTQ/AWQ/FP8 的支持,AD-002);\n3) 深度优化的路径:vLLM 起步(兼容+稳定)→场景特化(SGLang 的多轮/TRT-LLM 的吞吐)→自研(极少数:极致定制,AG-010 的『不重造轮子』原则);\n4) 混合部署:不同引擎服务不同场景(交互用 SGLang 的低延迟,批量用 vLLM 的高吞吐,EN-003 的分层)——引擎的统一管理(EN-014 的网关收敛)。",
-  "example": "选型对照(示例):\n```\n              vLLM       SGLang     TRT-LLM    Ollama\nOpenAI 兼容   ✅         ✅         ⚠️(适配)  ✅\n结构化输出    ✅(outlines)✅(xgrammar)⚠️       ❌\n多 LoRA       ✅         ⚠️         ❌         ❌\n投机解码      ✅         ✅         ✅         ❌\n部署复杂度    中         中         高         低\n社区          ★★★        ★★         ★★         ★★\n→ 默认 vLLM;多轮对话强化→SGLang;NVIDIA 极限→TRT-LLM\n```",
-  "interview": "口述版:『推理引擎选型除性能外看五个功能面:OpenAI 兼容(零改动迁移)、结构化输出(guided decoding)、多 LoRA(动态切换)、投机解码(加速)、流式(SSE)。生态:OpenAI 兼容模式让你的代码在引擎间自由切换(改 base_url)——这是最大的灵活性红利。深度优化的路径:vLLM 起步→场景特化。混合部署(交互 SGLang+批量 vLLM)用网关统一(EN-014)。』追问展开:兼容模式的限制、混合部署的统一管理、引擎升级的回归。",
+  "answer": "推理引擎按模型与硬件支持、功能契约、调度缓存、可观测性和维护状态选型。vLLM提供自动前缀缓存；TensorRT-LLM有OpenAI兼容服务入口；Ollama本地接口可用JSON Schema，但云端支持需另查。TGI截至2026-09-12处于维护模式。兼容端点不代表所有参数和行为可零改动互换。",
+  "plain": "可以把引擎当不同的执行系统：接口外观相近，内部排队、缓存和算子路径仍可能不同。旧能力表会过期，应该用自己需要的功能做小规模合同测试，而不是只看名字排名。",
+  "deep": "### 维护状态\n固定核查日期与版本，区分已有部署可运行与项目后续活跃开发。TGI维护模式不意味着旧服务突然不可用。\n\n### 缓存与结构化输出\nAPC复用相同前缀以减少prefill，不能保证所有decode都加速；结构化输出需按服务形态和schema支持逐项验收。\n\n### 实测矩阵\n同模型、精度、输入输出长度和并发下比较质量、吞吐、TTFT、尾延迟和显存，再验证工具调用与流式错误。\n\n### 可验证的对照\n兼容性可以做成一张可复跑矩阵：正常对话、工具schema、非法参数、流式中断、结构化输出、用量、批处理和缓存行为逐项记录。对“支持”还要区分本地接口、云服务和具体模型适配。若服务返回兼容的JSON外形，但不支持所依赖的参数语义，调用方仍可能产生错误。不要把官方网站的一项能力说明扩成对所有版本、模型和部署形态的保证。",
+  "example": "对照矩阵列出：模型版本、设备、精度、请求长度、并发、工具/schema/流式功能、缓存命中与维护状态。用小请求覆盖所需端点，再做有代表性的负载；本题不预填引擎性能排行榜。",
+  "interview": "推理引擎按模型与硬件支持、功能契约、调度缓存、可观测性和维护状态选型。vLLM提供自动前缀缓存；TensorRT-LLM有OpenAI兼容服务入口；Ollama本地接口可用JSON Schema，但云端支持需另查。TGI截至2026-09-12处于维护模式。兼容端点不代表所有参数和行为可零改动互换。\n\n深入回答时展开：维护状态；缓存与结构化输出；实测矩阵。用题中可核对的小例子说明，不把它说成真实模型收益。",
   "followups": [
    {
-    "q": "OpenAI 兼容模式有什么限制?",
-    "a": "兼容的是核心 API(chat/completions/embeddings),不兼容的:高级采样参数(某些引擎的特有参数)、投机解码的控制(引擎特有配置)、多 LoRA 的细粒度管理(版本/权重/路由)。兼容模式够 80% 场景,特殊需求走引擎的原生 API(或适配层暴露,EN-014)。"
+    "q": "有OpenAI兼容端点是否无需回归？",
+    "a": "仍需核对所用参数、错误、用量和流式事件语义。"
    },
    {
-    "q": "混合部署的统一管理怎么做?",
-    "a": "EN-014 的网关统一:路由到不同引擎(按场景/负载)、统一的监控与成本(EN-020)、统一的评测(不同引擎的结果对比,RG-009)。网关的复杂度:协议适配+健康检查+路由策略——网关本身要高可用(EN-009 的关键路径)。"
+    "q": "TGI维护模式意味着不能用吗？",
+    "a": "不意味着已有部署不能运行，但新项目要把生命周期和迁移成本纳入决策。"
    }
   ],
   "pitfalls": [
-   "只看吞吐 benchmark 选引擎,忽略 API 兼容与功能面(切换成本被低估)。",
-   "自托管的结构化输出没验证(guided decoding 的正确性因引擎而异,LP-003)。",
-   "多引擎部署无统一网关(监控/成本/评测各自为政,EN-020 的账本碎片化)。",
-   "引擎升级无回归测试(解码行为变化,AG-032 的版本管理缺失)。"
+   "用旧表格的❌代替当前功能核查。",
+   "只凭框架名称承诺最高性能或透明切换。"
   ],
   "check": {
-   "q": "你从 vLLM 切换到 TensorRT-LLM(为了更好的吞吐),哪些东西需要验证或迁移?",
-   "a": "迁移清单:①模型支持:确认 TRT-LLM 支持你的模型架构(需要模型转换:ckpt→TRT engine);②量化:TRT-LLM 的量化格式与 vLLM 可能不同(重新量化,AD-002);③API 适配:TRT-LLM 的接口与 vLLM 不同(适配层或代码修改);④结构化输出:TRT-LLM 的 guided decoding 支持(可能有限,LP-003);⑤性能验证:吞吐确实提升了(压测,EN-019);⑥质量回归:输出与 vLLM 一致(解码实现的差异可能改变输出);⑦监控与运维:TRT-LLM 的指标暴露与告警(EN-002);⑧回滚:vLLM 保留(快速切回)。清单的核心:不只是『换引擎』,是『换了一个有不同行为特征的推理系统』——全面验证。",
-   "explain": "检验点:引擎切换的全面验证清单(模型/量化/API/功能/性能/质量/监控/回滚)——不只是吞吐对比。"
+   "q": "一次chat/completions成功是否证明工具调用完全兼容？",
+   "a": "不能，至少验证工具schema、调用ID、结果回传、错误和流式行为。",
+   "explain": "检验重点：用旧表格的❌代替当前功能核查。；只凭框架名称承诺最高性能或透明切换。这些是需要主动排除的误解，应结合本题的条件说明判断依据。"
   },
   "related": [
    "AD-013",
@@ -240,20 +266,72 @@
    "LP-003"
   ],
   "doc_refs": [
-   "doc-advanced-0"
+   "doc-advanced-0",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "为独立整理;对照表为公开信息汇总"
+    "kind": "repo",
+    "name": "github.com · text-generation-inference",
+    "url": "https://github.com/huggingface/text-generation-inference",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "official-docs",
+    "name": "docs.vllm.ai · automatic_prefix_caching",
+    "url": "https://docs.vllm.ai/en/latest/features/automatic_prefix_caching/",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "official-docs",
+    "name": "docs.ollama.com · structured-outputs",
+    "url": "https://docs.ollama.com/capabilities/structured-outputs",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "repo",
+    "name": "nvidia.github.io · trtllm-serve.html",
+    "url": "https://nvidia.github.io/TensorRT-LLM/commands/trtllm-serve.html#about",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 推理引擎能力",
+    "url": "https://xiaolinnote.com/ai/llm/deployment_frameworks.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "为独立整理;引擎能力以官方文档为准(演进快,标注)。"
+   "checked_date": "2026-09-13",
+   "note": "本轮对照一手资料修订；示例为设计或算术，未运行真实模型/生产系统。事实、版本边界与工程建议分开理解。"
+  },
+  "fusion_notes": "### 推理引擎能力\n\n模型、硬件、功能和维护状态需按版本核查；vLLM有前缀缓存，TGI处于维护模式，接口兼容也要做行为回归。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "跨字段校正概念、版本与实验边界",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-LLM-20"
+    ],
+    "before_hash": "5421b1074cd485150f02817f0daedb8ecbcb3aadcb2abe67aa45bc1fce5c81b5",
+    "output_hash": "c30af1152ac6cd0139ad6f92205786348c45791052aa26ea1c6225939c397ad6"
+   }
   }
  },
  {

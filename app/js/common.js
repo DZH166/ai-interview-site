@@ -162,6 +162,9 @@ const QRender = (() => {
   function promptHtml(q) {
     return q.prompt ? `<div class="q-prompt" data-question-prompt="${esc(q.id)}">${mdHtml(q.prompt)}</div>` : '';
   }
+  function deepHtml(q) {
+    return mdHtml(q.deep + (q.fusion_notes ? '\n\n## 融合补充：场景与边界\n\n' + q.fusion_notes : ''));
+  }
 
   /* 概念(来自 data/concepts.json):题目→概念的正查与反查 */
   function conceptsOf(qid) {
@@ -208,7 +211,7 @@ const QRender = (() => {
       <div class="q-secs">
         ${section('answer', '直接答案', mdHtml(q.answer), false)}
         ${section('plain', '大白话解释', mdHtml(q.plain), false)}
-        ${section('deep', '原理拆解', mdHtml(q.deep), false)}
+        ${section('deep', '原理拆解', deepHtml(q), false)}
         ${section('example', '具体例子', mdHtml(q.example), false)}
         ${section('interview', '面试表达', mdHtml(q.interview), false)}
         ${section('followups', '常见追问', followupsHtml(q), false)}
@@ -236,5 +239,5 @@ const QRender = (() => {
       </div>`;
   }
 
-  return { badge, metaLine, studyBody, recordBar, verifyBlock, relLinks, mdHtml, promptHtml, section };
+  return { badge, metaLine, studyBody, recordBar, verifyBlock, relLinks, mdHtml, promptHtml, deepHtml, section };
 })();

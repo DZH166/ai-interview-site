@@ -284,7 +284,8 @@
   "tags": [
    "多路召回",
    "RRF",
-   "融合"
+   "融合",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-006"
@@ -327,7 +328,8 @@
    "EN-013"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -335,12 +337,37 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理(融合策略为检索系统通行实践)"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 多路融合",
+    "url": "https://xiaolinnote.com/ai/rag/13_multi_retrieval.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;示例代码为模式演示。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 多路融合\n\nRRF使用排名而非原始分数尺度，平滑常数不是召回K；融合分数不是概率，仍需去重和检查各路噪声。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-13"
+    ],
+    "before_hash": "13c27786857db2446633de40408943eb09748b689589130b4a99909a2487e6eb",
+    "output_hash": "1db955bdaff24ebf482dec401a396e6ebd4346de5d84845a963c27f0847a5892"
+   }
   }
  },
  {

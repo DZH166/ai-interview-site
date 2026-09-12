@@ -1,7 +1,7 @@
 {
   "name": "面试加油工作台",
   "short_name": "面试加油",
-  "description": "AI 应用开发与 Agent 方向面试工作台:336 题详解,含独立 Pi Agent 分类、模拟面试与面试表达卡导出。离线可用。",
+  "description": "AI 应用开发与 Agent 方向面试工作台:349 题详解,含 Pi Agent 和 LangChain 与 LangGraph 分类、模拟面试与面试表达卡导出。离线可用。",
   "lang": "zh-CN",
   "start_url": "./index.html",
   "scope": "./",

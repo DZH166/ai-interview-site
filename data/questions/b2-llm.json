@@ -9,40 +9,35 @@
    "流式",
    "SSE",
    "WebSocket",
-   "架构比较"
+   "架构比较",
+   "AI系列融合"
   ],
   "prerequisites": [
    "PY-004"
   ],
-  "answer": "服务端到客户端的流式推送,主流三选:SSE(单向服务器推,基于 HTTP,最简单,LLM 问答的首选)、WebSocket(双向长连接,适合语音/协作/多轮频繁交互)、轮询(客户端定时拉,实现最简单但延迟与浪费都高,只适合极短回答或兼容性兜底)。LLM 场景绝大多数选 SSE:逐 token 是典型的『单向、有顺序、可断线重连』流。",
-  "plain": "点外卖的比喻:轮询=每两分钟打电话问『好了吗』(浪费且延迟高);SSE=商家做好一步就给你发一条语音(单向播报,正合适);WebSocket=和厨师直接开免提对讲(双向实时,但建线贵)。做文字问答用『语音播报』就够了,开对讲是浪费。比喻局限:SSE 走的是普通 HTTP 通道,自动重连也由浏览器 EventSource 内建,比喻没体现。",
-  "deep": "逐项比较:\n1) SSE:HTTP/1.1+ 长连接,响应头 text/event-stream,消息帧 data: {json}\\n\\n;浏览器 EventSource 原生支持自动重连与 Last-Event-ID;只支持服务器→客户端单向(客户端动作另发 HTTP 请求即可);代理要关缓冲(nginx proxy_buffering off / X-Accel-Buffering: no)。OpenAI/Anthropic 的流式 API 本身就是 SSE——服务端转发时可以『边收边转推』。\n2) WebSocket:独立协议(ws://),握手升级后全双工;适合双向高频(语音识别中间结果、协同编辑、多 agent 状态同步);代价:需要连接管理、心跳、水平扩展时用 sticky session 或消息总线,鉴权也要自己做(通常是握手时带 token)。\n3) 轮询/长轮询:定时 GET;实现与兼容性最好,但延迟=间隔、无效请求多;只在极端兼容场景或非交互报表用。\n选型判据:单向还是双向?消息频率?断线重连要求?运维复杂度?——LLM 问答三个问题都指向 SSE。\n工程细节:SSE 帧里除增量 token 外,要设计事件类型(event: delta / done / error),结束帧带用量统计;前端渲染用『追加+光标闪烁』;超时与心跳防止代理掐空闲连接;客户端断开→服务端生成器被取消,记得清理与计费(见 PY-002 追问)。",
-  "example": "服务端『边收上游边转发』的 SSE(SSE 转发 SSE):\n```python\n@app.post(\"/chat\")\nasync def chat(req: ChatRequest):\n    async def gen():\n        async with httpx.AsyncClient(timeout=None) as c:\n            async with c.stream(\"POST\", UPSTREAM, json={...\"stream\": True}) as r:\n                async for line in r.aiter_lines():\n                    if line.startswith(\"data: \"):\n                        yield line + \"\\n\\n\"       # 原样转发 SSE 帧\n        yield 'event: done\\ndata: {}\\n\\n'\n    return StreamingResponse(gen(), media_type=\"text/event-stream\")\n```\n前端:fetch + ReadableStream 逐帧解析(比 EventSource 更可控,支持 POST)。",
-  "interview": "口述版:『我会按「单向/双向、频率、重连、运维成本」选:LLM 问答是单向有序流,选 SSE——它就是普通 HTTP,浏览器 EventSource 自带重连,和上游模型 API 的 SSE 还能边收边转;WebSocket 留给语音、协作这类双向高频场景;轮询只做兼容兜底。我还会主动提三个坑:代理缓冲、空闲心跳、断开清理与计费。』追问展开:SSE 转 WebSocket 的场景、断线续传思路、多轮会话要不要长连接。",
+  "answer": "文本单向增量输出可用SSE格式，频繁双向交互可评估WebSocket，短任务也可能用普通请求或轮询。SSE格式不等于浏览器EventSource API：EventSource常用GET，fetch的POST响应也能传SSE。选择取决于控制流、重连、代理和实现成本，不能按协议名保证更快或自动恢复完整任务。",
+  "plain": "先区分“传什么格式”和“用什么客户端读取”。网络收到的一块数据不一定是完整事件，更不一定对应一个token；应用仍需维护消息和任务的边界。",
+  "deep": "### 解析与重连\n处理UTF-8跨块、多行data与事件结束分隔。自动重连和Last-Event-ID需要服务端保留事件及重放策略配合。\n\n### 控制通道\nSSE可配合独立取消请求，WebSocket也需要定义确认、序号和恢复，不是用了双向连接就无需状态设计。\n\n### 部署影响\nHTTP版本、代理缓冲与超时影响实际连接；HTTP/2并发流也有限，不能说代理一定透明或连接无限。\n\n### 可验证的对照\n验收流式实现时，主动把同一事件拆成多个任意长度字节块，并把两个事件合到一个网络块，检查解析后的消息是否相同。再模拟断线和重放，验证重复事件不会重复结算业务。代理关闭缓冲只能解决一部分延迟；首字等待还可能来自检索、工具或模型预填充，不能仅凭使用SSE就承诺即时输出。",
+  "example": "文本聊天设计：POST提交消息并流式返回SSE事件，前端缓冲到完整事件后解析；取消使用任务ID请求服务端停止。另一种持续双向控制场景可用WebSocket，但仍要处理断线后任务是否继续。",
+  "interview": "文本单向增量输出可用SSE格式，频繁双向交互可评估WebSocket，短任务也可能用普通请求或轮询。SSE格式不等于浏览器EventSource API：EventSource常用GET，fetch的POST响应也能传SSE。选择取决于控制流、重连、代理和实现成本，不能按协议名保证更快或自动恢复完整任务。\n\n深入展开：解析与重连；控制通道；部署影响。用下面的设计例子说明，不能当成用户已实现的项目经历。",
   "followups": [
    {
-    "q": "EventSource 只能 GET,怎么用 POST 发对话?",
-    "a": "用 fetch 发 POST 并读取响应的 ReadableStream 自己解析 SSE 帧(主流做法),或先 POST 创建任务拿 ID 再 EventSource 订阅。fetch 方案要自己实现重连与 Last-Event-ID。"
+    "q": "SSE一定只能GET吗？",
+    "a": "原生EventSource的使用方式与SSE格式不同，POST响应可以携带事件流。"
    },
    {
-    "q": "用户中途关掉页面,服务端怎么知道?",
-    "a": "客户端断开会让响应写入失败/请求取消,Starlette 会取消该协程,生成器在 await 点收到取消,finally 里做清理(关闭上游流、结算 token)。这就是官方文档强调生成器内要有 await 的原因。"
-   },
-   {
-    "q": "断线重连后怎么继续?",
-    "a": "SSE 的 Last-Event-ID 只是通知『上次收到哪』,续传要服务端配合:把已生成内容暂存(内存/Redis),重连时按 ID 回放缺失增量;或简单方案——前端携带已有文本让模型续写(有重复风险)。"
+    "q": "连接断了是否等于任务取消？",
+    "a": "不能一概而论，应用及具体协议版本应有明确取消语义。"
    }
   ],
   "pitfalls": [
-   "nginx 默认缓冲导致『前端憋到最后一次性收到』,还以为是流式坏了。",
-   "忘记发结束帧,前端永远转圈。",
-   "每个 token 一帧不合并,帧率过高前端渲染卡顿(可按 50~100ms 或 N 字符合并)。",
-   "把 WebSocket 当万能方案,为单向问答引入连接管理复杂度。"
+   "把网络chunk当成完整事件。",
+   "把WebSocket全双工当作自动可靠恢复。"
   ],
   "check": {
-   "q": "判断:『我们的聊天室要做语音实时转写+文字问答,两个功能用一条 WebSocket 连接就够了,没必要用 SSE。』怎么评价?",
-   "a": "一半对一半可议:语音转写确实是双向高频场景,WebSocket 合理;文字问答跟着复用同一条连接是『能跑』,但代价是问答流量与转写流量耦合(一路抖动影响另一路)、断线语义混在一起。更清晰的架构是语音走 WebSocket、问答走 SSE,按流量特征分治;面试时说出『分治+耦合风险』比直接否定更显成熟。",
-   "explain": "检验点:不是背『SSE 好还是 WS 好』,而是按流量特征分治。"
+   "q": "两个网络chunk拼起来才是完整JSON，应何时解析？",
+   "a": "按事件/消息边界缓冲与解析，不按网络chunk逐块假定完整JSON。",
+   "explain": "检验重点：把网络chunk当成完整事件。；把WebSocket全双工当作自动可靠恢复。这些是需要主动排除的误解，应结合本题的条件说明判断依据。"
   },
   "related": [
    "PY-004",
@@ -50,26 +45,66 @@
    "LP-007"
   ],
   "doc_refs": [
-   "doc-llm-1"
+   "doc-llm-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
-    "name": "MDN · Server-Sent Events",
-    "url": "https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events",
     "kind": "official-docs",
-    "note": "SSE 语义稳定参考(未逐页抓取)"
+    "name": "html.spec.whatwg.org · server-sent-events.html",
+    "url": "https://html.spec.whatwg.org/multipage/server-sent-events.html",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
    },
    {
-    "name": "FastAPI 官方文档 · SSE 教程",
-    "url": "https://fastapi.tiangolo.com/advanced/custom-response/",
-    "kind": "official",
-    "note": "2026-09-06 已核验:SSE 有专门教程与 EventSourceResponse"
+    "kind": "official-docs",
+    "name": "www.rfc-editor.org · rfc6455",
+    "url": "https://www.rfc-editor.org/rfc/rfc6455",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "repo",
+    "name": "github.com · transports.mdx",
+    "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/38c84e9f93ad191d9eb26d92b945d17bd0efcaf3/docs/specification/2025-11-25/basic/transports.mdx",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 事件流与双向连接",
+    "url": "https://xiaolinnote.com/ai/tools/14_sse_vs_websocket.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
-   "status": "verified",
-   "checked_date": "2026-09-06",
-   "note": "SSE/WS 语义为公开稳定标准;选型判据为独立整理。"
+   "status": "partial",
+   "checked_date": "2026-09-13",
+   "note": "本轮对照一手资料修订；示例为设计或算术，未运行真实模型/生产系统。事实、版本边界与工程建议分开理解。"
+  },
+  "fusion_notes": "### 事件流与双向连接\n\nSSE、浏览器EventSource与WebSocket不是同一层概念；POST可以返回SSE格式，重连与取消仍需应用协议。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "跨字段校正概念、版本与实验边界",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-TOOLS-14"
+    ],
+    "before_hash": "317f095d100323243f4e8cd94dbdaa16448091db7f23e4b426db26d7333f9247",
+    "output_hash": "de28f175a81e9192672197e09e5a2e964f96059f4789349ae78c6dedacb5d95d"
+   }
   }
  },
  {
@@ -82,7 +117,8 @@
    "提示词工程",
    "few-shot",
    "CoT",
-   "防注入"
+   "防注入",
+   "AI系列融合"
   ],
   "prerequisites": [
    "LP-001"
@@ -124,7 +160,8 @@
    "AG-006"
   ],
   "doc_refs": [
-   "doc-llm-1"
+   "doc-llm-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -132,12 +169,37 @@
     "url": "https://developers.openai.com/api/docs/guides/prompt-engineering",
     "kind": "official",
     "note": "通用指引(未逐页抓取,标注);具体技巧为社区共识的独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 提示设计",
+    "url": "https://xiaolinnote.com/ai/llm/prompt_engineering.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "方法框架为社区共识独立整理;各模型对 CoT/few-shot 的响应差异属版本相关。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 提示设计\n\n明确任务、证据、约束、输出契约与例子，并用回归样本验证；角色描述和要求JSON不能替代事实及schema检查。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-LLM-16"
+    ],
+    "before_hash": "3cd8ed0bef4a5f3d5ae8bcf189623d105c5c74af67948ef22ea1fe380946483d",
+    "output_hash": "ef29942dbd79acae53e041f7fd045aafba88c04e50712fd595a227e7845f26bd"
+   }
   }
  },
  {

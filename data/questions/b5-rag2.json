@@ -80,7 +80,8 @@
     "tags": [
       "评估",
       "RAGAS",
-      "指标"
+      "指标",
+      "AI系列融合"
     ],
     "prerequisites": [
       "RG-009"
@@ -121,7 +122,8 @@
       "RG-028"
     ],
     "doc_refs": [
-      "doc-rag-1"
+      "doc-rag-1",
+      "doc-ai-series-1"
     ],
     "sources": [
       {
@@ -135,12 +137,37 @@
         "url": "https://github.com/KalyanKS-NLP/RAG-Interview-Questions-and-Answers-Hub",
         "kind": "repo",
         "note": "标题索引,解析独立撰写"
+      },
+      {
+        "kind": "web",
+        "name": "小林系列 · 评测分工",
+        "url": "https://xiaolinnote.com/ai/rag/18_evaluation.html",
+        "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
       }
     ],
     "verify": {
-      "status": "verified",
-      "checked_date": "2026-09-06",
-      "note": "指标定义已对 RAGAS 文档核验;诊断矩阵为独立整理。"
+      "status": "partial",
+      "checked_date": "2026-09-13",
+      "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+    },
+    "fusion_notes": "### 评测分工\n\nContext Recall关注参考信息覆盖，Precision关注相关内容排序，Faithfulness关注上下文支持；它们不能统称准确率。",
+    "content_version": {
+      "rev": "ai-series-20260913",
+      "date": "2026-09-13",
+      "summary": "补充场景边界与来源对照",
+      "changed_fields": [
+        "fusion_notes"
+      ]
+    },
+    "metadata": {
+      "ai_series": {
+        "batch_id": "ai-series-20260912",
+        "source_ids": [
+          "XL-RAG-18"
+        ],
+        "before_hash": "31a9af64f977fd33754b3793e2682e635f750cae0a05e0a6208c61ea331006df",
+        "output_hash": "5841b7a6d26663ee06ec2df3d1386c30cf09aafb5b2d50794ee92ec81bb0113d"
+      }
     }
   },
   {

@@ -54,5 +54,12 @@
     "order": 8,
     "name": "Pi Agent",
     "desc": "30 道 Pi Agent 源码原理与业务场景题：执行机制、上下文会话、扩展与生产工程。含完整题干、追问、评分、建议练习与固定版本依据。"
+  },
+  {
+    "id": "langchain",
+    "short": "LC",
+    "order": 9,
+    "name": "LangChain 与 LangGraph",
+    "desc": "Runnable与LCEL、LangChain v1工具循环、中间件、LangGraph中断恢复，以及Java和研究型Agent选学。"
   }
 ]

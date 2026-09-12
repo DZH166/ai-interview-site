@@ -8,7 +8,8 @@
   "tags": [
    "GraphRAG",
    "社区摘要",
-   "全局问题"
+   "全局问题",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-013"
@@ -51,7 +52,8 @@
   ],
   "doc_refs": [
    "doc-rag-1",
-   "doc-advanced-0"
+   "doc-advanced-0",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -65,12 +67,37 @@
     "url": "",
     "kind": "independent",
     "note": "管线与选型为独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 图检索适用性",
+    "url": "https://xiaolinnote.com/ai/rag/16_graph_db.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "机制以 GraphRAG 官方文档为准;工程分析为独立整理。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 图检索适用性\n\n显式关系、跨实体路径和全局归纳可能受益于图；实体抽取、关系更新和错误传播也是成本。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-16"
+    ],
+    "before_hash": "86cccd7057894328e9ddc874a07dd1f440ac37efdabf7801a4ab5ee4cf9af2a9",
+    "output_hash": "cf95dbcf9da6d55acd49aeb5a50091e564e00592fc02fc5fc1b934d5fadade0d"
+   }
   }
  },
  {
@@ -288,7 +315,8 @@
   "tags": [
    "状态机",
    "状态管理",
-   "Agent"
+   "Agent",
+   "AI系列融合"
   ],
   "prerequisites": [
    "AG-003",
@@ -331,7 +359,8 @@
    "PY-017"
   ],
   "doc_refs": [
-   "doc-agent-1"
+   "doc-agent-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -339,12 +368,37 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理(状态机模式为通用工程,Agent 场景展开)"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 会话与恢复",
+    "url": "https://xiaolinnote.com/ai/agent/18_session_state.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 会话与恢复\n\n对话、任务进度和业务副作用分别建模；合法目标变更应版本化，恢复时先核对结果未知的操作。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-AGENT-18"
+    ],
+    "before_hash": "c76752a3b418d7281bb567cd3ad765864395cdd3cc9170d0510e12972a4a26cc",
+    "output_hash": "9f203b2d454abd30512873db2ba1d104923ae5397fe7fda7ce435da7a6252c48"
+   }
   }
  },
  {
@@ -356,7 +410,8 @@
   "tags": [
    "上下文压缩",
    "长任务",
-   "Agent"
+   "Agent",
+   "AI系列融合"
   ],
   "prerequisites": [
    "AG-005",
@@ -399,7 +454,8 @@
    "AG-024"
   ],
   "doc_refs": [
-   "doc-agent-1"
+   "doc-agent-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -407,12 +463,37 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理(压缩框架与 AG-005/LP-002 呼应)"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 记忆压缩",
+    "url": "https://xiaolinnote.com/ai/agent/12_memcompress.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;示例为虚构演示(已标注)。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 记忆压缩\n\n窗口、摘要和结构化状态可以组合；Prompt Cache减少重复计算，不扩大模型上下文窗口，也不保证保留关键约束。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-AGENT-12"
+    ],
+    "before_hash": "8cfa051f08e3d54ecafdc26e6b3ffcb05baad659fb1a2afb65b0269b97b7a0cb",
+    "output_hash": "13f0510b7239379f76507e81d751d44a9e3299a0678221503e67f8a553f30986"
+   }
   }
  },
  {
@@ -493,7 +574,8 @@
   "tags": [
    "并发",
    "隔离",
-   "多任务"
+   "多任务",
+   "AI系列融合"
   ],
   "prerequisites": [
    "AG-017",
@@ -538,7 +620,8 @@
    "AG-009"
   ],
   "doc_refs": [
-   "doc-agent-1"
+   "doc-agent-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -546,12 +629,37 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理(并发隔离清单)"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 失联与并发写",
+    "url": "https://xiaolinnote.com/ai/agent/22_multi_agent_resilience.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;代码为模式演示未运行(已标注)。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 失联与并发写\n\n失联不等于进程已停止；接管需要版本或fencing token防旧执行者继续提交，文件改动要隔离并集成验证。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-AGENT-22"
+    ],
+    "before_hash": "0c0c717058573868a6a4e828f89a03eb51d436f144e1ccb7c1f151bbf363a90d",
+    "output_hash": "911823f65b797ae6f5dcea27b68afefec3cfa46433b01131e36a0540ddecfdd9"
+   }
   }
  }
 ]

@@ -83,6 +83,7 @@ const ExpressCard = (() => {
         qid: qid,
         title: (q && q.title) || it.title || qid,
         prompt: q ? String(q.prompt || '') : '',
+        fusion_notes: q ? String(q.fusion_notes || '') : '',
         topic: q ? q.topic : '',
         difficulty: q ? q.difficulty : '',
         status: it.mark || '',
@@ -108,6 +109,7 @@ const ExpressCard = (() => {
         qid: m.qid,
         title: q.title || m.qid,
         prompt: String(q.prompt || ''),
+        fusion_notes: String(q.fusion_notes || ''),
         topic: q.topic, difficulty: q.difficulty,
         status: m.status || 'weak',
         self: String(m.note || ''),
@@ -187,6 +189,7 @@ const ExpressCard = (() => {
         L.push(quote(clip(it.answer, MAX_SELF)));
         L.push('');
       }
+      if (it.fusion_notes) L.push('### 场景与边界补充', '', quote(clip(it.fusion_notes, MAX_SELF)), '');
       if (it.pitfalls.length) {
         L.push('### 常见误区');
         L.push('');
@@ -213,6 +216,7 @@ const ExpressCard = (() => {
       ${(!it.self.trim() && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
       ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}
       ${it.answer ? '<h3>参考要点</h3><pre>' + esc(clip(it.answer, MAX_SELF)) + '</pre>' : ''}
+      ${it.fusion_notes ? '<h3>场景与边界补充</h3><pre>' + esc(clip(it.fusion_notes, MAX_SELF)) + '</pre>' : ''}
       ${it.pitfalls.length ? '<h3>常见误区</h3><ul>' + it.pitfalls.map(p => '<li>' + esc(oneLine(p, 240)) + '</li>').join('') + '</ul>' : ''}
     </section>`).join('');
     const word = model.selfKind === 'note' ? '笔记' : '回答';

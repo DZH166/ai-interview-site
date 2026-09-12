@@ -281,7 +281,8 @@
   "tags": [
    "模型网关",
    "抽象层",
-   "多供应商"
+   "多供应商",
+   "AI系列融合"
   ],
   "prerequisites": [
    "LP-008",
@@ -326,7 +327,8 @@
   ],
   "doc_refs": [
    "doc-eng-1",
-   "doc-llm-1"
+   "doc-llm-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -334,12 +336,49 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理的网关设计要点"
+   },
+   {
+    "kind": "repo",
+    "name": "github.com · go.mod",
+    "url": "https://github.com/maximhq/bifrost/blob/0ebea6091a4005f72b346923da28412268ce9325/core/go.mod",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "repo",
+    "name": "github.com · bifrost.go",
+    "url": "https://github.com/maximhq/bifrost/blob/0ebea6091a4005f72b346923da28412268ce9325/core/bifrost.go",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 模型网关",
+    "url": "https://xiaolinnote.com/ai/tools/16_llm_gateway.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理的通行实践;示例代码为模式演示。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 模型网关\n\n网关统一入口、密钥治理、路由、预算与观测；兼容端点不保证模型能力无损切换，语义缓存也必须保持权限与版本边界。 Maxim的Bifrost网关核心使用Go，提供HTTP网关与Go SDK；选型仍需按固定版本验证接口兼容、失败回退、权限和真实负载性能，不能从实现语言推断任何场景都更快。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-TOOLS-16"
+    ],
+    "before_hash": "842610c2824f13f58c49b8b5569063453d253c808389ce52ba6ef28f6cbcdb1e",
+    "output_hash": "f2920740df60f9c0cbf6745417d5bcc767f4cbd5949c467eb92bda074b8620df"
+   }
   }
  },
  {

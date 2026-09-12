@@ -9,7 +9,8 @@
    "缓存",
    "语义缓存",
    "成本优化",
-   "延迟优化"
+   "延迟优化",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-003",
@@ -52,7 +53,8 @@
    "EN-002"
   ],
   "doc_refs": [
-   "doc-eng-1"
+   "doc-eng-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -66,12 +68,37 @@
     "url": "",
     "kind": "independent",
     "note": "分层缓存设计与风险分析为独立整理;示例数字为虚构演示并已标注"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 缓存两本账",
+    "url": "https://xiaolinnote.com/ai/llm/kv_cache_prompt_caching.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "分层设计为独立整理的通行实践;prompt caching 的具体折扣与规则版本相关,待逐项复核。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 缓存两本账\n\n区分同次解码KV与跨请求前缀复用；按KV头数计算理想容量，缓存命中减少重复prefill，不等于减少所有生成计算。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-LLM-14"
+    ],
+    "before_hash": "de75c1137fc17bfd8f49bea2a4bb11feb42f14ad85cde49cf761fe819deb441c",
+    "output_hash": "8f7f608643cdd2d6b87bb95a3b7fec17eea5e1c0753cdf2bb6d1f9829007a18a"
+   }
   }
  },
  {

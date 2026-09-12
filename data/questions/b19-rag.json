@@ -212,7 +212,8 @@
   "tags": [
    "嵌入",
    "MTEB",
-   "评测"
+   "评测",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-003",
@@ -256,7 +257,8 @@
    "EN-022"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -270,12 +272,37 @@
     "url": "",
     "kind": "independent",
     "note": "选型流程为独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · Embedding选型",
+    "url": "https://xiaolinnote.com/ai/rag/6_embedding.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "基准参考标注;流程为独立整理。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### Embedding选型\n\n在本业务语言、任务和权限条件下比较召回、延迟与成本；排行榜只能筛候选，不能替代本地标注集。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-RAG-06"
+    ],
+    "before_hash": "abdb1e7f119617985cf27d745b65212839a6c76e96df4f11e5cc0804de6ecbfc",
+    "output_hash": "ff780357d96ea9ef59d2d9e37f0d7514046e8324f1ae22654165530843f8ed07"
+   }
   }
  },
  {

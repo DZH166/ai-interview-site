@@ -42,7 +42,7 @@ const Search = (() => {
       add('tags', (q.tags || []).join(' '), 2.2, 'top');
       add('answer', q.answer, 1.6, 'answer');
       add('plain', q.plain, 1.0, 'plain');
-      add('deep', q.deep, 1.0, 'deep');
+      add('deep', q.deep + (q.fusion_notes ? '\n' + q.fusion_notes : ''), 1.0, 'deep');
       add('example', q.example, 0.8, 'example');
       add('interview', q.interview, 0.8, 'interview');
       (q.pitfalls || []).forEach(p => add('pitfalls', p, 0.8, 'pitfalls'));

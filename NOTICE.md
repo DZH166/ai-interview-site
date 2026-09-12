@@ -1,6 +1,6 @@
 # 署名与许可证说明(NOTICE)
 
-更新日期:2026-09-06
+更新日期:2026-09-13
 
 ## 本项目的立场
 
@@ -21,6 +21,10 @@
 | [landedjobs/awesome-ai-engineer-interview](https://github.com/landedjobs/awesome-ai-engineer-interview) | MIT | 考点参考 |
 | [KalyanKS-NLP/RAG-Interview-Questions-and-Answers-Hub](https://github.com/KalyanKS-NLP/RAG-Interview-Questions-and-Answers-Hub) | Apache-2.0 | 考点参考;其答案未逐条核验,未直接采用 |
 | [guocong-bincai/ai-interview-guide](https://github.com/guocong-bincai/ai-interview-guide) | MIT | 考点与中文表述参考 |
+
+## 小林AI系列选题对照
+
+本轮将2026-09-12备课提取的98个选题映射到原有与新增问题，并保留逐条原资料链接。来源为[小林面试笔记AI系列](https://xiaolinnote.com/ai/agent/agent_info.html)；本站使用独立短标签与独立答案，不复制其全文、面试对话或图片。重点技术结论另据官方文档和论文校正，范围见 [融合记录](docs/AI系列融合-2026-09-13.md)。
 
 ## 引用的事实来源
 

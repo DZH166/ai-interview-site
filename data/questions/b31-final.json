@@ -8,35 +8,35 @@
   "tags": [
    "KV Cache",
    "推理",
-   "显存"
+   "显存",
+   "AI系列融合"
   ],
   "prerequisites": [
    "FD-003"
   ],
-  "answer": "KV Cache 缓存每层注意力中已生成 token 的 Key/Value 矩阵——生成下一个 token 时,只对**新 token 本身**计算一遍 Q/K/V(算出的 K/V 追加进缓存),再拿新 Q 与缓存里的全部历史 K/V 做注意力——省掉的是『对历史 token 重复计算 Q/K/V』,不是不算。它让推理从 O(n²) 降到每步 O(n),是自回归生成可行的前提。代价:KV Cache 的显存随序列长度线性增长——128K 上下文的 KV Cache 可能超过模型权重本身。这也是长对话『越来越贵』的技术根源:每多一轮,KV Cache 就多一块。",
-  "plain": "KV Cache 像读书时的书签笔记:读第 10 页时记下要点(缓存),读第 11 页只需看新内容+翻笔记——不用重读前 10 页。笔记越积越厚(序列越长),占的桌子空间越大(显存)——128K 的书,笔记可能比书本身还厚。比喻局限:笔记可以摘要,KV Cache 不能(信息丢失会改变后续注意力分布)——所以只能靠分页管理(AD-011)或量化来省空间。",
-  "deep": "1) 显存估算:每 token 的 KV = 2 × 层数 × KV头数 × head_dim × 精度字节。以 7B(32层/GQA 8KV头/128dim/FP16)为例:2×32×8×128×2 = 131KB/token;128K token ≈ 16GB(仅 KV)。2) 优化方向:GQA/MQA(减少 KV 头数,FD-007)、KV 量化(INT8/INT4 的 KV)、滑动窗口(只保留最近 N token 的 KV)、PagedAttention(碎片管理,AD-011)。3) 与前缀缓存的联动:相同前缀(如 system prompt)的 KV 可共享——多租户/多请求的显存节省(AD-011 的前缀共享)。4) 对延迟的影响:TTFT 随输入长度上升(预填充大量 token 的 KV 计算);生成阶段每步的注意力计算也随历史增长——这是长对话每步变慢的原因。",
+  "answer": "KV Cache保存已处理位置在各层的键和值，避免自回归生成时反复重算整个前缀；没有缓存也能生成，只是重复计算昂贵。每个新位置仍需与历史信息交互，所以长上下文依旧增加时间与显存。跨请求前缀缓存是另一层复用，主要减少重复prefill，不等于让所有decode计算消失。",
+  "plain": "缓存像保留已经做过的中间工作，下一步少重做，但仍要参考越来越长的历史。分页、量化、滑窗和压缩解决的约束不同；有些会改变可用上下文或保真边界，不能一概当无损加速。",
+  "deep": "### 常规载荷公式\nB×T×L×2×Hkv×D×每值字节。此式针对常规MHA/GQA/MQA且K/V维度相同的理想布局；页块、对齐、并行与MLA布局另算。\n\n### 复杂度范围\n固定模型维度时，一个decode步的新query与长度t历史的注意力工作量随t增长；整个生成过程累积计算不能被概括成整体O(n)。\n\n### 跨请求复用\nAPC复用满足匹配条件的共同前缀，关注模型、适配器、缓存配置及隔离。它与语义相似问答缓存不同，也不是扩容上下文窗口。",
   "example": "显存估算(7B GQA 模型;假设 batch=1、32 层、8 个 KV 头、head_dim=128、FP16 每值 2 字节;\n每 token KV 字节 = 2(K/V) × 32 层 × 8 头 × 128 × 2B = 131072 B = 128 KiB):\n```\n权重 FP16:  ~14 GB\nKV Cache(batch=1):\n  4K 上下文:  128KiB × 4096  = 0.5 GiB\n  32K 上下文: 128KiB × 32768 = 4 GiB\n  128K 上下文: 128KiB × 131072 = 16 GiB  ← 接近甚至超过权重\n→ 长上下文的瓶颈是 KV Cache,不是权重\n注:batch 增大按倍数线性增长;MHA(无 GQA 分组)KV 头数=查询头数,还要再大数倍\n```",
-  "interview": "口述版:『KV Cache 缓存已生成 token 的 K/V 矩阵,让自回归生成避免对历史 token 重复计算 Q/K/V(新 token 自己的 Q/K/V 每步都要算)——每步只对新 token 算一遍 Q/K/V(K/V 入缓存),拿新 Q 与缓存的历史 K/V 交互。代价是显存随长度线性增长——128K 上下文的 KV 可能超过权重本身,这就是长对话越来越贵的技术根源。优化方向:GQA 减头、KV 量化、滑窗、分页管理(AD-011)。』追问展开:显存估算、GQA 原理、与 RAG 的关系。",
+  "interview": "KV Cache保存已处理位置在各层的键和值，避免自回归生成时反复重算整个前缀；没有缓存也能生成，只是重复计算昂贵。每个新位置仍需与历史信息交互，所以长上下文依旧增加时间与显存。跨请求前缀缓存是另一层复用，主要减少重复prefill，不等于让所有decode计算消失。\n\n深入回答时展开：常规载荷公式；复杂度范围；跨请求复用。用题中可核对的小例子说明，不把它说成真实模型收益。",
   "followups": [
    {
-    "q": "GQA 为什么能省 KV 显存?",
-    "a": "标准 MHA 每个 Query 头有独立的 K/V 头(32 个头=32 组 KV);GQA 让多个 Q 头共享一组 K/V(如 32Q/8KV=4:1)——KV Cache 直接降为 1/4,精度损失小(实验验证过)。MQA(全共享)更省但损失更大——GQA 是平衡点。"
+    "q": "同样Q头数为什么KV大小不同？",
+    "a": "MQA/GQA可共享KV头，缓存用实际KV头数；不能直接填Q头数。"
    },
    {
-    "q": "KV Cache 与 RAG 的关系?",
-    "a": "RAG 的检索结果作为上下文进 KV Cache——检索内容的长度直接影响 KV 显存;这就是为什么 RG-018 的证据压缩不仅是省钱,也是自托管场景的显存生存问题。前缀缓存(AD-011)让多请求共享 system+固定内容的 KV,大幅节省。"
+    "q": "前缀缓存一定让回答生成更快吗？",
+    "a": "主要节省重复prefill；输出阶段、网络及其他步骤仍可能成为瓶颈。"
    }
   ],
   "pitfalls": [
-   "只算权重显存忽略 KV(长上下文 OOM 的常见原因)。",
-   "以为 KV Cache 可以像文本一样截断(截断会改变后续注意力的结果)。",
-   "把 KV Cache 的显存增长当成 bug(它是设计使然,问题是管理不是消除)。"
+   "用Q头数估算GQA缓存。",
+   "把理想KV载荷当作模型完整显存，或混用GB与GiB。"
   ],
   "check": {
-   "q": "模型 7B(GQA 8KV头),要跑 32K 上下文,24GB 显存够吗?",
-   "a": "算账(假设同上):权重 INT4 ≈ 3.5GB;KV Cache:128 KiB/token × 32K ≈ 4 GiB;激活+框架开销 ≈ 2~4GB。总计 ≈ 10~12GB < 24GB ✅。但要注意:INT4 量化的质量损失需要评测(FD-025),32K 的有效利用率要实测(FD-007);batch>1 时 KV 按倍数增长。",
-   "explain": "检验点:显存的多分量估算(权重+KV+激活)与量化的质量验证提醒。"
+   "q": "32层、8KV头、128维、FP16、单请求每token多少缓存？",
+   "a": "理想载荷为32×2×8×128×2=131072字节，即128KiB/token。4K是0.5GiB，32K是4GiB，128K是16GiB，均不含其他内存。",
+   "explain": "检验重点：用Q头数估算GQA缓存。；把理想KV载荷当作模型完整显存，或混用GB与GiB。这些是需要主动排除的误解，应结合本题的条件说明判断依据。"
   },
   "related": [
    "FD-003",
@@ -47,27 +47,60 @@
   ],
   "doc_refs": [
    "doc-fund-1",
-   "doc-advanced-0"
+   "doc-advanced-0",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "为独立整理(公开工程常识)"
+    "kind": "official-docs",
+    "name": "huggingface.co · cache_explanation",
+    "url": "https://huggingface.co/docs/transformers/cache_explanation",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "official-docs",
+    "name": "docs.vllm.ai · automatic_prefix_caching",
+    "url": "https://docs.vllm.ai/en/latest/features/automatic_prefix_caching/",
+    "note": "本轮融合的一手依据；按所引版本及实验范围理解，未据此声明用户已完成项目。"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 缓存两本账",
+    "url": "https://xiaolinnote.com/ai/llm/kv_cache_prompt_caching.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:估算公式与三档数字已在本机复算(0.5/4/16 GiB @ batch=1、32层、8KV头、128dim、FP16);机制说明对照 Transformers KV cache 文档;估算假设已显式标注。"
+   "checked_date": "2026-09-13",
+   "note": "本轮对照一手资料修订；示例为设计或算术，未运行真实模型/生产系统。事实、版本边界与工程建议分开理解。"
   },
   "content_version": {
-   "rev": "2026-09-07",
-   "summary": "KV 显存三档修正为 0.5/4/16 GiB(原翻倍);澄清新 token 的 Q/K/V 都要计算、省的是历史重复计算。",
-   "changes": [
-    "答案/口述/例子/检查题对齐"
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "跨字段校正概念、版本与实验边界",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "fusion_notes"
    ]
+  },
+  "fusion_notes": "### 缓存两本账\n\n区分同次解码KV与跨请求前缀复用；按KV头数计算理想容量，缓存命中减少重复prefill，不等于减少所有生成计算。",
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-LLM-14"
+    ],
+    "before_hash": "8c149aff29077a0418bdc498df40ea32a8d2d145c3132d7d20a7fdc4be2d0774",
+    "output_hash": "d94302c653659d141965bd7c1089253225ad7ce25ec39f8d08b201f8d5519146"
+   }
   }
  },
  {

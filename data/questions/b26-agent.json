@@ -8,7 +8,8 @@
   "tags": [
    "上下文工程",
    "Agent",
-   "系统化"
+   "系统化",
+   "AI系列融合"
   ],
   "prerequisites": [
    "AG-005",
@@ -46,7 +47,8 @@
    "AG-031"
   ],
   "doc_refs": [
-   "doc-agent-1"
+   "doc-agent-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -54,14 +56,39 @@
     "url": "",
     "kind": "independent",
     "note": "为独立整理(上下文工程为行业共识术语)"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 上下文装配",
+    "url": "https://xiaolinnote.com/ai/agent/17_context_engineering.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理;画像为演示。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
   },
-  "example": "Agent 上下文的预算画像(示例):\n```\n总预算 32K:\n  system+规则       2K(5%)   永不压缩\n  任务+计划         3K(9%)   永不压缩\n  已确认事实区      4K(12%)  只增\n  工具结果(近期)   12K(37%) 瘦身+滚动\n  记忆注入          2K(6%)   阈值过滤(AG-036)\n  历史摘要          4K(12%)  压缩产物\n  当前观察+输入     2K(6%)\n  余量              3K(9%)   输出+突发\n—— 各维度份额随任务阶段动态调整(AG-031 的压缩联动)\n```"
+  "example": "Agent 上下文的预算画像(示例):\n```\n总预算 32K:\n  system+规则       2K(5%)   永不压缩\n  任务+计划         3K(9%)   永不压缩\n  已确认事实区      4K(12%)  只增\n  工具结果(近期)   12K(37%) 瘦身+滚动\n  记忆注入          2K(6%)   阈值过滤(AG-036)\n  历史摘要          4K(12%)  压缩产物\n  当前观察+输入     2K(6%)\n  余量              3K(9%)   输出+突发\n—— 各维度份额随任务阶段动态调整(AG-031 的压缩联动)\n```",
+  "fusion_notes": "### 上下文装配\n\n按任务相关性、时效、权限和来源可信度选内容；检索到的文本是证据，不自动升级为更高优先级指令。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-AGENT-17"
+    ],
+    "before_hash": "1fc5b5d0adf7dfa222da2afbff2c5918d446f0030a1baae5e4d24c3cd74eeba0",
+    "output_hash": "0bb8e7e3dc961d625e58d65cfe9d28f535b8941054d1971b3718c3298757a691"
+   }
+  }
  },
  {
   "id": "AG-051",

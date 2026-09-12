@@ -29,7 +29,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 # 目的是拦住「一句话打发」的新增内容,而不是逼所有人把话说长。
 # (早先按 150 卡 answer 会连报 6 条,而那 6 题的 deep 都在 500 字以上,属于阈值噪音。)
 MIN_LEN = {"answer": 120, "plain": 100, "deep": 200, "example": 60, "interview": 120}
-MIN_TOTAL = 800          # 五段总长下限
+MIN_TOTAL = 800          # 可见正文下限(五段 + 完整题干 + 融合补充；不含来源或隐藏metadata)
 REL_PCT = 0.05           # 相对偏薄:总长低于全库 5% 分位
 MIN_FOLLOWUPS = 2
 MIN_PITFALLS = 3
@@ -76,6 +76,11 @@ def numeric_claims(text):
         if len(hits) < 3:
             hits.append(ctx.replace("\n", " ").strip()[:60])
     return hard, hits
+
+
+def content_texts(q):
+    """Count only text that is actually rendered; imported metadata cannot inflate depth."""
+    return {k: str(q.get(k) or '') for k in (*MIN_LEN, 'prompt', 'fusion_notes')}
 
 
 def load_all():
@@ -188,6 +193,11 @@ def selftest():
     if wrong:
         print("自检失败:把正常写法当成占位符 %r" % wrong)
         return False
+    sample = {'answer': 'a', 'deep': 'abc', 'prompt': '题干', 'fusion_notes': '补充',
+              'metadata': {'hidden': 'x' * 10000}, 'sources': [{'note': 'x' * 10000}]}
+    if sum(map(len, content_texts(sample).values())) != 8 or MIN_TOTAL != 800:
+        print('自检失败:可见正文统计错误或长度门槛被改变')
+        return False
     print("审计器自检通过:%d 个真占位符全部命中,%d 个正常写法全部豁免"
           % (len(should_hit), len(should_miss)))
     return True
@@ -216,11 +226,11 @@ def main():
     # ---- 逐题检查
     totals = {}
     for q in qs:
-        total = sum(len(str(q.get(k) or "")) for k in MIN_LEN)
+        total = sum(map(len, content_texts(q).values()))
         totals[q.get("id")] = total
         if total < MIN_TOTAL:
             problems.append(("薄", q.get("id", "?"), "总长",
-                             "%d 字 < 下限 %d,四段加起来都撑不满一题" % (total, MIN_TOTAL)))
+                             "%d 字 < 下限 %d,可见正文仍偏薄" % (total, MIN_TOTAL)))
 
     for q in qs:
         qid = q.get("id", "?")
@@ -228,7 +238,7 @@ def main():
             v = str(q.get(k) or "").strip()
             if not v:
                 problems.append(("缺", qid, k, "字段缺失或为空"))
-            elif len(v) < need:
+            elif len(v + (str(q.get('fusion_notes') or '') if k == 'deep' else '')) < need:
                 warnings.append(("薄", qid, k, "%d 字 < 下限 %d" % (len(v), need)))
         fu = q.get("followups") or []
         if len(fu) < MIN_FOLLOWUPS:
@@ -263,7 +273,7 @@ def main():
             problems.append(("缺", qid, "sources", "一条来源都没有"))
 
         # 数字断言 vs 一手来源
-        hard, hits = numeric_claims(" ".join(str(q.get(k) or "") for k in MIN_LEN))
+        hard, hits = numeric_claims(" ".join(content_texts(q).values()))
         has_first_hand = any((s.get("kind") or "") in FIRST_HAND and (s.get("url") or "").startswith("http")
                              for s in srcs)
         if hard >= 3 and not has_first_hand:
@@ -285,7 +295,7 @@ def main():
                                      "%s,已 %d 天" % (cd, (today - d).days)))
             except ValueError:
                 problems.append(("缺", qid, "verify.checked_date", "日期格式不对:%s" % cd))
-        for k in ("answer", "plain", "deep", "example", "interview"):
+        for k in ("answer", "plain", "deep", "example", "interview", "prompt", "fusion_notes"):
             text = str(q.get(k) or "")
             for m in PLACEHOLDER.finditer(text):
                 ctx = text[max(0, m.start() - 30): m.end() + 30].replace("\n", " ")

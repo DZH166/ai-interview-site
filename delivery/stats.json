@@ -1,27 +1,28 @@
 {
   "built_at": "2026-09-06",
-  "questions_total": 336,
+  "questions_total": 349,
   "by_topic": {
-    "agent": 58,
+    "agent": 61,
+    "langchain": 6,
+    "rag": 71,
+    "llm-prompt": 46,
+    "fundamentals": 24,
     "advanced": 22,
-    "rag": 70,
-    "llm-prompt": 44,
     "python-backend": 44,
     "engineering": 45,
-    "fundamentals": 23,
     "pi-agent": 30
   },
   "by_difficulty": {
     "basic": 56,
-    "intermediate": 179,
-    "advanced": 101
+    "intermediate": 191,
+    "advanced": 102
   },
   "by_verify_status": {
-    "verified": 62,
-    "partial": 274
+    "partial": 305,
+    "verified": 44
   },
-  "docs_total": 13,
-  "sources_total": 26,
+  "docs_total": 15,
+  "sources_total": 27,
   "candidates_total": 150,
-  "data_js_kb": 2639.6
+  "data_js_kb": 2717.9
 }

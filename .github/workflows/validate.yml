@@ -51,6 +51,12 @@ jobs:
           node tools/import-pi-agent.js --check
           node tests/pi-agent-test.js
 
+      - name: AI系列融合覆盖与可验证算术
+        run: |
+          node tools/fuse-ai-series.js --check
+          node tests/ai-series-test.js
+          python tests/ai-series-math-test.py
+
       - name: 表达卡导出(工作台出口:内容真实/不产出空壳/转义正确)
         run: node tests/express-card-test.js
 
@@ -174,3 +180,10 @@ jobs:
           CHROME: default
           PORT: '8936'
         run: node tests/browser/pi-agent.js
+
+      - name: AI系列融合分类/来源索引/补充检索/旧记录
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8937'
+        run: node tests/browser/ai-series.js

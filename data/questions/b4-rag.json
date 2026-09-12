@@ -142,7 +142,8 @@
   "tags": [
    "Text2SQL",
    "结构化数据",
-   "工具调用"
+   "工具调用",
+   "AI系列融合"
   ],
   "prerequisites": [
    "RG-001",
@@ -186,7 +187,8 @@
    "EN-007"
   ],
   "doc_refs": [
-   "doc-rag-1"
+   "doc-rag-1",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -194,12 +196,37 @@
     "url": "",
     "kind": "independent",
     "note": "Text2SQL 架构为独立整理(语义层/护栏为行业通行做法)"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 数据库访问",
+    "url": "https://xiaolinnote.com/ai/agent/24_database_security.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-07",
-   "note": "结构完整、解析为独立撰写;暂无可打开的具体来源页,经诚实化审查由 verified 降级为部分核查——待逐题补充具体来源与核查要点(不因此删题)。原注:为独立整理的通行实践;示例为虚构演示(已标注)。"
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 数据库访问\n\n只读身份、参数绑定、结构检查和对象权限守住执行边界；查询安全不保证指标口径正确，结果还需业务核验。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-AGENT-24"
+    ],
+    "before_hash": "0f95ae9bdacb007589399a9a0fdac77595b4e4be8fb4c35e1a3832f5056f4339",
+    "output_hash": "2b647a94e49781100ad783bd9ca36d14fe035651b91e60dd4adb813bc0d8c412"
+   }
   }
  },
  {

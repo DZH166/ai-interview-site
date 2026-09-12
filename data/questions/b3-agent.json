@@ -8,7 +8,8 @@
   "tags": [
    "多智能体",
    "进阶",
-   "架构"
+   "架构",
+   "AI系列融合"
   ],
   "prerequisites": [
    "AG-001",
@@ -52,7 +53,8 @@
   ],
   "doc_refs": [
    "doc-agent-1",
-   "doc-advanced-0"
+   "doc-advanced-0",
+   "doc-ai-series-1"
   ],
   "sources": [
    {
@@ -60,12 +62,44 @@
     "url": "https://www.anthropic.com/research/building-effective-agents",
     "kind": "official-blog",
     "note": "2026-09-06 已核验主文;多 agent 细节为独立整理"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 多Agent",
+    "url": "https://xiaolinnote.com/ai/agent/10_multiagent.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
+   },
+   {
+    "kind": "web",
+    "name": "小林系列 · 单多Agent选型",
+    "url": "https://xiaolinnote.com/ai/agent/11_single_multi.html",
+    "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
    }
   ],
   "verify": {
-   "status": "verified",
-   "checked_date": "2026-09-06",
-   "note": "拓扑分类为社区共识;示例为虚构示意(已标注)。标注为进阶选学。"
+   "status": "partial",
+   "checked_date": "2026-09-13",
+   "note": "保留原题并补充跨源场景边界；本轮不代表原题每一句都重新完成事实核验，未把材料经历转为用户经历。"
+  },
+  "fusion_notes": "### 多Agent\n\n多角色可能减少单个上下文干扰，也增加通信、预算和集成成本；单Agent同样可以并发调用独立工具。\n\n### 单多Agent选型\n\n先验证单体瓶颈是否来自可拆分工作，再比较隔离和协作收益；不能用Agent数量代替对并发与质量的实测。",
+  "content_version": {
+   "rev": "ai-series-20260913",
+   "date": "2026-09-13",
+   "summary": "补充场景边界与来源对照",
+   "changed_fields": [
+    "fusion_notes"
+   ]
+  },
+  "metadata": {
+   "ai_series": {
+    "batch_id": "ai-series-20260912",
+    "source_ids": [
+     "XL-AGENT-10",
+     "XL-AGENT-11"
+    ],
+    "before_hash": "26793c5e10615f240e5ce7eca5c68d241462728a4c10ed9ba4f3dcab6171b3f5",
+    "output_hash": "8c6b054f3680317383bbf39354a8c9f8be9b7d0e7ceb1ea48c6988bb48ce3179"
+   }
   }
  },
  {

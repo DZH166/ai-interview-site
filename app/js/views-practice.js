@@ -203,7 +203,7 @@ const BrowseView = (() => {
       <div class="q-secs">
         ${QRender.section('answer', '直接答案', QRender.mdHtml(q.answer), false)}
         ${QRender.section('plain', '大白话解释', QRender.mdHtml(q.plain), false)}
-        ${QRender.section('deep', '原理拆解', QRender.mdHtml(q.deep), false)}
+        ${QRender.section('deep', '原理拆解', QRender.deepHtml(q), false)}
         ${QRender.section('example', '具体例子', QRender.mdHtml(q.example), false)}
         ${QRender.section('interview', '面试表达', QRender.mdHtml(q.interview), false)}
         ${QRender.section('followups', '常见追问', (q.followups || []).map((fu, i) => `<div class="fu"><div class="fu-q">追问 ${i + 1}:${esc(fu.q)}</div><div class="fu-a">${QRender.mdHtml(fu.a)}</div></div>`).join(''), false)}
@@ -378,7 +378,7 @@ const StudyView = (() => {
         <div class="q-secs">
           ${QRender.section('answer', '直接答案', QRender.mdHtml(q.answer), false)}
           ${QRender.section('plain', '大白话解释', QRender.mdHtml(q.plain), false)}
-          ${QRender.section('deep', '原理拆解', QRender.mdHtml(q.deep), false)}
+          ${QRender.section('deep', '原理拆解', QRender.deepHtml(q), false)}
           ${QRender.section('example', '具体例子', QRender.mdHtml(q.example), false)}
           ${QRender.section('interview', '面试表达', QRender.mdHtml(q.interview), false)}
           ${QRender.section('followups', '常见追问', (q.followups || []).map((f, i) => `<div class="fu"><div class="fu-q">追问 ${i + 1}:${esc(f.q)}</div><div class="fu-a">${QRender.mdHtml(f.a)}</div></div>`).join(''), false)}

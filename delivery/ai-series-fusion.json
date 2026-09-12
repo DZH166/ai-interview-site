@@ -1,0 +1,1516 @@
+{
+  "batch_id": "ai-series-20260912",
+  "extraction_date": "2026-09-12",
+  "integrated_date": "2026-09-13",
+  "source_count": 98,
+  "existing_supplemented": 72,
+  "existing_revised": 30,
+  "added": 13,
+  "source_to_question": [
+    {
+      "source_id": "XL-AGENT-01",
+      "group": "agent",
+      "order": 1,
+      "label": "Agent与模型",
+      "url": "https://xiaolinnote.com/ai/agent/1_whatisagent.html",
+      "target_ids": [
+        "AG-001"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-02",
+      "group": "agent",
+      "order": 2,
+      "label": "运行组成",
+      "url": "https://xiaolinnote.com/ai/agent/2_components.html",
+      "target_ids": [
+        "AG-013"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-03",
+      "group": "agent",
+      "order": 3,
+      "label": "流程与工具",
+      "url": "https://xiaolinnote.com/ai/agent/3_workflow_tools.html",
+      "target_ids": [
+        "AG-001"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-04",
+      "group": "agent",
+      "order": 4,
+      "label": "执行范式",
+      "url": "https://xiaolinnote.com/ai/agent/4_patterns.html",
+      "target_ids": [
+        "AG-015"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-05",
+      "group": "agent",
+      "order": 5,
+      "label": "ReAct反馈",
+      "url": "https://xiaolinnote.com/ai/agent/5_react.html",
+      "target_ids": [
+        "AG-015"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-06",
+      "group": "agent",
+      "order": 6,
+      "label": "规划和反思比较",
+      "url": "https://xiaolinnote.com/ai/agent/6_three_patterns.html",
+      "target_ids": [
+        "AG-015"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-07",
+      "group": "agent",
+      "order": 7,
+      "label": "任务拆分",
+      "url": "https://xiaolinnote.com/ai/agent/7_tasksplit.html",
+      "target_ids": [
+        "AG-007"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-08",
+      "group": "agent",
+      "order": 8,
+      "label": "记忆职责",
+      "url": "https://xiaolinnote.com/ai/agent/8_memory.html",
+      "target_ids": [
+        "AG-005"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-09",
+      "group": "agent",
+      "order": 9,
+      "label": "记忆存取",
+      "url": "https://xiaolinnote.com/ai/agent/9_memory_storage.html",
+      "target_ids": [
+        "AG-023"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-10",
+      "group": "agent",
+      "order": 10,
+      "label": "多Agent",
+      "url": "https://xiaolinnote.com/ai/agent/10_multiagent.html",
+      "target_ids": [
+        "AG-008"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-11",
+      "group": "agent",
+      "order": 11,
+      "label": "单多Agent选型",
+      "url": "https://xiaolinnote.com/ai/agent/11_single_multi.html",
+      "target_ids": [
+        "AG-008"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-12",
+      "group": "agent",
+      "order": 12,
+      "label": "记忆压缩",
+      "url": "https://xiaolinnote.com/ai/agent/12_memcompress.html",
+      "target_ids": [
+        "AG-031"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-13",
+      "group": "agent",
+      "order": 13,
+      "label": "框架与自研",
+      "url": "https://xiaolinnote.com/ai/agent/13_handcode.html",
+      "target_ids": [
+        "AG-010"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-14",
+      "group": "agent",
+      "order": 14,
+      "label": "规划能力",
+      "url": "https://xiaolinnote.com/ai/agent/14_planning.html",
+      "target_ids": [
+        "AG-007"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-15",
+      "group": "agent",
+      "order": 15,
+      "label": "反思证据",
+      "url": "https://xiaolinnote.com/ai/agent/15_reflection.html",
+      "target_ids": [
+        "AG-016"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-16",
+      "group": "agent",
+      "order": 16,
+      "label": "协作与交接",
+      "url": "https://xiaolinnote.com/ai/agent/16_collab.html",
+      "target_ids": [
+        "AG-021"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-17",
+      "group": "agent",
+      "order": 17,
+      "label": "上下文装配",
+      "url": "https://xiaolinnote.com/ai/agent/17_context_engineering.html",
+      "target_ids": [
+        "AG-050"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-18",
+      "group": "agent",
+      "order": 18,
+      "label": "会话与恢复",
+      "url": "https://xiaolinnote.com/ai/agent/18_session_state.html",
+      "target_ids": [
+        "AG-030"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-19",
+      "group": "agent",
+      "order": 19,
+      "label": "Agent评估",
+      "url": "https://xiaolinnote.com/ai/agent/19_evaluation.html",
+      "target_ids": [
+        "AG-012"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-20",
+      "group": "agent",
+      "order": 20,
+      "label": "循环稳定性",
+      "url": "https://xiaolinnote.com/ai/agent/20_loop_stability.html",
+      "target_ids": [
+        "AG-013"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-21",
+      "group": "agent",
+      "order": 21,
+      "label": "链路延迟",
+      "url": "https://xiaolinnote.com/ai/agent/21_agent_latency_trace.html",
+      "target_ids": [
+        "AG-024"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-22",
+      "group": "agent",
+      "order": 22,
+      "label": "失联与并发写",
+      "url": "https://xiaolinnote.com/ai/agent/22_multi_agent_resilience.html",
+      "target_ids": [
+        "AG-033"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-23",
+      "group": "agent",
+      "order": 23,
+      "label": "完成声明",
+      "url": "https://xiaolinnote.com/ai/agent/23_task_hallucination.html",
+      "target_ids": [
+        "AG-058"
+      ]
+    },
+    {
+      "source_id": "XL-AGENT-24",
+      "group": "agent",
+      "order": 24,
+      "label": "数据库访问",
+      "url": "https://xiaolinnote.com/ai/agent/24_database_security.html",
+      "target_ids": [
+        "RG-017"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-01",
+      "group": "rag",
+      "order": 1,
+      "label": "RAG流程",
+      "url": "https://xiaolinnote.com/ai/rag/1_whatisrag.html",
+      "target_ids": [
+        "RG-001"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-02",
+      "group": "rag",
+      "order": 2,
+      "label": "RAG能力边界",
+      "url": "https://xiaolinnote.com/ai/rag/2_rag_problems.html",
+      "target_ids": [
+        "RG-001"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-03",
+      "group": "rag",
+      "order": 3,
+      "label": "RAG与微调",
+      "url": "https://xiaolinnote.com/ai/rag/3_rag_vs_finetune.html",
+      "target_ids": [
+        "AD-001"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-04",
+      "group": "rag",
+      "order": 4,
+      "label": "切分与存储",
+      "url": "https://xiaolinnote.com/ai/rag/4_chunking.html",
+      "target_ids": [
+        "RG-002"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-05",
+      "group": "rag",
+      "order": 5,
+      "label": "语义边界",
+      "url": "https://xiaolinnote.com/ai/rag/5_semantic_cuts.html",
+      "target_ids": [
+        "RG-023"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-06",
+      "group": "rag",
+      "order": 6,
+      "label": "Embedding选型",
+      "url": "https://xiaolinnote.com/ai/rag/6_embedding.html",
+      "target_ids": [
+        "RG-051"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-07",
+      "group": "rag",
+      "order": 7,
+      "label": "向量表示",
+      "url": "https://xiaolinnote.com/ai/rag/7_embedding_algos.html",
+      "target_ids": [
+        "RG-003"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-08",
+      "group": "rag",
+      "order": 8,
+      "label": "向量数据库",
+      "url": "https://xiaolinnote.com/ai/rag/8_vectordb.html",
+      "target_ids": [
+        "RG-008"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-09",
+      "group": "rag",
+      "order": 9,
+      "label": "容量与性能口径",
+      "url": "https://xiaolinnote.com/ai/rag/9_vectordb_practice.html",
+      "target_ids": [
+        "RG-008"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-10",
+      "group": "rag",
+      "order": 10,
+      "label": "在线链路",
+      "url": "https://xiaolinnote.com/ai/rag/10_online_workflow.html",
+      "target_ids": [
+        "RG-001"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-11",
+      "group": "rag",
+      "order": 11,
+      "label": "稀疏与稠密检索",
+      "url": "https://xiaolinnote.com/ai/rag/11_retrieval_types.html",
+      "target_ids": [
+        "RG-006"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-12",
+      "group": "rag",
+      "order": 12,
+      "label": "查询改写",
+      "url": "https://xiaolinnote.com/ai/rag/12_query_rewrite.html",
+      "target_ids": [
+        "RG-007"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-13",
+      "group": "rag",
+      "order": 13,
+      "label": "多路融合",
+      "url": "https://xiaolinnote.com/ai/rag/13_multi_retrieval.html",
+      "target_ids": [
+        "RG-040"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-14",
+      "group": "rag",
+      "order": 14,
+      "label": "分阶段优化",
+      "url": "https://xiaolinnote.com/ai/rag/14_retrieval_opt.html",
+      "target_ids": [
+        "RG-020"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-15",
+      "group": "rag",
+      "order": 15,
+      "label": "复杂RAG",
+      "url": "https://xiaolinnote.com/ai/rag/15_advanced_paradigms.html",
+      "target_ids": [
+        "RG-013"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-16",
+      "group": "rag",
+      "order": 16,
+      "label": "图检索适用性",
+      "url": "https://xiaolinnote.com/ai/rag/16_graph_db.html",
+      "target_ids": [
+        "RG-044"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-17",
+      "group": "rag",
+      "order": 17,
+      "label": "引用与幻觉",
+      "url": "https://xiaolinnote.com/ai/rag/17_hallucination.html",
+      "target_ids": [
+        "RG-011"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-18",
+      "group": "rag",
+      "order": 18,
+      "label": "评测分工",
+      "url": "https://xiaolinnote.com/ai/rag/18_evaluation.html",
+      "target_ids": [
+        "RG-029",
+        "RG-009"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-19",
+      "group": "rag",
+      "order": 19,
+      "label": "持续更新",
+      "url": "https://xiaolinnote.com/ai/rag/19_dynamic_update.html",
+      "target_ids": [
+        "RG-014"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-20",
+      "group": "rag",
+      "order": 20,
+      "label": "落地难点",
+      "url": "https://xiaolinnote.com/ai/rag/20_hardest_parts.html",
+      "target_ids": [
+        "RG-004"
+      ]
+    },
+    {
+      "source_id": "XL-RAG-21",
+      "group": "rag",
+      "order": 21,
+      "label": "知识冲突",
+      "url": "https://xiaolinnote.com/ai/rag/21_knowledge_conflict.html",
+      "target_ids": [
+        "RG-071"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-01",
+      "group": "tools",
+      "order": 1,
+      "label": "工具调用闭环",
+      "url": "https://xiaolinnote.com/ai/tools/1_function_calling.html",
+      "target_ids": [
+        "AG-002"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-02",
+      "group": "tools",
+      "order": 2,
+      "label": "工具学习",
+      "url": "https://xiaolinnote.com/ai/tools/2_llm_tool_learning.html",
+      "target_ids": [
+        "LP-046"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-03",
+      "group": "tools",
+      "order": 3,
+      "label": "工具训练评测",
+      "url": "https://xiaolinnote.com/ai/tools/3_fc_training.html",
+      "target_ids": [
+        "LP-046"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-04",
+      "group": "tools",
+      "order": 4,
+      "label": "MCP定位",
+      "url": "https://xiaolinnote.com/ai/tools/4_what_is_mcp.html",
+      "target_ids": [
+        "AG-004",
+        "AG-019"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-05",
+      "group": "tools",
+      "order": 5,
+      "label": "MCP架构",
+      "url": "https://xiaolinnote.com/ai/tools/5_mcp_components.html",
+      "target_ids": [
+        "AG-018"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-06",
+      "group": "tools",
+      "order": 6,
+      "label": "FC与MCP",
+      "url": "https://xiaolinnote.com/ai/tools/6_mcp_vs_fc.html",
+      "target_ids": [
+        "AG-004"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-07",
+      "group": "tools",
+      "order": 7,
+      "label": "接入选择",
+      "url": "https://xiaolinnote.com/ai/tools/7_fc_vs_mcp_usage.html",
+      "target_ids": [
+        "AG-018"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-08",
+      "group": "tools",
+      "order": 8,
+      "label": "兼容问题定位",
+      "url": "https://xiaolinnote.com/ai/tools/8_reasoning_no_mcp.html",
+      "target_ids": [
+        "AG-018"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-09",
+      "group": "tools",
+      "order": 9,
+      "label": "Agent Skills",
+      "url": "https://xiaolinnote.com/ai/tools/9_skill.html",
+      "target_ids": [
+        "AG-059"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-10",
+      "group": "tools",
+      "order": 10,
+      "label": "Skill与MCP",
+      "url": "https://xiaolinnote.com/ai/tools/10_mcp_vs_skill.html",
+      "target_ids": [
+        "AG-059"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-11",
+      "group": "tools",
+      "order": 11,
+      "label": "三种机制",
+      "url": "https://xiaolinnote.com/ai/tools/11_fc_skill_mcp.html",
+      "target_ids": [
+        "AG-059"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-12",
+      "group": "tools",
+      "order": 12,
+      "label": "A2A协作",
+      "url": "https://xiaolinnote.com/ai/tools/12_a2a_protocol.html",
+      "target_ids": [
+        "AG-060"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-13",
+      "group": "tools",
+      "order": 13,
+      "label": "MCP传输",
+      "url": "https://xiaolinnote.com/ai/tools/13_mcp_transport.html",
+      "target_ids": [
+        "AG-011"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-14",
+      "group": "tools",
+      "order": 14,
+      "label": "事件流与双向连接",
+      "url": "https://xiaolinnote.com/ai/tools/14_sse_vs_websocket.html",
+      "target_ids": [
+        "LP-005"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-15",
+      "group": "tools",
+      "order": 15,
+      "label": "实时媒体",
+      "url": "https://xiaolinnote.com/ai/tools/15_webrtc_vs_ws.html",
+      "target_ids": [
+        "LP-047"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-16",
+      "group": "tools",
+      "order": 16,
+      "label": "模型网关",
+      "url": "https://xiaolinnote.com/ai/tools/16_llm_gateway.html",
+      "target_ids": [
+        "EN-014"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-17",
+      "group": "tools",
+      "order": 17,
+      "label": "工具路由",
+      "url": "https://xiaolinnote.com/ai/tools/17_tool_routing.html",
+      "target_ids": [
+        "AG-061"
+      ]
+    },
+    {
+      "source_id": "XL-TOOLS-18",
+      "group": "tools",
+      "order": 18,
+      "label": "工具故障",
+      "url": "https://xiaolinnote.com/ai/tools/18_tool_reliability.html",
+      "target_ids": [
+        "AG-014"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-01",
+      "group": "llm",
+      "order": 1,
+      "label": "模型与NLP分类",
+      "url": "https://xiaolinnote.com/ai/llm/what_is_llm.html",
+      "target_ids": [
+        "FD-025"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-02",
+      "group": "llm",
+      "order": 2,
+      "label": "Transformer结构",
+      "url": "https://xiaolinnote.com/ai/llm/transformer_architecture.html",
+      "target_ids": [
+        "FD-016"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-03",
+      "group": "llm",
+      "order": 3,
+      "label": "注意力优化层次",
+      "url": "https://xiaolinnote.com/ai/llm/mha_mqa_gqa_flash_attention.html",
+      "target_ids": [
+        "FD-007"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-04",
+      "group": "llm",
+      "order": 4,
+      "label": "位置信息",
+      "url": "https://xiaolinnote.com/ai/llm/position_encoding.html",
+      "target_ids": [
+        "FD-009"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-05",
+      "group": "llm",
+      "order": 5,
+      "label": "分词",
+      "url": "https://xiaolinnote.com/ai/llm/tokenizer.html",
+      "target_ids": [
+        "FD-005"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-06",
+      "group": "llm",
+      "order": 6,
+      "label": "训练配方",
+      "url": "https://xiaolinnote.com/ai/llm/llm_training.html",
+      "target_ids": [
+        "FD-013"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-07",
+      "group": "llm",
+      "order": 7,
+      "label": "缩放与涌现",
+      "url": "https://xiaolinnote.com/ai/llm/scaling_law_emergence.html",
+      "target_ids": [
+        "FD-014",
+        "FD-017",
+        "FD-024"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-08",
+      "group": "llm",
+      "order": 8,
+      "label": "微调路线",
+      "url": "https://xiaolinnote.com/ai/llm/finetuning.html",
+      "target_ids": [
+        "AD-001",
+        "AD-005"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-09",
+      "group": "llm",
+      "order": 9,
+      "label": "LoRA形状",
+      "url": "https://xiaolinnote.com/ai/llm/lora.html",
+      "target_ids": [
+        "AD-004",
+        "AD-001"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-10",
+      "group": "llm",
+      "order": 10,
+      "label": "后训练范围",
+      "url": "https://xiaolinnote.com/ai/llm/post_training.html",
+      "target_ids": [
+        "FD-013",
+        "AD-008"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-11",
+      "group": "llm",
+      "order": 11,
+      "label": "DPO与PPO",
+      "url": "https://xiaolinnote.com/ai/llm/dpo_vs_ppo.html",
+      "target_ids": [
+        "AD-003",
+        "AD-008"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-12",
+      "group": "llm",
+      "order": 12,
+      "label": "解码策略",
+      "url": "https://xiaolinnote.com/ai/llm/decoding_strategies.html",
+      "target_ids": [
+        "FD-012"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-13",
+      "group": "llm",
+      "order": 13,
+      "label": "采样配置",
+      "url": "https://xiaolinnote.com/ai/llm/temperature_top_p_top_k.html",
+      "target_ids": [
+        "LP-001"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-14",
+      "group": "llm",
+      "order": 14,
+      "label": "缓存两本账",
+      "url": "https://xiaolinnote.com/ai/llm/kv_cache_prompt_caching.html",
+      "target_ids": [
+        "FD-026",
+        "EN-001"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-15",
+      "group": "llm",
+      "order": 15,
+      "label": "量化比较",
+      "url": "https://xiaolinnote.com/ai/llm/quantization.html",
+      "target_ids": [
+        "AD-002"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-16",
+      "group": "llm",
+      "order": 16,
+      "label": "提示设计",
+      "url": "https://xiaolinnote.com/ai/llm/prompt_engineering.html",
+      "target_ids": [
+        "LP-006"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-17",
+      "group": "llm",
+      "order": 17,
+      "label": "CoT边界",
+      "url": "https://xiaolinnote.com/ai/llm/cot.html",
+      "target_ids": [
+        "LP-018"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-18",
+      "group": "llm",
+      "order": 18,
+      "label": "幻觉处理",
+      "url": "https://xiaolinnote.com/ai/llm/hallucination.html",
+      "target_ids": [
+        "FD-002"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-19",
+      "group": "llm",
+      "order": 19,
+      "label": "MoE成本",
+      "url": "https://xiaolinnote.com/ai/llm/moe.html",
+      "target_ids": [
+        "FD-010"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-20",
+      "group": "llm",
+      "order": 20,
+      "label": "推理引擎能力",
+      "url": "https://xiaolinnote.com/ai/llm/deployment_frameworks.html",
+      "target_ids": [
+        "AD-024",
+        "AD-014",
+        "AD-011"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-21",
+      "group": "llm",
+      "order": 21,
+      "label": "能力评估",
+      "url": "https://xiaolinnote.com/ai/llm/evaluation_metrics.html",
+      "target_ids": [
+        "FD-020"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-22",
+      "group": "llm",
+      "order": 22,
+      "label": "模型选择",
+      "url": "https://xiaolinnote.com/ai/llm/model_selection.html",
+      "target_ids": [
+        "LP-008"
+      ]
+    },
+    {
+      "source_id": "XL-LLM-23",
+      "group": "llm",
+      "order": 23,
+      "label": "有效上下文",
+      "url": "https://xiaolinnote.com/ai/llm/23_long_context_lost_middle.html",
+      "target_ids": [
+        "FD-028"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-01",
+      "group": "langchain",
+      "order": 1,
+      "label": "框架选型",
+      "url": "https://xiaolinnote.com/ai/langchain/agent_frameworks.html",
+      "target_ids": [
+        "AG-010"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-02",
+      "group": "langchain",
+      "order": 2,
+      "label": "Runnable与LCEL",
+      "url": "https://xiaolinnote.com/ai/langchain/chain.html",
+      "target_ids": [
+        "LC-001"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-03",
+      "group": "langchain",
+      "order": 3,
+      "label": "架构分工",
+      "url": "https://xiaolinnote.com/ai/langchain/langchain_architecture.html",
+      "target_ids": [
+        "LC-001"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-04",
+      "group": "langchain",
+      "order": 4,
+      "label": "创建Agent",
+      "url": "https://xiaolinnote.com/ai/langchain/build_agent.html",
+      "target_ids": [
+        "LC-002"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-05",
+      "group": "langchain",
+      "order": 5,
+      "label": "注册工具",
+      "url": "https://xiaolinnote.com/ai/langchain/tool_registration.html",
+      "target_ids": [
+        "LC-002"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-06",
+      "group": "langchain",
+      "order": 6,
+      "label": "框架记忆",
+      "url": "https://xiaolinnote.com/ai/langchain/memory.html",
+      "target_ids": [
+        "AG-005",
+        "AG-023"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-07",
+      "group": "langchain",
+      "order": 7,
+      "label": "LlamaIndex边界",
+      "url": "https://xiaolinnote.com/ai/langchain/langchain_vs_llamaindex.html",
+      "target_ids": [
+        "AG-010"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-08",
+      "group": "langchain",
+      "order": 8,
+      "label": "Java生态",
+      "url": "https://xiaolinnote.com/ai/langchain/langchain4j.html",
+      "target_ids": [
+        "LC-005"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-09",
+      "group": "langchain",
+      "order": 9,
+      "label": "编排控制层次",
+      "url": "https://xiaolinnote.com/ai/langchain/langchain_vs_langgraph.html",
+      "target_ids": [
+        "AG-022"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-10",
+      "group": "langchain",
+      "order": 10,
+      "label": "中断与恢复",
+      "url": "https://xiaolinnote.com/ai/langchain/langgraph_advantages.html",
+      "target_ids": [
+        "LC-003"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-11",
+      "group": "langchain",
+      "order": 11,
+      "label": "v1迁移",
+      "url": "https://xiaolinnote.com/ai/langchain/version_evolution.html",
+      "target_ids": [
+        "LC-004"
+      ]
+    },
+    {
+      "source_id": "XL-LANGCHAIN-12",
+      "group": "langchain",
+      "order": 12,
+      "label": "研究流程",
+      "url": "https://xiaolinnote.com/ai/langchain/deep_research.html",
+      "target_ids": [
+        "LC-006"
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "AG-001",
+      "disposition": "revised",
+      "before_hash": "1878ee9a88120df108f003b521581c38d348563ba89234de1368bbac05bc1dae",
+      "output_hash": "1b95df4ff02725e2eae48d40fe8d03e51c28f75284a557c6521bf8876e3b1128"
+    },
+    {
+      "id": "AG-013",
+      "disposition": "supplemented",
+      "before_hash": "648cd67f6cf7d37185278a733716730807835e1ad80d7dcf56bbedf4474c0cef",
+      "output_hash": "e4585ccacc69896212bd502c5c1df4fa0116abc614087889475f3ddd355d6578"
+    },
+    {
+      "id": "AG-015",
+      "disposition": "revised",
+      "before_hash": "1e9b57c65b58464c8ff060f1b930d5317596b4a44a2c14b74b0aa61736f364e8",
+      "output_hash": "cd28407e95a72aa661c4731bd5bb7d49ffb4314f2f6b86160c776369b3bbdbe0"
+    },
+    {
+      "id": "AG-007",
+      "disposition": "supplemented",
+      "before_hash": "6870a1b4a51b6b85bd84c74bb8cdf9bf41cbce698fa639e9a413d43b3413e6da",
+      "output_hash": "4a0385ead4d04f0fda70cdf25538787326d63a1e510213450438816d8c18a453"
+    },
+    {
+      "id": "AG-005",
+      "disposition": "revised",
+      "before_hash": "611daaae4c7e2f15b3faa171378fd01f3fb53f8c062a547c4e29facaa996bf0f",
+      "output_hash": "632b5fa768fa073a2e36df132d29769d8afee3b014b5e838877d63e09a21af56"
+    },
+    {
+      "id": "AG-023",
+      "disposition": "supplemented",
+      "before_hash": "c6cfe37ffd7b2eea768ff5eb729f624d0a6a0553dce507d70a84dabfb9a9f027",
+      "output_hash": "f17e44e5026b6595ee0b9c2c24696dbe53194450aa9da18674c8408152e32903"
+    },
+    {
+      "id": "AG-008",
+      "disposition": "supplemented",
+      "before_hash": "26793c5e10615f240e5ce7eca5c68d241462728a4c10ed9ba4f3dcab6171b3f5",
+      "output_hash": "8c6b054f3680317383bbf39354a8c9f8be9b7d0e7ceb1ea48c6988bb48ce3179"
+    },
+    {
+      "id": "AG-031",
+      "disposition": "supplemented",
+      "before_hash": "8cfa051f08e3d54ecafdc26e6b3ffcb05baad659fb1a2afb65b0269b97b7a0cb",
+      "output_hash": "13f0510b7239379f76507e81d751d44a9e3299a0678221503e67f8a553f30986"
+    },
+    {
+      "id": "AG-010",
+      "disposition": "revised",
+      "before_hash": "0bac3456471112518d953e6729f3f5d09e3a5287d729a3ef4dae066584086884",
+      "output_hash": "e8ee02ee15a13dea5afa81d4550bcce31183c9700bbfceae1dab61e22bd09130"
+    },
+    {
+      "id": "AG-016",
+      "disposition": "revised",
+      "before_hash": "6e3955d8906e89a147747e539fc12c281244e512c518c9d6f5e0f944332c50c0",
+      "output_hash": "c00dd513daa3715a7d2a26ee57a39f8141f1ffb62e150a7a0b1d15db73a5f934"
+    },
+    {
+      "id": "AG-021",
+      "disposition": "supplemented",
+      "before_hash": "59d4de93082b4b5eed043d3555e456406765422a79b4285c9d850713614a5f8a",
+      "output_hash": "20a5331e7fe884987b0c7d445ccc9710139a1fc5acd4c1f9e870f396a8b42dbc"
+    },
+    {
+      "id": "AG-050",
+      "disposition": "supplemented",
+      "before_hash": "1fc5b5d0adf7dfa222da2afbff2c5918d446f0030a1baae5e4d24c3cd74eeba0",
+      "output_hash": "0bb8e7e3dc961d625e58d65cfe9d28f535b8941054d1971b3718c3298757a691"
+    },
+    {
+      "id": "AG-030",
+      "disposition": "supplemented",
+      "before_hash": "c76752a3b418d7281bb567cd3ad765864395cdd3cc9170d0510e12972a4a26cc",
+      "output_hash": "9f203b2d454abd30512873db2ba1d104923ae5397fe7fda7ce435da7a6252c48"
+    },
+    {
+      "id": "AG-012",
+      "disposition": "supplemented",
+      "before_hash": "5dba36b6d470036a461602f42b7bcc33e8f3ab02506fc5103e5b9b4907925c49",
+      "output_hash": "959fc611c976e946ee5255a2466d8080dcf3d23e174baa09b9b0b5f449250d52"
+    },
+    {
+      "id": "AG-024",
+      "disposition": "supplemented",
+      "before_hash": "25ce791fa647beae9a1b94beb669488da5e0e8200bdb910ea9fa8eafac27ea22",
+      "output_hash": "73c7ca659d6cb7194d2d7480cd6b96d52102637e3a8a85bfab4a4de502bc8947"
+    },
+    {
+      "id": "AG-033",
+      "disposition": "supplemented",
+      "before_hash": "0c0c717058573868a6a4e828f89a03eb51d436f144e1ccb7c1f151bbf363a90d",
+      "output_hash": "911823f65b797ae6f5dcea27b68afefec3cfa46433b01131e36a0540ddecfdd9"
+    },
+    {
+      "id": "AG-058",
+      "disposition": "supplemented",
+      "before_hash": "280542a887c523319503257b39a05a2f5a6772443dc2da2cd29c70896a48aa14",
+      "output_hash": "a6e05a3aecc0e2ce3062e31895077247ec9c5a11ff528451459bf8f60a54d6e2"
+    },
+    {
+      "id": "RG-017",
+      "disposition": "supplemented",
+      "before_hash": "0f95ae9bdacb007589399a9a0fdac77595b4e4be8fb4c35e1a3832f5056f4339",
+      "output_hash": "2b647a94e49781100ad783bd9ca36d14fe035651b91e60dd4adb813bc0d8c412"
+    },
+    {
+      "id": "RG-001",
+      "disposition": "supplemented",
+      "before_hash": "99103ef928f837b7525e5371dd8e35516ac261cb882a97e8a0a00d7c61e90def",
+      "output_hash": "c5df914df61f364783ecb5f53d5b2d061904655c020cee8292618d8625f2da73"
+    },
+    {
+      "id": "AD-001",
+      "disposition": "revised",
+      "before_hash": "50c3b9796c8f9233dcb6a22aba444cc5fc9ef116f425718387a0a102e7be7101",
+      "output_hash": "da9878a8e142bb79b24bb8f78f6f2bbd5f051f4d0478de345e6fee50c63961c8"
+    },
+    {
+      "id": "RG-002",
+      "disposition": "supplemented",
+      "before_hash": "15620fc4e585ccb22bd6eb5960de2d89c8ddc827f77957fd88b3a619c88e92ea",
+      "output_hash": "12bc60ff84bfb1ea4524b8d8bab5892627a9db88a30a4c3925c86dfc69e65381"
+    },
+    {
+      "id": "RG-023",
+      "disposition": "supplemented",
+      "before_hash": "44398a656457e6fd0315ac4c8e66c2721094856b74376d776779ede1e769e565",
+      "output_hash": "af0ea6f8794c2971b753fc62667d3d1fb6632aa07bf9ec34529893e09906f1a6"
+    },
+    {
+      "id": "RG-051",
+      "disposition": "supplemented",
+      "before_hash": "abdb1e7f119617985cf27d745b65212839a6c76e96df4f11e5cc0804de6ecbfc",
+      "output_hash": "ff780357d96ea9ef59d2d9e37f0d7514046e8324f1ae22654165530843f8ed07"
+    },
+    {
+      "id": "RG-003",
+      "disposition": "supplemented",
+      "before_hash": "7f21c918d0666a66d80e3009ef25cc0fe11e65da44eed82fff7fbdc45dac09cd",
+      "output_hash": "4fd2cd180fb4100dbe606507c157c8eabd6da4c5292b25862d1d55446fecc7bc"
+    },
+    {
+      "id": "RG-008",
+      "disposition": "supplemented",
+      "before_hash": "e2c58a81913b8ee485fb898e240b3529d381b29e57d63a3849d5c7bc4cdcd7cf",
+      "output_hash": "48f730c3d24e11aa6fd1325d6099b8be3d83e060de507edca3fdd465637c64e6"
+    },
+    {
+      "id": "RG-006",
+      "disposition": "supplemented",
+      "before_hash": "ea5c090b869b24704e8169ab1657f85825c44a7d4eeecd3b9acded2ae9154652",
+      "output_hash": "7f377d6c17a22d08ab2109c5c280d6f620a2211913ec534861d4a6610521f932"
+    },
+    {
+      "id": "RG-007",
+      "disposition": "supplemented",
+      "before_hash": "66b474e812b1e04ecc8c20ad618be68c4ec796cb8e44277e9f51abb77f70836f",
+      "output_hash": "756ef46dd9daca60a09c3708ced1dc8d6e8ae1f20695758bbca42a1b6fb61e64"
+    },
+    {
+      "id": "RG-040",
+      "disposition": "supplemented",
+      "before_hash": "13c27786857db2446633de40408943eb09748b689589130b4a99909a2487e6eb",
+      "output_hash": "1db955bdaff24ebf482dec401a396e6ebd4346de5d84845a963c27f0847a5892"
+    },
+    {
+      "id": "RG-020",
+      "disposition": "supplemented",
+      "before_hash": "6011aeb0bb2156e4941b28a56efe174ae85d15da6a0dc130df789e6cf67eb18f",
+      "output_hash": "1278fdd1d13ed70992f58de0f79878b697ccff0cb68e2bbeff43c6e0a37ec04b"
+    },
+    {
+      "id": "RG-013",
+      "disposition": "supplemented",
+      "before_hash": "03798fbea8be974672b6a7c557ca0ddeb56879fa0339ae0dc962bfc8deffad91",
+      "output_hash": "ae6a426d75aa7800d4b4893fc4c757d0bb1295e96060849304ac2926a5c296e4"
+    },
+    {
+      "id": "RG-044",
+      "disposition": "supplemented",
+      "before_hash": "86cccd7057894328e9ddc874a07dd1f440ac37efdabf7801a4ab5ee4cf9af2a9",
+      "output_hash": "cf95dbcf9da6d55acd49aeb5a50091e564e00592fc02fc5fc1b934d5fadade0d"
+    },
+    {
+      "id": "RG-011",
+      "disposition": "supplemented",
+      "before_hash": "e482d505cfd234b6c275e73c2ea6a8acd896320a0197b700e8106c1df4531ebb",
+      "output_hash": "28622ea2f0e91898b2bdda7d67c79a2d814b41b3447f8d7f089f254d70839cee"
+    },
+    {
+      "id": "RG-029",
+      "disposition": "supplemented",
+      "before_hash": "31a9af64f977fd33754b3793e2682e635f750cae0a05e0a6208c61ea331006df",
+      "output_hash": "5841b7a6d26663ee06ec2df3d1386c30cf09aafb5b2d50794ee92ec81bb0113d"
+    },
+    {
+      "id": "RG-009",
+      "disposition": "supplemented",
+      "before_hash": "7dd0b520999aa10fa5e3fe1c5f653e5906a4c5239d1ee76bd19f261734d0ae2c",
+      "output_hash": "842d763694903c3ca5ec0a62e696024910be2a1f468babbc79d5aaa978893dbc"
+    },
+    {
+      "id": "RG-014",
+      "disposition": "supplemented",
+      "before_hash": "af982d4617906e1887238793587e18782257bd8f002f17fe07f871698a0d2039",
+      "output_hash": "cbec80cdc74fc1bfc99e7755dab6fca1d83c141743b89972bfe60fd0dc62e657"
+    },
+    {
+      "id": "RG-004",
+      "disposition": "supplemented",
+      "before_hash": "09f90cfccb8d1434df7d9276bbbd37c70dcbbabeab206a7218a699be9584e42d",
+      "output_hash": "4f2e65c50cd80cd7cbd6960011e23eb2adc64dcc25355a6c0fd8aeb70b95fc1b"
+    },
+    {
+      "id": "RG-071",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "d1384c505a888505816195e3542737096f0717abd28659f4894f8e2ce8385813"
+    },
+    {
+      "id": "AG-002",
+      "disposition": "revised",
+      "before_hash": "68f71980e6b058ff900af435cded0e7dcab2b4494b1a22a29041e32f7f26c290",
+      "output_hash": "6c56daacfcb29b69da58857e60ad83ae339d728437ab16349c2b3f2cfc20fab2"
+    },
+    {
+      "id": "LP-046",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "935abc48fbad6bab4d44ffae6e67b727e03a03e295a15b9d8b3fdd41ea0498db"
+    },
+    {
+      "id": "AG-004",
+      "disposition": "revised",
+      "before_hash": "818da251fe135374abafade69191e115a277b3a6293219fb2b676d6323fdc5e8",
+      "output_hash": "b76727156b394b13c1db0c01000748b7efb9de5ca98a3b77c3a8307bd6bf407e"
+    },
+    {
+      "id": "AG-019",
+      "disposition": "revised",
+      "before_hash": "a91942714e66aa5797ba020f2ca9a4db91907213ec2247ec632503c874b32807",
+      "output_hash": "5028ac381cdb41a4acd6b1a749866a2c1329b983bd3b95b6ee4ffdd3b269437e"
+    },
+    {
+      "id": "AG-018",
+      "disposition": "revised",
+      "before_hash": "c515242d2a9b0e30bc0439b6384c215d2b4d37b11d0ac380069f0d174505f5da",
+      "output_hash": "7167d7e9e74ebfaa52c553808b4abaa40dd028cab7bf1f6061a445aa915967e9"
+    },
+    {
+      "id": "AG-059",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "191eee8f0a620e0038986864da5213c1af9b157467f088b5c859d119a76446dd"
+    },
+    {
+      "id": "AG-060",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "b4cb581e28c029b5d4c819d55169d4cff5065be8e54a76e1bfebe1139338874e"
+    },
+    {
+      "id": "AG-011",
+      "disposition": "revised",
+      "before_hash": "2ed5e42db632a1233d4c55aebeed1756e7f19b9bbceea019c7873b29a57141cb",
+      "output_hash": "ed022c120abf576524300c04efa3e909da36568384ebcb031f86674d9fed845f"
+    },
+    {
+      "id": "LP-005",
+      "disposition": "revised",
+      "before_hash": "317f095d100323243f4e8cd94dbdaa16448091db7f23e4b426db26d7333f9247",
+      "output_hash": "de28f175a81e9192672197e09e5a2e964f96059f4789349ae78c6dedacb5d95d"
+    },
+    {
+      "id": "LP-047",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "055646ecf0aa2a4a7603bc07c63ab19d8c8ae34fc7a833ae8a7689a9deb4e716"
+    },
+    {
+      "id": "EN-014",
+      "disposition": "supplemented",
+      "before_hash": "842610c2824f13f58c49b8b5569063453d253c808389ce52ba6ef28f6cbcdb1e",
+      "output_hash": "f2920740df60f9c0cbf6745417d5bcc767f4cbd5949c467eb92bda074b8620df"
+    },
+    {
+      "id": "AG-061",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "00ad62a34d2e91f7cb1d09b95da06b95f5569ef5c52397e1210f75dff69d2880"
+    },
+    {
+      "id": "AG-014",
+      "disposition": "supplemented",
+      "before_hash": "364e644f1031edb50fd66891c77adcc17019d07477d1b431abea4b2bd111f1c8",
+      "output_hash": "80fefbcdc77555ea6c933e6a01ebc6a760393588835696df0dc81186acc814b1"
+    },
+    {
+      "id": "FD-025",
+      "disposition": "supplemented",
+      "before_hash": "7d95ae6885122813df168e852e4059701779227a52b180004cc87cbc0a5e955b",
+      "output_hash": "caa80dba8ce473a8b82a543003a61869324b2994e9cc2d1d8f921a069d9335aa"
+    },
+    {
+      "id": "FD-016",
+      "disposition": "supplemented",
+      "before_hash": "6b27aac32c3981d869e01479ee2a20b737d1d9025ea8e036f49f153bee9fec42",
+      "output_hash": "73033d85a9340c5e19377321a146c989339baf50331043274a381479b52a81ab"
+    },
+    {
+      "id": "FD-007",
+      "disposition": "revised",
+      "before_hash": "27eaead21fc85c3070791ce491797cd208bd3b9cc3df3352cad6a315b5c4b32a",
+      "output_hash": "8f86a3b4eeaf6b91aa8d8fefd194aca25e4eca183e7e9222eb1cdcffcbeb8670"
+    },
+    {
+      "id": "FD-009",
+      "disposition": "supplemented",
+      "before_hash": "0fcfe7923006628c44bd15c53ea95597c965048ba2d522bc77da670a9eca29ef",
+      "output_hash": "97882a0e6f5e29e44cf20849e1c950294cebdc9af4534b5750da841eb01d506b"
+    },
+    {
+      "id": "FD-005",
+      "disposition": "supplemented",
+      "before_hash": "b481ff775b979beb1a3979241f882ec9632ba5bf56923ce0183e53cb2fc49c9e",
+      "output_hash": "d2458e13614eac1bba27e6e946f3be8e01f2df312f8ee01108a856c6b6e51ee8"
+    },
+    {
+      "id": "FD-013",
+      "disposition": "revised",
+      "before_hash": "e1e9529d562d055eda1bbbbe9418edab4f6a32d3b59903c2982358dbe29d76e0",
+      "output_hash": "312e60393e0c08fecb77af00e4aecc5630db11ceda29001f315f9c1a757167b7"
+    },
+    {
+      "id": "FD-014",
+      "disposition": "revised",
+      "before_hash": "0b4a8e1c14bddec429f4cbc829ebc931aad4ddbdcf1b81a2a5ac863a38ef3082",
+      "output_hash": "6f75b8e7be24b2d4b811463419e8b2e70a754123e4c8c91b5d26c83e6a13282b"
+    },
+    {
+      "id": "FD-017",
+      "disposition": "revised",
+      "before_hash": "66a1e5e72d720803783bca2289878fc3db90b2333e6e7f6863ec5a433fc17658",
+      "output_hash": "2e1c63a5c800e694f3e0f8cc6f3beccd6863717d06b50f91da133afd899b8eef"
+    },
+    {
+      "id": "FD-024",
+      "disposition": "revised",
+      "before_hash": "6b3cf33c6c014334f694cb3109c83eeae09825ec3fcb305022e257796e5b59da",
+      "output_hash": "faec060c1348f5dff4ffb41c08fe9409bd4cd43c4dacfc9b38525f375a5bc65b"
+    },
+    {
+      "id": "AD-005",
+      "disposition": "revised",
+      "before_hash": "38dc12df0cc45e79a964c75e6d663dc0ea808ba8ddbc0cfab61e3632c96a1975",
+      "output_hash": "c1a70a1ac8744bc9b4c319a3cef96deab91c03ebbff09ebd36a3dee0a1d6465c"
+    },
+    {
+      "id": "AD-004",
+      "disposition": "revised",
+      "before_hash": "bdf286ad9a955f3bb9813a7cb729048eb38cd2fd647199569d3ba018f80c4c06",
+      "output_hash": "b958c764a87be848d13250b7195b2cc412fe8ceda0b1eb21c47e7c41e49442b2"
+    },
+    {
+      "id": "AD-008",
+      "disposition": "revised",
+      "before_hash": "95c2c6195442e1c0c6e090b1d6d6a7baf378bc6ac64a7c02ed32791495deddc4",
+      "output_hash": "c12127a65c0882faf02a4216754bff44ba525a9c743aa60e4fc0ab410ff61af4"
+    },
+    {
+      "id": "AD-003",
+      "disposition": "revised",
+      "before_hash": "214915ed29564c7eb710b379ef00955ac1fdb31cf11aa34dc2370f1fab79e701",
+      "output_hash": "910755090b99cf400e62d91cfeb2a1dec7ba9af5544c699559d880e84ac3ce95"
+    },
+    {
+      "id": "FD-012",
+      "disposition": "revised",
+      "before_hash": "b1cd920eafc62be05f6caff2debe41bfb057146f7b176383ec2085c677080cf0",
+      "output_hash": "018448dff98add7f6d7ee20f064e7a3150584774550c400efd99f5f8fd17d53c"
+    },
+    {
+      "id": "LP-001",
+      "disposition": "revised",
+      "before_hash": "2a410f1801fa4e7042d1178fa00727a6597a28434ccc6582b2fe0f28cda7837b",
+      "output_hash": "e856525e957611eec4c6d9f48d1623b7ffd26f8a791ef45edc724f05ae4b0e5a"
+    },
+    {
+      "id": "FD-026",
+      "disposition": "revised",
+      "before_hash": "8c149aff29077a0418bdc498df40ea32a8d2d145c3132d7d20a7fdc4be2d0774",
+      "output_hash": "d94302c653659d141965bd7c1089253225ad7ce25ec39f8d08b201f8d5519146"
+    },
+    {
+      "id": "EN-001",
+      "disposition": "supplemented",
+      "before_hash": "de75c1137fc17bfd8f49bea2a4bb11feb42f14ad85cde49cf761fe819deb441c",
+      "output_hash": "8f7f608643cdd2d6b87bb95a3b7fec17eea5e1c0753cdf2bb6d1f9829007a18a"
+    },
+    {
+      "id": "AD-002",
+      "disposition": "revised",
+      "before_hash": "651ab3e219ed150a7f58ce6dc6ee206026230c9c973b14fb6aa365e6d5d28a5b",
+      "output_hash": "f529f4ed4bdea340d8a24971edcb5fd14b1b67d8136823d1326405577954f41f"
+    },
+    {
+      "id": "LP-006",
+      "disposition": "supplemented",
+      "before_hash": "3cd8ed0bef4a5f3d5ae8bcf189623d105c5c74af67948ef22ea1fe380946483d",
+      "output_hash": "ef29942dbd79acae53e041f7fd045aafba88c04e50712fd595a227e7845f26bd"
+    },
+    {
+      "id": "LP-018",
+      "disposition": "supplemented",
+      "before_hash": "92bdbcfeb7f938d125e8da79ce724c5631cc432c73c242a1fb06d5744c619c8a",
+      "output_hash": "3d4efee715db9024101a4fe8407b5ed1e27eecfd7b26a92387aa30ebacaa9ef8"
+    },
+    {
+      "id": "FD-002",
+      "disposition": "supplemented",
+      "before_hash": "a1362429d136c1e2d7a2dce2e33d7941f1f9534735bb10fef29f8bbc93d84ba0",
+      "output_hash": "61690238c1979a93169e7be77f68958b6a8fb575b591a6a1f2ee9633ee2dec71"
+    },
+    {
+      "id": "FD-010",
+      "disposition": "revised",
+      "before_hash": "68e3dfdb0fbc7469389aa4f37d06f827065bbe3cae23fa7918d0fc46a406b7d3",
+      "output_hash": "040c848e7d5b6b032a012d3a1f28d494d9a376c56962d9d030f83cf6d593fbdd"
+    },
+    {
+      "id": "AD-024",
+      "disposition": "revised",
+      "before_hash": "5421b1074cd485150f02817f0daedb8ecbcb3aadcb2abe67aa45bc1fce5c81b5",
+      "output_hash": "c30af1152ac6cd0139ad6f92205786348c45791052aa26ea1c6225939c397ad6"
+    },
+    {
+      "id": "AD-014",
+      "disposition": "revised",
+      "before_hash": "d730e3f69497997acde1027beec04b3bf34e530a8f17ceec990fb3bf851a6f06",
+      "output_hash": "0f22445ca5d2ecca4b1ca4cb24051cc634e7006059927c7afa1a726b9a57741c"
+    },
+    {
+      "id": "AD-011",
+      "disposition": "revised",
+      "before_hash": "3e1709fd3356c09bd8721d1cc314c9913a897cf0adeb5f581569d909902e711c",
+      "output_hash": "4b36b4f2ef94a9b381e8401a4651c518c53ec88d82276274fd8912be753f7bf8"
+    },
+    {
+      "id": "FD-020",
+      "disposition": "supplemented",
+      "before_hash": "a1c250aa44dfe2215552398c8dc5d70c31794e254ab632a7f793819cae2aaec5",
+      "output_hash": "0eee42904ddaa898a26118eb2355ec6954e05401eb7e817e4f8f5b994de644ee"
+    },
+    {
+      "id": "LP-008",
+      "disposition": "supplemented",
+      "before_hash": "803d34a737eb93cfedd2b343e4e1625700fc03af6d6b01502a8421fde7ea0399",
+      "output_hash": "895c3ebfb408e12fa6f8484c5986a76397f3c209e6ca1e0a891bf9d6dbe8b019"
+    },
+    {
+      "id": "FD-028",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "5ae0ef1cc17513bd1e76c2b51fc90cc3696de52ab2409f378daeb6f26b3a5b64"
+    },
+    {
+      "id": "LC-001",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "fb75bc905e4c8f1d104b306722776c963e74ba413700d8b48703813059e74e56"
+    },
+    {
+      "id": "LC-002",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "239361257d14e88f8f0403df83b99514c48637d10ed439c72da7fe9de69348be"
+    },
+    {
+      "id": "LC-005",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "82b30c291b24af477e35d199b469fb56d0ab4be88bc04944fa5ddceafa63ebca"
+    },
+    {
+      "id": "AG-022",
+      "disposition": "revised",
+      "before_hash": "7845164077c128483a52a2f8f5ed19e71d0c1a7759909ae87b78c014015ac156",
+      "output_hash": "01af13fc814475d127b42fd108684dcae78ff38861de2c14876acf333032992b"
+    },
+    {
+      "id": "LC-003",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "542173ff6f943f9dd4353c8d5df01f9b2746aa382e67d918f5461c6bfc56f778"
+    },
+    {
+      "id": "LC-004",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "5c2d0fb8d214a24ca6a90bcd825408658274d16b77158e7989ddefd1a791d73b"
+    },
+    {
+      "id": "LC-006",
+      "disposition": "new",
+      "before_hash": null,
+      "output_hash": "98db9e9d474489af8e272993ded887f6b79205b182b9fd6d3ce29a18e6675087"
+    }
+  ],
+  "personal_state_written": false
+}
