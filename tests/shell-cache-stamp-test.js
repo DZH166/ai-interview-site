@@ -87,6 +87,14 @@ ok('清单顺序变化后哈希应变化(说明是顺序敏感的累积哈希,�
 ok('重算两次结果稳定(不含时间戳等易变因素)', computeStamp(shellFiles) === expected);
 
 console.log('\n== 4. 预缓存清单覆盖完整 ==');
+/* 新增一个 app/js 模块却忘了加进盖章清单时,它既不会被预缓存(离线打不开)、
+   也不会参与缓存戳计算(改了它老用户不刷新)——这是本轮真实踩过的坑,必须常驻拦住。 */
+const jsOnDisk = fs.readdirSync(path.join(ROOT, 'app', 'js'))
+  .filter(f => f.endsWith('.js')).map(f => 'app/js/' + f);
+const jsMissing = jsOnDisk.filter(f => !shellFiles.includes(f));
+ok('app/js 下每个 js 文件都在 build.py 的盖章清单里(新模块不能漏)',
+   jsMissing.length === 0,
+   '漏了:' + jsMissing.join(', ') + '\n      → 漏掉的模块不会被预缓存(离线打开会报错),也不参与缓存戳');
 /* 戳变了但 APP_SHELL 漏了某个文件,同样会让老用户拿到旧资源 */
 const shellArr = (swSrc.match(/const APP_SHELL = \[([\s\S]*?)\]/) || [, ''])[1];
 const cacheEntries = (shellArr.match(/'([^']+)'/g) || []).map(s => s.slice(1, -1)).filter(s => s !== './');

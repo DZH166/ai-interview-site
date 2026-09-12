@@ -1,7 +1,7 @@
 {
-  "name": "AI 面试学习站",
-  "short_name": "AI面试站",
-  "description": "AI 应用开发与 Agent 方向中文面试题库:306 题详解、文档阅读、模拟面试、全文检索。离线可用。",
+  "name": "面试加油工作台",
+  "short_name": "面试加油",
+  "description": "AI 应用开发与 Agent 方向面试工作台:306 题详解、今天要干的三件事、模拟面试与面试表达卡导出。离线可用。",
   "lang": "zh-CN",
   "start_url": "./index.html",
   "scope": "./",

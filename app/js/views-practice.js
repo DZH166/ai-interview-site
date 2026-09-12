@@ -771,11 +771,14 @@ const MockView = (() => {
         </div>
         <div class="mock-nav">
           <button class="btn" id="m-again">再来一轮</button>
+          <button class="btn btn-primary" id="m-card">导出这一轮的表达卡</button>
           <a class="btn" href="#/review">查看历史轮次</a>
-          <a class="btn btn-primary" href="#/home">返回首页</a>
+          <a class="btn" href="#/home">返回工作台</a>
         </div>
+        <p class="muted small" style="margin-top:8px">表达卡 = 你写的回答 + 面试口述版 + 参考要点,可下载 Markdown 或打印成 PDF。</p>
       </div>`;
     $('#m-again').addEventListener('click', () => { endSession(); state = null; go('#/mock'); });
+    $('#m-card').addEventListener('click', () => exportExpressCard('round', 0));
   }
 
   return { render, startDirected, flushDraft };

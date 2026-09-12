@@ -184,3 +184,66 @@ function modal(title, bodyHtml, buttons) {
   if (firstTarget) firstTarget.focus();
   return wrap;
 }
+
+/* ================= 表达卡导出(工作台的「出口」) =================
+   本站原来只有「导出备份」:那是给电脑恢复数据用的 JSON,人拿着读不了、念不了。
+   表达卡是给人用的:我的回答 + 面试口述版 + 参考要点,能复制、能打印。
+   生成逻辑在 express.js(纯函数,Node 里可测);这里只负责把它交到用户手上。 */
+
+/* 我标记为「还不熟 / 待复习」的题 —— 与复习中心今日队列同一套判定 */
+function pendingMarks() {
+  return Data.allQuestions()
+    .map(q => ({ q, r: Store.rec(q.id) }))
+    .filter(x => x.r.status === 'weak' || x.r.status === 'review')
+    .map(x => ({ qid: x.q.id, status: x.r.status, note: x.r.note || '' }));
+}
+
+function buildExpressCard(kind, index) {
+  const rounds = (Store.data.mock && Store.data.mock.rounds) || [];
+  if (kind === 'round') return ExpressCard.buildFromRound(rounds, index || 0, id => Data.question(id));
+  return ExpressCard.buildFromMarks(pendingMarks(), id => Data.question(id));
+}
+
+/* 打印版:开一个真正的新页面(Blob URL),用户在那里 Ctrl+P 就能存 PDF */
+function openPrintVersion(html) {
+  let url = '';
+  try {
+    url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    const w = window.open(url, '_blank');
+    if (!w) {
+      URL.revokeObjectURL(url);
+      toast('浏览器拦截了新窗口,请允许弹出窗口后重试', 'err');
+      return false;
+    }
+  } catch (e) {
+    if (url) URL.revokeObjectURL(url);
+    toast('打开打印版失败:' + e.message, 'err');
+    return false;
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return true;
+}
+
+/* kind: 'round'(某轮模拟面试) | 'marks'(待攻克清单)
+   失败一律明说原因,不产出看起来像材料的空文件。 */
+function exportExpressCard(kind, index) {
+  let r;
+  try { r = buildExpressCard(kind, index); }
+  catch (e) { toast('生成表达卡失败:' + e.message, 'err'); return null; }
+  if (!r || !r.ok) { toast((r && r.error) || '生成表达卡失败', 'err'); return null; }
+  modal('导出表达卡', `
+    <p>共 <b>${r.count}</b> 题,内容取自你本机浏览器的学习记录(不会上传)。</p>
+    <p class="muted small" style="margin-top:6px">两种格式按用途选:</p>
+    <ul style="margin:6px 0 0 18px">
+      <li><b>Markdown(.md)</b> — 复制进笔记软件、发给自己。</li>
+      <li><b>打印版(.html)</b> — 在新页面里 Ctrl+P 存成 PDF,面试前手机上翻。</li>
+    </ul>`, [
+    { label: '下载 Markdown', primary: true, onClick: () => {
+        download(r.mdName, r.markdown, 'text/markdown');
+        toast('已下载 ' + r.mdName);
+      } },
+    { label: '打开打印版', onClick: () => { openPrintVersion(r.html); } },
+    { label: '取消' }
+  ]);
+  return r;
+}

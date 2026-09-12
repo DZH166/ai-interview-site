@@ -49,6 +49,21 @@ async function open(page, hash) {
 const diskRec = page => page.evaluate(() => {
   try { return JSON.parse(localStorage.getItem('aiiv:records') || '{}'); } catch (e) { return { __parseError: String(e) }; }
 });
+/* 关掉当前打开的对话框(走真实关闭按钮)。
+   为什么需要:open() 用 page.goto 只改 hash 时**不会重新加载页面**,
+   上一段留下的对话框会一直盖在页面上,后面所有 click 都会被它拦掉。
+   (之前几段只用 evaluate 读文本,所以这个问题一直藏着没暴露。) */
+async function closeAnyModal(page) {
+  const n = await page.evaluate(() => document.querySelectorAll('.modal-wrap').length);
+  if (!n) return false;
+  await page.evaluate(() => {
+    const w = document.querySelector('.modal-wrap');
+    const b = w && w.querySelector('[data-close]');
+    if (b) b.click();
+  });
+  await sleep(200);
+  return true;
+}
 
 (async () => {
   const server = await startServer();
@@ -64,7 +79,7 @@ const diskRec = page => page.evaluate(() => {
   await page.evaluate(() => localStorage.clear());
   await open(page, '#/home');
   const homeOk = await page.evaluate(() => document.querySelector('#view').textContent.trim().length > 20);
-  ok('空存储时首页正常渲染(不依赖任何预置数据)', homeOk);
+  ok('空存储时工作台正常渲染(不依赖任何预置数据)', homeOk);
 
   /* ---------- 1. 练习一题:写笔记 + 标状态 ---------- */
   console.log('\n== 1. 答题并落盘 ==');
@@ -258,13 +273,139 @@ const diskRec = page => page.evaluate(() => {
       JSON.stringify(dr).slice(0, 180));
   }
   try { fs.unlinkSync(tmpFile); } catch (e) {}
+  /* 导入完成会弹一个结果对话框:这一段结束时必须关掉,否则后面所有点击都被它拦住 */
+  const closedImport = await closeAnyModal(page);
+  ok('导入结果对话框能正常关闭(不挡后续操作)', closedImport);
 
-  /* ---------- 7. 导入后仍然可检索(索引没被清空卡住) ---------- */
+  /* ---------- 7. 工作台:今天的三件事 + 出口(表达卡) ---------- */
+  console.log('\n== 7. 工作台与出口 ==');
+  await closeAnyModal(page);   /* 兜底:任何残留对话框都清掉,再开始点击 */
+  /* 先经过界面把这道题标成「还不熟」,这样第 1 件事有内容可对账 */
+  await open(page, '#/study/' + firstQid);
+  await page.evaluate(async qid => {
+    const b = Array.from(document.querySelectorAll('#q-detail [data-status], [data-status]'))
+      .find(x => x.dataset.status === 'weak');
+    if (b) b.click();
+    await new Promise(r => setTimeout(r, 300));
+  }, firstQid);
+  await sleep(400);
+
+  /* 对账:界面上的数字必须等于磁盘记录里的真值(不是"页面上有几个字") */
+  const diskBefore = await diskRec(page);
+  const expectReview = Object.keys(diskBefore.questions || {})
+    .filter(k => ['weak', 'review'].includes((diskBefore.questions[k] || {}).status)).length;
+  await open(page, '#/home');
+  const desk = await page.evaluate(() => ({
+    text: document.querySelector('#view').textContent,
+    todos: document.querySelectorAll('.desk-todo').length,
+    roundBtn: !!document.querySelector('#d-card-round'),
+    roundDisabled: !!(document.querySelector('#d-card-round') || {}).disabled,
+    marksBtn: !!document.querySelector('#d-card-marks'),
+    marksDisabled: !!(document.querySelector('#d-card-marks') || {}).disabled
+  }));
+  ok('工作台首屏是「今天的三件事」', desk.text.includes('今天的三件事'), desk.text.slice(0, 80));
+  ok('三件事都渲染出来了', desk.todos === 3, '实际 ' + desk.todos);
+  ok('第 1 件事的数字与磁盘记录一致', desk.text.includes('复习 ' + expectReview + ' 题'),
+    '磁盘里 weak/review 共 ' + expectReview + ' 题;页面文本=' + desk.text.slice(0, 200));
+  ok('有「带走点东西」出口区', desk.text.includes('带走点东西'));
+  ok('有「待攻克清单」导出按钮', desk.marksBtn);
+  ok('待攻克清单确实可导出(有 weak 题)', !desk.marksDisabled);
+  /* 诚实性:这一轮全程没做模拟面试,那一栏必须禁用并说明原因,而不是给个能点的空按钮 */
+  ok('没有模拟面试记录时,「最近一轮表达卡」按钮是禁用的', desk.roundDisabled);
+  ok('并说明了为什么不能导出', /还没有模拟面试记录/.test(desk.text));
+
+  /* 出口真的产出文件:待攻克清单 → Markdown,内容必须带我自己写的东西 */
+  await page.click('#d-card-marks');
+  await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+  const [dlCard] = await Promise.all([
+    page.waitForEvent('download', { timeout: 8000 }).catch(() => null),
+    page.evaluate(() => {
+      const b = Array.from(document.querySelectorAll('[role="dialog"] .modal-foot button'))
+        .find(x => /下载 Markdown/.test(x.textContent));
+      if (b) b.click();
+    })
+  ]);
+  let cardMd = '';
+  if (dlCard) {
+    const p = path.join(os.tmpdir(), 'aiiv-e2e-card-' + Date.now() + '.md');
+    await dlCard.saveAs(p);
+    cardMd = fs.readFileSync(p, 'utf8');
+    try { fs.unlinkSync(p); } catch (e) {}
+  }
+  ok('点导出真的下载到了文件', !!dlCard);
+  ok('卡片内容带上了我自己写的笔记', cardMd.includes(TOKEN),
+    '文件长度=' + cardMd.length);
+  ok('待攻克清单用「我的笔记」标签,不冒充「我的回答」', cardMd.includes('### 我的笔记'));
+  ok('卡片是给人看的成品(有标题/来源/题号)',
+    cardMd.includes('# 面试表达卡') && cardMd.includes('来源:') && cardMd.includes(firstQid));
+
+  /* 走一遍真实模拟面试,再从完成页导出「我的回答」那一版 */
+  await open(page, '#/mock');
+  const started = await page.evaluate(() => { const b = document.querySelector('#m-start'); if (b) b.click(); return !!b; });
+  ok('能从工作台进入模拟面试并开始', started);
+  await page.waitForFunction(() => !!document.querySelector('#m-self'), null, { timeout: 8000 });
+  await page.evaluate(t => {
+    const ta = document.querySelector('#m-self');
+    ta.focus(); ta.value = '我的面试回答:' + t;
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }, TOKEN);
+  await sleep(400);
+  /* 「完成本轮」只在最后一题出现,所以要像真人一样一题题翻过去 */
+  let reachedEnd = false;
+  for (let i = 0; i < 30 && !reachedEnd; i++) {
+    reachedEnd = await page.evaluate(() => !!document.querySelector('#m-finish'));
+    if (reachedEnd) break;
+    const moved = await page.evaluate(() => {
+      const b = document.querySelector('#m-next');
+      if (b) { b.click(); return true; }
+      return false;
+    });
+    if (!moved) break;
+    await sleep(120);
+  }
+  ok('能一题题翻到最后一题', reachedEnd);
+  await page.click('#m-finish');
+  await page.waitForFunction(() => !!document.querySelector('#m-card'), null, { timeout: 8000 })
+    .catch(() => {});
+  ok('模拟面试完成页有「导出这一轮的表达卡」', await page.evaluate(() => !!document.querySelector('#m-card')));
+  await page.click('#m-card');
+  await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+  const [dlRound] = await Promise.all([
+    page.waitForEvent('download', { timeout: 8000 }).catch(() => null),
+    page.evaluate(() => {
+      const b = Array.from(document.querySelectorAll('[role="dialog"] .modal-foot button'))
+        .find(x => /下载 Markdown/.test(x.textContent));
+      if (b) b.click();
+    })
+  ]);
+  let roundMd = '';
+  if (dlRound) {
+    const p = path.join(os.tmpdir(), 'aiiv-e2e-round-' + Date.now() + '.md');
+    await dlRound.saveAs(p);
+    roundMd = fs.readFileSync(p, 'utf8');
+    try { fs.unlinkSync(p); } catch (e) {}
+  }
+  ok('模拟面试也能导出表达卡', !!dlRound);
+  ok('这一版用「我的回答」标签', roundMd.includes('### 我的回答'));
+  ok('卡片里真的有我写的那句回答', roundMd.includes('我的面试回答:' + TOKEN));
+  ok('卡片带上了面试口述版与参考要点',
+    roundMd.includes('### 面试口述版') && roundMd.includes('### 参考要点'));
+  /* 开一轮新会话要去掉草稿,免得影响后面的断言与下次运行 */
+  await page.evaluate(() => { Store.data.mock.draft = null; Store.save(); });
+
+  await open(page, '#/home');
+  const desk2 = await page.evaluate(() => ({
+    roundDisabled: !!(document.querySelector('#d-card-round') || {}).disabled,
+    text: document.querySelector('#view').textContent
+  }));
+  ok('练过一轮之后,工作台的表达卡按钮变为可用', !desk2.roundDisabled);
+
+  /* ---------- 8. 导入后仍然可检索(索引没被清空卡住) ---------- */
   await open(page, '#/search?q=' + encodeURIComponent(TOKEN));
   const afterImport = await page.evaluate(() => document.querySelectorAll('.search-item').length);
   ok('导入后检索索引已重建,能重新搜到笔记', afterImport > 0, '命中数=' + afterImport);
 
-  /* ---------- 8. 全程无 JS 异常 ---------- */
+  /* ---------- 9. 全程无 JS 异常 ---------- */
   const realErrors = pageErrors.filter(m => !/Failed to load resource/.test(m));
   ok('整条链路无 JS 异常', realErrors.length === 0, JSON.stringify(realErrors.slice(0, 3)));
 

@@ -1,4 +1,4 @@
-/* 文档阅读与检索工作区 + 全局搜索结果 + 首页 */
+/* 文档阅读与检索工作区 + 全局搜索结果 + 工作台首页 */
 'use strict';
 
 /* ---------- 文档阅读 ---------- */
@@ -1123,19 +1123,36 @@ const PathView = (() => {
   return { render };
 })();
 
-/* ---------- 首页 ---------- */
+/* ---------- 工作台首页 ---------- */
 const HomeView = (() => {
+  /* 工作台首页:一进来先回答「今天干什么」,再给「能带走什么」。
+     这两件事才是它和工作台的区别所在——其余统计与进度照旧保留在下方。
+     「今天的三件事」的判定规则**复用复习中心**(ReviewView.getTodayQueue /
+     getDrillState),不在这里另抄一份:抄一份迟早两边不一致。 */
   function render(root) {
     const qs = Data.allQuestions();
-    const verified = qs.filter(q => q.verify && q.verify.status === 'verified').length;
     const byTopic = {};
     qs.forEach(q => { byTopic[q.topic] = (byTopic[q.topic] || 0) + 1; });
     const ui = Store.data.ui;
     const lastHash = ui.lastHash && ui.lastHash !== '#/home' ? ui.lastHash : '';
-    const pos = ui.docPos || {};
     const randomQid = qs.length ? qs[Math.floor(Math.random() * qs.length)].id : '';
 
-    /* 学习进度统计 */
+    /* ---- 今天的三件事 ---- */
+    const todayQueue = ReviewView.getTodayQueue();
+    const drill = ReviewView.getDrillState();
+    const draftCt = drill.drafts.length;
+    const failedCt = drill.drafts.filter(d => d.failed).length;
+    const unsolvedCt = drill.unsolved.length;
+    const wrapUpCt = draftCt + unsolvedCt;
+
+    /* ---- 出口:能带走的东西 ---- */
+    const rounds = (Store.data.mock.rounds || []);
+    const lastRound = rounds[0];
+    const lastRoundAnswered = lastRound
+      ? (lastRound.items || []).filter(it => String(it.self || '').trim()).length : 0;
+    const marks = pendingMarks();
+
+    /* ---- 学习进度统计 ---- */
     const recs = Store.data.questions;
     const studied = qs.filter(q => recs[q.id] && (recs[q.id].status || recs[q.id].viewedAt)).length;
     const mastered = qs.filter(q => recs[q.id] && recs[q.id].status === 'ok').length;
@@ -1144,21 +1161,74 @@ const HomeView = (() => {
     const favCt = qs.filter(q => recs[q.id] && recs[q.id].fav).length;
     const noteCt = qs.filter(q => (recs[q.id] && recs[q.id].note || '').trim()).length;
     const progressPct = qs.length ? Math.round(studied / qs.length * 100) : 0;
-    const mockRounds = (Store.data.mock.rounds || []).length;
-    const todayCt = getTodayReviewCount();
+    const mockRounds = rounds.length;
 
     root.innerHTML = `
-      <div class="home-hero">
-        <h1>AI 应用开发与 Agent 面试学习</h1>
-        <p>面向实习与校招的中文题库:每道题都有直接答案、大白话解释、原理拆解、例子、追问与误区,并标注核查状态与出处。支持练习、自测、文档阅读与全文检索,全部数据保存在本地。</p>
+      <div class="desk-head">
+        <h1>面试加油工作台</h1>
+        <p class="muted">今天要干的三件事,和干完能带走的东西。个人记录只存在本机浏览器。</p>
         <div class="hero-actions">
-          ${lastHash ? `<a class="btn btn-primary" href="${esc(lastHash)}">继续上次位置</a>` : `<a class="btn btn-primary" href="#/docs/doc-guide-1">如何使用本站</a>`}
-          ${todayCt ? `<a class="btn" href="#/review" style="border-color:var(--warn);color:var(--warn)">📌 今日复习 ${todayCt} 题</a>` : ''}
-          <a class="btn" href="#/browse">浏览题库</a>
-          <a class="btn" href="#/mock">自测/模拟面试</a>
-          <button class="btn" id="h-random">随机一题</button>
+          ${lastHash ? `<a class="btn" href="${esc(lastHash)}">继续上次位置</a>` : ''}
+          ${todayQueue.length ? `<a class="btn btn-primary" href="#/review">开始今天的复习</a>` : `<a class="btn btn-primary" href="#/browse">开始学新题</a>`}
+          <a class="btn" href="#/mock">练一轮模拟面试</a>
         </div>
       </div>
+
+      <h2 class="desk-title">今天的三件事</h2>
+      <div class="desk-todos">
+        <div class="desk-todo ${todayQueue.length ? '' : 'is-done'}">
+          <span class="dt-num">1</span>
+          <div class="dt-body">
+            <b>复习 ${todayQueue.length} 题</b>
+            <span class="muted">待复习 + 还不熟,按最久没练的排前面${todayQueue.length ? '' : ' —— 今天这项清空了'}</span>
+          </div>
+          <a class="btn ${todayQueue.length ? 'btn-primary' : ''}" href="#/review">${todayQueue.length ? '去复习' : '去看看'}</a>
+        </div>
+        <div class="desk-todo ${wrapUpCt ? '' : 'is-done'}">
+          <span class="dt-num">2</span>
+          <div class="dt-body">
+            <b>收尾 ${wrapUpCt} 条</b>
+            <span class="muted">${wrapUpCt
+              ? `写了没提交的草稿 ${draftCt} 条、待消化的专项 ${unsolvedCt} 条${failedCt ? `(其中 ${failedCt} 条提交失败没落盘)` : ''}`
+              : '没有悬着的草稿与待消化专项'}</span>
+          </div>
+          <a class="btn ${wrapUpCt ? 'btn-primary' : ''}" href="#/review">${wrapUpCt ? '去收尾' : '去看看'}</a>
+        </div>
+        <div class="desk-todo ${lastRound ? 'is-done' : ''}">
+          <span class="dt-num">3</span>
+          <div class="dt-body">
+            <b>练一轮模拟面试</b>
+            <span class="muted">${lastRound
+              ? `上一轮 ${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题`
+              : '还没练过:先写回答,再对照参考要点'}</span>
+          </div>
+          <a class="btn ${lastRound ? '' : 'btn-primary'}" href="#/mock">${lastRound ? '再练一轮' : '开始'}</a>
+        </div>
+      </div>
+
+      <h2 class="desk-title">带走点东西</h2>
+      <div class="desk-out">
+        <div class="out-card">
+          <h3>最近一轮的表达卡</h3>
+          ${lastRound ? `
+            <p class="muted">${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题,其中你写了回答的 ${lastRoundAnswered} 题。
+            导出后是你自己写的回答 + 面试口述版 + 参考要点,能直接念。</p>
+            <button class="btn btn-primary" id="d-card-round" ${lastRoundAnswered ? '' : 'disabled'}>导出表达卡</button>
+            ${lastRoundAnswered ? '' : `<p class="muted small" style="margin-top:6px">这一轮你一题都没写回答,先答几题再导出——不给空壳文件。</p>`}
+          ` : `
+            <p class="muted">还没有模拟面试记录。去<a href="#/mock">练一轮</a>,把回答写下来,这里就能导出了。</p>
+            <button class="btn" id="d-card-round" disabled>导出表达卡</button>`}
+        </div>
+        <div class="out-card">
+          <h3>待攻克清单</h3>
+          <p class="muted">${marks.length
+            ? `你标记为「还不熟 / 待复习」的 ${marks.length} 题,连带你写的笔记。`
+            : '还没有标记「还不熟 / 待复习」的题。'}</p>
+          <button class="btn ${marks.length ? 'btn-primary' : ''}" id="d-card-marks" ${marks.length ? '' : 'disabled'}>导出表达卡</button>
+          ${marks.length ? '' : '<p class="muted small" style="margin-top:6px">在学习页把卡壳的题标成「还不熟」,复习时才有的放矢。</p>'}
+        </div>
+      </div>
+
       <div class="stat-cards">
         <div class="stat-card"><div class="stat-num">${qs.length}</div><div class="stat-label">题目总数</div></div>
         <div class="stat-card"><div class="stat-num">${studied}</div><div class="stat-label">已学习(${progressPct}%)</div>
@@ -1197,22 +1267,20 @@ const HomeView = (() => {
         <div class="card">
           <h3>推荐用法</h3>
           <ol class="home-tips">
-            <li>先读<a href="#/docs/doc-guide-1">使用指南</a>,了解两种学习方式;</li>
+            <li>每天进来先看上面三件事,复习完再学新题;</li>
             <li>按<a href="#/docs/doc-path-1">备考路线</a>系统学习,章节里的知识点可直达题目;</li>
             <li>学习模式里先自己想再展开答案,做完"理解检查"小题;</li>
-            <li>用状态按钮手动标记掌握程度,面试前只刷<a href="#/review">"今日复习"</a>;</li>
+            <li>卡壳的题标「还不熟」,面试前导一张<a href="#/review">待攻克表达卡</a>;</li>
             <li>定期到<a href="#/maintain">维护页</a>导出个人记录做备份。</li>
           </ol>
         </div>
       </div>`;
-    $('#h-random').addEventListener('click', () => { if (randomQid) go('#/study/' + randomQid); });
-  }
 
-  function getTodayReviewCount() {
-    return Data.allQuestions().filter(q => {
-      const r = Store.rec(q.id);
-      return r.status === 'review' || r.status === 'weak';
-    }).length;
+    $('#h-random') && $('#h-random').addEventListener('click', () => { if (randomQid) go('#/study/' + randomQid); });
+    const roundBtn = $('#d-card-round');
+    if (roundBtn) roundBtn.addEventListener('click', () => exportExpressCard('round', 0));
+    const marksBtn = $('#d-card-marks');
+    if (marksBtn) marksBtn.addEventListener('click', () => exportExpressCard('marks'));
   }
 
   return { render };

@@ -75,7 +75,8 @@ def main():
     shell_files = ["app/data.js", "app/index.html", "app/manifest.webmanifest",
                    "app/css/style.css",
                    "app/js/util.js", "app/js/store.js", "app/js/markdown.js",
-                   "app/js/search.js", "app/js/common.js", "app/js/views-practice.js",
+                   "app/js/search.js", "app/js/common.js", "app/js/express.js",
+                   "app/js/views-practice.js",
                    "app/js/views-knowledge.js", "app/js/views-review.js", "app/js/app.js"]
     h = hashlib.md5()
     for rel in shell_files:

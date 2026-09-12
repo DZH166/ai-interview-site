@@ -66,7 +66,7 @@ const App = (() => {
       /* 路径页带深锚点(d 专项 / p 项目 / c 概念)时不回顶,交给 PathView.applyFocus 定位 */
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
-    document.title = 'AI 面试学习站';
+    document.title = '面试加油工作台';
   }
 
   /* 统一索引变更入口:任何数据变更(题库导入/资料增删/尝试保存/备份恢复/清空)都走这里。

@@ -46,6 +46,9 @@ jobs:
       - name: 回归测试(记录层/界面层问题 B/C/E4/F/H1/H2 的复现断言)
         run: node tests/regression-tests.js
 
+      - name: 表达卡导出(工作台出口:内容真实/不产出空壳/转义正确)
+        run: node tests/express-card-test.js
+
       - name: Shell 缓存戳一致性(改了 app/ 却没重新盖章 → 老用户拿旧缓存)
         run: node tests/shell-cache-stamp-test.js
 
@@ -137,7 +140,7 @@ jobs:
       # 全链验收:从空存储走完整用户旅程,含导出→清空→导入往返。
       # 其它套件都是「种好数据再验界面」,这一条证明没有预置数据时也能正常用、
       # 且数据真的落盘、真的能恢复。
-      - name: 全链验收(空存储起,含导出/清空/导入往返)
+      - name: 全链验收(空存储起,含工作台三件事/表达卡导出/导出清空导入往返)
         env:
           PW: playwright
           CHROME: default

@@ -304,9 +304,12 @@ const ReviewView = (() => {
             ${marked ? `<span class="badge st-weak">还不熟 ${marked}</span>` : ''}
             ${label ? `<span class="badge b-tag">${label}</span>` : ''}
           </summary>
+          <div class="round-actions">
+            <button class="btn btn-small" data-card-round="${ri}">导出这一轮的表达卡</button>
+            <span class="muted small">把我的回答 + 面试口述版 + 参考要点导成一份能念的材料</span>
+          </div>
           <div class="round-list">
-            ${items.map((it, i) => {
-              const q = Data.question(it.qid);
+            ${items.map((it, i) => {              const q = Data.question(it.qid);
               const st = it.mark ? (Store.STATUS.find(s => s.id === it.mark) || { label: it.mark }) : null;
               return `
                 <div class="round-item">
@@ -322,11 +325,17 @@ const ReviewView = (() => {
           </div>
         </details>`;
     }).join('');
+    /* 出口:每一轮都能单独导出表达卡(这一轮的「我的回答」是最值钱的部分) */
+    $$('[data-card-round]', box).forEach(b => b.addEventListener('click', () => {
+      exportExpressCard('round', Number(b.dataset.cardRound));
+    }));
   }
 
   function getMistakesList() { return getMistakes(); }
   function getTodayList() { return getTodayQueue(); }
 
+  /* getTodayQueue / getDrillState 对外导出:工作台首页的「今天的三件事」要用同一套规则。
+     复用而不是另抄一份——抄一份迟早两边不一致。 */
   return { render, getTodayQueue, getMistakes, getUnsolvedDrills, getDrillState };
 })();
 

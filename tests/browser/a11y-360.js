@@ -110,7 +110,7 @@ const OVERFLOW_PROBE = () => {
   /* ================= A. 360px 不横向溢出 ================= */
   console.log('== A. 360px 窄屏不横向溢出 ==');
   const ROUTES = [
-    ['#/home', '首页'], ['#/path', '学习路径'], ['#/browse', '练习'],
+    ['#/home', '工作台'], ['#/path', '学习路径'], ['#/browse', '练习'],
     ['#/docs', '文档阅读'], ['#/mock', '自测'], ['#/review', '复习'],
     ['#/maintain', '维护'], ['#/search?q=RAG', '搜索'],
     ['#/study/RG-001', '学习页']
