@@ -28,7 +28,9 @@ const App = (() => {
       } else if (view === 'docs') {
         fn.render(root, parts);
       } else if (view === 'search') {
-        fn.render(root, parts);
+        /* 搜索的正式深链是 #/search/<关键词>;同时兼容 #/search?q=<关键词>
+           ——本站其它深链都用 ?x= 形式,手抄/改写链接时很容易写成这种。 */
+        fn.render(root, parts, query);
       } else if (view === 'mock') {
         fn.render(root, parts);
       } else {

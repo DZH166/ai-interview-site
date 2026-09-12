@@ -281,8 +281,10 @@ const DocsView = (() => {
 
 /* ---------- 全局搜索 ---------- */
 const SearchView = (() => {
-  function render(root, parts) {
-    const q = parts && parts.length ? parts.join('/') : (Store.data.ui.search.q || '');
+  function render(root, parts, query) {
+    const fromPath = parts && parts.length ? parts.join('/') : '';
+    const fromQuery = (query && query.q) ? String(query.q) : '';
+    const q = fromPath || fromQuery || (Store.data.ui.search.q || '');
     const saved = Store.data.ui.search || {};
     root.innerHTML = `
       <div class="search-page">

@@ -129,3 +129,13 @@ jobs:
           CHROME: default
           PORT: '8933'
         run: node tests/browser/a11y-360.js
+
+      # 全链验收:从空存储走完整用户旅程,含导出→清空→导入往返。
+      # 其它套件都是「种好数据再验界面」,这一条证明没有预置数据时也能正常用、
+      # 且数据真的落盘、真的能恢复。
+      - name: 全链验收(空存储起,含导出/清空/导入往返)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8934'
+        run: node tests/browser/e2e-acceptance.js
