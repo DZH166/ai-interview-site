@@ -46,6 +46,9 @@ jobs:
       - name: 回归测试(记录层/界面层问题 B/C/E4/F/H1/H2 的复现断言)
         run: node tests/regression-tests.js
 
+      - name: Shell 缓存戳一致性(改了 app/ 却没重新盖章 → 老用户拿旧缓存)
+        run: node tests/shell-cache-stamp-test.js
+
       - name: LP-003 mock 分支测试(桩客户端,无真实 API)
         run: |
           python -m pip install --quiet 'openai>=2.0' 'pydantic>=2.5' || true
@@ -88,11 +91,12 @@ jobs:
             exit 1;
           }
 
-      - name: 构建可复现(data.js 应无 diff)
+      - name: 构建可复现(data.js / sw.js 应无 diff)
         run: |
           python tools/build.py
           git diff --exit-code -- app/data.js app/sw.js || {
-            echo '::error::build.py 产生了改动,仓库内的 app/data.js 或 sw.js 与 data/ 不同步,请重新构建并提交';
+            echo '::error::build.py 产生了改动,仓库内的 app/data.js 或 sw.js 与源码/数据不同步。'
+            echo '::error::请在本地跑 python tools/build.py 后一并提交;自查用 node tests/shell-cache-stamp-test.js';
             exit 1;
           }
 
