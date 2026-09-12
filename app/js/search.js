@@ -4,13 +4,22 @@
 
    索引新鲜度:索引记录构建时的 Store.rev(数据版本号,任何写入都会自增),
    查询时若发现数据已变,自动用上下文提供者重建。这样「忘记重建索引」不再是一类
-   可能的 bug(清空记录后还能搜到旧数据、导入了新笔记搜不到等)。 */
+   可能的 bug(清空记录后还能搜到旧数据、导入了新笔记搜不到等)。
+
+   分层缓存(2026-09-13):重建开销的大头是静态内容(题库字段 + Markdown 章节解析),
+   而触发重建的却往往是个人写入(记笔记/存尝试)。所以索引分两层:
+     - 静态层:题库/文档/概念/专项/项目,按题库规模签名缓存,基本只建一次;
+     - 动态层:笔记/尝试/运行/草稿/导入资料,随 Store.rev 重建。
+   查询时两层拼接,行为与单层完全一致(见 tests/search-cache-test.js)。 */
 'use strict';
 
 const Search = (() => {
   let units = [];
   let builtRev = -1;
   let ctxProvider = null;
+
+  /* 静态层缓存:签名 = 题库规模 + 文档数(导入题库会改长度,触发重建) */
+  const staticCache = { sig: '', units: [], staticBuilds: 0, dynamicBuilds: 0 };
 
   function norm(s) { return String(s || '').toLowerCase(); }
 
@@ -25,16 +34,14 @@ const Search = (() => {
     const ctx = ctxProvider ? ctxProvider() : null;
     if (ctx) build(ctx);   /* 没有上下文提供者时保持空索引:安全优于陈旧 */
   }
-  if (typeof Store !== 'undefined' && Store.onInvalidate) Store.onInvalidate(invalidate);
 
-  function build(ctx) {
-    /* ctx: {questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
-    units = [];
-    const qs = ctx.questions || [];
-    qs.forEach(q => {
+  /* ---- 静态层:题库字段 + 内置文档章节(不含任何个人数据) ---- */
+  function buildStatic(ctx) {
+    const out = [];
+    (ctx.questions || []).forEach(q => {
       const add = (field, text, weight, anchor) => {
         if (text && String(text).trim()) {
-          units.push({ kind: 'q', qid: q.id, field, anchor, text: norm(text), raw: String(text), weight, topic: q.topic });
+          out.push({ kind: 'q', qid: q.id, field, anchor, text: norm(text), raw: String(text), weight, topic: q.topic });
         }
       };
       add('title', q.title, 3.0, 'top');
@@ -48,46 +55,61 @@ const Search = (() => {
       (q.pitfalls || []).forEach(p => add('pitfalls', p, 0.8, 'pitfalls'));
       (q.followups || []).forEach(f => { add('followups', f.q, 0.9, 'followups'); add('followups', f.a, 0.7, 'followups'); });
       if (q.check) { add('check', q.check.q, 0.8, 'check'); add('check', q.check.a, 0.7, 'check'); }
-      const note = ctx.records && ctx.records.questions && ctx.records.questions[q.id] && ctx.records.questions[q.id].note;
-      if (note) units.push({ kind: 'note', qid: q.id, field: 'note', anchor: 'note', text: norm(note), raw: note, weight: 2.5, topic: q.topic });
     });
     (ctx.docs || []).forEach(d => {
-      units.push({ kind: 'doc', docId: d.id, field: 'title', anchor: '', text: norm(d.title + ' ' + (d.summary || '')), raw: d.title, weight: 2.0, topic: d.topic });
+      out.push({ kind: 'doc', docId: d.id, field: 'title', anchor: '', text: norm(d.title + ' ' + (d.summary || '')), raw: d.title, weight: 2.0, topic: d.topic });
       Markdown.sections(d.md).forEach(sec => {
         const body = sec.buf.join('\n');
         if (body.trim()) {
-          units.push({
+          out.push({
             kind: 'doc', docId: d.id, field: 'section', anchor: sec.id, topic: d.topic,
             text: norm(sec.title + '\n' + body), raw: sec.title + '\n' + body, weight: 1.2
           });
         }
       });
     });
-    /* 专项练习与动手项目进入索引(任务书阶段7:统一检索) */
+    /* 概念、专项题面、项目定义(均为静态数据) */
     ((ctx.concepts || [])).forEach(c => {
       if (!c.name) return;
-      units.push({
+      out.push({
         kind: 'concept', cid: c.id, field: 'concept', anchor: '',
         text: norm(c.name + ' ' + (c.definition || '')),
         raw: c.name + ':' + (c.definition || ''),
         weight: 2.0, topic: c.topic || ''
       });
     });
-    /* 专项练习(题面+参考)与个人尝试记录进索引 */
     ((ctx.drills || [])).forEach(d => {
       if (!d || !d.id) return;
       const body = [d.q, d.reference, d.reason].filter(Boolean).join('\n');
-      units.push({
+      out.push({
         kind: 'drill', drillId: d.id, stage: d.stage || '', field: 'drill', anchor: '',
         text: norm(d.type + ' ' + body), raw: d.type + ' | ' + body,
         weight: 1.6, topic: ''
       });
     });
-    /* 个人专项尝试记录(myAnswer/observed/review)进索引:
-       主来源=顶层 drillAttempts(新模型);兼容旧题目记录 drillTries。
-       每条尝试带 attemptId 身份与状态标签——搜索命中的是「哪一次尝试」,
-       而不是只能跳到专项页顶部。 */
+    ((ctx.projects || [])).forEach(pr => {
+      if (!pr || !pr.name) return;
+      const body = [pr.goal, pr.expected, pr.debug_case, pr.deliverable, (pr.extensions || []).join('; ')]
+        .filter(Boolean).join('\n');
+      out.push({
+        kind: 'project', pid: pr.id, field: 'project', anchor: '',
+        text: norm(pr.name + ' ' + body), raw: pr.name + '\n' + body,
+        weight: 1.8, topic: ''
+      });
+    });
+    return out;
+  }
+
+  /* ---- 动态层:个人内容(随 Store.rev 重建) ---- */
+  function buildDynamic(ctx) {
+    const out = [];
     const NL = String.fromCharCode(10);
+    const qs = ctx.questions || [];
+    const records = ctx.records || {};
+    qs.forEach(q => {
+      const note = records.questions && records.questions[q.id] && records.questions[q.id].note;
+      if (note) out.push({ kind: 'note', qid: q.id, field: 'note', anchor: 'note', text: norm(note), raw: note, weight: 2.5, topic: q.topic });
+    });
     const STATE_LABEL = { draft: '草稿', completed: '已完成', abandoned: '已放弃' };
     const seenTries = new Set();
     const pushTry = (t) => {
@@ -99,7 +121,7 @@ const Search = (() => {
       if (!body.trim()) return;
       seenTries.add(t.drillId + '|' + (t.myAnswer || '') + '|' + (t.observed || '') + '|' + (t.review || ''));
       const stName = STATE_LABEL[t.status] || t.status || '';
-      units.push({
+      out.push({
         kind: 'try', drillId: t.drillId, attemptId: t.attemptId || '', status: t.status || '',
         qid: null, field: 'try', anchor: '',
         text: norm('专项尝试 ' + stName + ' ' + body),
@@ -108,7 +130,7 @@ const Search = (() => {
       });
     };
     Object.values(ctx.drillAttempts || {}).forEach(list => { (list || []).forEach(pushTry); });
-    Object.values(ctx.records && ctx.records.questions || {}).forEach(r => {
+    Object.values(records.questions || {}).forEach(r => {
       (r.drillTries || []).forEach(t => {
         if (!t.drillId) return;
         const key = t.drillId + '|' + (t.myAnswer || '') + '|' + (t.observed || '') + '|' + (t.review || '');
@@ -116,19 +138,7 @@ const Search = (() => {
         pushTry(t);
       });
     });
-    ((ctx.projects || [])).forEach(pr => {
-      if (!pr || !pr.name) return;
-      const body = [pr.goal, pr.expected, pr.debug_case, pr.deliverable, (pr.extensions || []).join('; ')]
-        .filter(Boolean).join('\n');
-      units.push({
-        kind: 'project', pid: pr.id, field: 'project', anchor: '',
-        text: norm(pr.name + ' ' + body), raw: pr.name + '\n' + body,
-        weight: 1.8, topic: ''
-      });
-    });
-    /* 个人项目运行记录与草稿:用户自己写下的证据必须能被检索到,
-       并且要能定位到「哪一次运行」而不只是项目说明。 */
-    const ui = (ctx.records && ctx.records.ui) || {};
+    const ui = records.ui || {};
     Object.keys(ui.projectRuns || {}).forEach(pid => {
       (ui.projectRuns[pid] || []).forEach(r => {
         if (!r || typeof r !== 'object') return;
@@ -138,7 +148,7 @@ const Search = (() => {
                        r.stepStatus && '步骤:' + r.stepStatus].filter(Boolean);
         if (!parts.length) return;
         const body = parts.join(NL);
-        units.push({
+        out.push({
           kind: 'run', pid, runId: r.runId || '', field: 'run', anchor: '', topic: '',
           text: norm('项目运行记录 ' + body),
           raw: '项目运行记录 ' + NL + body,
@@ -152,7 +162,7 @@ const Search = (() => {
       [['short', '30 秒口述'], ['long', '2 分钟口述']].forEach(([key, label]) => {
         const text = d['speak_' + key];
         if (typeof text !== 'string' || !text.trim()) return;
-        units.push({ kind: 'draft', pid, field: 'speak_' + key, anchor: '', topic: '',
+        out.push({ kind: 'draft', pid, field: 'speak_' + key, anchor: '', topic: '',
           text: norm(label + ' ' + text), raw: label + NL + text, weight: 2.4 });
       });
       const parts = [d.runOutput && '输出:' + d.runOutput,
@@ -166,7 +176,7 @@ const Search = (() => {
                      d.speak_lack && '不足:' + d.speak_lack].filter(Boolean);
       if (!parts.length) return;
       const body = parts.join(NL);
-      units.push({
+      out.push({
         kind: 'draft', pid, field: 'draft', anchor: '', topic: '',
         text: norm('项目草稿 ' + body),
         raw: '项目草稿 ' + NL + body,
@@ -174,20 +184,34 @@ const Search = (() => {
       });
     });
     (ctx.userDocs || []).forEach(d => {
-      units.push({ kind: 'udoc', docId: d.id, field: 'title', anchor: '', text: norm(d.title), raw: d.title, weight: 2.0, topic: '' });
+      out.push({ kind: 'udoc', docId: d.id, field: 'title', anchor: '', text: norm(d.title), raw: d.title, weight: 2.0, topic: '' });
       Markdown.sections(d.text || '').forEach(sec => {
         const body = sec.buf.join('\n');
         if (body.trim()) {
-          units.push({
+          out.push({
             kind: 'udoc', docId: d.id, field: 'section', anchor: sec.id, topic: '',
             text: norm(sec.title + '\n' + body), raw: sec.title + '\n' + body, weight: 1.2
           });
         }
       });
     });
+    return out;
+  }
+
+  function build(ctx) {
+    /* ctx: {questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
+    const sig = (ctx.questions || []).length + '|' + (ctx.docs || []).length;
+    if (staticCache.sig !== sig) {
+      staticCache.units = buildStatic(ctx);
+      staticCache.sig = sig;
+      staticCache.staticBuilds++;
+    }
+    units = staticCache.units.concat(buildDynamic(ctx));
+    staticCache.dynamicBuilds++;
     /* 索引构建完成:记下数据版本,后续任何写入都会让它过期并按需自动重建 */
     builtRev = curRev();
   }
+  if (typeof Store !== 'undefined' && Store.onInvalidate) Store.onInvalidate(invalidate);
 
   function tokenize(q) {
     return norm(q).split(/[\s,，、;；]+/).filter(Boolean);
@@ -252,5 +276,16 @@ const Search = (() => {
 
   function count() { ensureFresh(); return units.length; }
 
-  return { build, query, tokenize, count, setContextProvider, ensureFresh, invalidate };
+  /* 分层缓存观测(测试与维护页用):静态层构建次数应恒为 1(题库规模不变时) */
+  function stats() {
+    return {
+      staticUnits: staticCache.units.length,
+      dynamicUnits: units.length - staticCache.units.length,
+      units: units.length,
+      staticBuilds: staticCache.staticBuilds,
+      dynamicBuilds: staticCache.dynamicBuilds
+    };
+  }
+
+  return { build, query, tokenize, count, stats, setContextProvider, ensureFresh, invalidate };
 })();

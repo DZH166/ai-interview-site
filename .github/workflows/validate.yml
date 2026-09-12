@@ -52,6 +52,9 @@ jobs:
       - name: 多标签页远程合并(内存合并不回写/新者胜/幂等/非法拒绝)
         run: node tests/remote-merge-test.js
 
+      - name: 搜索分层缓存(静态层只建一次/动态层随写入重建/行为一致)
+        run: node tests/search-cache-test.js
+
       - name: Pi Agent 题库完整性与幂等适配
         run: |
           node tools/import-pi-agent.js --check
@@ -214,3 +217,10 @@ jobs:
           CHROME: default
           PORT: '8940'
         run: node tests/browser/multitab.js
+
+      - name: 搜索缓存真数据验收(349 题/连续写入静态层不重建)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8941'
+        run: node tests/browser/search-cache.js
