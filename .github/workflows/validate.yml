@@ -197,3 +197,10 @@ jobs:
           CHROME: default
           PORT: '8938'
         run: node tests/browser/srs.js
+
+      - name: 追问二跳(先写后看/草稿恢复/轮次记录/表达卡追问练习)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8939'
+        run: node tests/browser/followup.js

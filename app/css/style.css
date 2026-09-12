@@ -800,3 +800,9 @@ textarea:focus-visible {
 
 /* ---- 搜索命中定位高亮 ---- */
 .drill-focus { border: 2px solid var(--warn); }
+
+/* 模拟面试的追问二跳 */
+.mock-fu { margin: 12px 0; border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; }
+.mock-fu h4 { margin: 0 0 8px; font-size: 13.5px; color: var(--muted); }
+.mock-fu .fu { margin: 0 0 10px; }
+.mock-fu .mock-fu-self { width: 100%; min-height: 52px; margin: 6px 0; }

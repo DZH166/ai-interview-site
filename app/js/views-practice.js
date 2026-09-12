@@ -516,7 +516,8 @@ const MockView = (() => {
   }
 
   /* 把输入框当前内容同步进会话(不经防抖)。所有离开当前题的动作前调用:
-     下一题/上一题/对照/复盘/结束/完成/路由离开。 */
+     下一题/上一题/对照/复盘/结束/完成/路由离开。
+     同时同步追问二跳的回答框:追问回答也是会话草稿的一部分。 */
   function captureInput() {
     const ta = $('#m-self');
     if (!ta || !state || state.ended) return;
@@ -527,6 +528,15 @@ const MockView = (() => {
       state.answers[q.id] = Object.assign(ans, { self: ta.value });
       draftSave();
     }
+    $$('#mock-fu-list [data-fu-self]', document).forEach(el => {
+      const i = parseInt(el.dataset.fuSelf, 10);
+      const cur = (state.answers[q.id].fu = state.answers[q.id].fu || {})[i] || {};
+      if ((cur.self || '') !== el.value) {
+        cur.self = el.value;
+        state.answers[q.id].fu[i] = cur;
+        draftSave();
+      }
+    });
   }
   /* pagehide 兜底:与 captureInput 相同(名称保留供 App.flush 调用) */
   function flushDraft() { captureInput(); }
@@ -652,6 +662,29 @@ const MockView = (() => {
     return shuffle(unseen).concat(seen).slice(0, n);
   }
 
+  /* 追问二跳:面试的真实压力在追问,不在主题。对照参考要点后出现,
+     每个追问同样先写后看;回答进会话草稿(刷新可恢复),完成时记入轮次与表达卡。 */
+  function renderFollowups(q, ans) {
+    const fus = q.followups || [];
+    if (!fus.length) return '';
+    const fuState = ans.fu || {};
+    return `
+      <div class="mock-fu" id="mock-fu-list">
+        <h4>追问二跳(面试官会顺着你的回答往下挖)</h4>
+        ${fus.map((f, i) => {
+          const st = fuState[i] || {};
+          return `
+          <div class="fu fu-mock" data-fu-item="${i}">
+            <div class="fu-q">追问 ${i + 1}:${esc(f.q)}</div>
+            <textarea data-fu-self="${i}" class="mock-fu-self" placeholder="先写下你的回答(自动保存)……">${esc(st.self || '')}</textarea>
+            ${st.revealed
+              ? `<div class="fu-a">${QRender.mdHtml(f.a)}</div>`
+              : `<button class="btn btn-small" data-fu-reveal="${i}">对照参考要点</button>`}
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
   function renderRun(root) {
     const q = Data.question(state.items[state.idx].qid || state.items[state.idx].id);
     if (!q) { toast('题目不存在,跳过', 'err'); state.idx++; if (state.idx >= state.items.length) finish(root); else renderRun(root); return; }
@@ -679,6 +712,7 @@ const MockView = (() => {
                  <details><summary>展开面试表达</summary>${QRender.mdHtml(q.interview)}</details>
                  <a href="#/study/${qid}" target="_self">查看完整解析 →</a>
                </div>
+               ${renderFollowups(q, ans)}
                <div class="mock-mark">
                  <span>自我复盘:</span>
                  <button class="status-btn st-ok ${ans.mark === 'ok' ? 'active' : ''}" data-mark="ok">基本掌握了</button>
@@ -710,6 +744,26 @@ const MockView = (() => {
       draftSave();
       renderRun(root);
     });
+    /* 追问二跳:回答框防抖落盘;揭示按钮只放开对应追问的参考要点 */
+    $$('#mock-fu-list [data-fu-self]', root).forEach(el => {
+      const i = parseInt(el.dataset.fuSelf, 10);
+      el.addEventListener('input', debounce(() => {
+        if (!state || state.ended || state.sid !== sid) return;
+        state.answers[qid] = state.answers[qid] || {};
+        state.answers[qid].fu = state.answers[qid].fu || {};
+        state.answers[qid].fu[i] = Object.assign(state.answers[qid].fu[i] || {}, { self: el.value });
+        draftSave();
+      }, 200));
+    });
+    $$('[data-fu-reveal]', root).forEach(b => b.addEventListener('click', () => {
+      captureInput();
+      const i = parseInt(b.dataset.fuReveal, 10);
+      state.answers[qid] = state.answers[qid] || {};
+      state.answers[qid].fu = state.answers[qid].fu || {};
+      state.answers[qid].fu[i] = Object.assign(state.answers[qid].fu[i] || {}, { revealed: true });
+      draftSave();
+      renderRun(root);
+    }));
     $$('[data-mark]', root).forEach(b => b.addEventListener('click', () => {
       captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { mark: b.dataset.mark });
@@ -741,7 +795,13 @@ const MockView = (() => {
         const id = q.qid || q.id;
         const a = state.answers[id] || {};
         const question = Data.question(id);
-        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '' };
+        /* 追问二跳的记录:只保留真实写过的(有回答或已对照),没碰过的不占位 */
+        const fu = a.fu || {};
+        const followups = (question && Array.isArray(question.followups))
+          ? question.followups.map((f, i) => ({ q: f.q, self: (fu[i] && fu[i].self) || '', revealed: !!(fu[i] && fu[i].revealed) }))
+              .filter(x => x.self.trim() || x.revealed)
+          : [];
+        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', followups };
       })
     };
     Store.data.mock.rounds.unshift(round);

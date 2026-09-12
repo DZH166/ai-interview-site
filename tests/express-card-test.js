@@ -151,6 +151,42 @@ ok('文件名不含 Windows 非法字符', !/[\\/:*?"<>|]/.test(r.mdName) && !/[
   r.mdName + ' / ' + r.htmlName);
 ok('Markdown 与 HTML 文件名不同', r.mdName !== r.htmlName);
 
+console.log('\n== 8. 追问二跳进入表达卡(只带真实写过的) ==');
+{
+  const lookup = id => id === 'FU-001' ? {
+    id: 'FU-001', title: '追问主题', prompt: '', fusion_notes: '', topic: 'rag', difficulty: 'basic',
+    answer: 'A', plain: 'P', interview: 'I', pitfalls: [],
+    followups: [
+      { q: '追问A:为什么不用别的方法?', a: '因为X' },
+      { q: '追问B:边界在哪?', a: '因为Y' },
+    ]
+  } : null;
+  const round = { ts: Date.now(), items: [
+    { qid: 'FU-001', title: '追问主题', self: '我的主回答', revealed: true, mark: 'weak',
+      followups: [
+        { q: '追问A:为什么不用别的方法?', self: '我写的追问回答', revealed: true },
+        { q: '追问B:边界在哪?', self: '', revealed: false },   /* 没碰过:不应出现 */
+      ] },
+  ] };
+  const fu = ExpressCard.buildFromRound([round], 0, lookup);
+  ok('有回答的轮次 → ok:true', fu.ok === true, fu.error);
+  ok('Markdown 含「追问练习」一节', fu.markdown.includes('### 追问练习'));
+  ok('写过的追问带原文', fu.markdown.includes('我写的追问回答'));
+  ok('没碰过的追问不占位', !fu.markdown.includes('追问B'), fu.markdown);
+  ok('HTML 也含追问且回答被带出', fu.html.includes('追问练习') && fu.html.includes('我写的追问回答'));
+  /* 对照过但没写:如实标注,不编造 */
+  const round2 = { ts: Date.now(), items: [
+    { qid: 'FU-001', title: '追问主题', self: '主回答', revealed: true, mark: '',
+      followups: [{ q: '追问A:为什么不用别的方法?', self: '', revealed: true }] },
+  ] };
+  const fu2 = ExpressCard.buildFromRound([round2], 0, lookup);
+  ok('对照过但没写的追问标注「没有写下回答」,不冒充', fu2.markdown.includes('当时没有写下回答') && !fu2.markdown.includes('我写的追问回答'));
+  /* 旧轮次(无 followups 字段)不受影响 */
+  const oldRound = { ts: Date.now(), items: [{ qid: 'FU-001', title: '追问主题', self: 's', revealed: true, mark: '' }] };
+  const fu3 = ExpressCard.buildFromRound([oldRound], 0, lookup);
+  ok('旧格式轮次(无追问)正常导出,无追问一节', fu3.ok === true && !fu3.markdown.includes('### 追问练习'));
+}
+
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);
 if (failed) console.log('失败项:\n  - ' + failures.join('\n  - '));
 process.exit(failed ? 1 : 0);

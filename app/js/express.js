@@ -91,6 +91,10 @@ const ExpressCard = (() => {
         /* 模拟面试里写的是「我的回答」 */
         selfKind: 'answer',
         revealed: !!it.revealed,
+        /* 追问二跳:只带真实写过的(与轮次记录同一条筛选规则),没碰过的不占位 */
+        followups: (Array.isArray(it.followups) ? it.followups : [])
+          .filter(f => f && typeof f.q === 'string' && ((f.self || '').trim() || f.revealed))
+          .map(f => ({ q: f.q, self: String(f.self || ''), revealed: !!f.revealed })),
         /* 参考要点只在题目存在时给出;题目缺失就如实留白,不编 */
         answer: q ? String(q.answer || '') : '',
         interview: q ? String(q.interview || '') : '',
@@ -190,6 +194,16 @@ const ExpressCard = (() => {
         L.push('');
       }
       if (it.fusion_notes) L.push('### 场景与边界补充', '', quote(clip(it.fusion_notes, MAX_SELF)), '');
+      if (it.followups && it.followups.length) {
+        L.push('### 追问练习(面试官会往下挖的点)');
+        L.push('');
+        it.followups.forEach((f, j) => {
+          L.push('**追问 ' + (j + 1) + ':' + oneLine(f.q, 150) + '**');
+          L.push('');
+          if (f.self.trim()) L.push(quote(clip(f.self, MAX_SELF)), '');
+          else L.push('_（对照过参考要点,当时没有写下回答）_', '');
+        });
+      }
       if (it.pitfalls.length) {
         L.push('### 常见误区');
         L.push('');
@@ -217,6 +231,10 @@ const ExpressCard = (() => {
       ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}
       ${it.answer ? '<h3>参考要点</h3><pre>' + esc(clip(it.answer, MAX_SELF)) + '</pre>' : ''}
       ${it.fusion_notes ? '<h3>场景与边界补充</h3><pre>' + esc(clip(it.fusion_notes, MAX_SELF)) + '</pre>' : ''}
+      ${(it.followups && it.followups.length) ? '<h3>追问练习(面试官会往下挖的点)</h3>' + it.followups.map((f, j) =>
+        '<div class="fu"><p class="fu-t"><b>追问 ' + (j + 1) + ':</b>' + esc(oneLine(f.q, 150)) + '</p>'
+        + (f.self.trim() ? '<pre class="self">' + esc(clip(f.self, MAX_SELF)) + '</pre>' : '<p class="empty">(对照过参考要点,当时没有写下回答)</p>')
+        + '</div>').join('') : ''}
       ${it.pitfalls.length ? '<h3>常见误区</h3><ul>' + it.pitfalls.map(p => '<li>' + esc(oneLine(p, 240)) + '</li>').join('') + '</ul>' : ''}
     </section>`).join('');
     const word = model.selfKind === 'note' ? '笔记' : '回答';
@@ -246,6 +264,8 @@ const ExpressCard = (() => {
         margin: 0; font-size: 14px; background: #f9fafb; border-radius: 6px; padding: 10px 12px; }
   pre.self { background: #eff6ff; border: 1px solid #bfdbfe; }
   .empty { color: #9ca3af; font-size: 13px; margin: 0; }
+  .fu { margin: 8px 0; }
+  .fu .fu-t { margin: 0 0 4px; font-size: 14px; }
   ul { margin: 0; padding-left: 20px; font-size: 14px; }
   footer { margin-top: 24px; color: #9ca3af; font-size: 12px; text-align: center; }
   @media print {
