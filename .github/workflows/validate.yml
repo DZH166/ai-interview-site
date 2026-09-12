@@ -49,6 +49,12 @@ jobs:
       - name: 表达卡导出(工作台出口:内容真实/不产出空壳/转义正确)
         run: node tests/express-card-test.js
 
+      - name: 学习记录冲突与项目证据卡
+        run: |
+          python -m pip install --quiet 'markdown-it-py==2.2.0'
+          node tests/learning-records-test.js
+          node tests/project-card-test.js
+
       - name: Shell 缓存戳一致性(改了 app/ 却没重新盖章 → 老用户拿旧缓存)
         run: node tests/shell-cache-stamp-test.js
 
@@ -68,6 +74,9 @@ jobs:
 
       - name: 项目C 四层诊断真实性(职责分离/固定配置/独立 oracle)
         run: python tests/proj_c_layers_test.py
+
+      - name: 项目C 引用与主张核对(引用不能绕过内容校验)
+        run: python tests/proj_c_claims_test.py
 
       - name: 审计器自检(占位符与越权断言的检查器本身必须是可信的)
         run: |
@@ -146,3 +155,10 @@ jobs:
           CHROME: default
           PORT: '8934'
         run: node tests/browser/e2e-acceptance.js
+
+      - name: 项目口述/选定证据/真实下载/独立上下文恢复
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8935'
+        run: node tests/browser/project-evidence.js

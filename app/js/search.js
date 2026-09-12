@@ -148,6 +148,12 @@ const Search = (() => {
     Object.keys(ui.projectDrafts || {}).forEach(pid => {
       const d = ui.projectDrafts[pid];
       if (!d || typeof d !== 'object') return;
+      [['short', '30 秒口述'], ['long', '2 分钟口述']].forEach(([key, label]) => {
+        const text = d['speak_' + key];
+        if (typeof text !== 'string' || !text.trim()) return;
+        units.push({ kind: 'draft', pid, field: 'speak_' + key, anchor: '', topic: '',
+          text: norm(label + ' ' + text), raw: label + NL + text, weight: 2.4 });
+      });
       const parts = [d.runOutput && '输出:' + d.runOutput,
                      d.debug && '定位:' + d.debug,
                      d.todo && '未完成:' + d.todo,

@@ -19,6 +19,7 @@ const App = (() => {
     try { if (StudyView.flushNote) StudyView.flushNote(); } catch (e) {}
     try { if (DocsView.cleanup) DocsView.cleanup(); } catch (e) {}
     try { if (StudyView.cleanup) StudyView.cleanup(); } catch (e) {}
+    if (PathView.cleanup) PathView.cleanup();
     const fn = routes[view] || HomeView;
     try {
       if (view === 'study') {

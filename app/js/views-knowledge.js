@@ -348,7 +348,8 @@ const SearchView = (() => {
         title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
         sub = '<span class="badge b-tag">运行记录</span>';
       } else if (u.kind === 'draft') {
-        href = `#/path?p=${encodeURIComponent(u.pid)}&tab=draft`;
+        href = `#/path?p=${encodeURIComponent(u.pid)}` + (u.field && u.field.startsWith('speak_')
+          ? `&tab=speak&field=${encodeURIComponent(u.field.slice(6))}` : '&tab=draft');
         title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
         sub = '<span class="badge b-tag">草稿</span>';
       } else if (u.kind === 'concept') {
@@ -372,7 +373,7 @@ const SearchView = (() => {
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
-      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿' }[u.field]) || u.field;
+      const fieldLabel = ({ title: '题名', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿', speak_short: '30 秒口述', speak_long: '2 分钟口述' }[u.field]) || u.field;
       return `
         <a class="search-item" href="${esc(href)}">
           <div class="si-head">
@@ -392,6 +393,11 @@ const SearchView = (() => {
 
 /* ---------- 学习路径 ---------- */
 const PathView = (() => {
+  let speechTimer = null;
+  function cleanup() {
+    if (speechTimer) clearInterval(speechTimer);
+    speechTimer = null;
+  }
   /* 路径定义来自 data/paths.json(稳定题号);完成与否由用户手动确认,进度存 Store。
      条目形状:{done?: ts, cancelled?: ts}(旧版 number 自动迁移为 {done:n},见 store 合并)。
      状态判定:按最新事件(done vs cancelled),晚者胜;同刻本地事件胜(此处即单一数据源)。 */
@@ -436,6 +442,8 @@ const PathView = (() => {
         if (q.at) {
           const rec = box.querySelector('[data-drill-record]');
           if (rec) rec.open = true;
+          const history = box.querySelector('[data-selected-attempt]');
+          if (history) targets.push(history);
         }
       }
     }
@@ -452,6 +460,16 @@ const PathView = (() => {
           const rec = box.querySelector('[data-proj-record]');
           if (rec) rec.open = true;
         }
+        if (q.tab === 'speak') {
+          const speech = box.querySelector('details[data-proj-speak]');
+          if (speech) {
+            speech.open = true; targets.push(speech);
+            if (['short', 'long', 'ask', 'plan', 'tradeoff', 'pain', 'verify', 'lack'].includes(q.field)) {
+              const field = speech.querySelector(`[data-proj-speak-field="${q.field}"]`);
+              if (field) targets.push(field);
+            }
+          }
+        }
       }
     }
     if (q.c) {
@@ -465,7 +483,8 @@ const PathView = (() => {
     for (let p = el.parentElement; p && p !== root; p = p.parentElement) {
       if (p.tagName === 'DETAILS') p.open = true;
     }
-    el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 88), behavior: 'instant' });
+    if (el.tagName === 'TEXTAREA') el.focus({ preventScroll: true });
     targets.forEach(t => {
       t.classList.add('flash');
       setTimeout(() => t.classList.remove('flash'), 2000);
@@ -475,6 +494,7 @@ const PathView = (() => {
 
   function render(root) {
     const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
+    cleanup();
     if (!paths.length) { root.innerHTML = '<div class="empty">暂无路径定义</div>'; return; }
     const path = paths[0];
     const prog = progress();
@@ -534,6 +554,20 @@ const PathView = (() => {
         Store.save();
       });
     });
+    $$('[data-proj-evidence]', root).forEach(el => {
+      el.addEventListener('change', () => {
+        const pid = el.dataset.projEvidence;
+        drafts[pid] = drafts[pid] || {};
+        drafts[pid].evidenceRunId = el.value;
+        drafts[pid].updatedAt = Date.now();
+        Store.save();
+        const link = root.querySelector(`[data-proj-evidence-link="${pid}"]`);
+        if (link) { link.hidden = !el.value; link.href = `#/path?p=${encodeURIComponent(pid)}&r=${encodeURIComponent(el.value)}`; }
+      });
+    });
+    $$('[data-proj-export]', root).forEach(btn => btn.addEventListener('click', () => {
+      exportExpressCard('project', { projectId: btn.dataset.projExport, runId: btn.dataset.projExportRun });
+    }));
     /* 诚实分级:选「只讲设计」时明确警告不能在面试里说成「我做过」 */
     $$('[data-proj-level]', root).forEach(btn => {
       btn.addEventListener('click', () => {
@@ -553,18 +587,18 @@ const PathView = (() => {
         const out = root.querySelector(`[data-proj-clock="${pid}"]`);
         if (!out) return;
         let left = total;
-        if (btn.__timer) clearInterval(btn.__timer);
+        cleanup();
         const tick = () => {
           out.textContent = `⏱ 剩余 ${left} 秒`;
           if (left <= 0) {
-            clearInterval(btn.__timer); btn.__timer = null;
+            cleanup();
             out.textContent = `⏱ ${total} 秒到——说完了吗?没说完就精简结构,别靠语速。`;
             return;
           }
           left--;
         };
         tick();
-        btn.__timer = setInterval(tick, 1000);
+        speechTimer = setInterval(tick, 1000);
       });
     });
     $$('[data-proj-step]', root).forEach(btn => {
@@ -720,7 +754,6 @@ const PathView = (() => {
               dropAttempt(drillId, cur.attemptId);
             } else {
               cur.status = mode === 'abandon' ? Store.STATE.ABANDONED : Store.STATE.COMPLETED;
-              cur.selfRating = cur.selfRating || 'unsolved';
               if (mode === 'abandon') cur.abandonedAt = Date.now();
               cur.updatedAt = Date.now();
               const res = saveAttempt(cur);
@@ -777,16 +810,7 @@ const PathView = (() => {
         const all = attemptsOf(drillId).filter(a => a.status !== Store.STATE.DRAFT);
         const done = all.filter(a => a.status === Store.STATE.COMPLETED);
         modal(`「${drillId}」历史尝试(${done.length} 次完成${all.length - done.length ? ` · ${all.length - done.length} 次放弃` : ''})`,
-          all.length ? all.map((a, i) => `
-            <div class="round-item">
-              <div class="round-head"><b>#${i + 1}</b>
-                <span class="badge ${a.status === 'completed' ? 'st-ok' : 'st-none'}">${Store.STATE_LABEL[a.status] || a.status}</span>
-                <span class="muted small">${fmtTime(Store.recTime(a))} · v${a.version || 1}
-                ${a.selfRating ? '· ' + ({ solved: '已解决', partial: '部分', unsolved: '未解决' }[a.selfRating] || a.selfRating) : ''}</span></div>
-              <div class="round-title"><b>预测:</b>${esc(a.myAnswer || '(无)')}</div>
-              ${a.observed ? `<div class="round-self"><b>观察:</b>${esc(a.observed)}</div>` : ''}
-              ${a.review ? `<div class="round-self"><b>复盘:</b>${esc(a.review)}</div>` : ''}
-            </div>`).join('') : '<p class="muted">暂无完成尝试</p>',
+          all.length ? all.map((a, i) => renderAttemptRecord(a, i + 1)).join('') : '<p class="muted">暂无完成尝试</p>',
           [{ label: '关闭' }]);
       });
 
@@ -915,14 +939,25 @@ const PathView = (() => {
           ${(draft.speakLevel === 'did' || draft.speakLevel === 'tried') && !runs.length
             ? '<div class="notice warn" style="margin:6px 0">你选了「' + (draft.speakLevel === 'did' ? '我做过' : '我在练手项目里验证过') + '」,但还没有任何运行记录。先去跑一次、把输出粘进「我的实现记录」并保存,再回来讲——表达要和证据对得上。</div>'
             : ''}
-          ${runs.length >= 2 && draft.speakLevel === 'design'
-            ? '<div class="notice warn" style="margin:6px 0">你已经有 ' + runs.length + ' 条运行记录了,可以放心往「我跑通过/验证过」这两档走,不必自我压低。</div>'
-            : ''}
+          <p class="muted small">记录数量不能证明运行成功;请按实际完成和验证的内容选择经历等级。</p>
+          <label class="muted small" for="pitch-short-${pr.id}">30 秒口述 · 需求、方案、结果与边界</label>
+          <textarea id="pitch-short-${pr.id}" class="input" data-proj-speak-field="short" data-proj-speak="${pr.id}" style="min-height:85px" placeholder="用自己的话写,只描述实际做过或计划设计的内容">${L('speak_short')}</textarea>
+          <label class="muted small" for="pitch-long-${pr.id}">2 分钟口述 · 取舍、问题定位、验证与不足</label>
+          <textarea id="pitch-long-${pr.id}" class="input" data-proj-speak-field="long" data-proj-speak="${pr.id}" style="min-height:140px" placeholder="展开一次具体的失败与修复过程,说明还没验证的部分">${L('speak_long')}</textarea>
+          <label class="muted small" for="pitch-evidence-${pr.id}">这份口述依据哪条运行记录</label>
+          <select id="pitch-evidence-${pr.id}" class="input" data-proj-evidence="${pr.id}">
+            <option value="">尚未绑定证据</option>
+            ${draft.evidenceRunId && !runs.some(r => r.runId === draft.evidenceRunId) ? `<option value="${esc(draft.evidenceRunId)}" selected>原证据已缺失,请重新选择</option>` : ''}
+            ${runs.map((r, i) => `<option value="${esc(r.runId)}" ${draft.evidenceRunId === r.runId ? 'selected' : ''}>第 ${runs.length - i} 次 · ${fmtTime(Store.recTime(r))} · ${esc(r.runOutput || r.debug || r.todo || '').slice(0, 45)}</option>`).join('')}
+          </select>
+          <a class="rel-link" data-proj-evidence-link="${pr.id}" href="#/path?p=${encodeURIComponent(pr.id)}&r=${encodeURIComponent(draft.evidenceRunId || '')}" ${draft.evidenceRunId ? '' : 'hidden'}>查看所选证据</a>
+          <p class="muted small" style="margin-top:10px">六段提纲(已有内容保留,可继续辅助组织表达):</p>
           ${SPEAK_FIELDS.map(([k, label]) => `
             <label class="muted small" style="display:block;margin-top:6px">${label}</label>
             <textarea class="input" data-proj-speak-field="${k}" data-proj-speak="${pr.id}" style="min-height:40px">${L('speak_' + k)}</textarea>`).join('')}
           <div class="btn-row" style="margin-top:6px">
             <button class="btn btn-primary btn-small" data-proj-save-speak="${pr.id}">保存口述草稿</button>
+            <button class="btn btn-small" data-proj-export="${pr.id}">导出项目复盘与口述卡</button>
             <button class="btn btn-small" data-proj-timer="30" data-proj="${pr.id}">⏱ 30 秒计时</button>
             <button class="btn btn-small" data-proj-timer="120" data-proj="${pr.id}">⏱ 2 分钟计时</button>
             <span class="muted small" data-proj-clock="${pr.id}"></span>
@@ -955,6 +990,7 @@ const PathView = (() => {
               <div class="round-self"><b>问题→定位→验证:</b>${esc(r.debug || '(无)')}</div>
               <div class="round-self"><b>未完成项:</b>${esc(r.todo || '(无)')}</div>
               <div class="muted small">记录 ID:<code>${esc(r.runId || '')}</code></div>
+              <button class="btn btn-small" data-proj-export="${pr.id}" data-proj-export-run="${esc(r.runId)}">导出这次运行与当前口述</button>
             </details>`).join('')}
           ${runs.length >= 2 ? `<button class="btn btn-small" data-proj-cmp="${pr.id}">比较最近两次</button>` : ''}
         </div>
@@ -990,10 +1026,18 @@ const PathView = (() => {
     return attemptsOf(drillId).filter(a => a.status === 'abandoned');
   }
   function draftOf(drillId) {
-    return Store.latestOf(Store.data.drillAttempts[drillId] || [], a => a.status === 'draft');
+    const list = Store.data.drillAttempts[drillId] || [];
+    const query = parseHash().query || {};
+    const selected = query.d === drillId && list.find(a => a.attemptId === query.at && a.status === 'draft');
+    if (selected) return selected;
+    const draft = Store.latestOf(list, a => a.status === 'draft');
+    const closed = Store.latestOf(list, a => a.status !== 'draft');
+    /* 更早的并行草稿只通过明确选择恢复,不在提交后自动填回旧答案。 */
+    return draft && (!closed || Store.recTime(draft) > Store.recTime(closed)
+      || (draft.ts || 0) >= Store.recTime(closed)) ? draft : null;
   }
   function hasContent(a) {
-    return !!a && !!((a.myAnswer || '').trim() || (a.observed || '').trim() || (a.review || '').trim());
+    return !!a && !!((a.myAnswer || '').trim() || (a.observed || '').trim() || (a.review || '').trim() || a.selfRating);
   }
   function newAttemptId() {
     return 'at-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -1023,14 +1067,28 @@ const PathView = (() => {
       内容仍在下面,可修改后重试;若持续失败请到<a href="#/maintain">维护页</a>导出记录并腾出空间。
     </div>`;
   }
+  function renderAttemptRecord(a, number) {
+    const rating = { solved: '已解决', partial: '部分', unsolved: '未解决' }[a.selfRating] || '未自评';
+    return `<div class="round-item">
+      <div class="round-head"><b>${number ? '#' + number : '选定历史'}</b>
+        <span class="badge ${a.status === 'completed' ? 'st-ok' : 'st-none'}">${Store.STATE_LABEL[a.status] || ''}</span>
+        <span class="muted small">${fmtTime(Store.recTime(a))} · v${esc(a.version || 1)} · ${rating}</span></div>
+      <div class="round-title"><b>预测:</b>${esc(a.myAnswer || '(无)')}</div>
+      ${a.observed ? `<div class="round-self"><b>观察:</b>${esc(a.observed)}</div>` : ''}
+      ${a.review ? `<div class="round-self"><b>复盘:</b>${esc(a.review)}</div>` : ''}
+      <div class="muted small">记录:${esc(a.attemptId)}</div>
+    </div>`;
+  }
   function renderDrill(stageId, di, d) {
     const drillId = d.id || `drill-${stageId}-${di}`;
     const focusDrillId = (parseHash().query.d || '');
     const draft = draftOf(drillId);
+    const otherDrafts = attemptsOf(drillId).filter(a => a.status === 'draft' && a !== draft);
     const completed = completedOf(drillId);
     const abandoned = abandonedOf(drillId);
     const focusAt = (parseHash().query.at || '');
-    const last = draft || completed[completed.length - 1];
+    const selectedAttempt = focusDrillId === drillId && attemptsOf(drillId).find(a => a.attemptId === focusAt);
+    const last = draft;
     return `
       <div class="path-drill ${focusDrillId === drillId ? 'drill-focus' : ''}" data-drill="${drillId}">
         <div class="path-drill-q">
@@ -1046,7 +1104,14 @@ const PathView = (() => {
           ${completed.length >= 2 ? `<a class="rel-link" data-drill-compare="${drillId}" href="javascript:void(0)">比较最近两次</a>` : ''}
         </div>` : ''}
         ${draft ? '<div class="muted small" style="margin:2px 0">⏸ 有未完成草稿(已自动恢复,可继续编辑)</div>' : ''}
+        ${otherDrafts.length ? `<div class="notice" style="margin:6px 0">另有 ${otherDrafts.length} 份草稿,选择后继续编辑(当前内容会自动保留):
+          ${otherDrafts.map(a => `<a class="rel-link" href="#/path?d=${encodeURIComponent(drillId)}&at=${encodeURIComponent(a.attemptId)}">草稿 · ${fmtTime(Store.recTime(a))}</a>`).join(' ')}
+        </div>` : ''}
         ${draft && draft.saveError ? saveFailureHtml(draft.saveError) : ''}
+        ${selectedAttempt && selectedAttempt.status !== 'draft' ? `<div data-selected-attempt="${esc(selectedAttempt.attemptId)}">
+          ${renderAttemptRecord(selectedAttempt)}<p class="muted small">这里是那次历史快照,下方输入框用于新的尝试。</p>
+        </div>` : ''}
+        ${focusDrillId === drillId && focusAt && !selectedAttempt ? '<p class="notice warn">这条记录已不存在;现有草稿与历史保持不变。</p>' : ''}
         <textarea class="path-drill-answer" data-drill-answer="${drillId}"
           placeholder="先写下你的预测/找出的错/推演结果(自动保存,刷新不丢)……">${esc(draft?.myAnswer ?? '')}</textarea>
         <details class="path-variant-ref" data-drill-ref="${drillId}">
@@ -1120,7 +1185,7 @@ const PathView = (() => {
       </div>`;
   }
 
-  return { render };
+  return { render, cleanup };
 })();
 
 /* ---------- 工作台首页 ---------- */
@@ -1148,6 +1213,9 @@ const HomeView = (() => {
     /* ---- 出口:能带走的东西 ---- */
     const rounds = (Store.data.mock.rounds || []);
     const lastRound = rounds[0];
+    const today = new Date().toDateString();
+    const practicedToday = rounds.some(r => typeof r.ts === 'number' && new Date(r.ts).toDateString() === today
+      && (r.items || []).some(it => String(it.self || '').trim()));
     const lastRoundAnswered = lastRound
       ? (lastRound.items || []).filter(it => String(it.self || '').trim()).length : 0;
     const marks = pendingMarks();
@@ -1194,12 +1262,12 @@ const HomeView = (() => {
           </div>
           <a class="btn ${wrapUpCt ? 'btn-primary' : ''}" href="#/review">${wrapUpCt ? '去收尾' : '去看看'}</a>
         </div>
-        <div class="desk-todo ${lastRound ? 'is-done' : ''}">
+        <div class="desk-todo ${practicedToday ? 'is-done' : ''}" data-today-mock>
           <span class="dt-num">3</span>
           <div class="dt-body">
             <b>练一轮模拟面试</b>
             <span class="muted">${lastRound
-              ? `上一轮 ${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题`
+              ? `${practicedToday ? '今天已写过模拟回答' : '今天尚未写模拟回答'} · 上一轮 ${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题`
               : '还没练过:先写回答,再对照参考要点'}</span>
           </div>
           <a class="btn ${lastRound ? '' : 'btn-primary'}" href="#/mock">${lastRound ? '再练一轮' : '开始'}</a>

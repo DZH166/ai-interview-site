@@ -148,10 +148,10 @@ console.log('== Store 记录导入/导出 ==');
   Store.importRecords(roundJson);
   eq('重复导入轮次幂等', Store.data.mock.rounds.length, before);
 
-  /* fav=false 语义保留:本机 true 不被 false 覆盖;OR 合并 */
+  /* 取消收藏是明确操作,无时间戳的旧备份不能撤销它。 */
   Store.toggleFav('PY-001'); /* true -> false */
   Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: { questions: { 'PY-001': { fav: true } } } }));
-  eq('备份 fav=true 恢复收藏', Store.rec('PY-001').fav, true);
+  eq('旧备份不复活刚取消的收藏', Store.rec('PY-001').fav, false);
 
   /* 坏备份:整批拒绝,状态不变 */
   const snapshot = JSON.stringify(Store.data);

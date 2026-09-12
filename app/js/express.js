@@ -50,6 +50,12 @@ const ExpressCard = (() => {
     return t.split('\n').map(l => (l ? '> ' + l : '>')).join('\n');
   }
 
+  /* 个人项目材料按原文展示,不激活 HTML、图片或链接语法。 */
+  function literalQuote(text) {
+    const escaped = String(text == null ? '' : text).replace(/\\/g, '\\\\').replace(/([`*_{}\[\]()!#|~])/g, '\\$1');
+    return quote(esc(escaped));
+  }
+
   /* 压成一行,供标题/元信息使用 */
   function oneLine(text, max) {
     const t = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
@@ -118,6 +124,15 @@ const ExpressCard = (() => {
   /* ---- Markdown ---- */
   function toMarkdown(model) {
     const L = [];
+    if (model.kind === 'project') {
+      L.push('# ' + model.title, '', '- 来源:' + model.source, '- 生成时间:' + timeLabel(model.ts), '');
+      (model.notes || []).forEach(n => L.push(literalQuote(n), ''));
+      model.items.forEach((it, i) => {
+        L.push('---', '', '## ' + (i + 1) + '. ' + it.title, '', literalQuote(it.meta || ''), '');
+        it.sections.forEach(s => L.push('### ' + s.label, '', literalQuote(s.text), ''));
+      });
+      return L.join('\n');
+    }
     const word = model.selfKind === 'note' ? '笔记' : '回答';
     L.push('# ' + model.title);
     L.push('');
@@ -181,7 +196,12 @@ const ExpressCard = (() => {
 
   /* ---- 打印版 HTML:浏览器直接「打印 → 另存为 PDF」就是一份能带走的材料 ---- */
   function toHtml(model) {
-    const rows = model.items.map((it, i) => `
+    const rows = model.items.map((it, i) => it.sections ? `
+    <section class="card">
+      <h2><span class="num">${i + 1}</span>${esc(it.title)}</h2>
+      <p class="meta">${esc(it.meta || '')}</p>
+      ${it.sections.map(s => '<h3>' + esc(s.label) + '</h3><pre class="self">' + esc(s.text) + '</pre>').join('')}
+    </section>` : `
     <section class="card">
       <h2><span class="num">${i + 1}</span>${esc(oneLine(it.title, 200))}</h2>
       <p class="meta">${esc(it.qid)}${it.topic ? ' · ' + esc(it.topic) : ''}${it.difficulty ? ' · ' + esc(it.difficulty) : ''} · 状态:${esc(statusLabel(it.status))}</p>
@@ -232,7 +252,8 @@ const ExpressCard = (() => {
   <div class="head">
     <h1>${esc(model.title)}</h1>
     <p>来源:${esc(model.source)}</p>
-    <p>生成时间:${esc(timeLabel(model.ts))} · 共 ${model.items.length} 题 · 我写了${word}的 ${model.items.filter(i => i.self.trim()).length} 题</p>
+    <p>生成时间:${esc(timeLabel(model.ts))} · ${model.kind === 'project' ? esc(model.summary) : `共 ${model.items.length} 题 · 我写了${word}的 ${model.items.filter(i => i.self.trim()).length} 题`}</p>
+    ${(model.notes || []).map(n => '<p>' + esc(n) + '</p>').join('')}
   </div>
   ${rows}
   <footer>由「面试加油工作台」生成 · 内容来自本机浏览器记录,未上传任何服务器</footer>
@@ -283,11 +304,57 @@ const ExpressCard = (() => {
     return finish(model, 'md');
   }
 
+  /* 当前口述与已保存运行分开标注;选定 runId 时绝不回退到另一条证据。
+     纯生成操作不写 Store,不把材料导出当成验证成功或记录提交。 */
+  function buildFromProject(project, draft, runs, runId) {
+    if (!project || !project.id) return { ok: false, error: '找不到这个项目。' };
+    draft = draft || {};
+    const list = (Array.isArray(runs) ? runs : []).filter(r => r && r.runId)
+      .slice().sort((a, b) => (a.updatedAt || a.ts || 0) - (b.updatedAt || b.ts || 0) || String(a.runId).localeCompare(String(b.runId)));
+    const selectedId = runId === undefined ? (draft.evidenceRunId || '') : runId;
+    const selected = selectedId ? list.filter(r => r.runId === selectedId) : list;
+    if (selectedId && !selected.length) return { ok: false, error: '所选证据记录已不存在,请重新选择后导出。' };
+    const fields = [
+      ['speak_short', '30 秒口述(当前草稿)'], ['speak_long', '2 分钟口述(当前草稿)'],
+      ['speak_ask', '提纲 · 需求'], ['speak_plan', '提纲 · 方案'], ['speak_tradeoff', '提纲 · 取舍'],
+      ['speak_pain', '提纲 · 问题与定位'], ['speak_verify', '提纲 · 验证证据'], ['speak_lack', '提纲 · 不足与下一步'],
+      ['runOutput', '当前实现草稿 · 输出(未作为新运行提交)'], ['debug', '当前实现草稿 · 排查'], ['todo', '当前实现草稿 · 未完成项']
+    ];
+    const sections = fields.filter(([key]) => !(selectedId && ['runOutput', 'debug', 'todo'].includes(key))
+      && typeof draft[key] === 'string' && draft[key].trim())
+      .map(([key, label]) => ({ label, text: draft[key] }));
+    const hasRuns = selected.some(r => [r.runOutput, r.debug, r.todo].some(t => typeof t === 'string' && t.trim()));
+    if (!sections.length && !hasRuns) return { ok: false, error: '先写下口述或保存一条有内容的运行记录,再导出项目材料。' };
+    const level = { did: '我做过(用户自评)', tried: '我在练手项目里验证过(用户自评)', design: '如果遇到我会这样设计' }[draft.speakLevel] || '尚未选择经历等级';
+    const notes = ['材料来自用户自填记录,未独立验证项目是否成功;当前口述草稿不等于历史运行时的说法。'];
+    if (!list.length) notes.push('无运行记录:目前只能据此准备方案表达,不能作为已完成项目的证明。');
+    else if (selectedId) notes.push('本次使用选定运行快照与当前口述草稿。');
+    else if (!selectedId) notes.push('未指定口述依据,下方列出已保存运行记录供核对。');
+    if (runId && draft.evidenceRunId && runId !== draft.evidenceRunId) notes.push('本次导出的运行与当前口述绑定的证据不同,请核对表达。');
+    const items = [];
+    if (sections.length) items.push({ title: selectedId ? '当前口述草稿' : '当前口述草稿与实现草稿', meta: project.id + ' · ' + level + (draft.updatedAt ? ' · 编辑于 ' + timeLabel(draft.updatedAt) : ''), sections });
+    selected.forEach(r => items.push({
+      title: '已保存运行 · ' + timeLabel(r.updatedAt || r.ts),
+      meta: '记录:' + r.runId + ' · 状态:' + ({ none: '未开始', trying: '尝试中', verified: '已验证(自评)', understood: '自评理解' }[r.stepStatus] || '未标记') + (r._legacy ? ' · 旧版迁移记录' : ''),
+      sections: [
+        { label: '实际运行输出', text: String(r.runOutput || '(未填写)') },
+        { label: '问题 → 定位 → 修改 → 验证', text: String(r.debug || '(未填写)') },
+        { label: '未完成项', text: String(r.todo || '(未填写)') }
+      ]
+    }));
+    return finish({ kind: 'project', title: '项目复盘与口述卡 · ' + oneLine(project.name || project.id, 100),
+      source: project.id + (selectedId ? ' · 选定证据:' + selectedId : ' · 项目个人记录'),
+      summary: selected.length + ' 条运行记录' + (sections.length ? ' + 当前草稿' : ''),
+      ts: Date.now(), items, notes }, 'md');
+  }
+
   function finish(model, ext) {
     const md = toMarkdown(model);
     return {
       ok: true, error: null,
       count: model.items.length,
+      summary: model.summary || '',
+      notes: model.notes || [],
       title: model.title,
       markdown: md,
       html: toHtml(model),
@@ -297,7 +364,7 @@ const ExpressCard = (() => {
   }
 
   return {
-    buildFromRound, buildFromMarks,
+    buildFromRound, buildFromMarks, buildFromProject,
     toMarkdown, toHtml, fileName, esc, quote, oneLine, clip, statusLabel,
     MAX_SELF, MAX_LINE
   };

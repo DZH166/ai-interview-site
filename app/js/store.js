@@ -54,23 +54,26 @@ const Store = (() => {
     const t = typeof a.ts === 'number' && isFinite(a.ts) ? a.ts : 0;
     return Math.max(u, t);
   }
-  /* 最新的满足条件的记录。时间相同则取数组中靠后者(确定、可复现)。 */
+  /* 时间相同按稳定身份排序,不让导入顺序决定「最新」。 */
+  function compareRecords(a, b) {
+    const time = recTime(a) - recTime(b);
+    if (time) return time;
+    const left = String(a && (a.attemptId || a.runId || a.id) || '');
+    const right = String(b && (b.attemptId || b.runId || b.id) || '');
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  /* 最新的满足条件的记录,与历史排序使用同一套规则。 */
   function latestOf(list, pred) {
-    let best = null, bestT = -1;
+    let best = null;
     (list || []).forEach(a => {
       if (pred && !pred(a)) return;
-      const t = recTime(a);
-      if (t >= bestT) { best = a; bestT = t; }
+      if (!best || compareRecords(a, best) >= 0) best = a;
     });
     return best;
   }
   /* 按时间升序排列的副本(历史回看、前后比较统一用它) */
   function sortedByTime(list) {
-    return (list || []).slice().sort((a, b) => {
-      const d = recTime(a) - recTime(b);
-      if (d !== 0) return d;
-      return String(a && a.attemptId || '').localeCompare(String(b && b.attemptId || ''));
-    });
+    return (list || []).slice().sort(compareRecords);
   }
 
   /* 数据版本号:任何写入都自增。搜索索引据此判断自己是否过期,
@@ -162,8 +165,8 @@ const Store = (() => {
        aiiv-library  导入题库 + 导入资料
        aiiv-full     两者合并(完整备份)
      记录合并规则(见 importRecords):
-       fav 取或;计数/时间戳取较大;note/status 按记录级 _updatedAt 新者胜,
-       备份无 _updatedAt 时只补空、不覆盖已有值(旧备份不会覆盖新笔记);
+       计数/时间戳取较大;note/status/fav 按记录级 _updatedAt 新者胜;
+       无更新时间的本地初始值可以补齐,较新记录中的明确清空/取消不会被旧备份撤销;
        轮次按稳定 ID 去重,重复导入幂等。 */
 
   function recordsPayload() {
@@ -678,15 +681,15 @@ const Store = (() => {
     });
     if (inc.note !== undefined) {
       if (incAt > curAt) { if (cur.note !== inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; } }
-      else if (!cur.note && inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; }
+      else if ((cur.note === undefined || (!curAt && !cur.note)) && inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; }
     }
     if (inc.status !== undefined) {
       if (incAt > curAt) { if (cur.status !== inc.status) { cur.status = inc.status; adopted = true; } }
-      else if (!cur.status && inc.status) { cur.status = inc.status; adopted = true; }
+      else if ((cur.status === undefined || (!curAt && !cur.status)) && inc.status) { cur.status = inc.status; adopted = true; }
     }
     if (inc.fav !== undefined) {
       if (incAt > curAt) { if (cur.fav !== inc.fav) { cur.fav = inc.fav; adopted = true; } }
-      else if (inc.fav === true && !cur.fav) { cur.fav = true; adopted = true; }
+      else if (inc.fav === true && (cur.fav === undefined || (!curAt && !cur.fav))) { cur.fav = true; adopted = true; }
     }
     if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
     /* 旧字段 drillTries 原样带入(由 migrateLegacyDrillTries 统一迁移到顶层) */

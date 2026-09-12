@@ -17,8 +17,9 @@
      仍判为正常。现在检索侧显式报告「达标证据被预算裁掉了多少条」,归因第③层。
   4. **第④层校验真的看回答文本**。上一版看的是 broken_fake 这个开关
      (if len(evidence) > 1),单证据时故意不遵循证据的回答会被放行。
-     现在 validate() 检查回答是否覆盖每一条给定证据,与是不是"错误 fake"无关——可以
-     注入任意生成器来验证它是否被拦住。
+     现在 validate() 使用明确的摘录契约:每个答案分句须来自所引证据,每条证据至少
+     有一个完整分句被使用。引用标签本身不算答案。它不判断自由改写是否语义等价;
+     无法按摘录核对的内容会拒绝并提示人工复核,不能当通用事实验证器。
 
 四层定义(评测侧口径)
   ① 库里没有         → 检索无证据,且独立标注确认该主题不在库中
@@ -116,30 +117,57 @@ def generate(query, hits, config=None):
 
 
 def validate(answer_text, hits):
-    """独立校验:回答有没有覆盖**给定的每一条证据**。
-    判据只看回答文本里有没有该证据的引用标记(或等价的可辨识片段),
-    与"生成器是不是故意坏的"无关——所以它可以拦住任何来源的不遵循。"""
-    text = str(answer_text or "")
-    covered, missing = [], []
-    for h in (hits or []):
-        did = h["doc"]["id"]
-        if ("[%s]" % did) in text:
-            covered.append(did)
+    """本地摘录校验,不做开放式语义判断。
+
+    允许空白、句末标点变化及省略文档标题;不允许修改数字/否定词、
+    拼入无证据的新主张或把另一文档的内容挂在当前引用下。
+    不带标签的完整原文摘录仍可匹配,但不能只凭相似词比例放行。
+    """
+    docs = {h['doc']['id']: h['doc']['text'] for h in (hits or [])}
+
+    def normal(s):
+        return re.sub(r'\s+', '', s).replace('，', ',').replace('：', ':')
+
+    def clauses(s):
+        return [normal(p) for p in re.split(r'[。；;！？!?\n]+', s) if normal(p)]
+
+    # 文档标题仅在原文确实声明该标题时可省略,不把任意冒号前的主张丢掉。
+    headings = {normal(t.split(':', 1)[0].split('：', 1)[0]) for t in docs.values() if ':' in t or '：' in t}
+
+    def without_heading(s):
+        head, sep, rest = s.partition(':')
+        return rest if sep and head in headings else s
+
+    facts = {did: {without_heading(p) for p in clauses(t)} for did, t in docs.items()}
+    text = re.sub(r'^\s*根据知识库\s*[:：]\s*', '', str(answer_text or ''))
+    covered_set, unsupported = set(), []
+    active_id = None
+    for part in re.split(r'(\[[^\[\]\r\n]+\])', text):
+        if re.fullmatch(r'\[[^\[\]\r\n]+\]', part):
+            active_id = part[1:-1]
+            if active_id not in docs:
+                unsupported.append('未知引用:' + part)
             continue
-        # 退一步:回答里出现该文档足够多的显著片段,也算覆盖(容忍不带引用格式的回答)
-        toks = tokenize(h["doc"]["text"])
-        uniq = list(dict.fromkeys(toks))
-        hit = sum(1 for t in uniq if t in text)
-        if uniq and hit / len(uniq) >= 0.6:
-            covered.append(did)
-        else:
-            missing.append(did)
+        for claim in clauses(part):
+            claim = without_heading(claim)
+            allowed = [active_id] if active_id is not None else list(docs)
+            matches = [did for did in allowed if claim in facts.get(did, set())]
+            if matches:
+                covered_set.update(matches)
+            else:
+                unsupported.append(claim)
+    covered = [did for did in docs if did in covered_set]
+    missing = [did for did in docs if did not in covered_set]
+    ok = bool(covered) and not missing and not unsupported
     return {
-        "ok": not missing,
+        "ok": ok,
+        "mode": "extractive",
         "covered": covered,
         "missing": missing,
-        "reason": ("覆盖全部证据: %s" % ",".join(covered)) if not missing
-                  else ("未覆盖证据: %s" % ",".join(missing)),
+        "unsupported": unsupported,
+        "reason": ("摘录核对通过: %s(不代表自由改写的语义验证)" % ','.join(covered)) if ok
+                  else ("摘录核对未通过;缺少证据正文:%s;无法从所引证据核对的分句:%s。改写需人工复核。"
+                        % (','.join(missing) or '无', ' / '.join(unsupported) or '无')),
     }
 
 
@@ -162,6 +190,7 @@ def diagnose(query, docs=None, config=None, generator=None):
 
     out = gen(query, r["hits"], config)
     answer_text = out.get("text", "")
+    base['candidate_answer'] = answer_text
     v = validate(answer_text, r["hits"])
     evidence = ["[%s] %s" % (h["doc"]["id"], h["doc"]["text"]) for h in r["hits"]]
     citations = [h["doc"]["id"] for h in r["hits"]]

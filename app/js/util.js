@@ -201,6 +201,12 @@ function pendingMarks() {
 function buildExpressCard(kind, index) {
   const rounds = (Store.data.mock && Store.data.mock.rounds) || [];
   if (kind === 'round') return ExpressCard.buildFromRound(rounds, index || 0, id => Data.question(id));
+  if (kind === 'project') {
+    const selection = index || {};
+    const project = ((window.APP_DATA.projects || {}).projects || []).find(p => p.id === selection.projectId);
+    return ExpressCard.buildFromProject(project, (Store.data.ui.projectDrafts || {})[selection.projectId],
+      (Store.data.ui.projectRuns || {})[selection.projectId], selection.runId);
+  }
   return ExpressCard.buildFromMarks(pendingMarks(), id => Data.question(id));
 }
 
@@ -232,7 +238,8 @@ function exportExpressCard(kind, index) {
   catch (e) { toast('生成表达卡失败:' + e.message, 'err'); return null; }
   if (!r || !r.ok) { toast((r && r.error) || '生成表达卡失败', 'err'); return null; }
   modal('导出表达卡', `
-    <p>共 <b>${r.count}</b> 题,内容取自你本机浏览器的学习记录(不会上传)。</p>
+    <p>${r.summary ? esc(r.summary) : `共 <b>${r.count}</b> 题`},内容取自你本机浏览器的学习记录(不会上传)。</p>
+    ${(r.notes || []).map(n => `<p class="muted small">${esc(n)}</p>`).join('')}
     <p class="muted small" style="margin-top:6px">两种格式按用途选:</p>
     <ul style="margin:6px 0 0 18px">
       <li><b>Markdown(.md)</b> — 复制进笔记软件、发给自己。</li>
@@ -243,6 +250,7 @@ function exportExpressCard(kind, index) {
         toast('已下载 ' + r.mdName);
       } },
     { label: '打开打印版', onClick: () => { openPrintVersion(r.html); } },
+    { label: '下载打印版 HTML', onClick: () => { download(r.htmlName, r.html, 'text/html'); } },
     { label: '取消' }
   ]);
   return r;
