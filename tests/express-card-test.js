@@ -209,6 +209,32 @@ console.log('\n== 9. Anki CSV 导出(与待攻克清单同源,转义正确) ==')
   ok('无标记 → ok:false,不产出空文件', empty.ok === false);
 }
 
+console.log('\n== 10. 统一资格:只写追问的真实练习可导出(SP-03) ==');
+{
+  const lookup = id => id === 'FU-100' ? {
+    id: 'FU-100', title: '资格主题', prompt: '', fusion_notes: '', topic: 'rag', difficulty: 'basic',
+    answer: 'A', plain: 'P', interview: 'I', pitfalls: [], followups: [{ q: '追问X?', a: '因为Z' }]
+  } : null;
+  const fuOnly = ExpressCard.buildFromRound([{ ts: Date.now(), items: [
+    { qid: 'FU-100', title: '资格主题', self: '', revealed: true, mark: '',
+      followups: [{ id: 'x', q: '追问X?', self: '只写了追问的回答', revealed: true }] }] }], 0, lookup);
+  ok('只写追问可导出', fuOnly.ok === true, fuOnly.error);
+  ok('卡片带追问原文', fuOnly.markdown.includes('只写了追问的回答'));
+  const revealedOnly = ExpressCard.buildFromRound([{ ts: Date.now(), items: [
+    { qid: 'FU-100', title: '资格主题', self: '', revealed: true, mark: '',
+      followups: [{ id: 'x', q: '追问X?', self: '', revealed: true }] }] }], 0, lookup);
+  ok('仅揭示未写 → 仍拒绝', revealedOnly.ok === false);
+  const whitespaceOnly = ExpressCard.buildFromRound([{ ts: Date.now(), items: [
+    { qid: 'FU-100', title: '资格主题', self: '  ', revealed: true, mark: '',
+      followups: [{ id: 'x', q: '追问X?', self: ' \n ', revealed: true }] }] }], 0, lookup);
+  ok('纯空白 → 仍拒绝', whitespaceOnly.ok === false);
+  ok('itemAnswered/hasRealAnswer 可独立判定',
+     ExpressCard.itemAnswered({ self: 'x' }) === true
+     && ExpressCard.itemAnswered({ self: '', followups: [{ self: 'y' }] }) === true
+     && ExpressCard.itemAnswered({ self: '', followups: [{ self: ' ' }] }) === false
+     && ExpressCard.hasRealAnswer([{ self: '' }]) === false);
+}
+
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);
 if (failed) console.log('失败项:\n  - ' + failures.join('\n  - '));
 process.exit(failed ? 1 : 0);

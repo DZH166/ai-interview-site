@@ -313,9 +313,10 @@ const ExpressCard = (() => {
     if (!round) return { ok: false, error: '找不到这一轮模拟面试记录。' };
     const items = itemsFromRound(round, lookup);
     if (!items.length) return { ok: false, error: '这一轮没有题目记录,没什么可导出的。' };
-    /* 诚实:一题都没写回答,不产出看着像材料其实空空如也的文件 */
-    if (!items.some(it => it.self.trim())) {
-      return { ok: false, error: '这一轮你没有写下任何回答,先答几题再导出吧。' };
+    /* 诚实:资格 = 真实作答(SP-03)——主回答或任一追问有非空文本;
+       仅揭示参考/打分/浏览不算,不产出看着像材料其实空空如也的文件 */
+    if (!hasRealAnswer(items)) {
+      return { ok: false, error: '这一轮你没有写下任何回答(主回答或追问),先答几题再导出吧。' };
     }
     const model = {
       title: '面试表达卡 · 模拟面试',
@@ -412,6 +413,13 @@ const ExpressCard = (() => {
       ts: Date.now(), items, notes }, 'md');
   }
 
+  /* 「有真实作答」的唯一判定:主回答或任一追问有非空文本。
+     完成页摘要/可导出按钮/首页「今天是否练过」都引用这一条,不各抄一份。 */
+  function itemAnswered(it) {
+    return !!(it && ((it.self || '').trim() || (it.followups || []).some(f => (f.self || '').trim())));
+  }
+  function hasRealAnswer(items) { return (items || []).some(itemAnswered); }
+
   function finish(model, ext) {
     const md = toMarkdown(model);
     return {
@@ -428,7 +436,7 @@ const ExpressCard = (() => {
   }
 
   return {
-    buildFromRound, buildFromMarks, buildFromProject, buildAnkiCsv,
+    buildFromRound, buildFromMarks, buildFromProject, buildAnkiCsv, itemAnswered, hasRealAnswer,
     toMarkdown, toHtml, fileName, esc, quote, oneLine, clip, statusLabel,
     MAX_SELF, MAX_LINE
   };

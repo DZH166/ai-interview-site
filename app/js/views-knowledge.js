@@ -1216,10 +1216,12 @@ const HomeView = (() => {
     const rounds = (Store.data.mock.rounds || []);
     const lastRound = rounds[0];
     const today = new Date().toDateString();
+    /* 「练过/可导出」与表达卡共用同一资格定义(真实作答 = 主回答或追问非空) */
     const practicedToday = rounds.some(r => typeof r.ts === 'number' && new Date(r.ts).toDateString() === today
-      && (r.items || []).some(it => String(it.self || '').trim()));
-    const lastRoundAnswered = lastRound
-      ? (lastRound.items || []).filter(it => String(it.self || '').trim()).length : 0;
+      && (r.items || []).some(it => ExpressCard.itemAnswered(it)));
+    const lastRoundMain = lastRound ? (lastRound.items || []).filter(it => (it.self || '').trim()).length : 0;
+    const lastRoundFu = lastRound ? (lastRound.items || []).reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0) : 0;
+    const lastRoundAnswered = lastRound ? (lastRound.items || []).filter(it => ExpressCard.itemAnswered(it)).length : 0;
     const marks = pendingMarks();
 
     /* ---- 学习进度统计 ---- */
@@ -1281,7 +1283,7 @@ const HomeView = (() => {
         <div class="out-card">
           <h3>最近一轮的表达卡</h3>
           ${lastRound ? `
-            <p class="muted">${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题,其中你写了回答的 ${lastRoundAnswered} 题。
+            <p class="muted">${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题,有真实作答的 ${lastRoundAnswered} 题(主回答 ${lastRoundMain} · 追问回答 ${lastRoundFu} 条)。
             导出后是你自己写的回答 + 面试口述版 + 参考要点,能直接念。</p>
             <button class="btn btn-primary" id="d-card-round" ${lastRoundAnswered ? '' : 'disabled'}>导出表达卡</button>
             ${lastRoundAnswered ? '' : `<p class="muted small" style="margin-top:6px">这一轮你一题都没写回答,先答几题再导出——不给空壳文件。</p>`}

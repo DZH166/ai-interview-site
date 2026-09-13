@@ -370,10 +370,11 @@ const ReviewView = (() => {
       const revealed = items.filter(it => it.revealed).length;
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';
       const marked = items.filter(it => it.mark === 'weak').length;
+      const fuCount = items.reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
       return `
         <details class="round-details" ${ri === 0 ? 'open' : ''}>
           <summary class="round-summary">
-            <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 对照参考 ${revealed} 题
+            <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 对照参考 ${revealed} 题${fuCount ? ` · 追问回答 ${fuCount} 条` : ''}
             ${marked ? `<span class="badge st-weak">还不熟 ${marked}</span>` : ''}
             ${label ? `<span class="badge b-tag">${label}</span>` : ''}
           </summary>

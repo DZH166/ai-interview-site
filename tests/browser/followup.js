@@ -146,6 +146,35 @@ async function open(page, hash) {
           && ![...document.querySelectorAll('#mock-fu-list [data-fu-id]')].some(el => el.value === '旧回答原文');
       }));
 
+    /* ---- 统一资格:只写追问也能完成并导出;完成页与首页同一口径(SP-03) ---- */
+    await page.goto(BASE + '/__seed__');
+    await page.evaluate(() => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions: {}, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} })));
+    await open(page, '#/mock');
+    await page.evaluate(() => MockView.startDirected(['AG-001'], '资格测试'));
+    await page.waitForFunction(() => document.querySelector('#m-reveal'));
+    await page.locator('#m-reveal').click();
+    await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
+    const fid0 = await page.evaluate(() => fuId('AG-001', Data.question('AG-001').followups[0].q));
+    await page.locator(`[data-fu-id="${fid0}"]`).fill('只有追问的回答');
+    await page.locator('#m-quit').click();
+    await page.waitForFunction(() => document.querySelector('.round-list'));
+    check('完成页展示追问回答与题面快照(主回答未写如实标注)',
+      await page.evaluate(() => {
+        const t = document.querySelector('.card').textContent;
+        return t.includes('只有追问的回答') && t.includes('主回答未写') && t.includes('追问回答 1 条') && t.includes('有真实作答 1 题');
+      }));
+    const card2 = await page.evaluate(() => { const r = buildExpressCard('round', 0); return r && r.ok ? r.markdown : 'ERR:' + (r && r.error); });
+    check('完成页表达卡资格:只写追问可导出', card2.includes('只有追问的回答'), card2.slice(0, 80));
+    /* 首页:今天已写过模拟回答 + 数量口径 */
+    await open(page, '#/home');
+    check('首页「今天已写过模拟回答」认可只写追问的轮次',
+      await page.evaluate(() => document.querySelector('.desk-todos').textContent.includes('今天已写过模拟回答')));
+    check('首页数量口径分列主回答与追问',
+      await page.evaluate(() => {
+        const t = document.querySelector('.desk-out').textContent;
+        return t.includes('主回答 0') && t.includes('追问回答 1 条');
+      }));
+
     check('全程无页面 JS 异常', errors.length === 0);
     console.log(`\n结果: ${passed} 通过, 0 失败`);
   } finally { if (browser) await browser.close(); server.kill(); }

@@ -964,8 +964,13 @@ const MockView = (() => {
   function finish(root) {
     captureInput(); /* 同步捕获当前输入,快速结束时最后一个回答不丢 */
     const sid = state.sid;
-    const answered = Object.keys(state.answers).filter(k => (state.answers[k].self || '').trim() || state.answers[k].revealed).length;
-    if (!answered) { toast('本轮还没有作答,已按原样记录'); }
+    /* 统一资格定义:真实作答 = 主回答或追问有非空文本(与表达卡同一判定) */
+    const answered = state.items.filter(q => {
+      const a = state.answers[q.qid || q.id] || {};
+      const fu = a.fu || {};
+      return (a.self || '').trim() || Object.keys(fu).some(k => (fu[k].self || '').trim());
+    }).length;
+    if (!answered) { toast('本轮还没有真实作答,已按原样记录'); }
     const round = {
       ts: Date.now(),
       sessionId: state.sessionId,
@@ -1003,10 +1008,14 @@ const MockView = (() => {
     if (!round) { renderConfig(root); return; }
     const revealed = round.items.filter(i => i.revealed);
     const weak = round.items.filter(i => i.mark === 'weak');
+    /* 与表达卡同一资格判定:有真实作答(主回答或追问)的题数;追问单独计数,不冒充主问题 */
+    const mainAnswered = round.items.filter(i => (i.self || '').trim()).length;
+    const fuAnswered = round.items.reduce((n, i) => n + (i.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
+    const realAnswered = round.items.filter(i => ExpressCard.itemAnswered(i)).length;
     root.innerHTML = `
       <div class="card">
         <h2>本轮完成</h2>
-        <p class="muted">${fmtTime(round.ts)} · 共 ${round.items.length} 题 · 对照参考要点 ${revealed.length} 题${weak.length ? ` · 标记还不熟 ${weak.length} 题(已进入错题本与今日复习)` : ''}</p>
+        <p class="muted">${fmtTime(round.ts)} · 共 ${round.items.length} 题 · 有真实作答 ${realAnswered} 题(主回答 ${mainAnswered} · 追问回答 ${fuAnswered} 条) · 对照参考要点 ${revealed.length} 题${weak.length ? ` · 标记还不熟 ${weak.length} 题(已进入错题本与今日复习)` : ''}</p>
         <div class="round-list">
           ${round.items.map((it, i) => `
             <div class="round-item">
@@ -1016,7 +1025,9 @@ const MockView = (() => {
                 <a class="rel-link" href="#/study/${it.qid}">打开题目</a>
               </div>
               <div class="round-title">${esc(it.title)}</div>
-              ${it.self ? `<div class="round-self"><b>我的回答:</b>${esc(it.self)}</div>` : '<div class="round-self muted">(未作答)</div>'}
+              ${it.self ? `<div class="round-self"><b>我的回答:</b>${esc(it.self)}</div>` : '<div class="round-self muted">(主回答未写)</div>'}
+              ${(it.followups || []).filter(fu => (fu.self || '').trim() || fu.revealed).map(fu => `
+                <div class="round-self"><b>追问(${esc((fu.q || '').slice(0, 40))}${(fu.q || '').length > 40 ? '…' : ''}):</b>${(fu.self || '').trim() ? esc(fu.self) : '<span class="muted">对照过参考,未写回答</span>'}</div>`).join('')}
             </div>`).join('')}
         </div>
         <div class="mock-nav">
