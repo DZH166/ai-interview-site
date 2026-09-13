@@ -91,10 +91,14 @@ const ExpressCard = (() => {
         /* 模拟面试里写的是「我的回答」 */
         selfKind: 'answer',
         revealed: !!it.revealed,
-        /* 追问二跳:只带真实写过的(与轮次记录同一条筛选规则),没碰过的不占位 */
+        /* 追问二跳:只带真实写过的(与轮次记录同一条筛选规则),没碰过的不占位;
+           id/legacy 原样透传(历史身份) */
         followups: (Array.isArray(it.followups) ? it.followups : [])
           .filter(f => f && typeof f.q === 'string' && ((f.self || '').trim() || f.revealed))
-          .map(f => ({ q: f.q, self: String(f.self || ''), revealed: !!f.revealed })),
+          .map(f => ({ id: f.id || '', q: f.q, self: String(f.self || ''), revealed: !!f.revealed, legacy: !!f.legacy })),
+        qRev: String(it.qRev || ''),
+        currentRev: (q && q.content_version && q.content_version.rev) || '',
+        revealed: !!it.revealed,
         /* 参考要点只在题目存在时给出;题目缺失就如实留白,不编 */
         answer: q ? String(q.answer || '') : '',
         interview: q ? String(q.interview || '') : '',
@@ -193,12 +197,16 @@ const ExpressCard = (() => {
         L.push(quote(clip(it.answer, MAX_SELF)));
         L.push('');
       }
+      if (it.qRev && it.currentRev && it.qRev !== it.currentRev) {
+        L.push('_注:作答后题目内容有更新(' + oneLine(it.qRev, 40) + ' → ' + oneLine(it.currentRev, 40) + '),下方参考要点为当前版本。_');
+        L.push('');
+      }
       if (it.fusion_notes) L.push('### 场景与边界补充', '', quote(clip(it.fusion_notes, MAX_SELF)), '');
       if (it.followups && it.followups.length) {
         L.push('### 追问练习(面试官会往下挖的点)');
         L.push('');
         it.followups.forEach((f, j) => {
-          L.push('**追问 ' + (j + 1) + ':' + oneLine(f.q, 150) + '**');
+          L.push('**追问 ' + (j + 1) + ':' + oneLine(f.q, 150) + '**' + (f.legacy ? ' _(旧版草稿,题面未记录,待核对)_' : ''));
           L.push('');
           if (f.self.trim()) L.push(quote(clip(f.self, MAX_SELF)), '');
           else L.push('_（对照过参考要点,当时没有写下回答）_', '');
@@ -230,6 +238,7 @@ const ExpressCard = (() => {
       ${(!it.self.trim() && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
       ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}
       ${it.answer ? '<h3>参考要点</h3><pre>' + esc(clip(it.answer, MAX_SELF)) + '</pre>' : ''}
+      ${(it.qRev && it.currentRev && it.qRev !== it.currentRev) ? '<p class="empty">注:作答后题目内容有更新(' + esc(it.qRev) + ' → ' + esc(it.currentRev) + '),下方参考要点为当前版本。</p>' : ''}
       ${it.fusion_notes ? '<h3>场景与边界补充</h3><pre>' + esc(clip(it.fusion_notes, MAX_SELF)) + '</pre>' : ''}
       ${(it.followups && it.followups.length) ? '<h3>追问练习(面试官会往下挖的点)</h3>' + it.followups.map((f, j) =>
         '<div class="fu"><p class="fu-t"><b>追问 ' + (j + 1) + ':</b>' + esc(oneLine(f.q, 150)) + '</p>'

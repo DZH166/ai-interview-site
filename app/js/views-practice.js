@@ -621,9 +621,37 @@ const MockView = (() => {
     if (Store.data.mock && Store.data.mock.draft) { Store.data.mock.draft = null; Store.save(); }
   }
 
+  /* 草稿的追问回答统一为按 ID 的对象存储(SP-02):
+     { [fuId]: {id, q(作答时题面), self, revealed} };
+     旧格式(数组下标键 0/1/…)无法确定与当前题面的对应关系——
+     保留原文并标记 legacy,渲染为「待核对」,绝不按位置绑到另一道追问。 */
+  function normalizeFu(raw) {
+    const out = { fu: {}, legacy: [] };
+    if (!raw) return out;
+    if (Array.isArray(raw)) {
+      raw.forEach((entry, i) => {
+        if (entry && typeof entry === 'object' && entry.id) out.fu[entry.id] = JSON.parse(JSON.stringify(entry));
+        else if (entry && typeof entry === 'object' && ((entry.self || '').trim() || entry.revealed)) {
+          out.legacy.push({ legacyIndex: i, self: String(entry.self || ''), revealed: !!entry.revealed });
+        }
+      });
+      return out;
+    }
+    Object.keys(raw).forEach(k => {
+      const entry = raw[k];
+      if (!entry || typeof entry !== 'object') return;
+      if (/^\d+$/.test(k)) {
+        if ((entry.self || '').trim() || entry.revealed) out.legacy.push({ legacyIndex: Number(k), self: String(entry.self || ''), revealed: !!entry.revealed });
+      } else {
+        out.fu[k] = JSON.parse(JSON.stringify(entry));
+      }
+    });
+    return out;
+  }
+
   /* 把输入框当前内容同步进会话(不经防抖)。所有离开当前题的动作前调用:
      下一题/上一题/对照/复盘/结束/完成/路由离开。
-     同时同步追问二跳的回答框:追问回答也是会话草稿的一部分。 */
+     同时同步追问二跳的回答框(按追问 ID):追问回答也是会话草稿的一部分。 */
   function captureInput() {
     const ta = $('#m-self');
     if (!ta || !state || state.ended) return;
@@ -631,15 +659,20 @@ const MockView = (() => {
     if (!q) return;
     const ans = state.answers[q.id] || {};
     if ((ans.self || '') !== ta.value) {
-      state.answers[q.id] = Object.assign(ans, { self: ta.value });
+      state.answers[q.id] = Object.assign(ans, { self: ta.value, qRev: q.content_version ? q.content_version.rev : '' });
       draftSave();
     }
-    $$('#mock-fu-list [data-fu-self]', document).forEach(el => {
-      const i = parseInt(el.dataset.fuSelf, 10);
-      const cur = (state.answers[q.id].fu = state.answers[q.id].fu || {})[i] || {};
+    $$('#mock-fu-list [data-fu-id]', document).forEach(el => {
+      /* 与主回答同一条纪律(ST-02):只有用户真实编辑过(dirty)的输入才可提交;
+         未编辑的过时 DOM 值不得覆盖 session/Store 里的已有内容 */
+      if (el.dataset.dirty !== '1') return;
+      const id = el.dataset.fuId;
+      const fq = el.dataset.fuQ || '';
+      const cur = (state.answers[q.id].fu = state.answers[q.id].fu || {})[id] || { id, q: fq };
       if ((cur.self || '') !== el.value) {
         cur.self = el.value;
-        state.answers[q.id].fu[i] = cur;
+        cur.q = fq;                     /* 作答时题面快照 */
+        state.answers[q.id].fu[id] = cur;
         draftSave();
       }
     });
@@ -778,22 +811,39 @@ const MockView = (() => {
      每个追问同样先写后看;回答进会话草稿(刷新可恢复),完成时记入轮次与表达卡。 */
   function renderFollowups(q, ans) {
     const fus = q.followups || [];
-    if (!fus.length) return '';
-    const fuState = ans.fu || {};
+    const norm = normalizeFu(ans.fu);
+    /* 孤儿回答:草稿里有 ID,但当前题库中不存在对应题面(被改写/删除)——
+       保留原回答与作答时题面快照,标记待核对;不按位置绑定到其它追问(SP-02) */
+    const currentIds = new Set(fus.map(f => fuId(q.id, f.q)));
+    const orphans = Object.keys(norm.fu).filter(k => !currentIds.has(k)).map(k => norm.fu[k]);
+    if (!fus.length && !norm.legacy.length && !orphans.length) return '';
     return `
       <div class="mock-fu" id="mock-fu-list">
         <h4>追问二跳(面试官会顺着你的回答往下挖)</h4>
         ${fus.map((f, i) => {
-          const st = fuState[i] || {};
+          const id = fuId(q.id, f.q);
+          const st = norm.fu[id] || {};
           return `
-          <div class="fu fu-mock" data-fu-item="${i}">
+          <div class="fu fu-mock" data-fu-item="${esc(id)}">
             <div class="fu-q">追问 ${i + 1}:${esc(f.q)}</div>
-            <textarea data-fu-self="${i}" class="mock-fu-self" placeholder="先写下你的回答(自动保存)……">${esc(st.self || '')}</textarea>
+            <textarea data-fu-id="${esc(id)}" data-fu-q="${esc(f.q)}" data-dirty="0" class="mock-fu-self" placeholder="先写下你的回答(自动保存)……">${esc(st.self || '')}</textarea>
             ${st.revealed
               ? `<div class="fu-a">${QRender.mdHtml(f.a)}</div>`
-              : `<button class="btn btn-small" data-fu-reveal="${i}">对照参考要点</button>`}
+              : `<button class="btn btn-small" data-fu-reveal="${esc(id)}">对照参考要点</button>`}
           </div>`;
         }).join('')}
+        ${(orphans.length || norm.legacy.length) ? `
+        <div class="fu fu-legacy">
+          <div class="fu-q muted">⚠ 以下回答对应的追问题面在当前题库中已不存在或已被改写,保留原文待你核对:</div>
+          ${orphans.map(e => `
+            <div class="muted small" style="margin:4px 0">
+              <span class="badge vf-todo">待核对</span> 题面(作答时):${esc(e.q || '(未记录)')} — 回答:${esc(e.self || '(未写)')}
+            </div>`).join('')}
+          ${norm.legacy.map(l => `
+            <div class="muted small" style="margin:4px 0">
+              <span class="badge vf-todo">待核对</span> 旧版草稿(题面未记录) — 回答:${esc(l.self || '(未写)')}
+            </div>`).join('')}
+        </div>` : ''}
       </div>`;
   }
 
@@ -857,22 +907,30 @@ const MockView = (() => {
       renderRun(root);
     });
     /* 追问二跳:回答框防抖落盘;揭示按钮只放开对应追问的参考要点 */
-    $$('#mock-fu-list [data-fu-self]', root).forEach(el => {
-      const i = parseInt(el.dataset.fuSelf, 10);
+    $$('#mock-fu-list [data-fu-id]', root).forEach(el => {
+      const id = el.dataset.fuId;
+      const fq = el.dataset.fuQ || '';
+      el.addEventListener('input', () => { el.dataset.dirty = '1'; });
       el.addEventListener('input', debounce(() => {
         if (!state || state.ended || state.sid !== sid) return;
         state.answers[qid] = state.answers[qid] || {};
         state.answers[qid].fu = state.answers[qid].fu || {};
-        state.answers[qid].fu[i] = Object.assign(state.answers[qid].fu[i] || {}, { self: el.value });
+        const cur = state.answers[qid].fu[id] || { id, q: fq };
+        cur.self = el.value; cur.q = fq;
+        state.answers[qid].fu[id] = cur;
         draftSave();
       }, 200));
     });
     $$('[data-fu-reveal]', root).forEach(b => b.addEventListener('click', () => {
       captureInput();
-      const i = parseInt(b.dataset.fuReveal, 10);
+      const id = b.dataset.fuReveal;
+      const f = (Data.question(qid).followups || []).find(x => fuId(qid, x.q) === id);
       state.answers[qid] = state.answers[qid] || {};
       state.answers[qid].fu = state.answers[qid].fu || {};
-      state.answers[qid].fu[i] = Object.assign(state.answers[qid].fu[i] || {}, { revealed: true });
+      const cur = state.answers[qid].fu[id] || { id, q: f ? f.q : '' };
+      cur.revealed = true;
+      cur.q = f ? f.q : cur.q;
+      state.answers[qid].fu[id] = cur;
       draftSave();
       renderRun(root);
     }));
@@ -882,6 +940,7 @@ const MockView = (() => {
       /* 复盘标记是真实的练习信号,但信号以「本轮内最后一次不同的选择」为准:
          同一轮重复点击同一按钮不重复排期(否则间隔被连续推大,一次点击变成 N 次练习);
          更改自评(如 ok→weak)= 以新信号重新排期,替换上一信号的排期结果。 */
+      state.answers[qid].qRev = q.content_version ? q.content_version.rev : '';
       const last = state.answers[qid].scheduledMark || '';
       if (b.dataset.mark !== last) {
         Store.setStatus(qid, b.dataset.mark, { reschedule: true });
@@ -916,12 +975,15 @@ const MockView = (() => {
         const a = state.answers[id] || {};
         const question = Data.question(id);
         /* 追问二跳的记录:只保留真实写过的(有回答或已对照),没碰过的不占位 */
-        const fu = a.fu || {};
-        const followups = (question && Array.isArray(question.followups))
-          ? question.followups.map((f, i) => ({ q: f.q, self: (fu[i] && fu[i].self) || '', revealed: !!(fu[i] && fu[i].revealed) }))
-              .filter(x => x.self.trim() || x.revealed)
-          : [];
-        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', followups };
+        /* 追问按 ID 收集(含旧格式迁移的待核对条目),带作答时题面快照;
+           题目当前不在题库也照常收集(历史真实发生过) */
+        const fuObj = a.fu || {};
+        const followups = Object.keys(fuObj).map(k => {
+          const e = fuObj[k] || {};
+          return { id: e.id || k, q: e.q || '', self: e.self || '', revealed: !!e.revealed };
+        }).filter(x => x.self.trim() || x.revealed);
+        const qRev = question && question.content_version ? question.content_version.rev : '';
+        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev, followups };
       })
     };
     Store.data.mock.rounds.unshift(round);

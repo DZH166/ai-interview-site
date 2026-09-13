@@ -493,11 +493,43 @@ const Store = (() => {
         if (!Array.isArray(rd.items)) { errs.push(`轮次 #${i}: 缺少 items 数组`); return; }
           rd.items.forEach((it, j) => {
             if (!it || typeof it !== 'object' || !it.qid) errs.push(`轮次 #${i} 第 ${j + 1} 题: 缺少 qid`);
-            else if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
+            else {
+              if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
+              if (it.qRev !== undefined && typeof it.qRev !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: qRev 必须是字符串`);
+              if (it.followups !== undefined) {
+                if (!Array.isArray(it.followups)) errs.push(`轮次 #${i} 第 ${j + 1} 题: followups 必须是数组`);
+                else it.followups.forEach((f, k) => {
+                  if (!f || typeof f !== 'object') { errs.push(`轮次 #${i} 第 ${j + 1} 题: followups[${k}] 非对象`); return; }
+                  if (typeof f.q !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: followups[${k}].q 必须是字符串`);
+                  if (f.self !== undefined && typeof f.self !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: followups[${k}].self 必须是字符串`);
+                  if (f.revealed !== undefined && typeof f.revealed !== 'boolean') errs.push(`轮次 #${i} 第 ${j + 1} 题: followups[${k}].revealed 必须是布尔`);
+                  if (f.id !== undefined && f.id !== null && typeof f.id !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: followups[${k}].id 必须是字符串`);
+                });
+              }
+            }
           });
         });
         if (mock.draft && typeof mock.draft === 'object' && !Array.isArray(mock.draft) && mock.draft.sessionId !== undefined && typeof mock.draft.sessionId !== 'string') {
           errs.push('mock.draft.sessionId 必须是字符串');
+        }
+        /* 追问回答(按 ID 的对象存储)与作答版本快照的字段校验 */
+        if (mock.draft && typeof mock.draft === 'object' && !Array.isArray(mock.draft) && mock.draft.answers && typeof mock.draft.answers === 'object') {
+          Object.keys(mock.draft.answers).forEach(qid => {
+            const a = mock.draft.answers[qid];
+            if (!a || typeof a !== 'object' || Array.isArray(a)) return;
+            if (a.qRev !== undefined && typeof a.qRev !== 'string') errs.push(`mock.draft.answers.${qid}.qRev 必须是字符串`);
+            if (a.fu !== undefined && a.fu !== null && (typeof a.fu !== 'object' || Array.isArray(a.fu))) {
+              errs.push(`mock.draft.answers.${qid}.fu 必须是对象`);
+            } else if (a.fu) {
+              Object.keys(a.fu).forEach(fid => {
+                const e = a.fu[fid];
+                if (!e || typeof e !== 'object' || Array.isArray(e)) { errs.push(`mock.draft.answers.${qid}.fu.${fid} 非对象`); return; }
+                if (e.self !== undefined && typeof e.self !== 'string') errs.push(`mock.draft.answers.${qid}.fu.${fid}.self 必须是字符串`);
+                if (e.q !== undefined && typeof e.q !== 'string') errs.push(`mock.draft.answers.${qid}.fu.${fid}.q 必须是字符串`);
+                if (e.revealed !== undefined && typeof e.revealed !== 'boolean') errs.push(`mock.draft.answers.${qid}.fu.${fid}.revealed 必须是布尔`);
+              });
+            }
+          });
         }
         if (mock.draft !== undefined && mock.draft !== null && (typeof mock.draft !== 'object' || Array.isArray(mock.draft))) {
           errs.push('mock.draft 必须是对象或 null');
@@ -1348,7 +1380,7 @@ const Store = (() => {
     adoptRemoteRecords, recordsSizeKB,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
     validateAttempt, migrateLegacyDrillTries, migrateLegacyRuns,
-    recTime, latestOf, sortedByTime, onInvalidate, onRemoteChange,
+    recTime, latestOf, sortedByTime, onInvalidate, onRemoteChange, contentHash,
     get rev() { return rev; },
     get lastSaveError() { return lastSaveError; },
     get loadIssues() { return loadIssues; },

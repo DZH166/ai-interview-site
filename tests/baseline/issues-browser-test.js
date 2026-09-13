@@ -189,7 +189,7 @@ async function reseed(page, questions) {
       await P.waitForFunction(() => document.querySelector('#mock-fu-list') || document.querySelector('#m-reveal'));
       if (await P.locator('#m-reveal').count()) await P.locator('#m-reveal').click();
       await P.waitForFunction(() => document.querySelector('#mock-fu-list'));
-      await P.locator('[data-fu-self="0"]').fill('我的追问回答ABC');
+      await P.locator('#mock-fu-list [data-fu-id]').first().fill('我的追问回答ABC');
       await sleep(400);                        /* 草稿落盘 */
       const qBefore = await P.evaluate(() => Data.question('AG-001').followups[0].q);
       /* 内容升级:互换追问顺序后刷新 */
@@ -199,14 +199,19 @@ async function reseed(page, questions) {
       await open(P, '#/mock/run');             /* 草稿自动恢复进 run 视图 */
       await P.waitForFunction(() => document.querySelector('#mock-fu-list') || document.querySelector('#m-resume') || document.querySelector('#m-self'));
       const qAfter = await P.evaluate(() => Data.question('AG-001').followups[0].q);
-      const ansNow = await P.evaluate(() => {
+      /* 修复后:回答按内容身份绑定——互换顺序后,回答必须仍显示在原题面下 */
+      const paired = await P.evaluate((origQ) => {
         const d = Store.data.mock.draft;
-        return d && d.answers && d.answers['AG-001'] && d.answers['AG-001'].fu ? d.answers['AG-001'].fu[0] : null;
-      });
+        const fu = (d.answers['AG-001'] || {}).fu || {};
+        const entry = Object.values(fu).find(e => (e.self || '') === '我的追问回答ABC');
+        if (!entry) return { ok: false, why: '回答丢失', entry: null };
+        const el = document.querySelector(`[data-fu-item="${entry.id}"] textarea`);
+        const fuq = document.querySelector(`[data-fu-item="${entry.id}"] .fu-q`);
+        const shownUnder = fuq ? fuq.textContent.replace(/^追问 \d+:/, '') : '(未找到)';
+        return { ok: !!(el && el.value === '我的追问回答ABC' && shownUnder === entry.q && entry.q === origQ), shownUnder, snap: entry.q };
+      }, fuQ0);
       check('SP-02pre 题库确实已更新(追问顺序互换)', qBefore !== qAfter, `${qBefore} → ${qAfter}`);
-      check('SP-02a 旧回答不得静默绑定到另一道追问',
-        !(ansNow && ansNow.self === '我的追问回答ABC' && qAfter !== fuQ0),
-        `回答现在显示在「${qAfter}」下(原题面:「${fuQ0}」)`);
+      check('SP-02a 旧回答跟随原题面(不按下标错配)', paired.ok === true, JSON.stringify(paired));
       await P.unroute('**/data.js');
       await P.close(); await ctx2.close();
     }

@@ -65,6 +65,13 @@ const Data = (() => {
   return { init, allQuestions, question, allDocs, doc, allUserDocs, reloadUserDocs, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
 
+/* 追问稳定身份(SP-02):qid + 题面内容哈希——
+   重排/新增/删除不影响其它追问的身份;题面被改写则身份变化,旧回答按「待核对」处理,
+   绝不按数组下标把回答绑到另一道追问上 */
+function fuId(qid, qText) {
+  return qid + '-fu-' + Store.contentHash(String(qText || ''));
+}
+
 /* 浏览上下文:记录上一题/下一题列表(来自浏览页筛选) */
 const NavCtx = {
   ids: null,   /* 数组或 null(全部) */
