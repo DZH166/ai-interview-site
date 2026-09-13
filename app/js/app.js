@@ -165,3 +165,12 @@ if (document.readyState === 'loading') {
 } else {
   App.init();
 }
+
+/* PWA:https(含 Pages)或 localhost 下注册 Service Worker,安装后可离线使用。
+   原为 index.html 内联脚本——页面加 CSP(script-src 'self')后内联脚本会被拦,移到这里。 */
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}

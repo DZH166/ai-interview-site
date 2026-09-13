@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>面试加油工作台</title>
   <meta name="theme-color" content="#2563eb">
+  <!-- CSP:兜底防注入(导入题库/资料的内容会被渲染)。style 需要 unsafe-inline:
+       站内大量使用 style= 属性;脚本一律外链文件,无内联 -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
@@ -49,14 +53,5 @@
   <script src="js/views-knowledge.js"></script>
   <script src="js/views-review.js"></script>
   <script src="js/app.js"></script>
-  <script>
-    // PWA:https(含 Pages)或 localhost 下注册 Service Worker,安装后可离线使用
-    if ('serviceWorker' in navigator &&
-        (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-      addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
-  </script>
 </body>
 </html>

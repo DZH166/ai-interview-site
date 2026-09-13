@@ -210,6 +210,16 @@ function buildExpressCard(kind, index) {
   return ExpressCard.buildFromMarks(pendingMarks(), id => Data.question(id));
 }
 
+/* 待攻克清单 → Anki 导入用 CSV(数据源与表达卡同一套 pendingMarks) */
+function exportAnkiCsv() {
+  let r;
+  try { r = ExpressCard.buildAnkiCsv(pendingMarks(), id => Data.question(id)); }
+  catch (e) { toast('生成 Anki CSV 失败:' + e.message, 'err'); return; }
+  if (!r || !r.ok) { toast((r && r.error) || '生成 Anki CSV 失败', 'err'); return; }
+  download(r.name, '\ufeff' + r.csv, 'text/csv');
+  toast('已下载 ' + r.name + '(Anki:文件 → 导入)');
+}
+
 /* 打印版:开一个真正的新页面(Blob URL),用户在那里 Ctrl+P 就能存 PDF */
 function openPrintVersion(html) {
   let url = '';

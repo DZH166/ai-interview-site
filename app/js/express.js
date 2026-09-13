@@ -332,6 +332,33 @@ const ExpressCard = (() => {
     return finish(model, 'md');
   }
 
+  /* ---- Anki 导入用 CSV(与待攻克清单同一数据源) ----
+     格式:首行 #separator/#html 指令(Anki 2.1.55+ 原生识别),字段:题号 / 正面 / 背面。
+     正面=题干;背面=直接答案 + 面试表达 + 常见误区。
+     诚实:只含题目自带的参考内容,不含个人笔记冒充的回答;内容先 HTML 转义再换 <br>。 */
+  function csvField(s) {
+    return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+  }
+  function toHtmlSafe(s) {
+    return esc(String(s == null ? '' : s)).replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
+  }
+  function buildAnkiCsv(marks, lookup) {
+    const items = itemsFromMarks(marks, lookup);
+    if (!items.length) return { ok: false, error: '当前没有标记为「还不熟 / 待复习」的题。' };
+    const rows = ['#separator:Comma', '#html:true', '#columns:题号,正面,背面'];
+    items.forEach(it => {
+      const front = '<b>' + toHtmlSafe(oneLine(it.title, 200)) + '</b>'
+        + (it.prompt ? '<br><br>' + toHtmlSafe(it.prompt) : '');
+      const backParts = [];
+      if (it.answer) backParts.push('<b>直接答案</b><br>' + toHtmlSafe(it.answer));
+      if (it.interview) backParts.push('<b>面试表达</b><br>' + toHtmlSafe(it.interview));
+      if (it.pitfalls.length) backParts.push('<b>常见误区</b><br>' + it.pitfalls.map(p => '· ' + toHtmlSafe(oneLine(p, 240))).join('<br>'));
+      rows.push([csvField(it.qid), csvField(front), csvField(backParts.join('<br><br>'))].join(','));
+    });
+    return { ok: true, count: items.length,
+      csv: rows.join('\n'), name: fileName('待攻克清单-Anki', Date.now(), 'csv') };
+  }
+
   /* 当前口述与已保存运行分开标注;选定 runId 时绝不回退到另一条证据。
      纯生成操作不写 Store,不把材料导出当成验证成功或记录提交。 */
   function buildFromProject(project, draft, runs, runId) {
@@ -392,7 +419,7 @@ const ExpressCard = (() => {
   }
 
   return {
-    buildFromRound, buildFromMarks, buildFromProject,
+    buildFromRound, buildFromMarks, buildFromProject, buildAnkiCsv,
     toMarkdown, toHtml, fileName, esc, quote, oneLine, clip, statusLabel,
     MAX_SELF, MAX_LINE
   };

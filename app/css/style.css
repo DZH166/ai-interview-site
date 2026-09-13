@@ -806,3 +806,8 @@ textarea:focus-visible {
 .mock-fu h4 { margin: 0 0 8px; font-size: 13.5px; color: var(--muted); }
 .mock-fu .fu { margin: 0 0 10px; }
 .mock-fu .mock-fu-self { width: 100%; min-height: 52px; margin: 6px 0; }
+
+/* javascript:void(0) 链接改为按钮后的外观复用(CSP 禁 javascript: URL) */
+button.rel-link { border: none; cursor: pointer; font: inherit; }
+button.toc-l { display: block; width: 100%; text-align: left; background: none;
+  border: none; cursor: pointer; font: inherit; color: var(--primary); }

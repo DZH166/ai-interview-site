@@ -142,7 +142,7 @@ const DocsView = (() => {
           <details class="doc-toc">
             <summary>本页目录</summary>
             <div class="doc-toc-list">
-              ${secList.map(s => `<a class="toc-l${s.level}" href="javascript:void(0)" data-toc="${s.id}">${esc(s.text)}</a>`).join('')}
+              ${secList.map(s => `<button class="toc-l${s.level}" type="button" data-toc="${s.id}">${esc(s.text)}</button>`).join('')}
             </div>
           </details>` : ''}
           <article class="doc-content" id="doc-content">${d.parsed === false ? '' : Markdown.render(d.md || d.text || '', { anchorPrefix: `doc-${d.id}-` })}</article>
@@ -1100,8 +1100,8 @@ const PathView = (() => {
         ${completed.length || abandoned.length ? `<div class="muted small" style="margin:4px 0">
           ${completed.length ? `已完成 ${completed.length} 次` : '还没有完成的尝试'}
           ${abandoned.length ? `<span class="muted">· 放弃 ${abandoned.length} 次</span>` : ''}
-          ${completed.length ? `<a class="rel-link" data-drill-history="${drillId}" href="javascript:void(0)">查看历史</a>` : ''}
-          ${completed.length >= 2 ? `<a class="rel-link" data-drill-compare="${drillId}" href="javascript:void(0)">比较最近两次</a>` : ''}
+          ${completed.length ? `<button class="rel-link" data-drill-history="${drillId}" type="button">查看历史</button>` : ''}
+          ${completed.length >= 2 ? `<button class="rel-link" data-drill-compare="${drillId}" type="button">比较最近两次</button>` : ''}
         </div>` : ''}
         ${draft ? '<div class="muted small" style="margin:2px 0">⏸ 有未完成草稿(已自动恢复,可继续编辑)</div>' : ''}
         ${otherDrafts.length ? `<div class="notice" style="margin:6px 0">另有 ${otherDrafts.length} 份草稿,选择后继续编辑(当前内容会自动保留):
@@ -1200,7 +1200,6 @@ const HomeView = (() => {
     qs.forEach(q => { byTopic[q.topic] = (byTopic[q.topic] || 0) + 1; });
     const ui = Store.data.ui;
     const lastHash = ui.lastHash && ui.lastHash !== '#/home' ? ui.lastHash : '';
-    const randomQid = qs.length ? qs[Math.floor(Math.random() * qs.length)].id : '';
 
     /* ---- 今天的三件事 ---- */
     const todayQueue = ReviewView.getTodayQueue();
@@ -1296,6 +1295,7 @@ const HomeView = (() => {
             ? `你标记为「还不熟 / 待复习」的 ${marks.length} 题,连带你写的笔记。`
             : '还没有标记「还不熟 / 待复习」的题。'}</p>
           <button class="btn ${marks.length ? 'btn-primary' : ''}" id="d-card-marks" ${marks.length ? '' : 'disabled'}>导出表达卡</button>
+          ${marks.length ? '<button class="btn" id="d-card-anki">导出 Anki CSV</button>' : ''}
           ${marks.length ? '' : '<p class="muted small" style="margin-top:6px">在学习页把卡壳的题标成「还不熟」,复习时才有的放矢。</p>'}
         </div>
       </div>
@@ -1347,11 +1347,12 @@ const HomeView = (() => {
         </div>
       </div>`;
 
-    $('#h-random') && $('#h-random').addEventListener('click', () => { if (randomQid) go('#/study/' + randomQid); });
     const roundBtn = $('#d-card-round');
     if (roundBtn) roundBtn.addEventListener('click', () => exportExpressCard('round', 0));
     const marksBtn = $('#d-card-marks');
     if (marksBtn) marksBtn.addEventListener('click', () => exportExpressCard('marks'));
+    const ankiBtn = $('#d-card-anki');
+    if (ankiBtn) ankiBtn.addEventListener('click', exportAnkiCsv);
   }
 
   return { render };

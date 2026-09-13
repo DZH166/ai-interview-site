@@ -51,8 +51,12 @@ def main():
             "sections": md_sections(body),
         })
     docs.sort(key=lambda d: (d["order"], d["id"]))
+    import hashlib as _hashlib
+    content_hash = _hashlib.md5(json.dumps(
+        {"questions": questions, "docs": docs}, ensure_ascii=False, sort_keys=True
+    ).encode("utf-8")).hexdigest()[:12]
     data = {
-        "generated_at": "2026-09-07",
+        "content_hash": content_hash,   # 数据内容哈希:可复现,替代曾硬编码的假日期
         "topics": topics,
         "questions": questions,
         "docs": docs,
@@ -102,7 +106,7 @@ def main():
         st = q.get("verify", {}).get("status", "unknown")
         by_status[st] = by_status.get(st, 0) + 1
     stats = {
-        "built_at": "2026-09-06",
+        "content_hash": content_hash,
         "questions_total": len(questions),
         "by_topic": by_topic, "by_difficulty": by_diff,
         "by_verify_status": by_status,

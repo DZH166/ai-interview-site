@@ -224,3 +224,10 @@ jobs:
           CHROME: default
           PORT: '8941'
         run: node tests/browser/search-cache.js
+
+      - name: 加固验收(CSP 无违规/SW 注册仍生效/Anki CSV 真实下载)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8942'
+        run: node tests/browser/hardening.js
