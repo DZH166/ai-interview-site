@@ -1,0 +1,523 @@
+{
+  "reviewed_commit": "d264959142a74bc6de37a06c9321723860819291",
+  "node": 333,
+  "python": 109,
+  "browser": 226,
+  "failures": 0,
+  "audit_hard": 0,
+  "audit_warnings": 141,
+  "total": 668,
+  "baseline": "8464079c61d756af3584a8eb3ae8b2151570b6c8",
+  "review_date": "2026-09-13",
+  "code_fixes_in_this_review": false,
+  "isolation": "Independent Chromium contexts; all records are test fixtures, not personal learning data.",
+  "axes": {
+    "Standards": [
+      {
+        "id": "ST-01",
+        "priority": 1,
+        "title": "No-op storage events trigger write/render loop"
+      },
+      {
+        "id": "ST-02",
+        "priority": 1,
+        "title": "Stale textarea overwrites saved remote note"
+      }
+    ],
+    "Spec": [
+      {
+        "id": "SP-01",
+        "priority": 2,
+        "title": "Old backup revives cleared SRS"
+      },
+      {
+        "id": "SP-02",
+        "priority": 2,
+        "title": "Question update misbinds follow-up answer"
+      },
+      {
+        "id": "SP-03",
+        "priority": 2,
+        "title": "Follow-up-only answer cannot be exported"
+      },
+      {
+        "id": "SP-04",
+        "priority": 2,
+        "title": "Future SRS date labeled as due"
+      },
+      {
+        "id": "SP-05",
+        "priority": 1,
+        "title": "Other tab revives cleared records"
+      },
+      {
+        "id": "SP-06",
+        "priority": 2,
+        "title": "Completed mock session revives draft"
+      }
+    ]
+  },
+  "existing_suites": [
+    {
+      "file": "tests/behavior-tests.js",
+      "exit": 0,
+      "passed": 124,
+      "failed": 0
+    },
+    {
+      "file": "tests/regression-tests.js",
+      "exit": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "file": "tests/express-card-test.js",
+      "exit": 0,
+      "passed": 56,
+      "failed": 0
+    },
+    {
+      "file": "tests/shell-cache-stamp-test.js",
+      "exit": 0,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "file": "tests/learning-records-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/project-card-test.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/pi-agent-test.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "file": "tests/ai-series-test.js",
+      "exit": 0,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "tests/srs-test.js",
+      "exit": 0,
+      "passed": 62,
+      "failed": 0
+    },
+    {
+      "file": "tests/remote-merge-test.js",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/search-cache-test.js",
+      "exit": 0,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "file": "tests/lp003_mock_test.py",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/path_exercise_test.py",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_a_test.py",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_test.py",
+      "exit": 0,
+      "passed": 23,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_layers_test.py",
+      "exit": 0,
+      "passed": 29,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_claims_test.py",
+      "exit": 0,
+      "passed": 7,
+      "failed": null
+    },
+    {
+      "file": "tests/ai-series-math-test.py",
+      "exit": 0,
+      "passed": 5,
+      "failed": null
+    },
+    {
+      "file": "tests/browser/ui-repro.js",
+      "exit": 0,
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/a11y-360.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/e2e-acceptance.js",
+      "exit": 0,
+      "passed": 46,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/project-evidence.js",
+      "exit": 0,
+      "passed": 28,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/pi-agent.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/ai-series.js",
+      "exit": 0,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/srs.js",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/followup.js",
+      "exit": 0,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/multitab.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/search-cache.js",
+      "exit": 0,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/hardening.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    }
+  ],
+  "extra_boundary_evidence": {
+    "standards": [
+      {
+        "idleObservationMs": 3000,
+        "idleBefore": [
+          {
+            "writes": 4,
+            "events": 2,
+            "renders": 3,
+            "savedAt": 1789296958764
+          },
+          {
+            "writes": 2,
+            "events": 3,
+            "renders": 4,
+            "savedAt": 1789296958764
+          }
+        ],
+        "idleAfter": [
+          {
+            "writes": 10,
+            "events": 8,
+            "renders": 9,
+            "savedAt": 1789296961874
+          },
+          {
+            "writes": 8,
+            "events": 9,
+            "renders": 10,
+            "savedAt": 1789296961874
+          }
+        ]
+      },
+      {
+        "focusObservationMs": 1100,
+        "focusStart": {
+          "active": "note-area",
+          "note": "saved before second tab"
+        },
+        "focusEnd": {
+          "active": "",
+          "note": "saved before second tab",
+          "writes": 12,
+          "events": 11,
+          "renders": 13
+        }
+      },
+      {
+        "immediatelyAfterBWrite": {
+          "local": "NEW VALUE WRITTEN BY B",
+          "disk": "NEW VALUE WRITTEN BY B"
+        },
+        "afterRemoteStudyFlush": {
+          "a": {
+            "local": "saved before second tab",
+            "dom": "saved before second tab"
+          },
+          "b": {
+            "local": "saved before second tab",
+            "disk": "saved before second tab"
+          }
+        }
+      }
+    ],
+    "spec": {
+      "srs": {
+        "before": {
+          "status": "",
+          "fav": false,
+          "note": "",
+          "viewedAt": 0,
+          "practiceCount": 0,
+          "lastPracticedAt": 0,
+          "_updatedAt": 1789296923603
+        },
+        "after": {
+          "status": "",
+          "fav": false,
+          "note": "",
+          "viewedAt": 0,
+          "practiceCount": 0,
+          "lastPracticedAt": 0,
+          "_updatedAt": 1789296923603,
+          "srs": {
+            "due": 1789296922603,
+            "ivl": 0,
+            "ease": 2.3,
+            "streak": 0,
+            "lapses": 1,
+            "lastAt": 1789296922603,
+            "lastRating": "again"
+          }
+        },
+        "result": {
+          "qMerged": 349,
+          "roundsAdded": 0,
+          "notesUpdated": 0,
+          "draftsAdopted": 0,
+          "draftsKept": 0,
+          "draftNotes": [],
+          "runsAdded": 0,
+          "runsMigrated": 0,
+          "docPosAdopted": true,
+          "docPosKept": false
+        },
+        "due": true,
+        "labelForFuture23h": "已到期"
+      },
+      "onlyFollowup": {
+        "round": {
+          "ts": 1789296925181,
+          "config": {
+            "topics": [],
+            "diffs": [],
+            "count": 1,
+            "label": "只答追问测试"
+          },
+          "items": [
+            {
+              "qid": "AG-001",
+              "title": "Agent 和工作流(workflow)有什么区别?什么时候该用 Agent?",
+              "self": "",
+              "revealed": true,
+              "mark": "",
+              "followups": [
+                {
+                  "q": "有动态路由就不是工作流吗？",
+                  "self": "只写追问的真实回答",
+                  "revealed": true
+                }
+              ]
+            }
+          ]
+        },
+        "card": {
+          "ok": false,
+          "error": "这一轮你没有写下任何回答,先答几题再导出吧。"
+        }
+      },
+      "versionReplay": {
+        "oldQuestion": "追问 1:有动态路由就不是工作流吗？",
+        "newQuestion": "追问 1:Agent一定需要长期记忆吗？",
+        "restoredAnswer": "这是旧版追问0的回答",
+        "draftBefore": {
+          "config": {
+            "topics": [],
+            "diffs": [],
+            "count": 1,
+            "label": "版本更新测试"
+          },
+          "items": [
+            {
+              "qid": "AG-001"
+            }
+          ],
+          "idx": 0,
+          "answers": {
+            "AG-001": {
+              "revealed": true,
+              "self": "",
+              "fu": {
+                "0": {
+                  "self": "这是旧版追问0的回答",
+                  "revealed": true
+                }
+              }
+            }
+          },
+          "directed": true,
+          "label": "版本更新测试",
+          "savedAt": 1789296926332
+        },
+        "roundAfter": {
+          "ts": 1789296928243,
+          "config": {
+            "topics": [],
+            "diffs": [],
+            "count": 1,
+            "label": "版本更新测试"
+          },
+          "items": [
+            {
+              "qid": "AG-001",
+              "title": "Agent 和工作流(workflow)有什么区别?什么时候该用 Agent?",
+              "self": "",
+              "revealed": true,
+              "mark": "",
+              "followups": [
+                {
+                  "q": "Agent一定需要长期记忆吗？",
+                  "self": "这是旧版追问0的回答",
+                  "revealed": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "errors": []
+    },
+    "lifecycle": {
+      "clearAll": {
+        "immediately": {
+          "note": "",
+          "disk": ""
+        },
+        "afterOtherTabSave": {
+          "note": "note explicitly deleted later",
+          "disk": "note explicitly deleted later"
+        }
+      },
+      "mockCompletion": {
+        "finished": {
+          "draft": {
+            "config": {
+              "topics": [],
+              "diffs": [],
+              "count": 1,
+              "label": "mock lifecycle repro"
+            },
+            "items": [
+              {
+                "qid": "AG-001"
+              }
+            ],
+            "idx": 0,
+            "answers": {
+              "AG-001": {
+                "self": "actual answer"
+              }
+            },
+            "directed": true,
+            "label": "mock lifecycle repro",
+            "savedAt": 1789297120861
+          },
+          "rounds": 1
+        },
+        "afterOtherTabSave": {
+          "draft": {
+            "config": {
+              "topics": [],
+              "diffs": [],
+              "count": 1,
+              "label": "mock lifecycle repro"
+            },
+            "items": [
+              {
+                "qid": "AG-001"
+              }
+            ],
+            "idx": 0,
+            "answers": {
+              "AG-001": {
+                "self": "actual answer"
+              }
+            },
+            "directed": true,
+            "label": "mock lifecycle repro",
+            "savedAt": 1789297120861
+          },
+          "rounds": 1,
+          "diskDraft": {
+            "config": {
+              "topics": [],
+              "diffs": [],
+              "count": 1,
+              "label": "mock lifecycle repro"
+            },
+            "items": [
+              {
+                "qid": "AG-001"
+              }
+            ],
+            "idx": 0,
+            "answers": {
+              "AG-001": {
+                "self": "actual answer"
+              }
+            },
+            "directed": true,
+            "label": "mock lifecycle repro",
+            "savedAt": 1789297120861
+          }
+        }
+      }
+    }
+  }
+}
