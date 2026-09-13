@@ -69,9 +69,8 @@ const ReviewView = (() => {
     const t = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
     return Data.allQuestions().filter(q => {
       const r = Store.rec(q.id);
-      const st = r.status || '';
-      if (st === 'weak' || st === 'review') return false;   /* 已在手动队列,不重复 */
-      return SRS.isDue(r, t);
+      /* 有效性条件统一在 SRS.suggestable:未练习/已在手动队列/排期缺失或非法/状态与信号矛盾 → 不建议 */
+      return SRS.suggestable(r, t);
     }).sort((a, b) => ((Store.rec(a.id).srs.due || 0) - (Store.rec(b.id).srs.due || 0)));
   }
 

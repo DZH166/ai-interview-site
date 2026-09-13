@@ -86,17 +86,33 @@ const SRS = (() => {
     return s.due <= t;
   }
 
-  /* 到期时间的人话版:已到期 / 今天 / 明天 / N 天后(学习页与建议列表共用)。 */
+  /* 到期时间的人话版。语义 = 纯剩余时长(SP-04):先与 isDue 同一判定(due<=now 即到期),
+     再按剩余毫秒分档——「已到期」与队列判定永远一致,不存在 23 小时后显示已到期的矛盾。
+     不用「明天」这类日历词:跨午夜/时区下日历日与剩余时长会互相矛盾。 */
   function dueLabel(due, now) {
     if (typeof due !== 'number' || !isFinite(due)) return '';
     const t = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
-    const days = Math.floor((due - t) / DAY);
-    if (days <= 0) return '已到期';
-    if (days === 1) return '明天';
-    return days + ' 天后';
+    if (due <= t) return '已到期';
+    const diff = due - t;
+    if (diff < DAY) return '24 小时内';
+    return Math.floor(diff / DAY) + ' 天后';
   }
 
-  return { schedule, ratingFromStatus, isDue, dueLabel, RATINGS, RATING_LABEL, MIN_EASE, MAX_EASE, MAX_IVL, DAY };
+  /* 建议队列的有效性条件(SP-01 配套):未练习、还不熟/待复习(已在手动队列)、
+     排期缺失/非法、排期与当前状态不一致的记录,一律不产生建议——
+     不再把「剩下的所有记录」都交给到期判定。 */
+  function suggestable(rec, now) {
+    const st = (rec && rec.status) || '';
+    if (!st || st === 'weak' || st === 'review') return false;
+    const s = rec.srs;
+    if (!s || typeof s !== 'object') return false;
+    if (typeof s.due !== 'number' || !isFinite(s.due)) return false;
+    if (!RATINGS.includes(s.lastRating)) return false;
+    if (ratingFromStatus(st) !== s.lastRating) return false;   /* 状态与排期信号矛盾:宁可不给建议 */
+    return isDue(rec, now);
+  }
+
+  return { schedule, ratingFromStatus, isDue, suggestable, dueLabel, RATINGS, RATING_LABEL, MIN_EASE, MAX_EASE, MAX_IVL, DAY };
 })();
 
 if (typeof window !== 'undefined') window.SRS = SRS;

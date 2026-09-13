@@ -121,7 +121,7 @@ console.log('== SP-04: 到期文案与队列判定一致 ==');
      '实际:' + SRS.dueLabel(now + 1, now));
   ok('SP-04d 同一毫秒 = 已到期(边界保持)', SRS.dueLabel(now, now) === '已到期');
   ok('SP-04e 过去 1 毫秒 = 已到期', SRS.dueLabel(now - 1, now) === '已到期');
-  ok('SP-04f 正好 24 小时 = 明天', SRS.dueLabel(now + DAY, now) === '明天', '实际:' + SRS.dueLabel(now + DAY, now));
+  ok('SP-04f 正好 24 小时 = 1 天后(纯剩余时长语义)', SRS.dueLabel(now + DAY, now) === '1 天后', '实际:' + SRS.dueLabel(now + DAY, now));
   ok('SP-04g 49 小时 = 2 天后', SRS.dueLabel(now + 49 * 3600000, now) === '2 天后', '实际:' + SRS.dueLabel(now + 49 * 3600000, now));
 }
 

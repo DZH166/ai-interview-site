@@ -204,8 +204,21 @@ console.log('== 4. 到期判定与展示 ==');
   ok('due = 现在 → 到期(<=)', SRS.isDue({ srs: { due: T0 } }, T0) === true);
   ok('坏 due → 不到期(不猜)', SRS.isDue({ srs: { due: '明天' } }, T0) === false);
   eq('到期文案:已到期', SRS.dueLabel(T0 - 1, T0), '已到期');
-  eq('到期文案:明天', SRS.dueLabel(T0 + DAY, T0), '明天');
+  eq('到期文案:24 小时内(不足一天,不得显示已到期)', SRS.dueLabel(T0 + 23 * 3600000, T0), '24 小时内');
+  eq('到期文案:未来 1 毫秒不显示已到期', SRS.dueLabel(T0 + 1, T0), '24 小时内');
+  eq('到期文案:1 天后(纯剩余时长,不用日历词)', SRS.dueLabel(T0 + DAY, T0), '1 天后');
   eq('到期文案:3 天后', SRS.dueLabel(T0 + 3 * DAY, T0), '3 天后');
+
+console.log('== 4b. 建议有效性(SP-01 配套):suggestable ==');
+{
+  ok('无状态不产生建议(未练习)', SRS.suggestable({ status: '', srs: { due: T0, lastRating: 'again' } }, T0) === false);
+  ok('weak/review 不产生建议(已在手动队列)', SRS.suggestable({ status: 'weak', srs: { due: T0, lastRating: 'again' } }, T0) === false);
+  ok('状态与信号矛盾不产生建议(ok 但 lastRating=again)', SRS.suggestable({ status: 'ok', srs: { due: T0, lastRating: 'again' } }, T0) === false);
+  ok('排期缺失不产生建议', SRS.suggestable({ status: 'ok' }, T0) === false);
+  ok('非法排期不产生建议', SRS.suggestable({ status: 'ok', srs: { due: '明天', lastRating: 'good' } }, T0) === false);
+  ok('一致且到期 → 建议', SRS.suggestable({ status: 'ok', srs: { due: T0, lastRating: 'good' } }, T0) === true);
+  ok('一致但未到期 → 不建议', SRS.suggestable({ status: 'ok', srs: { due: T0 + DAY, lastRating: 'good' } }, T0) === false);
+}
 }
 
 console.log('== 5. 轮次上限只有一份 ==');

@@ -89,6 +89,26 @@ async function reseed(page, now) {
     check('模拟面试标「基本掌握」:状态不变仍重排到期日', mockSrs.lastRating === 'good' && mockSrs.due > Date.now() && mockSrs.due > now, JSON.stringify(mockSrs));
     check('模拟面试标「基本掌握」:streak 连续成功 +1', mockSrs.streak >= 2, String(mockSrs.streak));
 
+    /* ---- 信号身份:同一轮重复点击同一复盘按钮,不重复排期(SP 阶段3.5) ---- */
+    await reseed(page, now);
+    await open(page, '#/review');
+    await page.locator('#start-today').click();
+    await page.waitForFunction(() => document.querySelector('#m-self'));
+    await page.locator('#m-next').click();   /* 队列手动在前:跳到 PY-001 */
+    await page.waitForFunction(() => (Store.data.mock.draft || { idx: -1 }).idx === 1);
+    await page.locator('#m-self').fill('回答内容');
+    await page.locator('#m-reveal').click();
+    await page.locator('[data-mark="ok"]').click();
+    const afterOnce = await page.evaluate(() => JSON.stringify(Store.rec('PY-001').srs));
+    await page.locator('[data-mark="ok"]').click();
+    await page.locator('[data-mark="ok"]').click();
+    const afterThrice = await page.evaluate(() => JSON.stringify(Store.rec('PY-001').srs));
+    check('同一轮重复点击同一按钮:排期不变(不把一次练习当成多次)', afterOnce === afterThrice, `${afterOnce} → ${afterThrice}`);
+    /* 更改自评 = 以新信号重新排期(替换语义) */
+    await page.locator('[data-mark="weak"]').click();
+    const afterChange = await page.evaluate(() => Store.rec('PY-001').srs);
+    check('更改自评:以新信号重新排期', afterChange.lastRating === 'again' && afterChange.ivl === 0, JSON.stringify(afterChange));
+
     /* ---- 学习页记录栏:只读到期提示 ---- */
     await open(page, '#/study/RG-001');
     check('记录栏显示建议到期日(未来到期)', (await page.locator('.record-bar').innerText()).includes('建议:'));

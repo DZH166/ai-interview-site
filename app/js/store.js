@@ -762,10 +762,12 @@ const Store = (() => {
       else if ((cur.status === undefined || (!curAt && !cur.status)) && inc.status) { cur.status = inc.status; adopted = true; }
     }
     if (inc.srs !== undefined) {
-      /* srs 是派生数据,整体作为一个单元随 _updatedAt 走:备份更新则整份采用,不逐字段拼 */
+      /* srs 是派生数据,整体作为一个单元随 _updatedAt 走:备份更新则整份采用,不逐字段拼。
+         旧备份只在「本地从未有过该题记录」时补回排期(SP-01):本地较新且无 srs,
+         意味着较新的状态已撤销排期(或从未排期)——旧排期不得越过较新的撤销。 */
       if (incAt > curAt) {
         if (JSON.stringify(cur.srs || null) !== JSON.stringify(inc.srs)) { cur.srs = inc.srs; adopted = true; }
-      } else if (cur.srs === undefined && inc.srs && typeof inc.srs === 'object') {
+      } else if (cur.srs === undefined && !curAt && inc.srs && typeof inc.srs === 'object') {
         cur.srs = inc.srs; adopted = true;
       }
     }

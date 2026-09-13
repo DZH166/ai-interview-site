@@ -879,9 +879,16 @@ const MockView = (() => {
     $$('[data-mark]', root).forEach(b => b.addEventListener('click', () => {
       captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { mark: b.dataset.mark });
-      /* 复盘标记是真实的练习信号:即使状态与上次相同(如连着两轮都标「基本掌握」),
-         也要重排间隔重复的到期日——否则「到期建议」里的题复习完永远出不去。 */
-      Store.setStatus(qid, b.dataset.mark, { reschedule: true });
+      /* 复盘标记是真实的练习信号,但信号以「本轮内最后一次不同的选择」为准:
+         同一轮重复点击同一按钮不重复排期(否则间隔被连续推大,一次点击变成 N 次练习);
+         更改自评(如 ok→weak)= 以新信号重新排期,替换上一信号的排期结果。 */
+      const last = state.answers[qid].scheduledMark || '';
+      if (b.dataset.mark !== last) {
+        Store.setStatus(qid, b.dataset.mark, { reschedule: true });
+        state.answers[qid].scheduledMark = b.dataset.mark;
+      } else {
+        Store.setStatus(qid, b.dataset.mark);   /* 同一信号重复点击:状态幂等,不再排期 */
+      }
       draftSave();
       renderRun(root);
     }));
