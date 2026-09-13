@@ -1053,20 +1053,60 @@ const Store = (() => {
   }
 
   /* ---- 多标签页并发:另一个标签页写入时的合并策略 ----
-     localStorage 同源共享,每个标签页各持一份内存副本,谁后写谁整份覆盖——
-     这会静默丢掉另一页刚写的内容(「多标签页并发未测」是诚实边界上挂着的已知风险)。
+     localStorage 同源共享,每个标签页各持一份内存副本,谁后写谁整份覆盖。
      策略:storage 事件只发给非写入方;收到后不做整份覆盖,而是复用备份导入的
      同一套合并规则(逐记录 _updatedAt 新者胜、轮次按内容去重、项目草稿整份判定、
-     pathProgress 晚者胜),把对方的修改合并进本页内存。两个标签页最终收敛到同一份数据。
-     只合并内存、不回写磁盘:本页下次保存时自然把合并结果带上,不会形成写回循环。
-     冲突窗口:本页防抖(250ms)内尚未落盘的击键可能被对方版本盖掉——
-     笔记每次击键都先进内存,真实丢失上限是一次防抖窗口。 */
+     pathProgress 晚者胜),把对方的修改合并进本页内存。只合并内存、不回写磁盘。
+
+     ST-01 教训:合并「处理条数」不等于「实际变更」——qMerged 对内容相同的记录也
+     递增,曾让 storage→App.route()→save(savedAt)→对页事件 形成跨页写回循环。
+     所以这里在合并前后做**数据签名对比**(savedAt/lastHash 等纯元数据不计入),
+     只有真实业务变更才推进版本、通知订阅者;订阅者拿到的就是变更集合
+     (哪些题目/专项/项目/结构段变了),由界面决定是否以及如何局部刷新。 */
+  function sig(v) { return contentHash(JSON.stringify(v === undefined ? null : v)); }
+
+  function recordsSigs(d) {
+    const qs = {}, da = {}, runs = {}, drafts = {};
+    Object.keys(d.questions || {}).forEach(k => { qs[k] = sig(d.questions[k]); });
+    Object.keys(d.drillAttempts || {}).forEach(k => { da[k] = sig(d.drillAttempts[k]); });
+    Object.keys(d.ui.projectRuns || {}).forEach(k => { runs[k] = sig(d.ui.projectRuns[k]); });
+    Object.keys(d.ui.projectDrafts || {}).forEach(k => { drafts[k] = sig(d.ui.projectDrafts[k]); });
+    return {
+      qs, da, runs, drafts,
+      rounds: sig((d.mock.rounds || []).map(r => r.id || roundId(r)).sort()),
+      mockDraft: d.mock.draft ? sig(d.mock.draft) : '',
+      docPos: sig(d.ui.docPos || null),
+      pathProgress: sig(d.ui.pathProgress || {})
+      /* 不计入:savedAt / lastHash / ui.search / ui.browse —— 纯元数据与界面偏好,
+         它们变化不构成业务变更,是 ST-01 循环的燃料。 */
+    };
+  }
+
+  function diffSigs(a, b) {
+    const qids = [], drillIds = [], pids = [], sections = [];
+    new Set([...Object.keys(a.qs), ...Object.keys(b.qs)]).forEach(k => { if (a.qs[k] !== b.qs[k]) qids.push(k); });
+    new Set([...Object.keys(a.da), ...Object.keys(b.da)]).forEach(k => { if (a.da[k] !== b.da[k]) drillIds.push(k); });
+    new Set([...Object.keys(a.runs), ...Object.keys(b.runs)]).forEach(k => { if (a.runs[k] !== b.runs[k]) pids.push(k); });
+    new Set([...Object.keys(a.drafts), ...Object.keys(b.drafts)]).forEach(k => { if (a.drafts[k] !== b.drafts[k]) pids.push(k); });
+    if (a.rounds !== b.rounds) sections.push('rounds');
+    if (a.mockDraft !== b.mockDraft) sections.push('mockDraft');
+    if (a.docPos !== b.docPos) sections.push('docPos');
+    if (a.pathProgress !== b.pathProgress) sections.push('pathProgress');
+    return { qids, drillIds, pids, sections, hasChanges: (qids.length + drillIds.length + pids.length + sections.length) > 0 };
+  }
+
+  /* 远端变更订阅:App 注册,用于定向刷新界面(不经过带退出保存的整页路由) */
+  const remoteListeners = [];
+  function onRemoteChange(fn) { if (typeof fn === 'function') remoteListeners.push(fn); }
+  function notifyRemote(changes) { remoteListeners.slice().forEach(fn => { try { fn(changes); } catch (e) { /* 单个订阅者失败不影响其它 */ } }); }
+
   function adoptRemoteRecords(jsonText) {
     let incoming;
     try { incoming = JSON.parse(jsonText); } catch (e) { return { ok: false, error: 'JSON 解析失败' }; }
     if (!incoming || typeof incoming !== 'object') return { ok: false, error: '记录必须是对象' };
     const errs = validateRecordsObj(incoming);
     if (errs.length) return { ok: false, error: '校验未通过:' + errs.slice(0, 3).join(';') };
+    const sigBefore = recordsSigs(data);
     const merged = JSON.parse(JSON.stringify(data));
     merged.mock.rounds = merged.mock.rounds.slice();
     if (!merged.ui.projectRuns) merged.ui.projectRuns = {};
@@ -1077,10 +1117,15 @@ const Store = (() => {
     mergeAttempts(merged, incoming.drillAttempts);
     mergeUi(merged, incoming, report);
     migrateLegacyDrillTries(merged);
+    const changes = diffSigs(sigBefore, recordsSigs(merged));
+    if (!changes.hasChanges) {
+      /* 无真实变更:不推进版本、不通知、绝不回写 —— 阻断 ST-01 循环的关键分支 */
+      return { ok: true, changed: false, changes, report };
+    }
     data = merged;
     bumpRev();
     notifyInvalidate();
-    return { ok: true, report };
+    return { ok: true, changed: true, changes, report };
   }
 
   /* 当前个人记录的序列化体积(KB):维护页存储健康度用 */
@@ -1090,16 +1135,23 @@ const Store = (() => {
   }
 
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    let lastRemoteRaw = null;   /* 事件去重:同一份远端内容(如对页重复落盘)只处理一次 */
     window.addEventListener('storage', e => {
-      if (!e || e.key !== KEY_RECORDS || e.newValue == null) return;   /* 清空/无关键:不动 */
+      if (!e || e.key !== KEY_RECORDS) return;
+      if (e.newValue == null) return;                    /* 清空事件的处理在阶段2纳入记录模型 */
+      if (e.newValue === lastRemoteRaw) return;          /* 同一远端版本重复通知:忽略 */
+      lastRemoteRaw = e.newValue;
       const res = adoptRemoteRecords(e.newValue);
       if (!res.ok) { console.warn('另一标签页的记录未通过校验,本页未合并', res.error); return; }
-      const r = res.report || {};
-      const changed = r.qMerged > 0 || r.roundsAdded > 0 || r.notesUpdated > 0
-        || r.draftsAdopted > 0 || r.runsAdded > 0 || r.docPosAdopted;
-      if (changed && typeof toast === 'function') toast('已合并另一个标签页的修改');
-      /* 当前视图带着旧数据时重渲染,让合并结果立即可见 */
-      if (changed && typeof App !== 'undefined' && App.route) { try { App.route(); } catch (err) { /* 渲染失败不打断 */ } }
+      if (!res.changed) return;                          /* 无业务变化:静默(含仅 savedAt/lastHash 变化) */
+      const c = res.changes;
+      /* 结构性变化(轮次/草稿/项目证据/清空语义)才提示;笔记与状态会在界面上就地更新,
+         每次击键同步都弹提示是噪音(ST-01e) */
+      if (typeof toast === 'function' && (c.sections.length || c.drillIds.length || c.pids.length)) {
+        toast('已合并另一个标签页的修改');
+      }
+      /* 定向刷新:订阅者自行决定如何局部更新;绝不走带退出保存的 App.route()(ST-02 根因) */
+      notifyRemote(c);
     });
   }
 
@@ -1152,7 +1204,7 @@ const Store = (() => {
     adoptRemoteRecords, recordsSizeKB,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
     validateAttempt, migrateLegacyDrillTries, migrateLegacyRuns,
-    recTime, latestOf, sortedByTime, onInvalidate,
+    recTime, latestOf, sortedByTime, onInvalidate, onRemoteChange,
     get rev() { return rev; },
     get lastSaveError() { return lastSaveError; },
     get loadIssues() { return loadIssues; },

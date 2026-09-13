@@ -99,6 +99,30 @@ console.log('== 4. 非法载荷整体拒绝 ==');
   ok('拒绝后磁盘未动', localStorage.getItem('aiiv:records') === diskBefore);
 }
 
+console.log('== 4b. 变更语义(ST-01):处理条数≠变更,无业务变化不推进版本 ==');
+{
+  localStorage.clear(); Store.load();
+  Store.setStatus('RG-040', 'weak'); Store.saveNow();
+  const revBefore = Store.rev;
+  /* 同一份数据再次合并:无任何变化 */
+  const raw = localStorage.getItem('aiiv:records');
+  const r1 = Store.adoptRemoteRecords(raw);
+  ok('重复合并:changed=false', r1.changed === false && r1.ok === true);
+  eq('重复合并:版本不推进', Store.rev, revBefore);
+  /* 仅 savedAt/lastHash 变化(对页导航/重存的元数据):不算业务变更 */
+  const obj = JSON.parse(raw);
+  obj.ui.savedAt = (obj.ui.savedAt || 0) + 12345;
+  obj.ui.lastHash = '#/browse';
+  const r2 = Store.adoptRemoteRecords(JSON.stringify(obj));
+  ok('仅元数据变化:changed=false(不触发界面刷新)', r2.changed === false, JSON.stringify(r2.changes));
+  eq('仅元数据变化:版本不推进', Store.rev, revBefore);
+  /* 真实业务变更:返回变更集合 */
+  const r3 = Store.adoptRemoteRecords(JSON.stringify({ v: 3, questions: { 'RG-041': { note: '真实变更', _updatedAt: Date.now() + 5000 } }, mock: { rounds: [] }, ui: {} }));
+  ok('真实变更:changed=true', r3.changed === true);
+  ok('变更集合指明题目', (r3.changes.qids || []).includes('RG-041'), JSON.stringify(r3.changes));
+  ok('真实变更:版本推进', Store.rev > revBefore);
+}
+
 console.log('== 5. 存储健康度 ==');
 {
   const kb = Store.recordsSizeKB();

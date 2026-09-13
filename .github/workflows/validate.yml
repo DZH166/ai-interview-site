@@ -231,3 +231,10 @@ jobs:
           CHROME: default
           PORT: '8942'
         run: node tests/browser/hardening.js
+
+      - name: 跨页同步(ST-01 静置稳定/不抢焦点/ST-02 旧控件不覆盖/冲突处置)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8943'
+        run: node tests/browser/remote-sync.js

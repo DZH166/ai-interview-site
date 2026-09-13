@@ -254,7 +254,35 @@ const BrowseView = (() => {
 
   function selectWrapper(root, qid) { DetailQid = qid; select(root, filters(), qid); }
 
-  return { render, filters, apply, select: selectWrapper };
+  /* 远端合并后的定向更新:当前详情的工具条就地同步;列表项徽章改文字与颜色。
+     不重渲染列表/详情——保住已展开的答案区块与滚动位置。 */
+  function applyRemote(changes) {
+    const qids = changes.qids || [];
+    if (!qids.length) return;
+    const list = $('#q-list', document);
+    qids.forEach(qid => {
+      if (!Data.question(qid)) return;
+      const item = list && list.querySelector(`.q-item[data-qid="${qid}"]`);
+      if (item) {
+        const st = Data.statusInfo(qid);
+        const badge = item.querySelector('.badge.st-none, .badge.st-weak, .badge.st-ok, .badge.st-review');
+        if (badge) { badge.className = 'badge ' + st.cls; badge.textContent = st.label; }
+      }
+    });
+    if (DetailQid && qids.includes(DetailQid)) {
+      const detail = $('#q-detail', document);
+      if (detail) {
+        QRender.syncRecordBar(detail, DetailQid);
+        const meta = detail.querySelector('.q-meta');
+        if (meta) {
+          const badges = meta.querySelectorAll('.badge.st-none, .badge.st-weak, .badge.st-ok, .badge.st-review');
+          badges.forEach(b => { const st = Data.statusInfo(DetailQid); b.className = 'badge ' + st.cls; b.textContent = st.label; });
+        }
+      }
+    }
+  }
+
+  return { render, filters, apply, select: selectWrapper, applyRemote };
 })();
 
 /* ---------- 学习模式 ---------- */
@@ -278,22 +306,85 @@ const StudyView = (() => {
   function captureNote(qid) {
     const ta = $('#note-area');
     if (!ta || !currentQid || qid !== currentQid) return;
-    if ((Store.rec(qid).note || '') !== ta.value) {
+    /* 只有用户真正编辑过(dirty)的输入才可提交:
+       远端合并后的过时 DOM 值不是用户输入,写回会覆盖另一页已保存的新笔记(ST-02)。 */
+    if (ta.dataset.dirty === '1' && (Store.rec(qid).note || '') !== ta.value) {
       Store.setNote(qid, ta.value);
       Store.saveNow();
     }
   }
 
-  /* pagehide/路由离开兜底:把文本框最新值写入内存并立即落盘。
-     由于每次击键已同步进内存,这里只在 DOM 领先内存时才写(输入中 Direct flush);
-     绝不把 DOM 的旧值回写覆盖内存的新值。 */
+  /* pagehide/路由离开兜底:只提交 dirty 的输入。
+     每次击键已同步进内存;非 dirty 的过时 DOM 值一律不写回——
+     「值不相等」不再被当成用户编辑(远端合并也会造成不相等)。 */
   function flushNote() {
     const ta = $('#note-area');
     if (!ta || !currentQid) return;
-    if ((Store.rec(currentQid).note || '') !== ta.value) {
+    if (ta.dataset.dirty === '1' && (Store.rec(currentQid).note || '') !== ta.value) {
       Store.setNote(currentQid, ta.value);
       Store.saveNow();
       window.rebuildIndex();
+    }
+  }
+
+  /* ---- 远端合并后的定向更新(ST-01f/ST-02) ----
+     只处理当前题;未编辑的笔记框就地更新(焦点/选区/滚动/展开状态不动);
+     用户正在编辑同字段时保留本地输入,暂存对方版本并给出显式处置入口,不静默替用户选择。 */
+  let remoteNotePending = null;
+  function applyRemote(changes) {
+    if (!currentQid || !(changes.qids || []).includes(currentQid)) return;
+    const r = Store.rec(currentQid);
+    const ta = $('#note-area');
+    if (ta) {
+      const dirty = ta.dataset.dirty === '1';
+      const remoteNote = r.note || '';
+      if (!dirty) {
+        if (ta.value !== remoteNote) { ta.value = remoteNote; ta.dataset.dirty = '0'; }
+        clearRemoteNotice();
+      } else if (ta.value !== remoteNote) {
+        remoteNotePending = remoteNote;
+        showRemoteNoteNotice();
+      }
+    }
+    /* 记录工具条(状态按钮/收藏/到期提示)就地同步 */
+    const bar = $('.record-bar', root() || document);
+    if (bar) QRender.syncRecordBar(bar, currentQid);
+  }
+  function root() { return document.getElementById('view'); }
+  function clearRemoteNotice() {
+    const box = document.getElementById('remote-note-conflict');
+    if (box) box.remove();
+    remoteNotePending = null;
+  }
+  function showRemoteNoteNotice() {
+    let box = document.getElementById('remote-note-conflict');
+    if (!box) {
+      const ta = $('#note-area');
+      if (!ta) return;
+      box = document.createElement('div');
+      box.id = 'remote-note-conflict';
+      box.className = 'notice warn';
+      box.style.marginTop = '6px';
+      box.innerHTML = '<b>另一个标签页也保存了这道题的笔记</b>:你的输入已保留,没有被覆盖。'
+        + '<button class="btn btn-small" id="rn-view" type="button">查看对方版本</button> '
+        + '<button class="btn btn-small" id="rn-mine" type="button">保留我的</button> '
+        + '<button class="btn btn-small btn-primary" id="rn-theirs" type="button">采用对方版本</button>';
+      ta.insertAdjacentElement('afterend', box);
+      $('#rn-view', box).addEventListener('click', () => {
+        modal('对方保存的笔记版本', '<pre class="code">' + esc(remoteNotePending || '') + '</pre>', [{ label: '关闭' }]);
+      });
+      $('#rn-mine', box).addEventListener('click', () => {
+        /* 保留我的:textarea 保持 dirty,后续 flush 会提交本地版本 */
+        box.remove();
+      });
+      $('#rn-theirs', box).addEventListener('click', () => {
+        ta.value = remoteNotePending || '';
+        ta.dataset.dirty = '0';
+        Store.setNote(currentQid, ta.value);
+        Store.saveNow();
+        box.remove();
+        toast('已采用对方版本;你的旧输入仍可在对方版本覆盖前于本页导出前找回');
+      });
     }
   }
 
@@ -395,7 +486,7 @@ const StudyView = (() => {
             }).join('')}
           </div>
           <label class="note-label" style="margin-top:8px">我的笔记(参与全文搜索)</label>
-          <textarea id="note-area" placeholder="写下你的理解、易错点或自己的例子……">${esc(Store.rec(qid).note || '')}</textarea>
+          <textarea id="note-area" data-dirty="0" placeholder="写下你的理解、易错点或自己的例子……">${esc(Store.rec(qid).note || '')}</textarea>
         </div>
       </div>`;
     wire(root, qid);
@@ -448,6 +539,7 @@ const StudyView = (() => {
     /* 每次击键同步进内存学习状态(Store),磁盘写入防抖(250ms);
        这样任何后续重渲染读 Store 都是最新值,不会拿旧记录覆盖文本框。 */
     note.addEventListener('input', () => {
+      note.dataset.dirty = '1';   /* 用户真实编辑标记:远端合并的过时 DOM 不会带这个标记 */
       const r = Store.rec(qid);
       if (r.note !== note.value) { r.note = note.value; r._updatedAt = Date.now(); Store.save(); }
     });
@@ -491,7 +583,7 @@ const StudyView = (() => {
     };
   }
 
-  return { render, checkHtml, currentCtx, cleanup, flushNote };
+  return { render, checkHtml, currentCtx, cleanup, flushNote, applyRemote };
 })();
 
 /* ---------- 自测与模拟面试 ----------

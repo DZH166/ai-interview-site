@@ -225,6 +225,27 @@ const QRender = (() => {
       </div>`;
   }
 
+  /* 就地同步记录工具条(远端合并后):只改状态按钮激活态/收藏标签/到期提示,
+     不重建 DOM——保留焦点与展开状态(ST-01f/ST-02 配套) */
+  function syncRecordBar(scope, qid) {
+    if (!scope) return;
+    const r = Store.rec(qid);
+    $$('.status-btn[data-status]', scope).forEach(b => {
+      b.classList.toggle('active', b.dataset.status === (r.status || ''));
+    });
+    const fav = $('[data-fav]', scope);
+    if (fav) {
+      fav.classList.toggle('faved', !!r.fav);
+      fav.textContent = r.fav ? '★ 已收藏' : '☆ 收藏';
+    }
+    const due = (r.srs && typeof r.srs.due === 'number') ? SRS.dueLabel(r.srs.due) : '';
+    const hint = $('.rb-srs-due', scope);
+    if (hint) {
+      hint.textContent = due ? '🔁 建议:' + due : '';
+      hint.hidden = !due;
+    }
+  }
+
   /* 记录工具条 */
   function recordBar(qid) {
     const r = Store.rec(qid);
@@ -237,10 +258,10 @@ const QRender = (() => {
           ${Store.STATUS.map(s => `
             <button class="status-btn ${s.cls} ${cur === s.id ? 'active' : ''}" data-status="${s.id}">${s.label}</button>`).join('')}
         </div>
-        ${due ? `<span class="muted" style="font-size:12px" title="间隔重复建议的下一次复习时间;手动状态永远优先">🔁 建议:${esc(due)}</span>` : ''}
+        ${due ? `<span class="rb-srs-due muted" style="font-size:12px" title="间隔重复建议的下一次复习时间;手动状态永远优先">🔁 建议:${esc(due)}</span>` : '<span class="rb-srs-due muted" style="font-size:12px" hidden></span>'}
         <button class="btn btn-small ${r.fav ? 'faved' : ''}" data-fav>${r.fav ? '★ 已收藏' : '☆ 收藏'}</button>
       </div>`;
   }
 
-  return { badge, metaLine, studyBody, recordBar, verifyBlock, relLinks, mdHtml, promptHtml, deepHtml, section };
+  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, promptHtml, deepHtml, section };
 })();

@@ -34,9 +34,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await pageB.waitForFunction(() => typeof Store !== 'undefined' && Store.rec('PY-001').note === 'A 页写的笔记', null, { timeout: 8000 })
       .catch(() => {});
     check('A 页写入后,B 页内存自动合并', await pageB.evaluate(() => Store.rec('PY-001').note === 'A 页写的笔记'));
-    check('B 页弹出「已合并另一个标签页的修改」提示',
-      await pageB.evaluate(() => (document.querySelector('#toast-box') || {}).textContent !== undefined
-        && document.querySelector('#toast-box').textContent.includes('已合并另一个标签页的修改')));
+    /* ST-01e 修复后,提示只在结构性变化(轮次/草稿/项目证据)时出现;
+       笔记级变化以界面就地更新为准,这里断言数据收敛而不是 toast */
+    check('B 页数据已收敛(内存读到 A 页笔记)',
+      await pageB.evaluate(() => Store.rec('PY-001').note === 'A 页写的笔记'));
 
     /* B 页写另一题 → A 页自动合并 */
     await pageB.evaluate(() => { Store.setNote('RG-001', 'B 页写的笔记'); Store.saveNow(); });

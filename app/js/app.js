@@ -84,6 +84,24 @@ const App = (() => {
     return StudyView.currentCtx();
   });
 
+  /* 另一标签页合并了真实业务变更后的**定向刷新**(ST-01/ST-02 修复):
+     绝不走带退出保存副作用(flushNote/flushDraft→落盘)的 App.route——
+     那会把过时 DOM 当成用户输入写回,并形成 savedAt 写回循环。
+     学习/浏览页就地更新未编辑的控件(焦点/滚动/展开状态全保留);
+     首页/复习页在用户没有输入焦点时才整段重绘;path/docs/mock 导航时自然读到新数据。 */
+  function handleRemoteChange(changes) {
+    let view = '';
+    try { view = parseHash().view; } catch (e) { return; }
+    if (view === 'study') { StudyView.applyRemote(changes); return; }
+    if (view === 'browse') { BrowseView.applyRemote(changes); return; }
+    if (view === 'home' || view === 'review') {
+      const el = document.activeElement;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;   /* 用户正在输入:不打断 */
+      try { routes[view].render($('#view')); } catch (e) { /* 渲染失败不中断 */ }
+    }
+  }
+  Store.onRemoteChange(handleRemoteChange);
+
   function goToAnchor(anchor) { pendingAnchor = anchor; }
 
   function updateThemeIcon() {
