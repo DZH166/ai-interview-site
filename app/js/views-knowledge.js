@@ -328,7 +328,7 @@ const SearchView = (() => {
       box.innerHTML = `<div class="empty">没有找到与「${esc(q)}」相关的内容。<br><span class="muted">提示:换更短的关键词,或检查范围/专题筛选。</span></div>`;
       return;
     }
-    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿' };
+    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿', fu: '我的追问回答' };
     box.innerHTML = results.map(r => {
       const u = r.unit;
       let href, title, sub = '';
@@ -352,6 +352,11 @@ const SearchView = (() => {
           ? `&tab=speak&field=${encodeURIComponent(u.field.slice(6))}` : '&tab=draft');
         title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
         sub = '<span class="badge b-tag">草稿</span>';
+      } else if (u.kind === 'fu') {
+        /* 我的追问回答:落到复习中心那一轮,展开并定位(不只到主题顶部) */
+        href = `#/review?t=rounds&r=${encodeURIComponent(u.roundId || '')}&q=${encodeURIComponent(u.qid || '')}`;
+        title = '追问回答 · ' + ((Data.question(u.qid) || {}).title || u.qid || '');
+        sub = '<span class="badge b-tag">我的追问回答</span>';
       } else if (u.kind === 'concept') {
         /* 概念有身份:落到概念地图并展开该条,而不是跳到「关联题的第一题」冒充命中 */
         href = `#/path?c=${encodeURIComponent(u.cid)}`;

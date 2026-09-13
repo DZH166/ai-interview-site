@@ -1380,7 +1380,7 @@ const Store = (() => {
     adoptRemoteRecords, recordsSizeKB,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
     validateAttempt, migrateLegacyDrillTries, migrateLegacyRuns,
-    recTime, latestOf, sortedByTime, onInvalidate, onRemoteChange, contentHash,
+    recTime, latestOf, sortedByTime, onInvalidate, onRemoteChange, contentHash, roundId,
     get rev() { return rev; },
     get lastSaveError() { return lastSaveError; },
     get loadIssues() { return loadIssues; },

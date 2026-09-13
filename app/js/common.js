@@ -27,7 +27,18 @@ const Data = (() => {
     byId = new Map(questions.map(q => [q.id, q]));
     docs = ((window.APP_DATA && window.APP_DATA.docs) || []).slice();
     userDocs = Store.loadUserDocsSafe();
+    contentVersion = computeContentVersion();
   }
+
+  /* 静态内容版本(搜索分层缓存的失效依据,阶段7):
+     build.py 的内容哈希 + 题库规模。等长内容替换 → 哈希变 → 静态层重建;
+     个人笔记编辑 → 不影响 → 静态层不重建。 */
+  let contentVersion = '';
+  function computeContentVersion() {
+    const base = (window.APP_DATA && window.APP_DATA.content_hash) || '';
+    return base + '|' + questions.length + '|' + docs.map(d => d.id).join(',');
+  }
+  function contentVersionOf() { return contentVersion; }
 
   function allQuestions() { return questions; }
   function question(id) { return byId.get(id); }
@@ -62,7 +73,7 @@ const Data = (() => {
     return Store.STATUS.find(x => x.id === s) || Store.STATUS[0];
   }
 
-  return { init, allQuestions, question, allDocs, doc, allUserDocs, reloadUserDocs, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
+  return { init, allQuestions, question, allDocs, doc, allUserDocs, reloadUserDocs, contentVersionOf, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
 
 /* 追问稳定身份(SP-02):qid + 题面内容哈希——

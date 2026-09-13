@@ -183,6 +183,21 @@ const Search = (() => {
         weight: 2.0
       });
     });
+    /* 我的追问回答(已完成轮次):带题目与轮次身份,点击落到那一轮(SP 阶段7.4) */
+    ((records.mock && records.mock.rounds) || []).forEach(rd => {
+      const rid = rd.id || '';
+      (rd.items || []).forEach(it => {
+        (it.followups || []).forEach(f => {
+          if (!(f.self || '').trim()) return;
+          out.push({
+            kind: 'fu', qid: it.qid, roundId: rid, field: 'fu', anchor: '', topic: '',
+            text: norm('追问 ' + (f.q || '') + ' ' + f.self),
+            raw: '追问(' + (f.q || '') + '):' + f.self,
+            weight: 2.2
+          });
+        });
+      });
+    });
     (ctx.userDocs || []).forEach(d => {
       out.push({ kind: 'udoc', docId: d.id, field: 'title', anchor: '', text: norm(d.title), raw: d.title, weight: 2.0, topic: '' });
       Markdown.sections(d.text || '').forEach(sec => {
@@ -199,8 +214,12 @@ const Search = (() => {
   }
 
   function build(ctx) {
-    /* ctx: {questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
-    const sig = (ctx.questions || []).length + '|' + (ctx.docs || []).length;
+    /* ctx: {contentVersion?, questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
+    /* 静态层签名:优先内容版本(Data.contentVersionOf:build.py 哈希+题库规模+文档集);
+       旧调用方未提供时回退规模签名(仅追加场景仍正确) */
+    const sig = typeof ctx.contentVersion === 'string' && ctx.contentVersion
+      ? ctx.contentVersion
+      : (ctx.questions || []).length + '|' + (ctx.docs || []).length;
     if (staticCache.sig !== sig) {
       staticCache.units = buildStatic(ctx);
       staticCache.sig = sig;

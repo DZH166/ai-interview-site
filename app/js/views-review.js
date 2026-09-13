@@ -2,6 +2,7 @@
 'use strict';
 
 const ReviewView = (() => {
+  const roundIdOf = rd => rd.id || (Store.roundId ? Store.roundId(rd) : '');
   let tab = 'today';
 
   /* ---- 今日复习队列 ----
@@ -88,6 +89,9 @@ const ReviewView = (() => {
   }
 
   function render(root) {
+    /* 深链 #/review?t=rounds&r=<roundId>(搜索我的追问回答落点):定位到那一轮 */
+    const dq = parseHash().query || {};
+    if (dq.t && ['today', 'mistakes', 'fav', 'weak', 'review', 'note', 'recent', 'rounds'].includes(dq.t)) tab = dq.t;
     const tq = getTodayQueue(), mk = getMistakes();
     const dueCt = getDueSuggestions().length;
     const drillCt = (() => { const s = getDrillState(); return s.unsolved.length + s.drafts.length; })();
@@ -360,6 +364,7 @@ const ReviewView = (() => {
 
   /* ---- 模拟面试历史:轮次列表 + 可展开详情(兼容旧格式) ---- */
   function renderRounds(box) {
+    const dq = parseHash().query || {};   /* 深链定位(与 render 内的 tab 深链同源) */
     const rounds = (Store.data.mock.rounds || []).slice();
     if (!rounds.length) {
       box.innerHTML = '<div class="empty">还没有模拟面试记录。完成一轮<a href="#/mock">自测</a>后,这里会显示题目、你的回答与复盘状态。</div>';
@@ -371,8 +376,9 @@ const ReviewView = (() => {
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';
       const marked = items.filter(it => it.mark === 'weak').length;
       const fuCount = items.reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
+      const focusRound = dq && dq.r && (rd.id === dq.r || roundIdOf(rd) === dq.r);
       return `
-        <details class="round-details" ${ri === 0 ? 'open' : ''}>
+        <details class="round-details" ${ri === 0 || focusRound ? 'open' : ''} data-round-id="${esc(rd.id || roundIdOf(rd) || '')}">
           <summary class="round-summary">
             <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 对照参考 ${revealed} 题${fuCount ? ` · 追问回答 ${fuCount} 条` : ''}
             ${marked ? `<span class="badge st-weak">还不熟 ${marked}</span>` : ''}
@@ -403,6 +409,18 @@ const ReviewView = (() => {
     $$('[data-card-round]', box).forEach(b => b.addEventListener('click', () => {
       exportExpressCard('round', Number(b.dataset.cardRound));
     }));
+    /* 深链定位:展开并闪烁目标轮次 */
+    if (dq && dq.r) {
+      const target = box.querySelector(`details[data-round-id="${dq.r}"]`);
+      if (target) {
+        target.open = true;
+        setTimeout(() => {
+          target.scrollIntoView({ block: 'start', behavior: 'instant' });
+          target.classList.add('flash');
+          setTimeout(() => target.classList.remove('flash'), 1600);
+        }, 60);
+      }
+    }
   }
 
   function getMistakesList() { return getMistakes(); }

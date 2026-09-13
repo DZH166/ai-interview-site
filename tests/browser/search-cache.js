@@ -43,6 +43,35 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await page.waitForFunction(() => document.querySelectorAll('.search-item').length > 0);
     check('搜索页 UI 命中个人笔记', (await page.locator('.search-item').first().innerText()).includes('笔记'));
 
+    /* ---- 我的追问回答:进索引 + 深链落到那一轮(阶段7.4) ---- */
+    await page.evaluate(() => {
+      Store.data.mock.rounds = [{ id: 'r-deeplink-1', ts: Date.now(), items: [{ qid: 'PY-001', title: 'PY-001 题', self: '', revealed: true, mark: '', followups: [{ id: 'f1', q: '追问深链测试?', self: '深链定位用的独特回答内容XYZ', revealed: true }] }] }];
+      Store.saveNow(); window.rebuildIndex();
+    });
+    await page.locator('#s-input').fill('深链定位用的独特回答内容XYZ');
+    await page.locator('#s-go').click();
+    await page.waitForFunction(() => [...document.querySelectorAll('.search-item')].some(el => el.textContent.includes('我的追问回答')));
+    check('搜索命中「我的追问回答」', true);
+    await page.locator('.search-item').first().click();
+    await page.waitForFunction(() => location.hash.indexOf('t=rounds') >= 0 && !!document.querySelector('.round-details[data-round-id="r-deeplink-1"]'));
+    check('深链展开具体那一轮', await page.evaluate(() => document.querySelector('.round-details[data-round-id="r-deeplink-1"]').open));
+
+    /* ---- 性能测量(记录分布,不拿单次最好当结论) ---- */
+    const perf = await page.evaluate(() => {
+      /* 全量重建 = 构造内容版本变化触发静态层重建(动态重建另有 dynMs) */
+      const t0 = performance.now();
+      const ctxFull = StudyView.currentCtx(); ctxFull.contentVersion = 'perf-' + Math.random();
+      Search.build(ctxFull); const tBuild = performance.now() - t0;
+      const times = [];
+      for (let i = 0; i < 5; i++) { const t = performance.now(); Search.query('向量检索 嵌入'); times.push(performance.now() - t); }
+      times.sort((a, b) => a - b);
+      const t1 = performance.now(); Store.setNote('RG-001', '性能测量笔记'); window.rebuildIndex(); const tDyn = performance.now() - t1;
+      return { buildMs: Math.round(tBuild * 100) / 100, dynMs: Math.round(tDyn * 100) / 100,
+               qMedianMs: Math.round(times[2] * 100) / 100, qMin: Math.round(times[0] * 100) / 100, qMax: Math.round(times[4] * 100) / 100 };
+    });
+    console.log(`  PERF(349题,本机Chromium):静态重建 ${perf.buildMs}ms · 动态重建 ${perf.dynMs}ms · 查询中位 ${perf.qMedianMs}ms(${perf.qMin}~${perf.qMax})`);
+    check('性能量级安全(查询中位 < 50ms,重建 < 500ms)', perf.qMedianMs < 50 && perf.buildMs < 500, JSON.stringify(perf));
+
     check('全程无页面 JS 异常', errors.length === 0, errors.join(' | '));
     console.log(`\n结果: ${passed} 通过, 0 失败`);
   } finally { if (browser) await browser.close(); server.kill(); }

@@ -572,6 +572,7 @@ const StudyView = (() => {
 
   function currentCtx() {
     return {
+      contentVersion: Data.contentVersionOf(),
       questions: Data.allQuestions(),
       docs: Data.allDocs(),
       userDocs: Data.allUserDocs(),
@@ -995,6 +996,7 @@ const MockView = (() => {
     /* 上限只有一份:Store.MAX_ROUNDS(备份合并 mergeRounds 用同一个数,
        此前两处各写一个数字导致 50/100 不一致,长期用会静默丢历史轮次) */
     Store.data.mock.rounds = Store.data.mock.rounds.slice(0, Store.MAX_ROUNDS);
+    if (!round.id) round.id = Store.roundId(round);   /* 落盘即有稳定 ID:搜索深链/去重都依赖 */
     markEnded(state.sessionId, 'completed');   /* 终态先于草稿清除落盘:其它页据此拒绝旧草稿 */
     endSession(); /* 会话终结:挂起的防抖回调不得再写回草稿 */
     Store.saveNow();   /* 同步落盘:终态与轮次立即对其它页可见(不留防抖窗口) */

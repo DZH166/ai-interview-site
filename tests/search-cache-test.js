@@ -97,5 +97,50 @@ console.log('== 4. 动态层不丢字段类型 ==');
   ok('口述草稿可检索', Search.query('三十秒口述XYZ').length > 0);
 }
 
+console.log('\n== 5. 内容版本失效(阶段7):等长内容更新必须重建静态层 ==');
+{
+  const mkVerCtx = (ver, docText, qTitle) => ({
+    contentVersion: ver,
+    questions: [{ id: 'RG-200', topic: 'rag', title: qTitle || '原题面', prompt: '', tags: [], answer: '', plain: '', deep: '', example: '', interview: '', pitfalls: [], followups: [], check: null }],
+    docs: [{ id: 'doc-x', topic: 'rag', title: 'X 章节', summary: '', md: docText }],
+    userDocs: [], records: { questions: {}, ui: {} }, concepts: [], drills: [], projects: [], drillAttempts: {}
+  });
+  Search.build(mkVerCtx('hash-1', '# 一节\n\n旧章节内容ABC\n'));
+  ok('初始:命中旧内容', Search.query('旧章节内容ABC').length > 0);
+  const b1 = Search.stats().staticBuilds;
+  /* 等长内容替换(长度相同,题目数/文档数都不变)+ 内容版本变化 → 必须重建 */
+  Search.build(mkVerCtx('hash-2', '# 一节\n\n新章节内容XYZ\n'));
+  eq('等长内容更新:静态层重建(相对+1)', Search.stats().staticBuilds, b1 + 1);
+  ok('旧内容不再命中', Search.query('旧章节内容ABC').length === 0);
+  ok('新内容命中', Search.query('新章节内容XYZ').length > 0);
+  /* 相同版本+相同规模:不重建 */
+  Search.build(mkVerCtx('hash-2', '# 一节\n\n新章节内容XYZ\n'));
+  eq('同版本:静态层不重建', Search.stats().staticBuilds, b1 + 1);
+  /* 对照组:未提供 contentVersion 的旧调用方,回退规模签名,行为不变 */
+  const legacyA = mkVerCtx(undefined, '# 一节\n\n旧内容\n');
+  delete legacyA.contentVersion;
+  Search.build(legacyA);
+  const s3 = Search.stats();
+  Search.build(legacyA);
+  eq('回退签名:同规模不重建', Search.stats().staticBuilds, s3.staticBuilds);
+  ok('回退签名:查询正常', Search.query('旧内容').length > 0);
+}
+
+console.log('\n== 6. 我的追问回答进索引,带题目与轮次身份(阶段7.4) ==');
+{
+  const ctx = {
+    contentVersion: 'hash-9',
+    questions: [{ id: 'RG-210', topic: 'rag', title: '追问来源题', prompt: '', tags: [], answer: '', plain: '', deep: '', example: '', interview: '', pitfalls: [], followups: [], check: null }],
+    docs: [], userDocs: [],
+    records: { questions: {}, ui: {}, mock: { rounds: [{ id: 'r-777', ts: 1, items: [{ qid: 'RG-210', title: '追问来源题', self: '', revealed: true, mark: '', followups: [{ id: 'f1', q: '为什么需要重排?', self: '因为粗排只保证召回,精排保证次序', revealed: true }] }] }] } },
+    concepts: [], drills: [], projects: [], drillAttempts: {}
+  };
+  Search.build(ctx);
+  const hits = Search.query('因为粗排只保证召回');
+  ok('追问回答可检索', hits.length > 0);
+  ok('结果带题目身份', hits.length > 0 && hits[0].unit.qid === 'RG-210');
+  ok('结果带轮次身份', hits.length > 0 && hits[0].unit.roundId === 'r-777');
+}
+
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);
 process.exit(failed ? 1 : 0);
