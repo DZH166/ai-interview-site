@@ -37,16 +37,25 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     check('index.html 带 CSP meta', await page.evaluate(() => !!document.querySelector('meta[http-equiv="Content-Security-Policy"]')));
     check('待攻克卡出现 Anki 出口按钮', await page.locator('#d-card-anki').count() === 1);
 
-    /* 真实下载:Anki CSV */
+    /* 真实下载:Anki CSV(先弹契约 modal,再点「下载 CSV」) */
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 15000 }),
-      page.locator('#d-card-anki').click()
+      (async () => {
+        await page.locator('#d-card-anki').click();
+        await page.waitForFunction(() => document.querySelector('.modal'));
+        check('契约 modal 含字段映射与更新说明',
+          (await page.evaluate(() => document.querySelector('.modal-body').textContent))
+            .includes('按更新合并'));
+        await page.locator('.modal .btn-primary').click();
+      })()
     ]);
     check('Anki CSV 触发真实下载', download.suggestedFilename().endsWith('.csv'), download.suggestedFilename());
     const tmp = path.join(require('os').tmpdir(), download.suggestedFilename());
     await download.saveAs(tmp);
     const csv = fs.readFileSync(tmp, 'utf8');
-    check('CSV 含指令头与两道题', csv.includes('#separator:Comma') && csv.includes('PY-001') && csv.includes('RG-001'), csv.slice(0, 120));
+    check('CSV 含指令头(含 guid 更新映射)与两道题',
+      csv.includes('#separator:Comma') && csv.includes('#guid column:2')
+      && csv.includes('"PY-001","PY-001"') && csv.includes('"RG-001","RG-001"'), csv.slice(0, 160));
 
     /* 内联 SW 注册脚本移除后,app.js 的注册逻辑仍要在 https/localhost 生效 */
     check('SW 注册代码已移入 app.js', fs.readFileSync(path.join(ROOT, 'app/js/app.js'), 'utf8').includes('serviceWorker.register'));

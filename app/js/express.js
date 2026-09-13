@@ -343,19 +343,31 @@ const ExpressCard = (() => {
   }
 
   /* ---- Anki 导入用 CSV(与待攻克清单同一数据源) ----
-     格式:首行 #separator/#html 指令(Anki 2.1.55+ 原生识别),字段:题号 / 正面 / 背面。
-     正面=题干;背面=直接答案 + 面试表达 + 常见误区。
-     诚实:只含题目自带的参考内容,不含个人笔记冒充的回答;内容先 HTML 转义再换 <br>。 */
+     契约(按官方 text-files 手册的文件头能力,不夸大):
+       - 需要先在 Anki 建一个名为「面试加油工作台」的笔记类型,3 个字段:题号 / 正面 / 背面;
+       - #notetype / #deck / #guid column 是 Anki 2.1.55+ 支持的文件头;
+       - 第 2 列 GUID = 站内题号(自定义稳定键,经 Anki 的 guid 列映射实现「同题号二次导入
+         按更新合并」——它不是 Anki 自动生成的内部 GUID,这一点在导入指南里明说);
+       - 正面=题干(题号不会成为唯一正面);背面=直接答案 + 面试表达 + 常见误区;
+       - 内容先 HTML 转义再换 <br>(#html:true),引号按 CSV 规范双写。 */
   function csvField(s) {
     return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
   }
   function toHtmlSafe(s) {
     return esc(String(s == null ? '' : s)).replace(/\r\n/g, '\n').replace(/\n/g, '<br>');
   }
+  const ANKI_NOTETYPE = '面试加油工作台';
   function buildAnkiCsv(marks, lookup) {
     const items = itemsFromMarks(marks, lookup);
     if (!items.length) return { ok: false, error: '当前没有标记为「还不熟 / 待复习」的题。' };
-    const rows = ['#separator:Comma', '#html:true', '#columns:题号,正面,背面'];
+    const rows = [
+      '#separator:Comma',
+      '#html:true',
+      '#notetype:' + ANKI_NOTETYPE,
+      '#deck:面试加油工作台',
+      '#columns:题号,GUID,正面,背面',
+      '#guid column:2'
+    ];
     items.forEach(it => {
       const front = '<b>' + toHtmlSafe(oneLine(it.title, 200)) + '</b>'
         + (it.prompt ? '<br><br>' + toHtmlSafe(it.prompt) : '');
@@ -363,7 +375,7 @@ const ExpressCard = (() => {
       if (it.answer) backParts.push('<b>直接答案</b><br>' + toHtmlSafe(it.answer));
       if (it.interview) backParts.push('<b>面试表达</b><br>' + toHtmlSafe(it.interview));
       if (it.pitfalls.length) backParts.push('<b>常见误区</b><br>' + it.pitfalls.map(p => '· ' + toHtmlSafe(oneLine(p, 240))).join('<br>'));
-      rows.push([csvField(it.qid), csvField(front), csvField(backParts.join('<br><br>'))].join(','));
+      rows.push([csvField(it.qid), csvField(it.qid), csvField(front), csvField(backParts.join('<br><br>'))].join(','));
     });
     return { ok: true, count: items.length,
       csv: rows.join('\n'), name: fileName('待攻克清单-Anki', Date.now(), 'csv') };

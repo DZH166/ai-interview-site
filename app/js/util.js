@@ -211,13 +211,61 @@ function buildExpressCard(kind, index) {
 }
 
 /* 待攻克清单 → Anki 导入用 CSV(数据源与表达卡同一套 pendingMarks) */
+/* Anki 导入指南(随 CSV 一起下载,内容与 README 的诚实边界一致):
+   只声明 Anki 文件头真实支持的能力;自定义稳定键经 guid 列映射实现更新合并,
+   不冒充 Anki 内部 GUID;CSV 无法替用户创建笔记类型,如实写明。 */
+const ANKI_GUIDE = [
+  '# Anki 导入指南(面试加油工作台 · 待攻克清单)',
+  '',
+  '## 一次性准备(约 1 分钟)',
+  '1. Anki → 工具 → 管理笔记模板 → 添加 → 基础,命名为「面试加油工作台」;',
+  '2. 给它配置 3 个字段,顺序与名称必须是:题号 / 正面 / 背面;',
+  '3. (可选)建一个牌组「面试加油工作台」。',
+  '',
+  '## 导入',
+  '1. Anki → 文件 → 导入 → 选择下载的 CSV;',
+  '2. 文件头已声明:分隔符(逗号)、HTML(开)、笔记类型、牌组、列名、GUID 列(第 2 列);',
+  '3. 字段映射:第 1 列→题号,第 3 列→正面,第 4 列→背面(第 2 列是 GUID 特殊列,不进字段);',
+  '4. 确认「允许 HTML」为开(文件头 #html:true 已声明),点导入。',
+  '',
+  '## 重复导入行为',
+  '- 第 2 列 GUID = 站内题号(自定义稳定键):同题号再次导入时,Anki 按 GUID 更新现有笔记',
+  '  (新内容覆盖正/背面),不会制造重复卡片;你的复习排程与挂起状态不受影响;',
+  '- 该键是我们写入的自定义稳定键,不是 Anki 自动生成的内部 GUID;换设备重新导出时,',
+  '  同一题号仍是同一个键——这正是更新匹配所依赖的稳定性;',
+  '- 题号同时是第 1 字段,但卡片正面始终是题干,不会只显示一个编号。',
+  '',
+  '## 诚实边界',
+  '- CSV 无法替你创建笔记类型:上面的「一次性准备」必须先做一次;',
+  '- 本说明按 Anki 官方《Importing text files》的文件头能力编写;',
+  '- 站内已在隔离浏览器验证 CSV 内容与转义;真实 Anki 桌面版导入受版本影响,',
+  '  首次导入后请核对一张卡片的正反面;字段错位时优先检查笔记类型的字段数量与顺序。',
+].join('\n');
+
 function exportAnkiCsv() {
   let r;
   try { r = ExpressCard.buildAnkiCsv(pendingMarks(), id => Data.question(id)); }
   catch (e) { toast('生成 Anki CSV 失败:' + e.message, 'err'); return; }
   if (!r || !r.ok) { toast((r && r.error) || '生成 Anki CSV 失败', 'err'); return; }
-  download(r.name, '\ufeff' + r.csv, 'text/csv');
-  toast('已下载 ' + r.name + '(Anki:文件 → 导入)');
+  modal('导出 Anki CSV', `
+    <p>共 <b>${r.count}</b> 题。首次使用需要一次性准备:在 Anki 建笔记类型「面试加油工作台」,
+    字段依次为 <b>题号 / 正面 / 背面</b>(完整步骤见「下载导入指南」)。</p>
+    <ul style="margin:6px 0 0 18px">
+      <li>字段映射:第 1 列题号 → 第 3 列正面(题干)→ 第 4 列背面(答案+口述+误区);第 2 列 GUID 用于同题号二次导入<b>按更新合并</b>;</li>
+      <li>HTML 已在文件头声明为开,内容均已转义;</li>
+      <li>重复导入不会制造重复卡片,也不会清空你的复习安排。</li>
+    </ul>
+    <p class="muted small" style="margin-top:6px">真实 Anki 桌面版导入受版本影响:首次导入后请核对一张卡片的正反面。</p>`, [
+    { label: '下载 CSV', primary: true, onClick: () => {
+        download(r.name, '\ufeff' + r.csv, 'text/csv');
+        toast('已下载 ' + r.name);
+      } },
+    { label: '下载导入指南', onClick: () => {
+        download('Anki导入指南.md', ANKI_GUIDE, 'text/markdown');
+      } },
+    { label: '取消' }
+  ]);
+  return r;
 }
 
 /* 打印版:开一个真正的新页面(Blob URL),用户在那里 Ctrl+P 就能存 PDF */

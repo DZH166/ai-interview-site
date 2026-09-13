@@ -197,9 +197,18 @@ console.log('\n== 9. Anki CSV 导出(与待攻克清单同源,转义正确) ==')
   const r = ExpressCard.buildAnkiCsv(
     [{ qid: 'AK-001', status: 'weak', note: '' }, { qid: 'ZZ-404', status: 'weak', note: '' }], lookup);
   ok('有标记 → ok:true,且只含题库中存在的题', r.ok === true && r.count === 1, JSON.stringify(r && r.error));
-  ok('CSV 带 Anki 指令头(separator/html/columns)', r.csv.includes('#separator:Comma') && r.csv.includes('#html:true'));
+  ok('CSV 带 Anki 指令头(separator/html/notetype/deck/columns/guid)',
+     r.csv.includes('#separator:Comma') && r.csv.includes('#html:true')
+     && r.csv.includes('#notetype:面试加油工作台') && r.csv.includes('#deck:面试加油工作台')
+     && r.csv.includes('#columns:题号,GUID,正面,背面') && r.csv.includes('#guid column:2'));
+  ok('每行 4 列(题号,GUID,正面,背面),GUID=站内题号',
+     (() => { const dataRows = r.csv.split('\n').filter(l => l && !l.startsWith('#'));
+       return dataRows.length === 1 && dataRows[0].startsWith('"AK-001","AK-001"'); })());
   ok('正面含题干与题号', r.csv.includes('什么是KV缓存?') && r.csv.includes('AK-001'));
   ok('背面含答案/表达/误区三段', r.csv.includes('直接答案') && r.csv.includes('面试表达') && r.csv.includes('常见误区'));
+  ok('正面不是只有题号(题干必须在正面字段里)',
+     (() => { const cells = r.csv.split('\n').filter(l => l && !l.startsWith('#'))[0].match(/"[^"]*(?:""[^"]*)*"/g) || [];
+       return cells.length === 4 && cells[2].includes('什么是KV缓存?'); })());
   ok('内容先 HTML 转义(原始引号不进入 CSV 字段,导入 HTML 渲染也安全)', r.csv.includes('&quot;引号&quot;') && !r.csv.includes('含"引号"'), r.csv);
   ok('换行转为 <br>(字段内不再有裸换行)',
      !r.csv.split('\n').slice(3).some(l => (l.match(/"/g) || []).length % 2 === 1), r.csv);
