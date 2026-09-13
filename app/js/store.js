@@ -25,8 +25,10 @@ const Store = (() => {
     return {
       v: 3,
       questions: {},          // qid -> {status, fav, note, viewedAt, practiceCount, lastPracticedAt, lastResult, _updatedAt}
-      mock: { rounds: [], draft: null },   // 模拟面试轮次 + 未完成草稿
+      mock: { rounds: [], draft: null, ended: {} },   // 轮次 + 草稿 + 会话终态登记(sid -> {status,ts})
       drillAttempts: {},                    // drillId -> [attempt];attempt 稳定归属不依赖题目
+      resetEpoch: 0,          // 清空纪元:每次 clearAll 递增,旧纪元快照不得越过清空边界(SP-05)
+      resetTs: 0,             // 本次清空发生的时刻(同机时钟,用于放行清空后新写的记录)
       ui: { lastHash: '', browse: {}, docPos: {}, search: {} }
     };
   }
@@ -99,9 +101,10 @@ const Store = (() => {
         if (parsed && typeof parsed === 'object') {
           data = Object.assign(blank(), parsed);
           data.questions = (parsed.questions && typeof parsed.questions === 'object') ? parsed.questions : {};
-          data.mock = parsed.mock && Array.isArray(parsed.mock.rounds) ? parsed.mock : { rounds: [], draft: null };
+          data.mock = parsed.mock && Array.isArray(parsed.mock.rounds) ? parsed.mock : { rounds: [], draft: null, ended: {} };
           if (!Array.isArray(data.mock.rounds)) data.mock.rounds = [];
           if (!('draft' in data.mock)) data.mock.draft = null;
+          if (!data.mock.ended || typeof data.mock.ended !== 'object') data.mock.ended = {};
           data.ui = Object.assign(blank().ui, parsed.ui || {});
           data.drillAttempts = (parsed.drillAttempts && typeof parsed.drillAttempts === 'object' && !Array.isArray(parsed.drillAttempts)) ? parsed.drillAttempts : {};
           /* 启动即迁移旧题目记录里的 drillTries(幂等) */
@@ -486,16 +489,36 @@ const Store = (() => {
         (mock.rounds || []).forEach((rd, i) => {
           if (!rd || typeof rd !== 'object' || Array.isArray(rd)) { errs.push(`轮次 #${i}: 不是对象`); return; }
           if (!isTs(rd.ts)) errs.push(`轮次 #${i}: ts 必须是非负数字`);
-          if (!Array.isArray(rd.items)) { errs.push(`轮次 #${i}: 缺少 items 数组`); return; }
+          if (rd.sessionId !== undefined && typeof rd.sessionId !== 'string') errs.push(`轮次 #${i}: sessionId 必须是字符串`);
+        if (!Array.isArray(rd.items)) { errs.push(`轮次 #${i}: 缺少 items 数组`); return; }
           rd.items.forEach((it, j) => {
             if (!it || typeof it !== 'object' || !it.qid) errs.push(`轮次 #${i} 第 ${j + 1} 题: 缺少 qid`);
             else if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
           });
         });
+        if (mock.draft && typeof mock.draft === 'object' && !Array.isArray(mock.draft) && mock.draft.sessionId !== undefined && typeof mock.draft.sessionId !== 'string') {
+          errs.push('mock.draft.sessionId 必须是字符串');
+        }
         if (mock.draft !== undefined && mock.draft !== null && (typeof mock.draft !== 'object' || Array.isArray(mock.draft))) {
           errs.push('mock.draft 必须是对象或 null');
         }
+        if (mock.ended !== undefined && (mock.ended === null || typeof mock.ended !== 'object' || Array.isArray(mock.ended))) {
+          errs.push('mock.ended 必须是对象');
+        } else if (mock.ended) {
+          Object.keys(mock.ended).forEach(sid => {
+            const e = mock.ended[sid];
+            if (!e || typeof e !== 'object' || Array.isArray(e)) { errs.push(`mock.ended.${sid} 非对象`); return; }
+            if (!['completed', 'abandoned'].includes(e.status)) errs.push(`mock.ended.${sid}.status 非法`);
+            if (!(typeof e.ts === 'number' && isFinite(e.ts) && e.ts >= 0)) errs.push(`mock.ended.${sid}.ts 非法`);
+          });
+        }
       }
+    }
+    if (incoming.resetEpoch !== undefined && !(typeof incoming.resetEpoch === 'number' && isFinite(incoming.resetEpoch) && incoming.resetEpoch >= 0)) {
+      errs.push('resetEpoch 必须是非负数字');
+    }
+    if (incoming.resetTs !== undefined && !(typeof incoming.resetTs === 'number' && isFinite(incoming.resetTs) && incoming.resetTs >= 0)) {
+      errs.push('resetTs 必须是非负数字');
     }
     if (incoming.ui !== undefined && (!incoming.ui || typeof incoming.ui !== 'object' || Array.isArray(incoming.ui))) {
       errs.push('ui 必须是对象');
@@ -782,8 +805,27 @@ const Store = (() => {
     });
   }
 
+  /* 会话终态登记合并(SP-06):union;冲突时 completed 优先(有轮次为证),
+     同状态取最早 ts(第一次终结)——不依赖事件到达顺序。 */
+  function mergeEndedSessions(merged, incomingMock) {
+    const inc = (incomingMock && incomingMock.ended) || {};
+    if (!merged.mock.ended || typeof merged.mock.ended !== 'object') merged.mock.ended = {};
+    Object.keys(inc).forEach(sid => {
+      const e = inc[sid];
+      if (!e || typeof e !== 'object') return;
+      const cur = merged.mock.ended[sid];
+      if (!cur) { merged.mock.ended[sid] = JSON.parse(JSON.stringify(e)); return; }
+      if (cur.status !== e.status) {
+        if (e.status === 'completed') merged.mock.ended[sid] = JSON.parse(JSON.stringify(e));
+        return;
+      }
+      if ((e.ts || 0) < (cur.ts || 0)) merged.mock.ended[sid] = JSON.parse(JSON.stringify(e));
+    });
+  }
+
   /* 合并模拟面试轮次:按稳定 ID 去重,降序保留最近 100 轮 */
   function mergeRounds(merged, incomingMock, report) {
+    mergeEndedSessions(merged, incomingMock);
     const existIds = new Set((merged.mock.rounds || []).map(r => r.id || roundId(r)));
     ((incomingMock && incomingMock.rounds) || []).forEach(r => {
       const id = roundId(r);
@@ -796,8 +838,29 @@ const Store = (() => {
     });
     merged.mock.rounds.sort((a, b) => (b.ts || 0) - (a.ts || 0));
     merged.mock.rounds = merged.mock.rounds.slice(0, MAX_ROUNDS);
-    /* 草稿:已有草稿优先(本机更可能新鲜),备份草稿仅在本地没有时恢复 */
-    if (!merged.mock.draft && incomingMock && incomingMock.draft) merged.mock.draft = incomingMock.draft;
+    /* 草稿恢复(SP-06):该会话已有终态(completed/abandoned)时,任何旧草稿不得复活;
+       同一会话的两份草稿按 savedAt 新者胜(同刻按内容哈希决胜,不依赖到达顺序);
+       不同会话的草稿沿用「已有草稿优先」,备份草稿仅在本地没有时恢复 */
+    /* 本页已挂起的草稿若属于已终结会话(终态由另一页登记后合并到达),同样清除 */
+    if (merged.mock.draft && merged.mock.draft.sessionId && merged.mock.ended[merged.mock.draft.sessionId]) {
+      merged.mock.draft = null;
+    }
+    const incDraft = incomingMock && incomingMock.draft;
+    if (incDraft && typeof incDraft === 'object') {
+      const sid = incDraft.sessionId || '';
+      if (sid && merged.mock.ended[sid]) return;              /* 终态会话:草稿不复活 */
+      if (!merged.mock.draft) {
+        merged.mock.draft = JSON.parse(JSON.stringify(incDraft));
+        report.draftsAdopted++;
+      } else if (sid && merged.mock.draft.sessionId === sid) {
+        const a = merged.mock.draft, b = incDraft;
+        const ta = a.savedAt || 0, tb = b.savedAt || 0;
+        if (tb > ta || (tb === ta && contentHash(JSON.stringify(b)) > contentHash(JSON.stringify(a)))) {
+          merged.mock.draft = JSON.parse(JSON.stringify(b));
+          report.draftsAdopted++;
+        }
+      }
+    }
   }
 
   /* 合并专项尝试:按 attemptId 幂等;两份都有时 updatedAt 新者胜 */
@@ -1044,12 +1107,46 @@ const Store = (() => {
      同步推进数据版本并通知订阅者(搜索索引据此失效)——否则会出现
      「清空后搜索仍能搜出已清空的笔记与尝试」这种界面与数据不一致。 */
   function clearAll() {
+    /* 清空是带版本的删除(SP-05):纪元+时刻同步落盘,其它页据此区分
+       「清空前的旧快照」(不得合并回来)与「清空后新写的记录」(正常同步)。
+       此前 removeItem+防抖保存之间存在窗口,另一页的旧快照会趁机写回磁盘。 */
+    const nextEpoch = ((data && data.resetEpoch) || 0) + 1;
+    const ts = Date.now();
     data = blank();
-    try { localStorage.removeItem(KEY_RECORDS); } catch (e) { /* 已无记录 */ }
+    data.resetEpoch = nextEpoch;
+    data.resetTs = ts;
     bumpRev();
     notifyInvalidate();
-    save();
+    saveNow();
     return true;
+  }
+
+  /* 取出「清空时刻之后新写」的记录(同机时钟可比):清空边界两侧的筛选器(SP-05)。
+     题目记录按 _updatedAt;专项尝试/项目记录按 updatedAt;轮次按 ts;草稿按 savedAt。 */
+  function extractPostClear(d, clearTs) {
+    const out = { v: 3, questions: {}, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {} };
+    if (!clearTs) {   /* 没有可比较的时刻(异常情形):宁可少同步,不越过边界 */
+      return out;
+    }
+    Object.keys(d.questions || {}).forEach(qid => {
+      const r = d.questions[qid];
+      if (r && typeof r === 'object' && (r._updatedAt || 0) > clearTs) out.questions[qid] = JSON.parse(JSON.stringify(r));
+    });
+    (d.mock && d.mock.rounds || []).forEach(r => { if ((r.ts || 0) > clearTs) out.mock.rounds.push(JSON.parse(JSON.stringify(r))); });
+    if (d.mock && d.mock.draft && (d.mock.draft.savedAt || 0) > clearTs) out.mock.draft = JSON.parse(JSON.stringify(d.mock.draft));
+    Object.keys(d.drillAttempts || {}).forEach(did => {
+      const list = (d.drillAttempts[did] || []).filter(a => (a.updatedAt || a.ts || 0) > clearTs);
+      if (list.length) out.drillAttempts[did] = JSON.parse(JSON.stringify(list));
+    });
+    Object.keys(d.ui.projectRuns || {}).forEach(pid => {
+      const list = (d.ui.projectRuns[pid] || []).filter(r => (r.updatedAt || r.ts || 0) > clearTs);
+      if (list.length) out.ui.projectRuns[pid] = JSON.parse(JSON.stringify(list));
+    });
+    Object.keys(d.ui.projectDrafts || {}).forEach(pid => {
+      const dr = d.ui.projectDrafts[pid];
+      if (dr && typeof dr === 'object' && (dr.updatedAt || 0) > clearTs) out.ui.projectDrafts[pid] = JSON.parse(JSON.stringify(dr));
+    });
+    return out;
   }
 
   /* ---- 多标签页并发:另一个标签页写入时的合并策略 ----
@@ -1106,6 +1203,51 @@ const Store = (() => {
     if (!incoming || typeof incoming !== 'object') return { ok: false, error: '记录必须是对象' };
     const errs = validateRecordsObj(incoming);
     if (errs.length) return { ok: false, error: '校验未通过:' + errs.slice(0, 3).join(';') };
+    const inEpoch = (incoming && typeof incoming.resetEpoch === 'number' && incoming.resetEpoch >= 0) ? incoming.resetEpoch : 0;
+    const inResetTs = (incoming && typeof incoming.resetTs === 'number') ? incoming.resetTs : 0;
+    const myEpoch = (data && data.resetEpoch) || 0;
+    if (inEpoch > myEpoch) {
+      /* 对方经历了更新的清空:本页(旧纪元)的完整快照整体作废,
+         采用对方的清空后状态,仅保留本页在「对方清空时刻」之后新写的记录(SP-05) */
+      const keep = extractPostClear(data, inResetTs);
+      const fresh = blank();
+      fresh.resetEpoch = inEpoch;
+      fresh.resetTs = inResetTs;
+      fresh.ui.lastHash = data.ui.lastHash;   /* 界面偏好不随清空丢失 */
+      const rep = newReport();
+      mergeQuestions(fresh, keep.questions, rep);
+      mergeRounds(fresh, keep.mock, rep);
+      mergeAttempts(fresh, keep.drillAttempts);
+      mergeUi(fresh, keep, rep);
+      const sigBefore0 = recordsSigs(data);
+      data = fresh;
+      const changes0 = diffSigs(sigBefore0, recordsSigs(data));
+      if (!changes0.hasChanges) return { ok: true, changed: false, changes: changes0, report: rep };
+      bumpRev();
+      notifyInvalidate();
+      return { ok: true, changed: true, changes: { qids: [], drillIds: [], pids: [], sections: ['reset'].concat(changes0.sections), hasChanges: true }, report: rep };
+    }
+    if (inEpoch < myEpoch) {
+      /* 对方还是清空前的旧纪元:其快照不得越过本页的清空边界,
+         只采纳对方在清空时刻之后新写的记录(SP-05) */
+      const keepIncoming = extractPostClear(incoming, data.resetTs);
+      const sigBeforeS = recordsSigs(data);
+      const mergedS = JSON.parse(JSON.stringify(data));
+      mergedS.mock.rounds = mergedS.mock.rounds.slice();
+      if (!mergedS.ui.projectRuns) mergedS.ui.projectRuns = {};
+      const repS = newReport();
+      mergeQuestions(mergedS, keepIncoming.questions, repS);
+      mergeRounds(mergedS, keepIncoming.mock, repS);
+      mergeAttempts(mergedS, keepIncoming.drillAttempts);
+      mergeUi(mergedS, keepIncoming, repS);
+      migrateLegacyDrillTries(mergedS);
+      const changesS = diffSigs(sigBeforeS, recordsSigs(mergedS));
+      if (!changesS.hasChanges) return { ok: true, changed: false, changes: changesS, report: repS, staleEpoch: true };
+      data = mergedS;
+      bumpRev();
+      notifyInvalidate();
+      return { ok: true, changed: true, changes: changesS, report: repS, staleEpoch: true };
+    }
     const sigBefore = recordsSigs(data);
     const merged = JSON.parse(JSON.stringify(data));
     merged.mock.rounds = merged.mock.rounds.slice();

@@ -590,8 +590,12 @@ const StudyView = (() => {
    会话状态(含未写完的回答草稿)实时落盘 Store.data.mock.draft:
    切题/对照/复盘/翻页即保存,刷新或离开后可从配置页恢复继续;完成或放弃才清除。 */
 const MockView = (() => {
-  let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}, directed, label, sid} */
+  let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}, directed, label, sid, sessionId} */
   let sessionSeq = 0;
+
+  /* 跨页稳定的会话身份(SP-06):完成/放弃登记进 mock.ended,
+     其它页据此拒绝旧草稿复活;旧数据无 sessionId 时按内容补确定性 ID。 */
+  function newSessionId() { return 'ms-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8); }
 
   function draftLoad() { return (Store.data.mock && Store.data.mock.draft) || null; }
   function draftSave() {
@@ -599,9 +603,19 @@ const MockView = (() => {
     Store.data.mock.draft = {
       config: state.config, items: state.items, idx: state.idx,
       answers: state.answers, directed: !!state.directed,
-      label: state.label || '', savedAt: Date.now()
+      label: state.label || '', savedAt: Date.now(),
+      sessionId: state.sessionId
     };
     Store.saveNow(); /* 同步写,刷新/关闭不丢草稿 */
+  }
+  /* 会话终结登记:completed(有轮次)/abandoned(放弃)——终态优先于旧草稿 */
+  function markEnded(sessionId, status) {
+    if (!sessionId) return;
+    Store.data.mock.ended = Store.data.mock.ended || {};
+    const cur = Store.data.mock.ended[sessionId];
+    if (!cur || status === 'completed' || (cur.ts || 0) > Date.now()) {
+      Store.data.mock.ended[sessionId] = { status, ts: Date.now() };
+    }
   }
   function draftClear() {
     if (Store.data.mock && Store.data.mock.draft) { Store.data.mock.draft = null; Store.save(); }
@@ -648,6 +662,7 @@ const MockView = (() => {
             config: d.config || { topics: [], diffs: [], count: d.items.length },
             items: d.items, idx: Math.min(d.idx || 0, d.items.length - 1),
             answers: d.answers || {}, directed: !!d.directed, label: d.label || '',
+            sessionId: d.sessionId || ('ms-legacy-' + (d.savedAt || 0) + '-' + (d.items[0] && d.items[0].qid || '')),
             sid: ++sessionSeq, ended: false
           };
         }
@@ -708,6 +723,9 @@ const MockView = (() => {
     if (hasDraft) {
       $('#m-resume', root).addEventListener('click', () => go('#/mock/run'));
       $('#m-discard', root).addEventListener('click', () => {
+        const d = draftLoad();
+        if (d) markEnded(d.sessionId || 'ms-legacy-' + (d.savedAt || 0), 'abandoned');
+        Store.saveNow();
         endSession();
         state = null;
         toast('已放弃未完成的草稿');
@@ -725,6 +743,7 @@ const MockView = (() => {
         config: { topics: selTopics, diffs: selDiffs, count },
         items: sample(pool, Math.min(count, pool.length)).map(q => ({ qid: q.id })),
         idx: 0, answers: {}, directed: false, label: '',
+        sessionId: newSessionId(),
         sid: ++sessionSeq, ended: false
       };
       draftSave();
@@ -740,6 +759,7 @@ const MockView = (() => {
       config: { topics: [], diffs: [], count: qids.length, label: label || '定向复习' },
       items: qids.map(id => ({ qid: id })),
       idx: 0, answers: {}, directed: true, label: label || '定向复习',
+      sessionId: newSessionId(),
       sid: ++sessionSeq, ended: false
     };
     draftSave();
@@ -882,6 +902,7 @@ const MockView = (() => {
     if (!answered) { toast('本轮还没有作答,已按原样记录'); }
     const round = {
       ts: Date.now(),
+      sessionId: state.sessionId,
       config: state.config,
       items: state.items.map(q => {
         const id = q.qid || q.id;
@@ -900,8 +921,9 @@ const MockView = (() => {
     /* 上限只有一份:Store.MAX_ROUNDS(备份合并 mergeRounds 用同一个数,
        此前两处各写一个数字导致 50/100 不一致,长期用会静默丢历史轮次) */
     Store.data.mock.rounds = Store.data.mock.rounds.slice(0, Store.MAX_ROUNDS);
+    markEnded(state.sessionId, 'completed');   /* 终态先于草稿清除落盘:其它页据此拒绝旧草稿 */
     endSession(); /* 会话终结:挂起的防抖回调不得再写回草稿 */
-    Store.save();
+    Store.saveNow();   /* 同步落盘:终态与轮次立即对其它页可见(不留防抖窗口) */
     state.round = round;
     state.sid = sid;
     go('#/mock/done');

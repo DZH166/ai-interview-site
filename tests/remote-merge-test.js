@@ -123,6 +123,85 @@ console.log('== 4b. 变更语义(ST-01):处理条数≠变更,无业务变化不
   ok('真实变更:版本推进', Store.rev > revBefore);
 }
 
+console.log('== 4c. 清空纪元(SP-05):旧快照不得越过清空边界 ==');
+{
+  localStorage.clear(); Store.load();
+  Store.setNote('PY-001', '清空前的笔记'); Store.saveNow();
+  /* 模拟另一页(旧纪元)持有的完整快照 */
+  const staleSnapshot = JSON.parse(localStorage.getItem('aiiv:records'));
+  /* 本页清空:纪元+1,同步落盘 */
+  Store.clearAll();
+  eq('清空后纪元为 1', Store.data.resetEpoch, 1);
+  ok('清空后内存为空', !Store.rec('PY-001').note);
+  /* 旧纪元快照整份合并:必须被拒绝(不得复活) */
+  const r1 = Store.adoptRemoteRecords(JSON.stringify(staleSnapshot));
+  ok('旧纪元快照不复活被清空笔记', !Store.rec('PY-001').note, Store.rec('PY-001').note);
+  ok('旧纪元合并返回 staleEpoch 标记', r1.staleEpoch === true);
+  /* 旧纪元页在清空后新写的记录(_updatedAt > resetTs):正常同步 */
+  const postClear = JSON.parse(JSON.stringify(staleSnapshot));
+  postClear.questions['RG-050'] = { note: '清空后新写', _updatedAt: Store.data.resetTs + 5000 };
+  const r2 = Store.adoptRemoteRecords(JSON.stringify(postClear));
+  eq('清空后新写的记录正常同步', Store.rec('RG-050').note, '清空后新写');
+  ok('清空前的笔记仍不复活', !Store.rec('PY-001').note);
+  /* 更高纪元到达:对方的清空发生在更晚时刻 → 该时刻之前的一切写入(无论哪页写的)都被那次清空抹掉 */
+  Store.setNote('RG-051', '我在清空后新写'); Store.saveNow();
+  const newer = { v: 3, questions: {}, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {}, resetEpoch: 2, resetTs: Date.now() + 20000 };
+  const r3 = Store.adoptRemoteRecords(JSON.stringify(newer));
+  eq('采用更高纪元', Store.data.resetEpoch, 2);
+  eq('更高纪元清空时刻之前的记录被抹掉(RG-050)', Store.rec('RG-050').note, '');
+  eq('更高纪元清空时刻之前的记录被抹掉(RG-051)', Store.rec('RG-051').note, '');
+  /* 新纪元里新写的记录,不会被旧纪元页面的快照冲掉 */
+  Store.setNote('RG-052', '新纪元里新写'); Store.saveNow();
+  Store.adoptRemoteRecords(JSON.stringify(staleSnapshot));
+  eq('新纪元的记录不受旧纪元快照影响', Store.rec('RG-052').note, '新纪元里新写');
+  /* 用户主动恢复备份 = 明确意图:旧数据可以回来,但不把纪元倒回去 */
+  Store.importRecords(JSON.stringify({ type: 'aiiv-records', v: 2, records: staleSnapshot }));
+  eq('主动恢复:纪元不回退', Store.data.resetEpoch, 2);
+  eq('主动恢复:备份内容按用户意图恢复', Store.rec('PY-001').note, '清空前的笔记');
+}
+
+console.log('== 4d. 会话终态(SP-06):终态优先于旧草稿 ==');
+{
+  /* 测试隔离:clearAll 让内存与磁盘真正归零;后续 incoming 携带相同纪元,
+     确保走的是「终态守卫」路径而不是纪元路径(两条路径各有断言) */
+  const resetRecords = () => { localStorage.clear(); Store.load(); Store.clearAll(); };
+  const EP = () => Store.data.resetEpoch;
+  const withEpoch = o => Object.assign({ resetEpoch: EP(), resetTs: Store.data.resetTs }, o);
+
+  resetRecords();
+  const SID = 'ms-1000-abc';
+  Store.data.mock.ended[SID] = { status: 'completed', ts: 2000 }; Store.saveNow();
+  const staleDraft = { config: {}, items: [{ qid: 'PY-001' }], idx: 0, answers: { 'PY-001': { self: '旧草稿回答', revealed: true } }, savedAt: 1500, sessionId: SID };
+  Store.adoptRemoteRecords(JSON.stringify(withEpoch({ v: 3, questions: {}, mock: { rounds: [], draft: staleDraft, ended: {} }, drillAttempts: {}, ui: {} })));
+  ok('终态会话的旧草稿不复活', Store.data.mock.draft === null, JSON.stringify(Store.data.mock.draft));
+
+  resetRecords();
+  Store.data.mock.ended['ms-x'] = { status: 'abandoned', ts: 5000 }; Store.saveNow();
+  Store.adoptRemoteRecords(JSON.stringify(withEpoch({ v: 3, questions: {}, mock: { rounds: [], draft: { config: {}, items: [{ qid: 'PY-001' }], idx: 0, answers: {}, savedAt: 1000, sessionId: 'ms-x' }, ended: {} }, drillAttempts: {}, ui: {} })));
+  ok('abandoned 终态同样拒绝草稿复活', Store.data.mock.draft === null);
+
+  /* 收敛:B 页残留的同会话草稿,在终态合并到达后也被清除(不永远挂着死草稿) */
+  resetRecords();
+  Store.data.mock.draft = { config: {}, items: [{ qid: 'PY-001' }], idx: 0, answers: { 'PY-001': { self: 'B 的残留草稿' } }, savedAt: 1500, sessionId: 'ms-y' };
+  Store.saveNow();
+  Store.adoptRemoteRecords(JSON.stringify(withEpoch({ v: 3, questions: {}, mock: { rounds: [], draft: null, ended: { 'ms-y': { status: 'completed', ts: 2000 } } }, drillAttempts: {}, ui: {} })));
+  ok('终态合并到达后,本页残留的同会话草稿被清除', Store.data.mock.draft === null, JSON.stringify(Store.data.mock.draft));
+
+  resetRecords();
+  Store.adoptRemoteRecords(JSON.stringify(withEpoch({ v: 3, questions: {}, mock: { rounds: [], draft: { config: {}, items: [{ qid: 'PY-001' }], idx: 0, answers: { 'PY-001': { self: '新草稿' } }, savedAt: 1000, sessionId: 'ms-fresh' }, ended: {} }, drillAttempts: {}, ui: {} })));
+  eq('无终态:草稿正常恢复', Store.data.mock.draft && Store.data.mock.draft.answers['PY-001'].self, '新草稿');
+
+  resetRecords();
+  const base = { config: {}, items: [{ qid: 'PY-001' }], idx: 0, answers: {}, sessionId: 'ms-same', ended: {} };
+  const d1 = JSON.parse(JSON.stringify(base)); d1.savedAt = 1000; d1.answers['PY-001'] = { self: '旧' };
+  const d2 = JSON.parse(JSON.stringify(base)); d2.savedAt = 2000; d2.answers['PY-001'] = { self: '新' };
+  Store.data.mock.draft = JSON.parse(JSON.stringify(d1)); Store.saveNow();
+  Store.adoptRemoteRecords(JSON.stringify(withEpoch({ v: 3, questions: {}, mock: { rounds: [], draft: d2, ended: {} }, drillAttempts: {}, ui: {} })));
+  eq('同会话草稿:新者胜', Store.data.mock.draft.answers['PY-001'].self, '新');
+  Store.adoptRemoteRecords(JSON.stringify(withEpoch({ v: 3, questions: {}, mock: { rounds: [], draft: d1, ended: {} }, drillAttempts: {}, ui: {} })));
+  eq('同会话草稿:旧的不覆盖新的(乱序到达安全)', Store.data.mock.draft.answers['PY-001'].self, '新');
+}
+
 console.log('== 5. 存储健康度 ==');
 {
   const kb = Store.recordsSizeKB();
