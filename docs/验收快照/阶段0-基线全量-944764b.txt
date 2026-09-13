@@ -1,0 +1,40 @@
+== 阶段0 基线全套测试(HEAD 944764b, 实跑统计) ==
+
+--- Node ---
+behavior-tests: 结果: 124 通过, 0 失败
+regression-tests: 结果: 15 通过, 0 失败
+srs-test: 结果: 62 通过, 0 失败
+remote-merge-test: 结果: 18 通过, 0 失败
+search-cache-test: 结果: 16 通过, 0 失败
+express-card-test: 结果: 56 通过, 0 失败
+shell-cache-stamp-test: 结果: 13 通过, 0 失败
+learning-records-test: 结果: 8 通过, 0 失败
+project-card-test: 结果: 9 通过, 0 失败
+pi-agent-test: 结果: 7 通过, 0 失败
+ai-series-test: 结果: 5 通过, 0 失败
+--- Python ---
+proj_c_test: 结果: 23 通过, 0 失败
+proj_c_layers_test: 结果: 29 通过, 0 失败
+proj_c_claims_test: OK
+path_exercise_test: 结果: 19 通过, 0 失败
+ai-series-math-test: OK
+proj_a_test: 结果: 8 通过, 0 失败
+lp003_mock_test: 结果: 18 通过, 0 失败
+--- 浏览器(11套件) ---
+ui-repro: 结果: 17 通过, 0 失败
+a11y-360: 结果: 34 通过, 0 失败
+e2e-acceptance: 结果: 46 通过, 0 失败
+project-evidence: 结果: 28 通过, 0 失败
+pi-agent: 结果: 34 通过, 0 失败
+ai-series: 结果: 16 通过, 0 失败
+srs: 结果: 18 通过, 0 失败
+followup: 结果: 12 通过, 0 失败
+multitab: 结果: 8 通过, 0 失败
+search-cache: 结果: 5 通过, 0 失败
+hardening: 结果: 8 通过, 0 失败
+--- 工具链 ---
+警告: 0
+
+共 349 题,n-gram(3) 相似度 ≥ 0.6:无预警
+硬问题 0 条,提醒 141 条
+build ok

@@ -1,0 +1,40 @@
+{
+  "baseline": "944764b0dcc6aa82cbb0c655f73afd3cd63d1dda",
+  "review_baseline": "d264959142a74bc6de37a06c9321723860819291",
+  "date": "2026-09-14",
+  "purpose": "阶段0:记录可靠性与练习闭环——问题复现与全套测试实测",
+  "existing_tests": {
+    "node": { "suites": 11, "passed": 333, "failed": 0 },
+    "python": { "suites": 7, "passed": 109, "failed": 0, "note": "proj_c_claims_test与ai-series-math_test以OK结尾,按审查报告口径计7项" },
+    "browser": { "suites": 11, "passed": 226, "failed": 0 },
+    "total": 668
+  },
+  "tools": {
+    "validate_bank": "349题,0错0警",
+    "dedup_check": "无预警",
+    "content_audit": "硬问题0,提醒141",
+    "fusion_pi_check": "两个适配器--check通过",
+    "build": "可复现"
+  },
+  "issue_repro": {
+    "runner": "tests/baseline/issues-node-test.js + tests/baseline/issues-browser-test.js(不进CI)",
+    "environment": "隔离Chromium上下文/独立端口;Node vm桩;未触碰真实学习数据",
+    "results": {
+      "ST-01": { "status": "reproduced", "evidence": "静置3秒再测1.5秒:A/B写盘、App.route、toast计数全部增长;跨页更新抢走聚焦中的笔记框焦点", "baseline_assertions_failed": ["ST-01a","ST-01b","ST-01c","ST-01d","ST-01e","ST-01f"] },
+      "ST-02": { "status": "reproduced", "evidence": "A停留AG-001学习页未编辑,B保存新笔记,1.4秒后A内存、B内存、磁盘、DOM全部退回旧笔记", "baseline_assertions_failed": ["ST-02a","ST-02b","ST-02c","ST-02d"] },
+      "SP-01": { "status": "reproduced", "evidence": "撤销srs后恢复旧备份,三个入口(importRecords/importFull/adoptRemoteRecords)全部复活排期;跨页合并路径连续合并时lapses累加(比报告更严重)", "baseline_assertions_failed": ["SP-01a","SP-01b","SP-01c"], "control_passed": ["SP-01d全新环境导入正常恢复"] },
+      "SP-02": { "status": "reproduced", "evidence": "响应替换(阻断SW后)互换AG-001追问顺序并刷新,旧回答显示在另一道追问下", "baseline_assertions_failed": ["SP-02a"] },
+      "SP-03": { "status": "reproduced", "evidence": "主回答留空、追问有真实文本,buildFromRound返回『这一轮你没有写下任何回答』;仅揭示与纯空格仍拒绝(应保持)", "baseline_assertions_failed": ["SP-03a"], "control_passed": ["SP-03c","SP-03d"] },
+      "SP-04": { "status": "reproduced", "evidence": "due=now+23h与now+1ms时isDue=false但dueLabel返回已到期;due=now与过去仍正确", "baseline_assertions_failed": ["SP-04b","SP-04c"], "control_passed": ["SP-04a","SP-04d","SP-04e","SP-04f","SP-04g"] },
+      "SP-05": { "status": "reproduced", "evidence": "A清空后(同步内存为空),B随后一次写入使A内存复活被清空笔记;磁盘状态受ST-01循环污染,复活路径与报告一致", "baseline_assertions_failed": ["SP-05a"] },
+      "SP-06": { "status": "reproduced", "evidence": "A完成单题定向练习(同步断言:草稿空/历史1轮)后,B一次写入使A内存与磁盘复活旧草稿", "baseline_assertions_failed": ["SP-06a","SP-06b"] }
+    },
+    "snapshot": "docs/验收快照/阶段0-问题复现-944764b.txt",
+    "full_baseline_log": "docs/验收快照/阶段0-基线全量-944764b.txt"
+  },
+  "notes": [
+    "SP-05/SP-06的前置断言必须同步执行:ST-01的循环会在静置窗口内污染异步前置检查(这本身是缺陷的一部分)",
+    "SP-02复现需阻断Service Worker:SW内fetch不经过页面级路由,响应替换必须serviceWorkers:'block'",
+    "本轮未修改任何真实题库;SP-02用响应替换模拟内容升级"
+  ]
+}
