@@ -64,13 +64,44 @@ HEDGE = re.compile(r"(约|大约|通常|往往|一般|常见|量级|示意|概�
                    r"不等|取决于|可能|最多|至少|上下|左右|数量级)")
 FIRST_HAND = ("paper", "official", "official-docs", "official-blog", "repo", "benchmark")
 
+# 围栏代码块若以这些词开栏(或其前一行),块内数字是演算/看板示意——
+# 题面本就声明了「示例」,把演示数据当权威断言去追出处是检查器误报。
+FENCE_FRAME = re.compile(r"示例|演示|示意|算一笔账|看板|推演|对比报告|账本|账单")
+
+
+def framed_fence_spans(text):
+    """返回 [(start, end, framed)]:每个围栏代码块的字符区间与是否带示例框架。"""
+    text = str(text or "")
+    spans, in_fence, start, framed = [], False, 0, False
+    lines = text.split("\n")
+    pos = 0
+    for i, ln in enumerate(lines):
+        s = ln.strip()
+        if not in_fence and s.startswith("```"):
+            in_fence, start = True, pos
+            opener = lines[i - 1] if i else ""
+            framed = bool(FENCE_FRAME.search(opener) or FENCE_FRAME.search(ln))
+        elif in_fence and s.startswith("```"):
+            in_fence = False
+            spans.append((start, pos + len(ln), framed))
+        pos += len(ln) + 1
+    if in_fence:
+        spans.append((start, pos, framed))
+    return spans
+
 
 def numeric_claims(text):
-    """返回 (硬断言数, 命中样例)"""
+    """返回 (硬断言数, 命中样例)。
+    豁免两类:① ±40 字符内带缓冲词(约/常见/量级/示意…);② 标注为示例/演示的
+    围栏代码块内的数字(演算看板,题面已声明是演示)。未标注框架的围栏仍照常计数。"""
+    text = str(text or "")
+    spans = framed_fence_spans(text)
     hard, hits = 0, []
-    for m in NUM_CLAIM.finditer(str(text or "")):
-        ctx = str(text)[max(0, m.start() - 40): m.end() + 40]
+    for m in NUM_CLAIM.finditer(text):
+        ctx = text[max(0, m.start() - 40): m.end() + 40]
         if HEDGE.search(ctx):
+            continue
+        if any(s <= m.start() <= e and framed for (s, e, framed) in spans):
             continue
         hard += 1
         if len(hits) < 3:
@@ -198,8 +229,25 @@ def selftest():
     if sum(map(len, content_texts(sample).values())) != 8 or MIN_TOTAL != 800:
         print('自检失败:可见正文统计错误或长度门槛被改变')
         return False
-    print("审计器自检通过:%d 个真占位符全部命中,%d 个正常写法全部豁免"
-          % (len(should_hit), len(should_miss)))
+    # 数字断言规则的反向对照:正文硬断言命中;缓冲词/示例围栏豁免;未标注围栏照常命中
+    num_hit = ["通过率提升了 15%", "成本是原来的 3 倍"]
+    num_miss = ["采样率常见在 10~50% 之间",
+                "看板(示例):\n```\n通过率 91%\n```\n",
+                "发布验证采样约 20~50% 流量"]
+    bad_num = [t for t in num_hit if numeric_claims(t)[0] < 1]
+    if bad_num:
+        print("自检失败:认不出正文硬数字断言 %r" % bad_num)
+        return False
+    wrong_num = [t for t in num_miss if numeric_claims(t)[0] != 0]
+    if wrong_num:
+        print("自检失败:缓冲措辞或示例围栏未被豁免 %r" % wrong_num)
+        return False
+    if numeric_claims("报告:\n```\n通过率 91%\n```\n")[0] != 1:
+        print("自检失败:未标注示例框架的围栏没有被计数(豁免过宽)")
+        return False
+    print("审计器自检通过:%d 个真占位符全部命中,%d 个正常写法全部豁免,"
+          "数字断言 %d 命中 / %d 豁免 / 未标注围栏照常计数"
+          % (len(should_hit), len(should_miss), len(num_hit), len(num_miss)))
     return True
 
 
