@@ -78,7 +78,8 @@ const ExpressCard = (() => {
     const items = [];
     (round.items || []).forEach(it => {
       const qid = it.qid || it.id;
-      const q = lookup ? lookup(qid) : null;
+      const current = lookup ? lookup(qid) : null;
+      const q = it.questionSnapshot || current;
       items.push({
         qid: qid,
         title: (q && q.title) || it.title || qid,
@@ -97,7 +98,9 @@ const ExpressCard = (() => {
           .filter(f => f && typeof f.q === 'string' && ((f.self || '').trim() || f.revealed))
           .map(f => ({ id: f.id || '', q: f.q, self: String(f.self || ''), revealed: !!f.revealed, legacy: !!f.legacy })),
         qRev: String(it.qRev || ''),
-        currentRev: (q && q.content_version && q.content_version.rev) || '',
+        currentRev: (current && current.content_version && current.content_version.rev) || '',
+        hasSnapshot: !!it.questionSnapshot,
+        snapshotCapturedLate: !!it.snapshotCapturedLate,
         revealed: !!it.revealed,
         /* 参考要点只在题目存在时给出;题目缺失就如实留白,不编 */
         answer: q ? String(q.answer || '') : '',
@@ -153,7 +156,7 @@ const ExpressCard = (() => {
     L.push('- 共 ' + model.items.length + ' 题');
     const weak = model.items.filter(i => i.status === 'weak').length;
     if (weak) L.push('- 其中标记「还不熟」' + weak + ' 题');
-    const answered = model.items.filter(i => i.self.trim()).length;
+    const answered = model.items.filter(itemAnswered).length;
     L.push('- 我写了' + word + '的:' + answered + ' 题');
     L.push('');
     L.push('> 本文件由「面试加油工作台」生成,内容来自我本机浏览器的学习记录。');
@@ -197,8 +200,9 @@ const ExpressCard = (() => {
         L.push(quote(clip(it.answer, MAX_SELF)));
         L.push('');
       }
+      if (it.snapshotCapturedLate) L.push('_旧草稿未记录原参考版本；当前快照为恢复时补录，待核对。_', '');
       if (it.qRev && it.currentRev && it.qRev !== it.currentRev) {
-        L.push('_注:作答后题目内容有更新(' + oneLine(it.qRev, 40) + ' → ' + oneLine(it.currentRev, 40) + '),下方参考要点为当前版本。_');
+        L.push('_注:作答后题目内容有更新(' + oneLine(it.qRev, 40) + ' → ' + oneLine(it.currentRev, 40) + '),下方参考要点为' + (it.hasSnapshot ? '保存的快照' : '当前版本，旧参考未记录') + '。_');
         L.push('');
       }
       if (it.fusion_notes) L.push('### 场景与边界补充', '', quote(clip(it.fusion_notes, MAX_SELF)), '');
@@ -238,10 +242,11 @@ const ExpressCard = (() => {
       ${(!it.self.trim() && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
       ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}
       ${it.answer ? '<h3>参考要点</h3><pre>' + esc(clip(it.answer, MAX_SELF)) + '</pre>' : ''}
-      ${(it.qRev && it.currentRev && it.qRev !== it.currentRev) ? '<p class="empty">注:作答后题目内容有更新(' + esc(it.qRev) + ' → ' + esc(it.currentRev) + '),下方参考要点为当前版本。</p>' : ''}
+      ${it.snapshotCapturedLate ? '<p class="empty">旧草稿未记录原参考版本；当前快照为恢复时补录，待核对。</p>' : ''}
+      ${(it.qRev && it.currentRev && it.qRev !== it.currentRev) ? '<p class="empty">注:作答后题目内容有更新(' + esc(it.qRev) + ' → ' + esc(it.currentRev) + '),下方参考要点为' + (it.hasSnapshot ? '保存的快照' : '当前版本，旧参考未记录') + '。</p>' : ''}
       ${it.fusion_notes ? '<h3>场景与边界补充</h3><pre>' + esc(clip(it.fusion_notes, MAX_SELF)) + '</pre>' : ''}
       ${(it.followups && it.followups.length) ? '<h3>追问练习(面试官会往下挖的点)</h3>' + it.followups.map((f, j) =>
-        '<div class="fu"><p class="fu-t"><b>追问 ' + (j + 1) + ':</b>' + esc(oneLine(f.q, 150)) + '</p>'
+        '<div class="fu"><p class="fu-t"><b>追问 ' + (j + 1) + ':</b>' + esc(oneLine(f.q, 150)) + (f.legacy ? '（旧版草稿，题面未记录，待核对）' : '') + '</p>'
         + (f.self.trim() ? '<pre class="self">' + esc(clip(f.self, MAX_SELF)) + '</pre>' : '<p class="empty">(对照过参考要点,当时没有写下回答)</p>')
         + '</div>').join('') : ''}
       ${it.pitfalls.length ? '<h3>常见误区</h3><ul>' + it.pitfalls.map(p => '<li>' + esc(oneLine(p, 240)) + '</li>').join('') + '</ul>' : ''}
@@ -342,14 +347,8 @@ const ExpressCard = (() => {
     return finish(model, 'md');
   }
 
-  /* ---- Anki 导入用 CSV(与待攻克清单同一数据源) ----
-     契约(按官方 text-files 手册的文件头能力,不夸大):
-       - 需要先在 Anki 建一个名为「面试加油工作台」的笔记类型,3 个字段:题号 / 正面 / 背面;
-       - #notetype / #deck / #guid column 是 Anki 2.1.55+ 支持的文件头;
-       - 第 2 列 GUID = 站内题号(自定义稳定键,经 Anki 的 guid 列映射实现「同题号二次导入
-         按更新合并」——它不是 Anki 自动生成的内部 GUID,这一点在导入指南里明说);
-       - 正面=题干(题号不会成为唯一正面);背面=直接答案 + 面试表达 + 常见误区;
-       - 内容先 HTML 转义再换 <br>(#html:true),引号按 CSV 规范双写。 */
+  /* Anki uses the first field as the application-owned stable key.
+     A matching three-field note type and explicit card templates are documented in ANKI_GUIDE. */
   function csvField(s) {
     return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
   }
@@ -365,8 +364,7 @@ const ExpressCard = (() => {
       '#html:true',
       '#notetype:' + ANKI_NOTETYPE,
       '#deck:面试加油工作台',
-      '#columns:题号,GUID,正面,背面',
-      '#guid column:2'
+      '#columns:题号,正面,背面'
     ];
     items.forEach(it => {
       const front = '<b>' + toHtmlSafe(oneLine(it.title, 200)) + '</b>'
@@ -375,7 +373,7 @@ const ExpressCard = (() => {
       if (it.answer) backParts.push('<b>直接答案</b><br>' + toHtmlSafe(it.answer));
       if (it.interview) backParts.push('<b>面试表达</b><br>' + toHtmlSafe(it.interview));
       if (it.pitfalls.length) backParts.push('<b>常见误区</b><br>' + it.pitfalls.map(p => '· ' + toHtmlSafe(oneLine(p, 240))).join('<br>'));
-      rows.push([csvField(it.qid), csvField(it.qid), csvField(front), csvField(backParts.join('<br><br>'))].join(','));
+      rows.push([csvField(it.qid), csvField(front), csvField(backParts.join('<br><br>'))].join(','));
     });
     return { ok: true, count: items.length,
       csv: rows.join('\n'), name: fileName('待攻克清单-Anki', Date.now(), 'csv') };

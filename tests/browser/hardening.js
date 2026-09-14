@@ -45,7 +45,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
         await page.waitForFunction(() => document.querySelector('.modal'));
         check('契约 modal 含字段映射与更新说明',
           (await page.evaluate(() => document.querySelector('.modal-body').textContent))
-            .includes('按更新合并'));
+            .includes('首字段题号匹配'));
         await page.locator('.modal .btn-primary').click();
       })()
     ]);
@@ -53,12 +53,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const tmp = path.join(require('os').tmpdir(), download.suggestedFilename());
     await download.saveAs(tmp);
     const csv = fs.readFileSync(tmp, 'utf8');
-    check('CSV 含指令头(含 guid 更新映射)与两道题',
-      csv.includes('#separator:Comma') && csv.includes('#guid column:2')
-      && csv.includes('"PY-001","PY-001"') && csv.includes('"RG-001","RG-001"'), csv.slice(0, 160));
+    check('CSV 含指令头(首字段更新映射)与两道题',
+      csv.includes('#separator:Comma') && !csv.includes('#guid') && csv.includes('#columns:题号,正面,背面')
+      && csv.includes('"PY-001","<b>') && csv.includes('"RG-001","<b>'), csv.slice(0, 160));
 
     /* 内联 SW 注册脚本移除后,app.js 的注册逻辑仍要在 https/localhost 生效 */
-    check('SW 注册代码已移入 app.js', fs.readFileSync(path.join(ROOT, 'app/js/app.js'), 'utf8').includes('serviceWorker.register'));
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.reload();
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+    await context.setOffline(true);
+    await page.goto(BASE + '/index.html#/study/LC-003');
+    await page.waitForFunction(() => typeof Data !== 'undefined' && document.querySelector('[data-question-prompt="LC-003"]'));
+    check('SW 实际控制页面并在断网后加载题库与学习页', await page.evaluate(() => Data.allQuestions().length === 349 && typeof SRS !== 'undefined'));
+    await context.setOffline(false);
     check('index.html 不再含内联脚本', !fs.readFileSync(path.join(ROOT, 'app/index.html'), 'utf8').match(/<script>(?!\s*<\/)/));
 
     check('全程无 CSP 违规', cspViolations.length === 0, cspViolations.join(' | '));

@@ -392,7 +392,7 @@ const ReviewView = (() => {
             ${items.map((it, i) => {              const q = Data.question(it.qid);
               const st = it.mark ? (Store.STATUS.find(s => s.id === it.mark) || { label: it.mark }) : null;
               return `
-                <div class="round-item">
+                <div class="round-item" data-qid="${esc(it.qid)}">
                   <div class="round-head">
                     <a class="qid" href="#/study/${esc(it.qid)}">${i + 1}. ${esc(it.qid)}</a>
                     ${st ? QRender.badge(st.label, 'st-' + it.mark) : '<span class="muted">未复盘</span>'}
@@ -400,6 +400,7 @@ const ReviewView = (() => {
                   </div>
                   <div class="round-title">${esc(it.title || (q ? q.title : it.qid))}</div>
                   ${it.self ? `<div class="round-self"><b>我的回答:</b>${esc(it.self)}</div>` : '<div class="round-self muted">(未作答)</div>'}
+                  ${(it.followups || []).map((f, index) => `<div class="round-self saved-followup" data-followup-id="${esc(f.id || 'legacy-' + index)}"><b>追问:${esc(f.q || '(题面未记录)')}</b>${f.legacy ? '<span class="badge vf-todo">待核对</span>' : ''}<p>${esc(f.self || '(未作答)')}</p></div>`).join('')}
                 </div>`;
             }).join('')}
           </div>
@@ -411,13 +412,16 @@ const ReviewView = (() => {
     }));
     /* 深链定位:展开并闪烁目标轮次 */
     if (dq && dq.r) {
-      const target = box.querySelector(`details[data-round-id="${dq.r}"]`);
+      const target = box.querySelector(`details[data-round-id="${CSS.escape(dq.r)}"]`);
       if (target) {
         target.open = true;
         setTimeout(() => {
-          target.scrollIntoView({ block: 'start', behavior: 'instant' });
-          target.classList.add('flash');
-          setTimeout(() => target.classList.remove('flash'), 1600);
+          const question = dq.q && target.querySelector(`[data-qid="${CSS.escape(dq.q)}"]`);
+          const answer = question && dq.f && question.querySelector(`[data-followup-id="${CSS.escape(dq.f)}"]`);
+          const focus = answer || question || target;
+          focus.scrollIntoView({ block: 'start', behavior: 'instant' });
+          focus.classList.add('flash');
+          setTimeout(() => focus.classList.remove('flash'), 1600);
         }, 60);
       }
     }
@@ -629,7 +633,7 @@ const MaintainView = (() => {
       modal('确认清空全部记录?','<p>不可恢复,建议先导出备份。导入的题库与资料不受影响。</p>',[
         {label:'取消'},
         {label:'确认清空',danger:true,onClick:()=>{
-          Store.clearAll();
+          if (!Store.clearAll()) return false;
           window.rebuildIndex();   /* 让检索索引随清空立即失效,搜索不再返回已删数据 */
           toast('已清空');
           App.route();

@@ -308,6 +308,7 @@ const StudyView = (() => {
     if (!ta || !currentQid || qid !== currentQid) return;
     /* 只有用户真正编辑过(dirty)的输入才可提交:
        远端合并后的过时 DOM 值不是用户输入,写回会覆盖另一页已保存的新笔记(ST-02)。 */
+    if (remoteNotePending !== null) { Store.saveNoteDraft(qid, ta.value); return; }
     if (ta.dataset.dirty === '1' && (Store.rec(qid).note || '') !== ta.value) {
       Store.setNote(qid, ta.value);
       Store.saveNow();
@@ -317,15 +318,7 @@ const StudyView = (() => {
   /* pagehide/路由离开兜底:只提交 dirty 的输入。
      每次击键已同步进内存;非 dirty 的过时 DOM 值一律不写回——
      「值不相等」不再被当成用户编辑(远端合并也会造成不相等)。 */
-  function flushNote() {
-    const ta = $('#note-area');
-    if (!ta || !currentQid) return;
-    if (ta.dataset.dirty === '1' && (Store.rec(currentQid).note || '') !== ta.value) {
-      Store.setNote(currentQid, ta.value);
-      Store.saveNow();
-      window.rebuildIndex();
-    }
-  }
+  function flushNote() { if (currentQid) captureNote(currentQid); }
 
   /* ---- 远端合并后的定向更新(ST-01f/ST-02) ----
      只处理当前题;未编辑的笔记框就地更新(焦点/选区/滚动/展开状态不动);
@@ -336,13 +329,19 @@ const StudyView = (() => {
     const r = Store.rec(currentQid);
     const ta = $('#note-area');
     if (ta) {
+      if ((changes.sections || []).includes('reset')) {
+        ta.value = r.note || ''; ta.dataset.dirty = '0';
+        clearRemoteNotice();
+      }
       const dirty = ta.dataset.dirty === '1';
       const remoteNote = r.note || '';
       if (!dirty) {
         if (ta.value !== remoteNote) { ta.value = remoteNote; ta.dataset.dirty = '0'; }
         clearRemoteNotice();
       } else if (ta.value !== remoteNote) {
+        const newCanonicalConflict = remoteNotePending !== remoteNote;
         remoteNotePending = remoteNote;
+        if (newCanonicalConflict) Store.saveNoteDraft(currentQid, ta.value);
         showRemoteNoteNotice();
       }
     }
@@ -374,16 +373,18 @@ const StudyView = (() => {
         modal('对方保存的笔记版本', '<pre class="code">' + esc(remoteNotePending || '') + '</pre>', [{ label: '关闭' }]);
       });
       $('#rn-mine', box).addEventListener('click', () => {
-        /* 保留我的:textarea 保持 dirty,后续 flush 会提交本地版本 */
-        box.remove();
+        Store.setNote(currentQid, ta.value);
+        if (!Store.saveNoteDraft(currentQid, ta.value, true)) return;
+        clearRemoteNotice();
+        ta.dataset.dirty = '0';
       });
       $('#rn-theirs', box).addEventListener('click', () => {
         ta.value = remoteNotePending || '';
         ta.dataset.dirty = '0';
         Store.setNote(currentQid, ta.value);
-        Store.saveNow();
-        box.remove();
-        toast('已采用对方版本;你的旧输入仍可在对方版本覆盖前于本页导出前找回');
+        if (!Store.saveNoteDraft(currentQid, ta.value, true)) return;
+        clearRemoteNotice();
+        toast('已采用对方版本');
       });
     }
   }
@@ -436,6 +437,7 @@ const StudyView = (() => {
     const q = Data.question(qid);
     if (!q) { root.innerHTML = '<div class="empty">未找到题目:' + esc(qid) + '</div>'; return; }
     currentQid = qid;
+    remoteNotePending = null;
     Store.markViewed(qid);
     const nb = NavCtx.neighbors(qid);
     /* 内容修订提醒:实质修订过且你还没确认过新版 → 提示;旧笔记/记录保留,由你决定 */
@@ -487,9 +489,23 @@ const StudyView = (() => {
           </div>
           <label class="note-label" style="margin-top:8px">我的笔记(参与全文搜索)</label>
           <textarea id="note-area" data-dirty="0" placeholder="写下你的理解、易错点或自己的例子……">${esc(Store.rec(qid).note || '')}</textarea>
+          ${Store.rec(qid).noteDraft ? '<button class="btn btn-small" id="note-versions">查看保留的输入副本</button>' : ''}
         </div>
       </div>`;
     wire(root, qid);
+    const versionsButton = $('#note-versions', root);
+    if (versionsButton) versionsButton.addEventListener('click', () => {
+      const draft = Store.rec(qid).noteDraft || {};
+      const versions = Object.values(draft.versions || { current: { text: draft.text || '' } });
+      modal('保留的冲突输入副本', versions.map(v => '<pre>' + esc(v.text) + '</pre>').join(''), [{ label: '关闭' }]);
+    });
+    const pending = Store.rec(qid).noteDraft;
+    if (pending && !pending.resolved) {
+      const ta = $('#note-area');
+      ta.value = pending.text; ta.dataset.dirty = '1';
+      remoteNotePending = Store.rec(qid).note || '';
+      showRemoteNoteNotice();
+    }
     $$('[data-reason]', root).forEach(cb => {
       cb.addEventListener('change', () => {
         const r = Store.rec(qid);
@@ -539,7 +555,8 @@ const StudyView = (() => {
     /* 每次击键同步进内存学习状态(Store),磁盘写入防抖(250ms);
        这样任何后续重渲染读 Store 都是最新值,不会拿旧记录覆盖文本框。 */
     note.addEventListener('input', () => {
-      note.dataset.dirty = '1';   /* 用户真实编辑标记:远端合并的过时 DOM 不会带这个标记 */
+      note.dataset.dirty = '1';
+      if (remoteNotePending !== null) { Store.saveNoteDraft(qid, note.value); return; }
       const r = Store.rec(qid);
       if (r.note !== note.value) { r.note = note.value; r._updatedAt = Date.now(); Store.save(); }
     });
@@ -599,15 +616,49 @@ const MockView = (() => {
   function newSessionId() { return 'ms-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8); }
 
   function draftLoad() { return (Store.data.mock && Store.data.mock.draft) || null; }
+  function activeSession() {
+    if (!state || state.ended) return false;
+    const result = Store.refreshFromDisk();
+    if (!result.ok) { toast('读取最新会话失败:' + result.error, 'err'); return false; }
+    const reset = [Store.data.resetEpoch || 0, Store.data.resetTs || 0].join('|');
+    if (!state.resetVersion) state.resetVersion = reset;
+    if (Store.data.mock.ended[state.sessionId] || state.resetVersion !== reset) {
+      state.ended = true;
+      const host = document.querySelector('.mock-run');
+      if (host) {
+        host.querySelectorAll('textarea, button').forEach(el => { el.disabled = true; });
+        const notice = document.createElement('p'); notice.className = 'notice';
+        notice.textContent = '此会话已在另一页结束或记录已清空，当前输入未作为新练习保存。请返回自测页开始新会话。';
+        host.prepend(notice);
+      }
+      return false;
+    }
+    return true;
+  }
+  function applyRemote() { if (state && !state.ended) activeSession(); }
+  function questionForSession(qid) {
+    const ans = state.answers[qid] || (state.answers[qid] = { self: '', revealed: false, mark: '' });
+    if (!ans.questionSnapshot) {
+      const current = Data.question(qid);
+      if (!current) return null;
+      ans.snapshotCapturedLate = !!(ans.self || ans.revealed || Object.keys(ans.fu || {}).length);
+      ans.questionSnapshot = JSON.parse(JSON.stringify(Object.fromEntries(
+        ['id','title','topic','type','difficulty','tags','prompt','answer','plain','interview','pitfalls','fusion_notes','followups','content_version']
+          .filter(k => current[k] !== undefined).map(k => [k, current[k]]))));
+      ans.qRev = ans.qRev || (current.content_version && current.content_version.rev) || '';
+    }
+    return ans.questionSnapshot;
+  }
+
   function draftSave() {
-    if (!state || state.ended) return; /* 会话已终结:任何残留回调不得再写 */
+    if (!activeSession()) return false;
     Store.data.mock.draft = {
       config: state.config, items: state.items, idx: state.idx,
       answers: state.answers, directed: !!state.directed,
       label: state.label || '', savedAt: Date.now(),
       sessionId: state.sessionId
     };
-    Store.saveNow(); /* 同步写,刷新/关闭不丢草稿 */
+    return Store.saveNow(); /* 失败时保留编辑态供重试 */
   }
   /* 会话终结登记:completed(有轮次)/abandoned(放弃)——终态优先于旧草稿 */
   function markEnded(sessionId, status) {
@@ -656,7 +707,7 @@ const MockView = (() => {
   function captureInput() {
     const ta = $('#m-self');
     if (!ta || !state || state.ended) return;
-    const q = Data.question(state.items[state.idx].qid || state.items[state.idx].id);
+    const q = questionForSession(state.items[state.idx].qid || state.items[state.idx].id);
     if (!q) return;
     const ans = state.answers[q.id] || {};
     if ((ans.self || '') !== ta.value) {
@@ -849,7 +900,7 @@ const MockView = (() => {
   }
 
   function renderRun(root) {
-    const q = Data.question(state.items[state.idx].qid || state.items[state.idx].id);
+    const q = questionForSession(state.items[state.idx].qid || state.items[state.idx].id);
     if (!q) { toast('题目不存在,跳过', 'err'); state.idx++; if (state.idx >= state.items.length) finish(root); else renderRun(root); return; }
     const qid = q.id;
     const ans = state.answers[qid] || { self: '', revealed: false, mark: '' };
@@ -903,7 +954,6 @@ const MockView = (() => {
     if (revealBtn) revealBtn.addEventListener('click', () => {
       captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { revealed: true, self: selfBox.value });
-      Store.markPracticed(qid, 'mock');
       draftSave();
       renderRun(root);
     });
@@ -925,7 +975,7 @@ const MockView = (() => {
     $$('[data-fu-reveal]', root).forEach(b => b.addEventListener('click', () => {
       captureInput();
       const id = b.dataset.fuReveal;
-      const f = (Data.question(qid).followups || []).find(x => fuId(qid, x.q) === id);
+      const f = (questionForSession(qid).followups || []).find(x => fuId(qid, x.q) === id);
       state.answers[qid] = state.answers[qid] || {};
       state.answers[qid].fu = state.answers[qid].fu || {};
       const cur = state.answers[qid].fu[id] || { id, q: f ? f.q : '' };
@@ -941,10 +991,14 @@ const MockView = (() => {
       /* 复盘标记是真实的练习信号,但信号以「本轮内最后一次不同的选择」为准:
          同一轮重复点击同一按钮不重复排期(否则间隔被连续推大,一次点击变成 N 次练习);
          更改自评(如 ok→weak)= 以新信号重新排期,替换上一信号的排期结果。 */
-      state.answers[qid].qRev = q.content_version ? q.content_version.rev : '';
       const last = state.answers[qid].scheduledMark || '';
       if (b.dataset.mark !== last) {
-        Store.setStatus(qid, b.dataset.mark, { reschedule: true });
+        const answer = state.answers[qid];
+        if (!Object.hasOwn(answer, 'srsBase')) {
+          answer.srsBase = Store.rec(qid).srs ? JSON.parse(JSON.stringify(Store.rec(qid).srs)) : null;
+          answer.srsAt = Date.now();
+        }
+        Store.setStatus(qid, b.dataset.mark, { reschedule: true, base: answer.srsBase, at: answer.srsAt });
         state.answers[qid].scheduledMark = b.dataset.mark;
       } else {
         Store.setStatus(qid, b.dataset.mark);   /* 同一信号重复点击:状态幂等,不再排期 */
@@ -964,7 +1018,10 @@ const MockView = (() => {
 
   function finish(root) {
     captureInput(); /* 同步捕获当前输入,快速结束时最后一个回答不丢 */
+    if (!activeSession()) return;
     const sid = state.sid;
+    const previousMock = JSON.parse(JSON.stringify(Store.data.mock));
+    const previousQuestions = JSON.parse(JSON.stringify(Store.data.questions));
     /* 统一资格定义:真实作答 = 主回答或追问有非空文本(与表达卡同一判定) */
     const answered = state.items.filter(q => {
       const a = state.answers[q.qid || q.id] || {};
@@ -979,17 +1036,17 @@ const MockView = (() => {
       items: state.items.map(q => {
         const id = q.qid || q.id;
         const a = state.answers[id] || {};
-        const question = Data.question(id);
+        const question = questionForSession(id);
         /* 追问二跳的记录:只保留真实写过的(有回答或已对照),没碰过的不占位 */
         /* 追问按 ID 收集(含旧格式迁移的待核对条目),带作答时题面快照;
            题目当前不在题库也照常收集(历史真实发生过) */
         const fuObj = a.fu || {};
         const followups = Object.keys(fuObj).map(k => {
           const e = fuObj[k] || {};
-          return { id: e.id || k, q: e.q || '', self: e.self || '', revealed: !!e.revealed };
+          return { id: e.id || k, q: e.q || '', self: e.self || '', revealed: !!e.revealed, legacy: !!e.legacy || /^\d+$/.test(k) };
         }).filter(x => x.self.trim() || x.revealed);
-        const qRev = question && question.content_version ? question.content_version.rev : '';
-        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev, followups };
+        const qRev = a.qRev || '';
+        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev, questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
       })
     };
     Store.data.mock.rounds.unshift(round);
@@ -998,8 +1055,15 @@ const MockView = (() => {
     Store.data.mock.rounds = Store.data.mock.rounds.slice(0, Store.MAX_ROUNDS);
     if (!round.id) round.id = Store.roundId(round);   /* 落盘即有稳定 ID:搜索深链/去重都依赖 */
     markEnded(state.sessionId, 'completed');   /* 终态先于草稿清除落盘:其它页据此拒绝旧草稿 */
-    endSession(); /* 会话终结:挂起的防抖回调不得再写回草稿 */
-    Store.saveNow();   /* 同步落盘:终态与轮次立即对其它页可见(不留防抖窗口) */
+    Store.data.mock.draft = null;
+    round.items.filter(ExpressCard.itemAnswered).forEach(it => Store.markPracticed(it.qid, 'mock'));
+    if (!Store.saveNow()) {
+      Store.data.mock = previousMock;
+      Store.data.questions = previousQuestions;
+      toast('本轮未完成保存，回答仍保留，请恢复存储后再次点击完成。', 'err');
+      return;
+    }
+    state.ended = true;
     state.round = round;
     state.sid = sid;
     go('#/mock/done');
@@ -1044,5 +1108,5 @@ const MockView = (() => {
     $('#m-card').addEventListener('click', () => exportExpressCard('round', 0));
   }
 
-  return { render, startDirected, flushDraft };
+  return { render, startDirected, flushDraft, applyRemote };
 })();

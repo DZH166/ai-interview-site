@@ -22,7 +22,7 @@ async function open(page, hash) {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(BASE + '/index.html')).ok) { ready = true; break; } } catch (_) {} await sleep(100); }
     assert(ready);
     browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME && process.env.CHROME !== 'default' ? process.env.CHROME : undefined });
-    const context = await browser.newContext({ viewport: { width: 1200, height: 850 } });
+    const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1200, height: 850 } });
     const page = await context.newPage(), errors = [];
     page.on('pageerror', e => errors.push(e.message));
 
@@ -112,13 +112,10 @@ async function open(page, hash) {
         const el = document.querySelector(`[data-fu-id="${id0}"]`);
         return { ok: !!(el && el.value === '绑定在原题面的回答'), hasEl: !!el, val: el && el.value, qid, id0, fuKeys: Object.keys(Store.data.mock.draft.answers[qid].fu || {}) };
       }).then(r => { if (!r.ok) console.log('  DEBUG', JSON.stringify(r)); return r.ok; }));
-    /* 模拟重排:交换题库里该题前两条追问,再刷新(不发请求,直接改内存数据源并重载视图) */
-    await page.evaluate(() => {
-      const qid = Store.data.mock.draft.items[Store.data.mock.draft.idx].qid;
-      const f = Data.question(qid).followups;
-      const t = f[0]; f[0] = f[1]; f[1] = t;
-      window.__swapped = true;
-    });
+    /* Simulate a real publication: the replacement must survive reload. */
+    await page.route('**/data.js', route => route.fulfill({ status: 200, contentType: 'application/javascript',
+      body: require('fs').readFileSync(path.join(ROOT, 'app/data.js'), 'utf8') +
+        '\nwindow.APP_DATA.questions.find(q => q.id === ' + JSON.stringify(firstQid) + ').followups.reverse();' }));
     await page.reload();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
     check('重排后:回答仍显示在原题面下(身份跟内容走,不跟位置走)',
@@ -145,6 +142,8 @@ async function open(page, hash) {
         return !!legacyBox && legacyBox.textContent.includes('旧回答原文') && legacyBox.textContent.includes('待核对')
           && ![...document.querySelectorAll('#mock-fu-list [data-fu-id]')].some(el => el.value === '旧回答原文');
       }));
+
+    await page.unroute('**/data.js');
 
     /* ---- 统一资格:只写追问也能完成并导出;完成页与首页同一口径(SP-03) ---- */
     await page.goto(BASE + '/__seed__');

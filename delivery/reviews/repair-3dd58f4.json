@@ -1,0 +1,215 @@
+{
+  "reviewed_commit": "3dd58f4bab363018432f42999b0554ef4ef089fa",
+  "review_baseline": "944764b0dcc6aa82cbb0c655f73afd3cd63d1dda",
+  "date": "2026-09-14",
+  "node": 392,
+  "python": 109,
+  "browser": 267,
+  "failed_suites": 0,
+  "suites": [
+    {
+      "file": "tests/behavior-tests.js",
+      "exit": 0,
+      "passed": 124,
+      "failed": 0
+    },
+    {
+      "file": "tests/regression-tests.js",
+      "exit": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "file": "tests/express-card-test.js",
+      "exit": 0,
+      "passed": 63,
+      "failed": 0
+    },
+    {
+      "file": "tests/shell-cache-stamp-test.js",
+      "exit": 0,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "file": "tests/learning-records-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/project-card-test.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/pi-agent-test.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "file": "tests/ai-series-test.js",
+      "exit": 0,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "tests/srs-test.js",
+      "exit": 0,
+      "passed": 71,
+      "failed": 0
+    },
+    {
+      "file": "tests/remote-merge-test.js",
+      "exit": 0,
+      "passed": 43,
+      "failed": 0
+    },
+    {
+      "file": "tests/search-cache-test.js",
+      "exit": 0,
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "file": "tests/record-boundary-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/lp003_mock_test.py",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/path_exercise_test.py",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_a_test.py",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_test.py",
+      "exit": 0,
+      "passed": 23,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_layers_test.py",
+      "exit": 0,
+      "passed": 29,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_claims_test.py",
+      "exit": 0,
+      "passed": 7,
+      "failed": null
+    },
+    {
+      "file": "tests/ai-series-math-test.py",
+      "exit": 0,
+      "passed": 5,
+      "failed": null
+    },
+    {
+      "file": "tests/browser/ui-repro.js",
+      "exit": 0,
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/a11y-360.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/e2e-acceptance.js",
+      "exit": 0,
+      "passed": 46,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/project-evidence.js",
+      "exit": 0,
+      "passed": 28,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/pi-agent.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/ai-series.js",
+      "exit": 0,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/srs.js",
+      "exit": 0,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/followup.js",
+      "exit": 0,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/multitab.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/search-cache.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/hardening.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/remote-sync.js",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/learning-integrity.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    }
+  ],
+  "audit": {
+    "hard_problems": 0,
+    "warnings": 113,
+    "threshold_lowered": false
+  },
+  "verification_limits": [
+    "Anki desktop import not run",
+    "localStorage read-merge-write is not a cross-process atomic transaction",
+    "source URLs checked structurally, not all fetched again"
+  ],
+  "actual_offline_browser_verified": true,
+  "total": 768
+}

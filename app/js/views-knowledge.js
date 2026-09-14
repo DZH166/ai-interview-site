@@ -354,7 +354,7 @@ const SearchView = (() => {
         sub = '<span class="badge b-tag">草稿</span>';
       } else if (u.kind === 'fu') {
         /* 我的追问回答:落到复习中心那一轮,展开并定位(不只到主题顶部) */
-        href = `#/review?t=rounds&r=${encodeURIComponent(u.roundId || '')}&q=${encodeURIComponent(u.qid || '')}`;
+        href = `#/review?t=rounds&r=${encodeURIComponent(u.roundId || '')}&q=${encodeURIComponent(u.qid || '')}&f=${encodeURIComponent(u.fuId || '')}`;
         title = '追问回答 · ' + ((Data.question(u.qid) || {}).title || u.qid || '');
         sub = '<span class="badge b-tag">我的追问回答</span>';
       } else if (u.kind === 'concept') {

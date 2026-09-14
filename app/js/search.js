@@ -185,12 +185,12 @@ const Search = (() => {
     });
     /* 我的追问回答(已完成轮次):带题目与轮次身份,点击落到那一轮(SP 阶段7.4) */
     ((records.mock && records.mock.rounds) || []).forEach(rd => {
-      const rid = rd.id || '';
+      const rid = rd.id || (typeof Store !== 'undefined' && Store.roundId ? Store.roundId(rd) : '');
       (rd.items || []).forEach(it => {
-        (it.followups || []).forEach(f => {
+        (it.followups || []).forEach((f, index) => {
           if (!(f.self || '').trim()) return;
           out.push({
-            kind: 'fu', qid: it.qid, roundId: rid, field: 'fu', anchor: '', topic: '',
+            kind: 'fu', qid: it.qid, roundId: rid, fuId: f.id || 'legacy-' + index, field: 'fu', anchor: '', topic: '',
             text: norm('追问 ' + (f.q || '') + ' ' + f.self),
             raw: '追问(' + (f.q || '') + '):' + f.self,
             weight: 2.2

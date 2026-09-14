@@ -52,6 +52,9 @@ jobs:
       - name: 多标签页远程合并(内存合并不回写/新者胜/幂等/非法拒绝)
         run: node tests/remote-merge-test.js
 
+      - name: 清空与终态边界、冲突副本与快照校验
+        run: node tests/record-boundary-test.js
+
       - name: 搜索分层缓存(静态层只建一次/动态层随写入重建/行为一致)
         run: node tests/search-cache-test.js
 
@@ -238,3 +241,10 @@ jobs:
           CHROME: default
           PORT: '8943'
         run: node tests/browser/remote-sync.js
+
+      - name: 学习记录完整性与真实版本恢复
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8944'
+        run: node tests/browser/learning-integrity.js

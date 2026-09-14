@@ -92,6 +92,7 @@ const App = (() => {
   function handleRemoteChange(changes) {
     let view = '';
     try { view = parseHash().view; } catch (e) { return; }
+    if (view === 'mock') { MockView.applyRemote(changes); return; }
     if (view === 'study') { StudyView.applyRemote(changes); return; }
     if (view === 'browse') { BrowseView.applyRemote(changes); return; }
     if (view === 'home' || view === 'review') {

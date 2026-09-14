@@ -92,10 +92,12 @@ const Store = (() => {
 
 
   let data = blank();
+  let savedRaw = null;
 
   function load() {
     try {
       const raw = localStorage.getItem(KEY_RECORDS);
+      savedRaw = raw;
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
@@ -127,10 +129,13 @@ const Store = (() => {
 
   /* 同步落盘:自测草稿等不可丢失的数据直接写,不等防抖(刷新/关闭不打断)。
      返回布尔值(既有调用点用 `=== false` 判断);失败原因见 Store.lastSaveError。 */
-  function saveNow() {
+  function writeRecords(next) {
     try {
-      data.ui.savedAt = Date.now();
-      localStorage.setItem(KEY_RECORDS, JSON.stringify(data));
+      next.ui.savedAt = Date.now();
+      const raw = JSON.stringify(next);
+      localStorage.setItem(KEY_RECORDS, raw);
+      data = next;
+      savedRaw = raw;
       lastSaveError = null;
       bumpRev();
       notifyInvalidate();   /* 数据变了:派生索引(全文检索)立即失效,按需重建 */
@@ -142,6 +147,24 @@ const Store = (() => {
       toast('保存失败:' + lastSaveError, 'err');
       return false;
     }
+  }
+
+  function saveNow() {
+    let next = data;
+    try {
+      const raw = localStorage.getItem(KEY_RECORDS);
+      if (raw && raw !== savedRaw) {
+        const remote = JSON.parse(raw);
+        const errors = validateRecordsObj(remote);
+        if (errors.length) throw new Error('磁盘记录校验失败:' + errors[0]);
+        next = reconcileRecords(data, remote).merged;
+      }
+    } catch (e) {
+      lastSaveError = '保存前读取最新记录失败:' + e.message;
+      toast(lastSaveError, 'err');
+      return false;
+    }
+    return writeRecords(next);
   }
 
   function rec(qid) {
@@ -170,7 +193,7 @@ const Store = (() => {
       } else if (typeof SRS !== 'undefined' && SRS.ratingFromStatus) {
         const rating = SRS.ratingFromStatus(status);
         if (rating) {
-          try { r.srs = SRS.schedule(r.srs, rating, Date.now()); }
+          try { r.srs = SRS.schedule(opts && Object.hasOwn(opts, 'base') ? opts.base : r.srs, rating, opts && opts.at !== undefined ? opts.at : Date.now()); }
           catch (e) { console.warn('SRS 排期失败(不影响状态保存)', e); }
         }
       }
@@ -179,6 +202,29 @@ const Store = (() => {
   }
   function toggleFav(qid) { const r = rec(qid); r.fav = !r.fav; touch(r); save(); return r.fav; }
   function setNote(qid, text) { const r = rec(qid); r.note = text; touch(r); save(); }
+  const noteWriterPrefix = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  const noteWriters = new Map();
+  let noteWriterSequence = 0;
+  function saveNoteDraft(qid, text, resolved = false) {
+    const r = rec(qid), before = r.noteDraft;
+    if (before && before.text === text && !!before.resolved === resolved) return true;
+    if (!noteWriters.has(qid)) noteWriters.set(qid, noteWriterPrefix + '-' + (++noteWriterSequence));
+    r.noteDraft = mergeNoteDraft(before, { text, resolved, writer: noteWriters.get(qid), updatedAt: Math.max(Date.now(), ((before && before.updatedAt) || 0) + 1) });
+    if (saveNow()) { if (resolved) noteWriters.delete(qid); return true; }
+    if (before === undefined) delete r.noteDraft; else r.noteDraft = before;
+    return false;
+  }
+  function mergeNoteDraft(a, b) {
+    const choices = [a, b].filter(Boolean);
+    const winner = choices.slice().sort((x, y) => (y.updatedAt - x.updatedAt) || sig(y).localeCompare(sig(x)))[0];
+    const versions = {};
+    const keep = (key, value) => {
+      if (!versions[key] || (value.updatedAt || 0) >= (versions[key].updatedAt || 0)) versions[key] = value;
+    };
+    choices.forEach(v => Object.entries(v.versions || {}).forEach(([key, value]) => keep(key, value)));
+    choices.forEach(v => { if (v.text && !v.resolved) keep(v.writer || 'legacy-' + contentHash(v.text), { text: v.text, updatedAt: v.updatedAt }); });
+    return { ...winner, versions: Object.fromEntries(Object.keys(versions).sort().map(k => [k, versions[k]])) };
+  }
   function markViewed(qid) { const r = rec(qid); r.viewedAt = Date.now(); save(); }
   function markPracticed(qid, result) {
     const r = rec(qid);
@@ -423,9 +469,27 @@ const Store = (() => {
       errs.push('缺少 questions 字段'); return errs;
     }
     const isTs = v => typeof v === 'number' && isFinite(v) && v >= 0;
+    const validateSnapshot = (snapshot, qid, where) => {
+      if (snapshot === undefined) return;
+      if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) { errs.push(where + ': questionSnapshot 必须是对象'); return; }
+      if (snapshot.id !== qid || typeof snapshot.title !== 'string') errs.push(where + ': 快照题号或题目标题无效');
+      ['prompt','answer','plain','interview','fusion_notes','topic','type','difficulty'].forEach(k => {
+        if (snapshot[k] !== undefined && typeof snapshot[k] !== 'string') errs.push(where + ': 快照字段 ' + k + ' 必须是文本');
+      });
+      for (const k of ['tags','pitfalls']) if (snapshot[k] !== undefined && (!Array.isArray(snapshot[k]) || snapshot[k].some(v => typeof v !== 'string'))) errs.push(where + ': 快照字段 ' + k + ' 必须是文本数组');
+      if (snapshot.followups !== undefined && (!Array.isArray(snapshot.followups) || snapshot.followups.some(f => !f || typeof f.q !== 'string' || typeof f.a !== 'string'))) errs.push(where + ': 快照追问字段无效');
+      if (snapshot.content_version !== undefined && (!snapshot.content_version || typeof snapshot.content_version !== 'object' || typeof snapshot.content_version.rev !== 'string')) errs.push(where + ': 快照版本无效');
+    };
     Object.keys(incoming.questions).forEach(qid => {
       const r = incoming.questions[qid];
       if (!r || typeof r !== 'object' || Array.isArray(r)) { errs.push(`题目记录 ${qid}: 不是对象`); return; }
+      if (r.noteDraft !== undefined) {
+        const d = r.noteDraft;
+        if (!d || typeof d !== 'object' || Array.isArray(d) || typeof d.text !== 'string' || !isTs(d.updatedAt)
+            || (d.resolved !== undefined && typeof d.resolved !== 'boolean')) errs.push(`题目记录 ${qid}: 冲突草稿无效`);
+        else if (d.versions !== undefined && (!d.versions || typeof d.versions !== 'object' || Array.isArray(d.versions)
+            || Object.values(d.versions).some(v => !v || typeof v.text !== 'string'))) errs.push(`题目记录 ${qid}: 冲突输入副本无效`);
+      }
       if (r.status !== undefined && !STATUS_IDS.includes(r.status)) errs.push(`题目记录 ${qid}: status 非法(${JSON.stringify(r.status)})`);
       if (r.fav !== undefined && typeof r.fav !== 'boolean') errs.push(`题目记录 ${qid}: fav 必须是布尔`);
       if (r.note !== undefined && typeof r.note !== 'string') errs.push(`题目记录 ${qid}: note 必须是字符串`);
@@ -494,6 +558,7 @@ const Store = (() => {
           rd.items.forEach((it, j) => {
             if (!it || typeof it !== 'object' || !it.qid) errs.push(`轮次 #${i} 第 ${j + 1} 题: 缺少 qid`);
             else {
+              validateSnapshot(it.questionSnapshot, it.qid, `轮次 #${i} 第 ${j + 1} 题`);
               if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
               if (it.qRev !== undefined && typeof it.qRev !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: qRev 必须是字符串`);
               if (it.followups !== undefined) {
@@ -517,6 +582,7 @@ const Store = (() => {
           Object.keys(mock.draft.answers).forEach(qid => {
             const a = mock.draft.answers[qid];
             if (!a || typeof a !== 'object' || Array.isArray(a)) return;
+            validateSnapshot(a.questionSnapshot, qid, 'mock.draft.answers.' + qid);
             if (a.qRev !== undefined && typeof a.qRev !== 'string') errs.push(`mock.draft.answers.${qid}.qRev 必须是字符串`);
             if (a.fu !== undefined && a.fu !== null && (typeof a.fu !== 'object' || Array.isArray(a.fu))) {
               errs.push(`mock.draft.answers.${qid}.fu 必须是对象`);
@@ -624,6 +690,7 @@ const Store = (() => {
 
   /* 轮次稳定 ID:内容哈希,重复导入幂等 */
   function roundId(rd) {
+    if (rd.sessionId) return 'session-' + rd.sessionId;
     if (rd.id) return String(rd.id);
     const basis = JSON.stringify([rd.ts, (rd.items || []).map(i => i.qid)]);
     let h = 5381;
@@ -803,6 +870,10 @@ const Store = (() => {
         cur.srs = inc.srs; adopted = true;
       }
     }
+    if (inc.noteDraft) {
+      const draft = mergeNoteDraft(cur.noteDraft, inc.noteDraft);
+      if (sig(cur.noteDraft) !== sig(draft)) { cur.noteDraft = draft; adopted = true; }
+    }
     if (inc.fav !== undefined) {
       if (incAt > curAt) { if (cur.fav !== inc.fav) { cur.fav = inc.fav; adopted = true; } }
       else if (inc.fav === true && (cur.fav === undefined || (!curAt && !cur.fav))) { cur.fav = true; adopted = true; }
@@ -860,7 +931,7 @@ const Store = (() => {
   /* 合并模拟面试轮次:按稳定 ID 去重,降序保留最近 100 轮 */
   function mergeRounds(merged, incomingMock, report) {
     mergeEndedSessions(merged, incomingMock);
-    const existIds = new Set((merged.mock.rounds || []).map(r => r.id || roundId(r)));
+    const existIds = new Set((merged.mock.rounds || []).map(roundId));
     ((incomingMock && incomingMock.rounds) || []).forEach(r => {
       const id = roundId(r);
       if (existIds.has(id)) return;
@@ -1141,24 +1212,25 @@ const Store = (() => {
      同步推进数据版本并通知订阅者(搜索索引据此失效)——否则会出现
      「清空后搜索仍能搜出已清空的笔记与尝试」这种界面与数据不一致。 */
   function clearAll() {
-    /* 清空是带版本的删除(SP-05):纪元+时刻同步落盘,其它页据此区分
-       「清空前的旧快照」(不得合并回来)与「清空后新写的记录」(正常同步)。
-       此前 removeItem+防抖保存之间存在窗口,另一页的旧快照会趁机写回磁盘。 */
-    const nextEpoch = ((data && data.resetEpoch) || 0) + 1;
-    const ts = Date.now();
-    data = blank();
-    data.resetEpoch = nextEpoch;
-    data.resetTs = ts;
-    bumpRev();
-    notifyInvalidate();
-    saveNow();
-    return true;
+    let latest = data;
+    try {
+      const raw = localStorage.getItem(KEY_RECORDS);
+      if (raw) latest = reconcileRecords(data, JSON.parse(raw)).merged;
+    } catch (e) {
+      lastSaveError = '清空前读取记录失败:' + e.message;
+      toast(lastSaveError, 'err');
+      return false;
+    }
+    const next = blank();
+    next.resetEpoch = (latest.resetEpoch || 0) + 1;
+    next.resetTs = Math.max(Date.now(), (latest.resetTs || 0) + 1);
+    return writeRecords(next);
   }
 
   /* 取出「清空时刻之后新写」的记录(同机时钟可比):清空边界两侧的筛选器(SP-05)。
      题目记录按 _updatedAt;专项尝试/项目记录按 updatedAt;轮次按 ts;草稿按 savedAt。 */
   function extractPostClear(d, clearTs) {
-    const out = { v: 3, questions: {}, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {} };
+    const out = { v: 3, questions: {}, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: { projectRuns: {}, projectDrafts: {} } };
     if (!clearTs) {   /* 没有可比较的时刻(异常情形):宁可少同步,不越过边界 */
       return out;
     }
@@ -1168,15 +1240,18 @@ const Store = (() => {
     });
     (d.mock && d.mock.rounds || []).forEach(r => { if ((r.ts || 0) > clearTs) out.mock.rounds.push(JSON.parse(JSON.stringify(r))); });
     if (d.mock && d.mock.draft && (d.mock.draft.savedAt || 0) > clearTs) out.mock.draft = JSON.parse(JSON.stringify(d.mock.draft));
+    Object.entries((d.mock && d.mock.ended) || {}).forEach(([sid, end]) => {
+      if ((end.ts || 0) > clearTs) out.mock.ended[sid] = JSON.parse(JSON.stringify(end));
+    });
     Object.keys(d.drillAttempts || {}).forEach(did => {
       const list = (d.drillAttempts[did] || []).filter(a => (a.updatedAt || a.ts || 0) > clearTs);
       if (list.length) out.drillAttempts[did] = JSON.parse(JSON.stringify(list));
     });
-    Object.keys(d.ui.projectRuns || {}).forEach(pid => {
+    Object.keys((d.ui || {}).projectRuns || {}).forEach(pid => {
       const list = (d.ui.projectRuns[pid] || []).filter(r => (r.updatedAt || r.ts || 0) > clearTs);
       if (list.length) out.ui.projectRuns[pid] = JSON.parse(JSON.stringify(list));
     });
-    Object.keys(d.ui.projectDrafts || {}).forEach(pid => {
+    Object.keys((d.ui || {}).projectDrafts || {}).forEach(pid => {
       const dr = d.ui.projectDrafts[pid];
       if (dr && typeof dr === 'object' && (dr.updatedAt || 0) > clearTs) out.ui.projectDrafts[pid] = JSON.parse(JSON.stringify(dr));
     });
@@ -1200,11 +1275,13 @@ const Store = (() => {
     const qs = {}, da = {}, runs = {}, drafts = {};
     Object.keys(d.questions || {}).forEach(k => { qs[k] = sig(d.questions[k]); });
     Object.keys(d.drillAttempts || {}).forEach(k => { da[k] = sig(d.drillAttempts[k]); });
-    Object.keys(d.ui.projectRuns || {}).forEach(k => { runs[k] = sig(d.ui.projectRuns[k]); });
-    Object.keys(d.ui.projectDrafts || {}).forEach(k => { drafts[k] = sig(d.ui.projectDrafts[k]); });
+    Object.keys((d.ui || {}).projectRuns || {}).forEach(k => { runs[k] = sig(d.ui.projectRuns[k]); });
+    Object.keys((d.ui || {}).projectDrafts || {}).forEach(k => { drafts[k] = sig(d.ui.projectDrafts[k]); });
     return {
       qs, da, runs, drafts,
-      rounds: sig((d.mock.rounds || []).map(r => r.id || roundId(r)).sort()),
+      rounds: sig((d.mock.rounds || []).map(roundId).sort()),
+      ended: sig(d.mock.ended || {}),
+      reset: sig([d.resetEpoch || 0, d.resetTs || 0]),
       mockDraft: d.mock.draft ? sig(d.mock.draft) : '',
       docPos: sig(d.ui.docPos || null),
       pathProgress: sig(d.ui.pathProgress || {})
@@ -1220,6 +1297,8 @@ const Store = (() => {
     new Set([...Object.keys(a.runs), ...Object.keys(b.runs)]).forEach(k => { if (a.runs[k] !== b.runs[k]) pids.push(k); });
     new Set([...Object.keys(a.drafts), ...Object.keys(b.drafts)]).forEach(k => { if (a.drafts[k] !== b.drafts[k]) pids.push(k); });
     if (a.rounds !== b.rounds) sections.push('rounds');
+    if (a.ended !== b.ended) sections.push('ended');
+    if (a.reset !== b.reset) sections.push('reset');
     if (a.mockDraft !== b.mockDraft) sections.push('mockDraft');
     if (a.docPos !== b.docPos) sections.push('docPos');
     if (a.pathProgress !== b.pathProgress) sections.push('pathProgress');
@@ -1231,77 +1310,66 @@ const Store = (() => {
   function onRemoteChange(fn) { if (typeof fn === 'function') remoteListeners.push(fn); }
   function notifyRemote(changes) { remoteListeners.slice().forEach(fn => { try { fn(changes); } catch (e) { /* 单个订阅者失败不影响其它 */ } }); }
 
+  function copyRecords(value) {
+    const copy = JSON.parse(JSON.stringify(value));
+    return Object.assign(blank(), copy, {
+      questions: copy.questions || {},
+      mock: Object.assign(blank().mock, copy.mock || {}),
+      ui: Object.assign(blank().ui, copy.ui || {})
+    });
+  }
+
+  function resetOrder(a, b) {
+    return ((a.resetEpoch || 0) - (b.resetEpoch || 0)) || ((a.resetTs || 0) - (b.resetTs || 0));
+  }
+
+  function mergeInto(target, incoming, report) {
+    migrateLegacyRuns({ ui: { projectRuns: incoming.ui && incoming.ui.projectRuns } });
+    mergeQuestions(target, incoming.questions || {}, report);
+    mergeRounds(target, incoming.mock, report);
+    mergeAttempts(target, incoming.drillAttempts);
+    mergeUi(target, incoming, report);
+    migrateLegacyDrillTries(target);
+  }
+
+  /* Pure reconciliation also runs before a suspended tab writes again.
+     This protects stale sequential writes; localStorage is not an atomic cross-tab transaction. */
+  function reconcileRecords(base, incoming) {
+    const report = newReport(), order = resetOrder(incoming, base);
+    let merged;
+    if (order > 0) {
+      merged = copyRecords(incoming);
+      mergeInto(merged, extractPostClear(base, merged.resetTs), report);
+    } else {
+      merged = copyRecords(base);
+      mergeInto(merged, order < 0 ? extractPostClear(incoming, merged.resetTs) : incoming, report);
+    }
+    merged.ui.lastHash = base.ui.lastHash;
+    const changes = diffSigs(recordsSigs(base), recordsSigs(merged));
+    return { merged, changes, report, staleEpoch: order < 0 };
+  }
+
   function adoptRemoteRecords(jsonText) {
     let incoming;
     try { incoming = JSON.parse(jsonText); } catch (e) { return { ok: false, error: 'JSON 解析失败' }; }
     if (!incoming || typeof incoming !== 'object') return { ok: false, error: '记录必须是对象' };
     const errs = validateRecordsObj(incoming);
     if (errs.length) return { ok: false, error: '校验未通过:' + errs.slice(0, 3).join(';') };
-    const inEpoch = (incoming && typeof incoming.resetEpoch === 'number' && incoming.resetEpoch >= 0) ? incoming.resetEpoch : 0;
-    const inResetTs = (incoming && typeof incoming.resetTs === 'number') ? incoming.resetTs : 0;
-    const myEpoch = (data && data.resetEpoch) || 0;
-    if (inEpoch > myEpoch) {
-      /* 对方经历了更新的清空:本页(旧纪元)的完整快照整体作废,
-         采用对方的清空后状态,仅保留本页在「对方清空时刻」之后新写的记录(SP-05) */
-      const keep = extractPostClear(data, inResetTs);
-      const fresh = blank();
-      fresh.resetEpoch = inEpoch;
-      fresh.resetTs = inResetTs;
-      fresh.ui.lastHash = data.ui.lastHash;   /* 界面偏好不随清空丢失 */
-      const rep = newReport();
-      mergeQuestions(fresh, keep.questions, rep);
-      mergeRounds(fresh, keep.mock, rep);
-      mergeAttempts(fresh, keep.drillAttempts);
-      mergeUi(fresh, keep, rep);
-      const sigBefore0 = recordsSigs(data);
-      data = fresh;
-      const changes0 = diffSigs(sigBefore0, recordsSigs(data));
-      if (!changes0.hasChanges) return { ok: true, changed: false, changes: changes0, report: rep };
+    const result = reconcileRecords(data, incoming);
+    if (result.changes.hasChanges) {
+      data = result.merged;
       bumpRev();
       notifyInvalidate();
-      return { ok: true, changed: true, changes: { qids: [], drillIds: [], pids: [], sections: ['reset'].concat(changes0.sections), hasChanges: true }, report: rep };
     }
-    if (inEpoch < myEpoch) {
-      /* 对方还是清空前的旧纪元:其快照不得越过本页的清空边界,
-         只采纳对方在清空时刻之后新写的记录(SP-05) */
-      const keepIncoming = extractPostClear(incoming, data.resetTs);
-      const sigBeforeS = recordsSigs(data);
-      const mergedS = JSON.parse(JSON.stringify(data));
-      mergedS.mock.rounds = mergedS.mock.rounds.slice();
-      if (!mergedS.ui.projectRuns) mergedS.ui.projectRuns = {};
-      const repS = newReport();
-      mergeQuestions(mergedS, keepIncoming.questions, repS);
-      mergeRounds(mergedS, keepIncoming.mock, repS);
-      mergeAttempts(mergedS, keepIncoming.drillAttempts);
-      mergeUi(mergedS, keepIncoming, repS);
-      migrateLegacyDrillTries(mergedS);
-      const changesS = diffSigs(sigBeforeS, recordsSigs(mergedS));
-      if (!changesS.hasChanges) return { ok: true, changed: false, changes: changesS, report: repS, staleEpoch: true };
-      data = mergedS;
-      bumpRev();
-      notifyInvalidate();
-      return { ok: true, changed: true, changes: changesS, report: repS, staleEpoch: true };
-    }
-    const sigBefore = recordsSigs(data);
-    const merged = JSON.parse(JSON.stringify(data));
-    merged.mock.rounds = merged.mock.rounds.slice();
-    if (!merged.ui.projectRuns) merged.ui.projectRuns = {};
-    const report = newReport();
-    migrateLegacyRuns({ ui: { projectRuns: incoming.ui && incoming.ui.projectRuns } });
-    mergeQuestions(merged, incoming.questions || {}, report);
-    mergeRounds(merged, incoming.mock, report);
-    mergeAttempts(merged, incoming.drillAttempts);
-    mergeUi(merged, incoming, report);
-    migrateLegacyDrillTries(merged);
-    const changes = diffSigs(sigBefore, recordsSigs(merged));
-    if (!changes.hasChanges) {
-      /* 无真实变更:不推进版本、不通知、绝不回写 —— 阻断 ST-01 循环的关键分支 */
-      return { ok: true, changed: false, changes, report };
-    }
-    data = merged;
-    bumpRev();
-    notifyInvalidate();
-    return { ok: true, changed: true, changes, report };
+    return { ok: true, changed: result.changes.hasChanges, changes: result.changes,
+      report: result.report, staleEpoch: result.staleEpoch };
+  }
+
+  function refreshFromDisk() {
+    try {
+      const raw = localStorage.getItem(KEY_RECORDS);
+      return raw ? adoptRemoteRecords(raw) : { ok: true, changed: false };
+    } catch (e) { return { ok: false, error: e.message }; }
   }
 
   /* 当前个人记录的序列化体积(KB):维护页存储健康度用 */
@@ -1374,7 +1442,7 @@ const Store = (() => {
 
   return {
     STATUS, STATE, STATE_IDS, STATE_LABEL, MAX_ROUNDS,
-    load, save, saveNow, rec, setStatus, toggleFav, setNote, markViewed, markPracticed,
+    load, save, saveNow, rec, setStatus, toggleFav, setNote, saveNoteDraft, refreshFromDisk, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
     validateQuestions, validateQuestion, validateRecordsObj, normalizeSourceKind,
     adoptRemoteRecords, recordsSizeKB,
