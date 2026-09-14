@@ -53,6 +53,8 @@ jobs:
         run: node tests/remote-merge-test.js
       - name: 保存前协议(无竞争直写/合并后再写/坏数据不覆盖/同刻决胜确定)
         run: node tests/save-protocol-test.js
+      - name: 备份可预览恢复(预览不改状态/四类归类/与实际导入一致)
+        run: node tests/preview-restore-test.js
 
       - name: 清空与终态边界、冲突副本与快照校验
         run: node tests/record-boundary-test.js

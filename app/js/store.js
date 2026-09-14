@@ -992,21 +992,72 @@ const Store = (() => {
   }
 
   /* 合并导入个人记录。失败 throw(状态不变);成功返回合并报告 */
-  function importRecords(jsonText) {
+  /* 校验备份外壳与记录结构,返回 {incoming}(不合法 throw)——预览与导入共用(后续轮3) */
+  function parseRecordsBackup(jsonText, acceptTypes) {
     let obj;
     try { obj = JSON.parse(jsonText); } catch (e) { throw new Error('不是合法的 JSON 文件'); }
     if (!obj || typeof obj !== 'object') throw new Error('格式不正确:应为备份 JSON 对象');
-    if (obj.type && !['aiiv-records'].includes(obj.type)) {
+    if (obj.type && !acceptTypes.includes(obj.type)) {
       throw new Error(obj.type === 'aiiv-full'
         ? '这是完整备份:请用「导入完整备份」入口,一次恢复记录+题库+资料'
-        : `备份类型不匹配:${obj.type}(本入口接受 aiiv-records)`);
+        : `备份类型不匹配:${obj.type}(本入口接受 ${acceptTypes.join(' / ')})`);
     }
     if (obj.v !== undefined && obj.v !== 1 && obj.v !== 2) {
       throw new Error(`不支持的备份版本:v${obj.v}`);
     }
-    const incoming = obj.records || obj; /* 兼容直接给 records 对象 */
+    const incoming = obj.records || obj;
+    if (incoming !== obj && incoming.v !== undefined && incoming.v !== 1 && incoming.v !== 2 && incoming.v !== 3) {
+      throw new Error(`不支持的记录版本:v${incoming.v}`);
+    }
     const errs = validateRecordsObj(incoming);
     if (errs.length) throw new Error('备份校验未通过,未做任何修改:' + errs.slice(0, 5).join(';') + (errs.length > 5 ? ` 等 ${errs.length} 项` : ''));
+    return incoming;
+  }
+
+  /* 预览:同一套合并规则跑一遍(不改任何状态),返回四类计数的明细(后续轮3)。
+     新增=本地没有该题/该轮;覆盖=备份更新而替换本地的字段;保留=本地较新未采用;
+     撤销=备份明确清空而本地有值。 */
+  function previewRecordsMerge(jsonText) {
+    const incoming = parseRecordsBackup(jsonText, ['aiiv-records']);
+    const sigBefore = recordsSigs(data);
+    const merged = JSON.parse(JSON.stringify(data));
+    merged.mock.rounds = merged.mock.rounds.slice();
+    if (!merged.ui.projectRuns) merged.ui.projectRuns = {};
+    const report = newReport();
+    mergeQuestions(merged, incoming.questions || {}, report);
+    mergeRounds(merged, incoming.mock, report);
+    mergeAttempts(merged, incoming.drillAttempts);
+    mergeUi(merged, incoming, report);
+    migrateLegacyDrillTries(merged);
+    const changes = diffSigs(sigBefore, recordsSigs(merged));
+    /* 逐题归类(预览粒度到题) */
+    const perQuestion = { added: 0, overridden: 0, kept: 0, reverted: 0 };
+    const localQ = data.questions || {}, incQ = incoming.questions || {};
+    Object.keys(incQ).forEach(qid => {
+      const cur = localQ[qid], inc = incQ[qid] || {};
+      if (!cur) { perQuestion.added++; return; }
+      const incAt = inc._updatedAt || 0, curAt = cur._updatedAt || 0;
+      const clearRev = ['note', 'status', 'fav'].some(k => inc[k] !== undefined && incAt > curAt && (inc[k] === '' || inc[k] === false) && (cur[k] === undefined || cur[k]));
+      if (clearRev) perQuestion.reverted++;
+      else if (incAt > curAt && changes.qids.includes(qid)) perQuestion.overridden++;
+      else if (changes.qids.includes(qid)) perQuestion.overridden++;   /* 计数/时间戳补齐也算采用 */
+      else perQuestion.kept++;
+    });
+    return {
+      ok: true,
+      summary: {
+        questionsTouched: changes.qids.length,
+        roundsAdded: report.roundsAdded,
+        draftsAdopted: report.draftsAdopted, draftsKept: report.draftsKept,
+        runsAdded: report.runsAdded, runsMigrated: report.runsMigrated,
+        perQuestion, noChanges: !changes.hasChanges
+      },
+      changes
+    };
+  }
+
+  function importRecords(jsonText) {
+    const incoming = parseRecordsBackup(jsonText, ['aiiv-records']);
 
     /* 在副本上合并,校验+写入都成功才替换内存状态 */
     const merged = JSON.parse(JSON.stringify(data));
@@ -1445,7 +1496,7 @@ const Store = (() => {
     load, save, saveNow, rec, setStatus, toggleFav, setNote, saveNoteDraft, refreshFromDisk, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
     validateQuestions, validateQuestion, validateRecordsObj, normalizeSourceKind,
-    adoptRemoteRecords, recordsSizeKB,
+    adoptRemoteRecords, recordsSizeKB, previewRecordsMerge,
     quarantineCount, quarantineExport, rawExtrasExport, resetLoadIssues,
     validateAttempt, migrateLegacyDrillTries, migrateLegacyRuns,
     recTime, latestOf, sortedByTime, onInvalidate, onRemoteChange, contentHash, roundId,

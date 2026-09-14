@@ -262,6 +262,10 @@ async function closeAnyModal(page) {
   ok('点「导入记录」会打开文件选择器', !!chooser);
   if (chooser) {
     await chooser.setFiles(tmpFile);
+    /* 轮3:导入前先弹「确认恢复」预览(四类归类),必须点确认才真正写入 */
+    await page.waitForFunction(() => !!document.querySelector('.modal'), null, { timeout: 8000 }).catch(() => {});
+    const confirmBtn = page.locator('.modal .btn-primary');
+    if (await confirmBtn.count()) await confirmBtn.first().click();
     await sleep(800);
     const restored = await diskRec(page);
     const q = (restored.questions || {})[firstQid] || {};

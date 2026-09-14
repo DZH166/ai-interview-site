@@ -561,10 +561,22 @@ const MaintainView = (() => {
         try {
           const t = JSON.parse(text);
           if (t && t.type === 'aiiv-full') { toast('这是完整备份:已改走「导入完整备份」入口,本次未做任何修改', 'err'); return; }
-          const r = Store.importRecords(text);
-          window.rebuildIndex();
-          modal('导入完成(记录合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
-          App.route();
+          /* 预览(同一套合并规则跑一遍,不改状态)→ 用户确认 → 才真正导入(后续轮3) */
+          const p = Store.previewRecordsMerge(text);
+          if (p.summary.noChanges) { modal('没有需要恢复的内容', '<p>这份备份与当前记录一致,导入不会产生任何变化。</p>', [{ label: '知道了' }]); return; }
+          const pq = p.summary.perQuestion;
+          modal('确认恢复这份备份?', previewMergeHtml(p), [
+            { label: '取消' },
+            { label: '确认恢复', primary: true, onClick: () => {
+                try {
+                  const r = Store.importRecords(text);
+                  window.rebuildIndex();
+                  modal('导入完成(记录合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
+                  App.route();
+                }
+                catch(e) { toast('导入失败(记录未变动): ' + e.message, 'err'); return false; }
+              } }
+          ]);
         }
         catch(e) { toast('导入失败(记录未变动): ' + e.message, 'err'); }
       }).catch(() => {});
@@ -640,6 +652,22 @@ const MaintainView = (() => {
         }}
       ]);
     });
+  }
+
+  /* 预览:恢复将发生什么(新增/覆盖/保留/撤销 + 轮次/草稿/项目),解释清空版本与会话终态口径 */
+  function previewMergeHtml(p) {
+    const sm = p.summary, pq = sm.perQuestion;
+    const row = (k, v) => `<div class="kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`;
+    return `
+      <div class="kv" style="margin-top:8px">
+        ${row('题目记录变化', sm.questionsTouched ? sm.questionsTouched + ' 条(新增 ' + pq.added + ' · 采用备份 ' + pq.overridden + ' · 保留本机 ' + pq.kept + ' · 备份撤销本机 ' + pq.reverted + ')' : '无')}
+        ${row('模拟面试轮次', sm.roundsAdded ? '新增 ' + sm.roundsAdded + ' 轮' : '无新增')}
+        ${row('未完成草稿', sm.draftsAdopted ? '恢复 ' + sm.draftsAdopted + ' 份(本地没有才恢复;同会话已终态的不恢复)' : '无变化')}
+        ${row('项目运行记录', sm.runsAdded ? '新增 ' + sm.runsAdded + ' 条' + (sm.runsMigrated ? '(含补齐旧ID ' + sm.runsMigrated + ')' : '') : '无新增')}
+        ${row('阅读位置', sm.docPosAdoptedHint || '按「本地为空才采用」规则处理')}
+      </div>
+      <p class="muted small" style="margin-top:8px">合并口径:逐记录按更新时间新者胜(明确清空也算新状态);同会话已完成/已放弃的旧草稿不会复活;
+      本机较新的内容不会被备份覆盖。校验不通过或写盘失败则全部不生效。</p>`;
   }
 
   /* 把合并报告说成人话:恢复了什么、跳过了什么、为什么 */
