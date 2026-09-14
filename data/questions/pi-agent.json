@@ -36,7 +36,8 @@
     ],
     "pitfalls": [
       "**错误说法：**模型输出了工具调用，说明工具已经执行。\n\n**正确理解：**工具调用是执行请求，真正执行由宿主程序完成，参数错误或权限阻断都可能使它不执行。",
-      "**错误说法：**Harness 必然包含生产级部署和故障恢复。\n\n**正确理解：**这个名称只描述承载职责，持久化、隔离和恢复能力必须逐个检查具体实现。"
+      "**错误说法：**Harness 必然包含生产级部署和故障恢复。\n\n**正确理解：**这个名称只描述承载职责，持久化、隔离和恢复能力必须逐个检查具体实现。",
+      "**错误说法：**模型名字决定 Harness 能力，越强的模型越不需要宿主。\n\n**正确理解：**权限、重试、持久化和审计由 Harness 承担；模型再强也替代不了宿主的边界检查。"
     ],
     "check": {
       "q": "分别画出固定发票校验与陌生代码库探索的执行步骤，标出哪些下一步由代码决定、哪些由模型决定。",
@@ -71,7 +72,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "e53f07b862d5f0d89daf8a6bdce30f234c5cc173652641f20f6eb1ddcff0da79",
+        "source_hash": "99ad9728319dbae79e69740c5ba13bc4d1546a7e1e792e221405f3f591d7c281",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -159,6 +160,10 @@
             {
               "claim": "Harness 必然包含生产级部署和故障恢复。",
               "correction": "这个名称只描述承载职责，持久化、隔离和恢复能力必须逐个检查具体实现。"
+            },
+            {
+              "claim": "模型名字决定 Harness 能力，越强的模型越不需要宿主。",
+              "correction": "权限、重试、持久化和审计由 Harness 承担；模型再强也替代不了宿主的边界检查。"
             }
           ],
           "rubric": [
@@ -216,7 +221,7 @@
             }
           ]
         },
-        "adapter_hash": "629c3d91335f292ce24ca790b7ff9476f71bd09012c260b8f4ed8d4a855b33c4"
+        "adapter_hash": "568b7bdd8a14aba7d9a17916db9f5add0e458de56cdf60a0156aee30a2b4c05d"
       }
     }
   },
@@ -259,7 +264,8 @@
     ],
     "pitfalls": [
       "**错误说法：**pi-ai 本身会循环执行所有工具。\n\n**正确理解：**pi-ai 提供模型与流协议，真正运行工具循环的是agent-core等宿主逻辑。",
-      "**错误说法：**做网页必须重写 Pi 的 Agent Loop。\n\n**正确理解：**可以复用Agent或AgentSession，只为网页适配输入与事件展示。"
+      "**错误说法：**做网页必须重写 Pi 的 Agent Loop。\n\n**正确理解：**可以复用Agent或AgentSession，只为网页适配输入与事件展示。",
+      "**错误说法：**分包只是为了代码整洁，可以随意合并。\n\n**正确理解：**分层对应不同复用场景（模型接入/循环引擎/终端交互），合并会让不相关依赖捆绑升级。"
     ],
     "check": {
       "q": "画一张四层职责图，并为“浏览器换终端”“模型A换模型B”“新增业务工具”分别标出主要改动层。",
@@ -300,7 +306,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "d15669280ef4cc5b057a842a0eafa463f7054c3a1ec76d483cf92fbec0c7803e",
+        "source_hash": "a7ad1f261da20e1f0106738b245c1871fe9e44d9269f7b854913a2ac1f6e5cdd",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -394,6 +400,10 @@
             {
               "claim": "做网页必须重写 Pi 的 Agent Loop。",
               "correction": "可以复用Agent或AgentSession，只为网页适配输入与事件展示。"
+            },
+            {
+              "claim": "分包只是为了代码整洁，可以随意合并。",
+              "correction": "分层对应不同复用场景（模型接入/循环引擎/终端交互），合并会让不相关依赖捆绑升级。"
             }
           ],
           "rubric": [
@@ -459,7 +469,7 @@
             }
           ]
         },
-        "adapter_hash": "4617c5a6480d35f80d0078f95f26da0df612ca4f7973cc774b29dbf359ffec0a"
+        "adapter_hash": "4290f586bdfc84205db6bd03d8041fa288cf6bc5716e4cdfc580d114b24c1586"
       }
     }
   },
@@ -502,7 +512,8 @@
     ],
     "pitfalls": [
       "**错误说法：**每个工具调用就是一轮。\n\n**正确理解：**Pi以一次助手响应加整个工具批次定义一轮。",
-      "**错误说法：**助手message_end后就可以发任务成功通知。\n\n**正确理解：**它可能只是工具请求完成，之后还有工具执行和更多模型轮次。"
+      "**错误说法：**助手message_end后就可以发任务成功通知。\n\n**正确理解：**它可能只是工具请求完成，之后还有工具执行和更多模型轮次。",
+      "**错误说法：**消息顺序只影响展示，不影响模型理解。\n\n**正确理解：**排列错误会让模型看到未回答的请求或缺失的工具结果，改变它对任务状态的判断。"
     ],
     "check": {
       "q": "使用假模型：第一响应请求一个echo工具，第二响应输出done，把全部事件类型和消息角色记到数组。",
@@ -543,7 +554,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "3f8be1dd56311c683a5552b0dec3608900638bccec06140c401aac10ea0f3be4",
+        "source_hash": "696ef106b555848b894c7fb65b5840850b8f8368c08b9c643f1fc66ec5439cb4",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -637,6 +648,10 @@
             {
               "claim": "助手message_end后就可以发任务成功通知。",
               "correction": "它可能只是工具请求完成，之后还有工具执行和更多模型轮次。"
+            },
+            {
+              "claim": "消息顺序只影响展示，不影响模型理解。",
+              "correction": "排列错误会让模型看到未回答的请求或缺失的工具结果，改变它对任务状态的判断。"
             }
           ],
           "rubric": [
@@ -703,7 +718,7 @@
             }
           ]
         },
-        "adapter_hash": "5ba75a60fe01129e8455b0b93e7507dc53f6b53dba71818247499f3a856296fd"
+        "adapter_hash": "c6cd35a339177993ceacb81e11637d9541b909301909e87d34860988ab05ab93"
       }
     }
   },
@@ -746,7 +761,8 @@
     ],
     "pitfalls": [
       "**错误说法：**JSON.parse成功就代表工具调用完成。\n\n**正确理解：**成功解析只能说明当前文本形成了某种合法结构，不能说明生成结束或语义完整。",
-      "**错误说法：**Pi在toolcall_delta时开始执行，最后补齐参数。\n\n**正确理解：**本版本等待助手最终消息，检查停止原因后才进入工具执行管道。"
+      "**错误说法：**Pi在toolcall_delta时开始执行，最后补齐参数。\n\n**正确理解：**本版本等待助手最终消息，检查停止原因后才进入工具执行管道。",
+      "**错误说法：**流式解析只是性能优化，错过也不影响正确性。\n\n**正确理解：**提前执行会产生参数不完整或语义不完整的调用，正确性恰恰是流式边界的核心约束。"
     ],
     "check": {
       "q": "用假模型输出一个content为半截文本、stopReason=length的write调用，工具只记录调用次数，不实际写文件。",
@@ -787,7 +803,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "958634d705ef2c84e957f28f2634303ada3396f4bf3ee378016f04880488853e",
+        "source_hash": "ce817c9cd69b847ed6bcb280f36f684075ed7ab059efaefcf85ed479ce9e64c8",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -882,6 +898,10 @@
             {
               "claim": "Pi在toolcall_delta时开始执行，最后补齐参数。",
               "correction": "本版本等待助手最终消息，检查停止原因后才进入工具执行管道。"
+            },
+            {
+              "claim": "流式解析只是性能优化，错过也不影响正确性。",
+              "correction": "提前执行会产生参数不完整或语义不完整的调用，正确性恰恰是流式边界的核心约束。"
             }
           ],
           "rubric": [
@@ -948,7 +968,7 @@
             }
           ]
         },
-        "adapter_hash": "f765de4e85cea56f8c42794c253f87cec06bd70275a7cef40d3b74ba4f72d5a2"
+        "adapter_hash": "f3df672fa4aa3803d5cf6f4fc95064a6ceba7ae4de999f8323e8808b5e240837"
       }
     }
   },
@@ -991,7 +1011,8 @@
     ],
     "pitfalls": [
       "**错误说法：**Steering一到就会取消未完成工具。\n\n**正确理解：**它主要改变下一轮模型上下文，当前批次工具不会因排队消息自动跳过。",
-      "**错误说法：**Follow-up和Steering只是UI快捷键不同。\n\n**正确理解：**两种队列的消费时机与任务语义不同，直接影响实际执行顺序。"
+      "**错误说法：**Follow-up和Steering只是UI快捷键不同。\n\n**正确理解：**两种队列的消费时机与任务语义不同，直接影响实际执行顺序。",
+      "**错误说法：**运行中改需求会自动应用到已排队但未执行的工具。\n\n**正确理解：**已排队的批次仍会执行，只有尚未开始的轮次才按新指令调整。"
     ],
     "check": {
       "q": "设置两个可手动释放的假工具，在第一个运行时分别入队steering和follow-up，记录下一轮模型收到的消息。",
@@ -1032,7 +1053,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "ae1c4ae82fffab281fe137d22d65bf009a9443cf25e6e8a9802e893b85495b6f",
+        "source_hash": "62d793cee2877729202bb74fe325bb3ff0c088cae47c23d3e59e041b670d0601",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -1122,6 +1143,10 @@
             {
               "claim": "Follow-up和Steering只是UI快捷键不同。",
               "correction": "两种队列的消费时机与任务语义不同，直接影响实际执行顺序。"
+            },
+            {
+              "claim": "运行中改需求会自动应用到已排队但未执行的工具。",
+              "correction": "已排队的批次仍会执行，只有尚未开始的轮次才按新指令调整。"
             }
           ],
           "rubric": [
@@ -1189,7 +1214,7 @@
             }
           ]
         },
-        "adapter_hash": "ff984ca973d39cd66fcecbe494f4a5840772e4192ade91e9fbb64b90d7b1464c"
+        "adapter_hash": "b9b74ff678399c8892971c6ae50e2f4a468a02105a013ea81a776693d626905a"
       }
     }
   },
@@ -1233,7 +1258,8 @@
     ],
     "pitfalls": [
       "**错误说法：**Pi默认会在固定十轮后停下来。\n\n**正确理解：**本题核对的底层循环没有这样的通用默认轮数上限，业务要自行配置停止策略。",
-      "**错误说法：**取消返回代表文件或订单已回滚。\n\n**正确理解：**取消与回滚不同；外部动作可能已完成或仍在收尾，需要业务查询与补偿。"
+      "**错误说法：**取消返回代表文件或订单已回滚。\n\n**正确理解：**取消与回滚不同；外部动作可能已完成或仍在收尾，需要业务查询与补偿。",
+      "**错误说法：**设置轮数上限就等于控制了费用。\n\n**正确理解：**费用由 token 与工具成本决定，轮数少但单轮调用昂贵工具同样可能超预算。"
     ],
     "check": {
       "q": "用永远返回同一工具调用的假模型，分别实现三轮后优雅停止和等待中取消；工具只增加内存计数。",
@@ -1274,7 +1300,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "5d747eb249e92cf076d43831c37261c19a89f7f3348c2ce43ee9f14f0d608789",
+        "source_hash": "daeb5f4a11e307662ee1ca9f2d9406c7bef2d5a865b595e54e9fa13c55fdf3d9",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -1369,6 +1395,10 @@
             {
               "claim": "取消返回代表文件或订单已回滚。",
               "correction": "取消与回滚不同；外部动作可能已完成或仍在收尾，需要业务查询与补偿。"
+            },
+            {
+              "claim": "设置轮数上限就等于控制了费用。",
+              "correction": "费用由 token 与工具成本决定，轮数少但单轮调用昂贵工具同样可能超预算。"
             }
           ],
           "rubric": [
@@ -1436,7 +1466,7 @@
             }
           ]
         },
-        "adapter_hash": "340ce3bd3d24d06ceb817307429e96c1e43954a10bb9814cecbb21740ccb3ed0"
+        "adapter_hash": "00c8ce0292fcea3e0bf157418fdc99e9e8f2783bc1de96644fb00f6276625587"
       }
     }
   },
@@ -1481,7 +1511,8 @@
     ],
     "pitfalls": [
       "**错误说法：**有TypeScript就不必验证模型参数。\n\n**正确理解：**类型检查与运行时外部输入校验解决不同问题，模型输出仍要验证。",
-      "**错误说法：**任何工具失败都会自动再执行一次相同工具。\n\n**正确理解：**底层把失败转换为工具结果供模型处理，没有为任意业务工具提供通用自动重试保证。"
+      "**错误说法：**任何工具失败都会自动再执行一次相同工具。\n\n**正确理解：**底层把失败转换为工具结果供模型处理，没有为任意业务工具提供通用自动重试保证。",
+      "**错误说法：**工具结果只要返回文本就算成功。\n\n**正确理解：**业务成功要看结果内容与状态，返回错误说明或空结果也是一次有效的工具结果传递。"
     ],
     "check": {
       "q": "定义一个只处理内存数据的工具，测试合法输入、非法结构、前置阻断、execute抛错、后置改写五种路径。",
@@ -1528,7 +1559,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "f5c28cae0172d39c4144bdcbfa9ab7935d22a319d9d49fb6974e88c79dd8d0a6",
+        "source_hash": "8c3e3577dedbb2db75ac575fb37a189617a601d7981eeabc86d7e086e1eca35f",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -1629,6 +1660,10 @@
             {
               "claim": "任何工具失败都会自动再执行一次相同工具。",
               "correction": "底层把失败转换为工具结果供模型处理，没有为任意业务工具提供通用自动重试保证。"
+            },
+            {
+              "claim": "工具结果只要返回文本就算成功。",
+              "correction": "业务成功要看结果内容与状态，返回错误说明或空结果也是一次有效的工具结果传递。"
             }
           ],
           "rubric": [
@@ -1706,7 +1741,7 @@
             }
           ]
         },
-        "adapter_hash": "3e2a55338e5f0edfa7df7bd6c92c6ffd95e9ddc1e898d303803aa182eb0f98d0"
+        "adapter_hash": "2c868660a2f7585321e098c96a515b663c0246898ce04738ae55ba82105a5c10"
       }
     }
   },
@@ -2033,7 +2068,8 @@
     ],
     "pitfalls": [
       "**错误说法：**统一API保证跨模型无信息损失。\n\n**正确理解：**图片降级、隐藏推理丢弃等会改变输入信息，只能说提高兼容性。",
-      "**错误说法：**自动补工具结果意味着框架替你恢复了工具执行。\n\n**正确理解：**补的是错误占位消息，不能替代外部状态查询和副作用恢复。"
+      "**错误说法：**自动补工具结果意味着框架替你恢复了工具执行。\n\n**正确理解：**补的是错误占位消息，不能替代外部状态查询和副作用恢复。",
+      "**错误说法：**多模型切换只是换个名字参数。\n\n**正确理解：**能力、上下文长度、工具调用风格和计费口径都不同，切换后要重新验证任务表现。"
     ],
     "check": {
       "q": "构造含图片、带签名推理和缺失工具结果的内存历史，调用转换函数切换到不支持图片的假目标模型。",
@@ -2074,7 +2110,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "e7e368f993135d6614d612fffeefe2f3ded5349049b81e69dfd9e2fa66f8f38b",
+        "source_hash": "b9daa67b4bbf320bcb1557382ef99cbd48a1cadd2eb5d774a490e5f86d77e95f",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -2174,6 +2210,10 @@
             {
               "claim": "自动补工具结果意味着框架替你恢复了工具执行。",
               "correction": "补的是错误占位消息，不能替代外部状态查询和副作用恢复。"
+            },
+            {
+              "claim": "多模型切换只是换个名字参数。",
+              "correction": "能力、上下文长度、工具调用风格和计费口径都不同，切换后要重新验证任务表现。"
             }
           ],
           "rubric": [
@@ -2240,7 +2280,7 @@
             }
           ]
         },
-        "adapter_hash": "c70faefef848b2948671ffe4d569af12bc9b52b4446285335c9f7c0dd9d63f33"
+        "adapter_hash": "9dee2a612c58d3f6c541acf8fb707104969e785357ce48b11b71c330eae38d1c"
       }
     }
   },
@@ -2577,7 +2617,8 @@
     ],
     "pitfalls": [
       "**错误说法：**Session 文件里有的信息，模型一定知道。\n\n**正确理解：**只有活动路径经过压缩、变换和转换后保留下来的信息才会进入本次请求。",
-      "**错误说法：**AgentState 就是永久记忆数据库。\n\n**正确理解：**它首先是内存运行状态；持久化和跨会话检索需要其他组件。"
+      "**错误说法：**AgentState 就是永久记忆数据库。\n\n**正确理解：**它首先是内存运行状态；持久化和跨会话检索需要其他组件。",
+      "**错误说法：**把历史重新发给模型就是长期记忆。\n\n**正确理解：**记忆需要选择性、检索与更新策略；全量重发既贵也不等于模型会正确利用。"
     ],
     "check": {
       "q": "用手写会话夹具构造一条普通 custom 条目和一条 display=false 的 custom_message，调用上下文构建和转换函数比较结果；不请求真实模型。",
@@ -2618,7 +2659,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "5ce449eb49ff08aa54ce64064cee682fe3a0afe0476f091e5af07470de9172f3",
+        "source_hash": "23af618346f127a97d137b45e54ed39cad5d51a03cb8a080f6bf3fec82e7b6e6",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -2713,6 +2754,10 @@
             {
               "claim": "AgentState 就是永久记忆数据库。",
               "correction": "它首先是内存运行状态；持久化和跨会话检索需要其他组件。"
+            },
+            {
+              "claim": "把历史重新发给模型就是长期记忆。",
+              "correction": "记忆需要选择性、检索与更新策略；全量重发既贵也不等于模型会正确利用。"
             }
           ],
           "rubric": [
@@ -2780,7 +2825,7 @@
             }
           ]
         },
-        "adapter_hash": "8dbfba38cc7870f9419dfb6035d5717cbaf17b19cae1a2e3be53f3ce6f52e72a"
+        "adapter_hash": "cbf699fe240d8f3188951806dbf6f9549e4147414126d459a3922fd09b2d224a"
       }
     }
   },
@@ -2823,7 +2868,8 @@
     ],
     "pitfalls": [
       "**错误说法：**appendFileSync 就代表事务提交和磁盘断电保证。\n\n**正确理解：**同步追加只说明这次调用的文件操作同步完成；源码没有由此建立跨操作事务或断电耐久协议。",
-      "**错误说法：**树导航后关闭进程，必定恢复到刚选中的节点。\n\n**正确理解：**单独 branch 只更改内存位置；没有新的持久条目时，加载索引会重新采用文件中最后的条目。"
+      "**错误说法：**树导航后关闭进程，必定恢复到刚选中的节点。\n\n**正确理解：**单独 branch 只更改内存位置；没有新的持久条目时，加载索引会重新采用文件中最后的条目。",
+      "**错误说法：**JSONL 树结构可以随时人工编辑。\n\n**正确理解：**条目间有父子依赖，手工改动可能破坏加载索引与恢复路径。"
     ],
     "check": {
       "q": "在专门的临时目录中创建模拟 SessionManager，记录第一次助手消息之前和之后的文件存在情况；构造两条分支，切换叶子后重开文件观察恢复位置。",
@@ -2858,7 +2904,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "a6895a5b4aec4272c2239799868403b3046df41ebc960ce4f10cf88b3e7b68fc",
+        "source_hash": "fa924e445f8a8058e136ae58cd2f5c7662b1528a61827fd2280c35f7d8d47c7d",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -2952,6 +2998,10 @@
             {
               "claim": "树导航后关闭进程，必定恢复到刚选中的节点。",
               "correction": "单独 branch 只更改内存位置；没有新的持久条目时，加载索引会重新采用文件中最后的条目。"
+            },
+            {
+              "claim": "JSONL 树结构可以随时人工编辑。",
+              "correction": "条目间有父子依赖，手工改动可能破坏加载索引与恢复路径。"
             }
           ],
           "rubric": [
@@ -3013,7 +3063,7 @@
             }
           ]
         },
-        "adapter_hash": "a34b5dd4a144d70b1ef12c65bd7757d3d8bacf0a364a36fcb42a29c7b656a16b"
+        "adapter_hash": "4425190e4b01d3379d90459e2d27e95482d82ca585534f034f1f9453b297c90d"
       }
     }
   },
@@ -3058,7 +3108,8 @@
     ],
     "pitfalls": [
       "**错误说法：**/clone 会复制整个仓库和全部会话分支。\n\n**正确理解：**它复制当前活动会话分支为新会话文件，代码目录不因此复制。",
-      "**错误说法：**工具结果曾经记录成功，所以回到前面节点会自动撤销它。\n\n**正确理解：**历史条目记录结果，不等于具有对应的逆向操作；外部副作用可能不可逆。"
+      "**错误说法：**工具结果曾经记录成功，所以回到前面节点会自动撤销它。\n\n**正确理解：**历史条目记录结果，不等于具有对应的逆向操作；外部副作用可能不可逆。",
+      "**错误说法：**会话恢复等于工作区快照回滚。\n\n**正确理解：**两者是不同层面的状态，文件系统变化不会随会话节点自动还原。"
     ],
     "check": {
       "q": "在仅含样例文本的临时目录中手动写入 A，再构造模拟会话执行 branch；比较文件内容。画出 tree、fork、clone 三种会话结构，单独标记磁盘状态。",
@@ -3099,7 +3150,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "89575c2334df63e78d6026abb09c7227b4db1cf40814ba339d2dbc81cc928739",
+        "source_hash": "166a4b06a9b90e1417fc5ec08c07ed2388845b5483583c64c2ef7213129ba489",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -3195,6 +3246,10 @@
             {
               "claim": "工具结果曾经记录成功，所以回到前面节点会自动撤销它。",
               "correction": "历史条目记录结果，不等于具有对应的逆向操作；外部副作用可能不可逆。"
+            },
+            {
+              "claim": "会话恢复等于工作区快照回滚。",
+              "correction": "两者是不同层面的状态，文件系统变化不会随会话节点自动还原。"
             }
           ],
           "rubric": [
@@ -3261,7 +3316,7 @@
             }
           ]
         },
-        "adapter_hash": "cc5e6d86a9544ce53eff759d3cf0ccfded2fe45c3bab8b5a21d162d11a468d56"
+        "adapter_hash": "282fffa2a414d4705c83963d402873209260baa879b7cc6fdb0a93861c08624f"
       }
     }
   },
@@ -3305,7 +3360,8 @@
     ],
     "pitfalls": [
       "**错误说法：**display=false 表示不会发送给模型。\n\n**正确理解：**默认转换仍发送 custom.content；它只控制 UI 展示。",
-      "**错误说法：**details 不在模型请求里，所以任何秘密都可以放进去。\n\n**正确理解：**它仍可能持久化、导出或被扩展使用，应遵守业务的数据访问和保留规则。"
+      "**错误说法：**details 不在模型请求里，所以任何秘密都可以放进去。\n\n**正确理解：**它仍可能持久化、导出或被扩展使用，应遵守业务的数据访问和保留规则。",
+      "**错误说法：**隐藏的消息等同于不存在。\n\n**正确理解：**不展示不等于不持久化，数据治理要按存储与传输口径分别检查。"
     ],
     "check": {
       "q": "构造虚拟订单标记字段，通过 convertToLlm 转换 custom、toolResult 等夹具，记录哪些字段保留；使用假的 streamFn 捕获请求，不连接模型。",
@@ -3346,7 +3402,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "aa3821fe924d28f4048463c44ede9a4faa56975b6001c36cf1e78bbc0afcf232",
+        "source_hash": "e151a7ade88136f6f9a966699479c5a1ab50ee6d53f41673e0a6ed5a04cf2b35",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -3441,6 +3497,10 @@
             {
               "claim": "details 不在模型请求里，所以任何秘密都可以放进去。",
               "correction": "它仍可能持久化、导出或被扩展使用，应遵守业务的数据访问和保留规则。"
+            },
+            {
+              "claim": "隐藏的消息等同于不存在。",
+              "correction": "不展示不等于不持久化，数据治理要按存储与传输口径分别检查。"
             }
           ],
           "rubric": [
@@ -3507,7 +3567,7 @@
             }
           ]
         },
-        "adapter_hash": "d7399684d44d3f83401f8c04722b7cb204c1e8eda5c6b5827bf52295d420e2fa"
+        "adapter_hash": "940a6fc17e94524af19b0e7c3151a921d573fd645e22d5d4da823ea82732890d"
       }
     }
   },
@@ -3808,7 +3868,8 @@
     ],
     "pitfalls": [
       "**错误说法：**工具调用和结果互相独立，可以任意裁剪。\n\n**正确理解：**两者通过 ID 配对，错误裁剪可能导致 Provider 拒绝请求或模型误解状态。",
-      "**错误说法：**摘要里有文件列表，就等于完整工具执行审计。\n\n**正确理解：**列表来源于特定工具调用参数，不验证执行成功，也不覆盖所有间接文件操作。"
+      "**错误说法：**摘要里有文件列表，就等于完整工具执行审计。\n\n**正确理解：**列表来源于特定工具调用参数，不验证执行成功，也不覆盖所有间接文件操作。",
+      "**错误说法：**压缩只影响上下文长度，不影响任务正确性。\n\n**正确理解：**摘要有损，丢失的细节可能正是后续推理需要的关键状态。"
     ],
     "check": {
       "q": "构造用户、助手工具调用、工具结果、下一助手的会话夹具，用多组 keepRecentTokens 测试 findCutPoint 和 prepareCompaction；模拟 length 摘要输出验证失败判定。",
@@ -3849,7 +3910,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "7b5b23d256b225084f8656d93c00c1af283b9b4c7051a14be71a5586e498ffcd",
+        "source_hash": "658faf153485c7f48a5066b046d960c5e7c621be093c0cc96c42d5cd3008192d",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -3945,6 +4006,10 @@
             {
               "claim": "摘要里有文件列表，就等于完整工具执行审计。",
               "correction": "列表来源于特定工具调用参数，不验证执行成功，也不覆盖所有间接文件操作。"
+            },
+            {
+              "claim": "压缩只影响上下文长度，不影响任务正确性。",
+              "correction": "摘要有损，丢失的细节可能正是后续推理需要的关键状态。"
             }
           ],
           "rubric": [
@@ -4015,7 +4080,7 @@
             }
           ]
         },
-        "adapter_hash": "0cb7ee813cb1f7a3addb52cbafd3d7260bce433e46259397beb01f1420e9f07e"
+        "adapter_hash": "376de2bf2a8542f36e75d72ce1b3094382f9b1937a08af0482937838cc19181b"
       }
     }
   },
@@ -4060,7 +4125,8 @@
     ],
     "pitfalls": [
       "**错误说法：**有 JSONL 和摘要就有完整长期记忆。\n\n**正确理解：**仍缺少跨会话选择、身份隔离、更新、来源和遗忘策略。",
-      "**错误说法：**分支摘要会把旧分支每一条工具结果完整带过去。\n\n**正确理解：**默认准备阶段跳过 toolResult，且还存在预算选择与摘要有损处理。"
+      "**错误说法：**分支摘要会把旧分支每一条工具结果完整带过去。\n\n**正确理解：**默认准备阶段跳过 toolResult，且还存在预算选择与摘要有损处理。",
+      "**错误说法：**三种机制同时开启就一定更好。\n\n**正确理解：**叠加使用会互相遮蔽，预算与信息来源要有明确的优先级约定。"
     ],
     "check": {
       "q": "手绘有共同祖先的 A、B 会话树，使用模拟 SessionManager 调用 collectEntriesForBranchSummary；再设计三个客户记忆测试案例，不建立真实客户库。",
@@ -4101,7 +4167,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "370bd849d14d50b5776a0d56b446ca4755b540ebbab539e631443283bd95d627",
+        "source_hash": "72d6c2acc3b9f18e717587964db10ba2bbbcf4107f224a354b43be9bf9b91de8",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -4197,6 +4263,10 @@
             {
               "claim": "分支摘要会把旧分支每一条工具结果完整带过去。",
               "correction": "默认准备阶段跳过 toolResult，且还存在预算选择与摘要有损处理。"
+            },
+            {
+              "claim": "三种机制同时开启就一定更好。",
+              "correction": "叠加使用会互相遮蔽，预算与信息来源要有明确的优先级约定。"
             }
           ],
           "rubric": [
@@ -4264,7 +4334,7 @@
             }
           ]
         },
-        "adapter_hash": "182f5714c5aa2e963012780a0d5b1834d974b30b854879760f18c49473c9bbfc"
+        "adapter_hash": "4af2174258511741af3e4449e83e6c694ff9a840ba4507ae8b0e800dc0af65bb"
       }
     }
   },
@@ -4308,7 +4378,8 @@
     ],
     "pitfalls": [
       "**错误说法：**子目录 AGENTS.md 会按系统规则完全覆盖所有祖先提示。\n\n**正确理解：**文件内容是按顺序装配，只有同目录候选文件存在明确选择优先级，不能等同权限继承和强制覆盖。",
-      "**错误说法：**拒绝 trust 就禁止工具修改该目录。\n\n**正确理解：**它限制资源加载，不改变 Pi 进程的文件和命令权限。"
+      "**错误说法：**拒绝 trust 就禁止工具修改该目录。\n\n**正确理解：**它限制资源加载，不改变 Pi 进程的文件和命令权限。",
+      "**错误说法：**AGENTS.md 越长约束力越强。\n\n**正确理解：**它只是提示来源之一，执行效果取决于模型遵循度与宿主的强制检查。"
     ],
     "check": {
       "q": "在临时目录建立父子级上下文文件和同目录 override 文件，调用 loadProjectContextFiles 与 buildSystemPrompt 检查装配文本；只使用无害指令。",
@@ -4349,7 +4420,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "af152691cc4cb423152805279a14c58f41dd837a9b415e5aafd1c3ee657f3a60",
+        "source_hash": "ba14a04048145e9e6886b63bc2c6e688512ec177c721d49fc75805aa528620cb",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -4444,6 +4515,10 @@
             {
               "claim": "拒绝 trust 就禁止工具修改该目录。",
               "correction": "它限制资源加载，不改变 Pi 进程的文件和命令权限。"
+            },
+            {
+              "claim": "AGENTS.md 越长约束力越强。",
+              "correction": "它只是提示来源之一，执行效果取决于模型遵循度与宿主的强制检查。"
             }
           ],
           "rubric": [
@@ -4510,7 +4585,7 @@
             }
           ]
         },
-        "adapter_hash": "01ce471046bee3f867bf74929313a6dc6899a205bcbabdfd8f78f70b6ba97ae8"
+        "adapter_hash": "978695555a092d9371f983351d7f23af9683aff3496d2711326fbaf57144afd3"
       }
     }
   },
@@ -5122,7 +5197,8 @@
     ],
     "pitfalls": [
       "**错误说法：**不信任项目等于只读沙箱。\n\n**正确理解：**它只是资源加载策略，既不自动只读，也不形成系统隔离。",
-      "**错误说法：**仅禁止 bash 就能完全限制文件访问。\n\n**正确理解：**其他文件工具和扩展仍可能访问数据，权限必须覆盖所有实际执行入口。"
+      "**错误说法：**仅禁止 bash 就能完全限制文件访问。\n\n**正确理解：**其他文件工具和扩展仍可能访问数据，权限必须覆盖所有实际执行入口。",
+      "**错误说法：**信任确认后项目内所有操作都安全。\n\n**正确理解：**信任的是资源加载来源，具体操作风险要按命令与工具逐个评估。"
     ],
     "check": {
       "q": "在一次性临时目录设计一张能力矩阵，用假的 secret.txt 代替密钥，比较“拒绝项目信任”和“只读隔离”允许的行为；只用本地模拟工具，不读取真实秘密。",
@@ -5157,7 +5233,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "721388f40f9e32ef64f4415ca396b8c3372e4e88ac8267743aca801aa3430ffe",
+        "source_hash": "9e1cfc77e8ea33e944557d5d3a74bec72459b379624ec908b5d227e713257e1f",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -5246,6 +5322,10 @@
             {
               "claim": "仅禁止 bash 就能完全限制文件访问。",
               "correction": "其他文件工具和扩展仍可能访问数据，权限必须覆盖所有实际执行入口。"
+            },
+            {
+              "claim": "信任确认后项目内所有操作都安全。",
+              "correction": "信任的是资源加载来源，具体操作风险要按命令与工具逐个评估。"
             }
           ],
           "rubric": [
@@ -5305,7 +5385,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "55359377096090820f496b399cd292b7bd938624d056aecd7ff05619ebdf5696"
+        "adapter_hash": "7fe8f362c2332e6a0b2ee4dd209e1ba9d5dfc441f354204efbfda0bfc175d9ba"
       }
     }
   },
@@ -5351,7 +5431,8 @@
     ],
     "pitfalls": [
       "**错误说法：**传 customTools 就只会启用我的工具。\n\n**正确理解：**自定义工具会与扩展注册工具组合；应使用明确允许列表并检查最终生效工具。",
-      "**错误说法：**不同 cwd 就实现多租户隔离。\n\n**正确理解：**cwd 是工作目录，不是文件、数据库或身份权限边界。"
+      "**错误说法：**不同 cwd 就实现多租户隔离。\n\n**正确理解：**cwd 是工作目录，不是文件、数据库或身份权限边界。",
+      "**错误说法：**裁剪系统提示就能裁掉模型能力。\n\n**正确理解：**能力边界由可用工具与权限共同决定，提示只是引导。"
     ],
     "check": {
       "q": "给一个虚构销售表设计三种工具的输入输出说明，并用固定数据模拟允许与拒绝查询；无需连真实数据库或模型。",
@@ -5392,7 +5473,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "1e892ee81e86bdfe229d0336c350bdc9df7738015c4edfbdd2ab128edeaa546c",
+        "source_hash": "ce498a753c6639c335f71ca4d8c38b5448dced8d09e1f2ce2110bec0f3b96e55",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -5483,6 +5564,10 @@
             {
               "claim": "不同 cwd 就实现多租户隔离。",
               "correction": "cwd 是工作目录，不是文件、数据库或身份权限边界。"
+            },
+            {
+              "claim": "裁剪系统提示就能裁掉模型能力。",
+              "correction": "能力边界由可用工具与权限共同决定，提示只是引导。"
             }
           ],
           "rubric": [
@@ -5552,7 +5637,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "769f4dadbd352a16b1c8c46ae144fc2377ded7da1e566b63b61c1866cbebead5"
+        "adapter_hash": "84e98d7c4317009983cd6366d5e7c9d83179464b66b7c447dfda64e23eb806db"
       }
     }
   },
@@ -5597,7 +5682,8 @@
     ],
     "pitfalls": [
       "**错误说法：**正则匹配危险命令等于完整权限系统。\n\n**正确理解：**正则难以覆盖所有 shell 语法、别名、脚本和其他进程入口。",
-      "**错误说法：**审批按钮点过一次，之后相关动作都可自动执行。\n\n**正确理解：**批准应有明确对象、参数、范围和期限，超出范围需重新判断。"
+      "**错误说法：**审批按钮点过一次，之后相关动作都可自动执行。\n\n**正确理解：**批准应有明确对象、参数、范围和期限，超出范围需重新判断。",
+      "**错误说法：**敏感文件只要不在工作目录就安全。\n\n**正确理解：**工具可以通过绝对路径或环境变量访问外部文件，保护范围必须显式声明。"
     ],
     "check": {
       "q": "使用假的 secret.txt 和模拟删除工具，写出审批状态转换及绕过测试表；不执行真实危险命令。",
@@ -5638,7 +5724,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "6335cc13e10c15fca75a66d7d96902f0503300e0dba2e6840259cd714b6aacb4",
+        "source_hash": "9a3e8816634860ea6ea2d42c8dfa59f75fc7c11ddb741fc15e47a8d8026db5d6",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -5728,6 +5814,10 @@
             {
               "claim": "审批按钮点过一次，之后相关动作都可自动执行。",
               "correction": "批准应有明确对象、参数、范围和期限，超出范围需重新判断。"
+            },
+            {
+              "claim": "敏感文件只要不在工作目录就安全。",
+              "correction": "工具可以通过绝对路径或环境变量访问外部文件，保护范围必须显式声明。"
             }
           ],
           "rubric": [
@@ -5795,7 +5885,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "bcaed97be795ea171a0983c1610025b153877086e2cf16ceda03fd1eca82133c"
+        "adapter_hash": "cf4d3a8a6c29f39ef05b5964cf94e1bfef15ffb7819cd25a2ffdcbb945be3403"
       }
     }
   },
@@ -5842,7 +5932,8 @@
     ],
     "pitfalls": [
       "**错误说法：**HTTP 连接断开就会自动终止 Pi。\n\n**正确理解：**应用需要显式把断线策略映射到 abort，或者保留任务并仅清理观察连接。",
-      "**错误说法：**全局 busy 标志能保护多实例会话。\n\n**正确理解：**它只存在于一个进程，无法阻止另一个实例同时写入。"
+      "**错误说法：**全局 busy 标志能保护多实例会话。\n\n**正确理解：**它只存在于一个进程，无法阻止另一个实例同时写入。",
+      "**错误说法：**为每个用户复制一个进程就能无限扩展。\n\n**正确理解：**进程隔离只是起点，资源上限、会话持久化与排队策略决定真实容量。"
     ],
     "check": {
       "q": "用两个虚构用户和延迟假模型模拟 SSE 服务状态表，加入刷新、断线、取消和两个工作者竞争场景。",
@@ -5883,7 +5974,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "fe96549af615aa4c0c8d3996b228c141e3fc368b9338925cd7a4dfb3fc4883e0",
+        "source_hash": "a7e391c13543f29c89ae3970d34e74a471327ca635ab1fcfb293bddf58724396",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -5979,6 +6070,10 @@
             {
               "claim": "全局 busy 标志能保护多实例会话。",
               "correction": "它只存在于一个进程，无法阻止另一个实例同时写入。"
+            },
+            {
+              "claim": "为每个用户复制一个进程就能无限扩展。",
+              "correction": "进程隔离只是起点，资源上限、会话持久化与排队策略决定真实容量。"
             }
           ],
           "rubric": [
@@ -6048,7 +6143,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "7f4c5c20cd1a9fefa43492f02ddf75f357fc24a48e44ff19862393bfc3bb7528"
+        "adapter_hash": "396ced860ace928677ddf0c1b64952d85292ab55fe0da5fc7d70199d364948ac"
       }
     }
   },
@@ -6095,7 +6190,8 @@
     ],
     "pitfalls": [
       "**错误说法：**把所有流式事件的 usage 相加就是总量。\n\n**正确理解：**部分流式字段是当前请求累计值，逐次相加会重复计算；必须按供应商和事件语义归一。",
-      "**错误说法：**Pi 显示的成本就是账单最终金额。\n\n**正确理解：**它基于已报告用量与模型价格估算，订阅、折扣、缺失用量和外部工具账单可能不同。"
+      "**错误说法：**Pi 显示的成本就是账单最终金额。\n\n**正确理解：**它基于已报告用量与模型价格估算，订阅、折扣、缺失用量和外部工具账单可能不同。",
+      "**错误说法：**缓存命中只省钱不影响行为。\n\n**正确理解：**缓存键设计与失效策略会影响上下文内容，进而影响回答质量与一致性。"
     ],
     "check": {
       "q": "构造两轮模型、一次摘要和一个带 usage 的工具记录，手算一次运行的用量；再加入重复累计事件和一条缺失用量的中止请求。",
@@ -6136,7 +6232,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "ae76ce5a637c13a3b3882b9a59ad4588277290b508f7743125fa61dbdb4eb102",
+        "source_hash": "287fe2fa41c0f482f08c2c37420d2f06c6bed3275dda6f37606dd338ed288220",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -6228,6 +6324,10 @@
             {
               "claim": "Pi 显示的成本就是账单最终金额。",
               "correction": "它基于已报告用量与模型价格估算，订阅、折扣、缺失用量和外部工具账单可能不同。"
+            },
+            {
+              "claim": "缓存命中只省钱不影响行为。",
+              "correction": "缓存键设计与失效策略会影响上下文内容，进而影响回答质量与一致性。"
             }
           ],
           "rubric": [
@@ -6297,7 +6397,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "18811063f77f0a0aeea4f1b1f3a20f7aba2c3bc17b972e92562a3c3bc606e668"
+        "adapter_hash": "89b365291c40d2eedcb6761a1c1f7c0a2fd52c53001fc0af74b8d81b06304a9d"
       }
     }
   },
@@ -6343,7 +6443,8 @@
     ],
     "pitfalls": [
       "**错误说法：**测试全绿说明 Agent 会理解所有业务问题。\n\n**正确理解：**程序协议测试只覆盖指定输入，真实模型的决策与泛化要单独测量。",
-      "**错误说法：**模型评分高就不用人工看失败轨迹。\n\n**正确理解：**评审模型可能错误或偏爱某种文风，轨迹和客观结果仍是关键证据。"
+      "**错误说法：**模型评分高就不用人工看失败轨迹。\n\n**正确理解：**评审模型可能错误或偏爱某种文风，轨迹和客观结果仍是关键证据。",
+      "**错误说法：**换更强模型就不用维护测试集。\n\n**正确理解：**模型升级会改变失败模式，回归集是唯一稳定的对照基准。"
     ],
     "check": {
       "q": "先设计十个虚构报表任务及评分规则，用假模型跑通其中工具返回的预期轨迹；另写真实评测计划，本练习无需调用付费模型。",
@@ -6378,7 +6479,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "4cf73898936aaceb36c572642c5d40748cfa7e5241f68524f13541909038ef27",
+        "source_hash": "1554619a81673133ec37d11fdc9923aa41c556710bda8de19c60efc6d7b2d6cd",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -6473,6 +6574,10 @@
             {
               "claim": "模型评分高就不用人工看失败轨迹。",
               "correction": "评审模型可能错误或偏爱某种文风，轨迹和客观结果仍是关键证据。"
+            },
+            {
+              "claim": "换更强模型就不用维护测试集。",
+              "correction": "模型升级会改变失败模式，回归集是唯一稳定的对照基准。"
             }
           ],
           "rubric": [
@@ -6535,7 +6640,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "0adb335fae673e2d626c365a2916673069b4408849665c374297f1cdb9a0dd15"
+        "adapter_hash": "96a886cacd300bb91ae0690816b9cc555827021a3b7bb80c9b4034103d4be27e"
       }
     }
   },
@@ -6581,7 +6686,8 @@
     ],
     "pitfalls": [
       "**错误说法：**Pi 的会话记忆就是内置 RAG 知识库。\n\n**正确理解：**会话记录和摘要与企业文档索引、检索授权是不同组件。",
-      "**错误说法：**给每段答案加链接就完成了可追溯性。\n\n**正确理解：**还要保留当时的数据版本、片段、查询口径，并验证引用支持对应结论。"
+      "**错误说法：**给每段答案加链接就完成了可追溯性。\n\n**正确理解：**还要保留当时的数据版本、片段、查询口径，并验证引用支持对应结论。",
+      "**错误说法：**检索结果正确，回答就一定正确。\n\n**正确理解：**生成环节仍可能引入与证据不符的表述，答案与证据的一致性要单独验证。"
     ],
     "check": {
       "q": "设计含普通员工与管理层权限的六篇虚构文档，用固定检索结果生成证据包和结论映射表；无需接入向量数据库。",
@@ -6616,7 +6722,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "6d0f6b1f25761df6dc44f604d79dad3ce3aa30184f131a048f3590dfaeb7e916",
+        "source_hash": "adab1a3a5d39bf6d315652992c52039b8dd9fd5adab3bae367f9b4b30c1a6e94",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -6711,6 +6817,10 @@
             {
               "claim": "给每段答案加链接就完成了可追溯性。",
               "correction": "还要保留当时的数据版本、片段、查询口径，并验证引用支持对应结论。"
+            },
+            {
+              "claim": "检索结果正确，回答就一定正确。",
+              "correction": "生成环节仍可能引入与证据不符的表述，答案与证据的一致性要单独验证。"
             }
           ],
           "rubric": [
@@ -6771,7 +6881,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "2c198f8fbe4eb4e60468c74b1734a9cec2522de22e1afd75b239395527b3f69a"
+        "adapter_hash": "18d258b539bafd7adb0b95e2c7678e69175da29462de69ccdfebad442991389f"
       }
     }
   },
@@ -6818,7 +6928,8 @@
     ],
     "pitfalls": [
       "**错误说法：**Pi 安装后默认就有完整多 Agent 团队系统。\n\n**正确理解：**核心没有该默认产品能力，官方示例与第三方扩展需单独组合。",
-      "**错误说法：**多个模型相互投票就能消除错误。\n\n**正确理解：**它们可能共享错误来源；还需要独立证据、程序测试和冲突处理。"
+      "**错误说法：**多个模型相互投票就能消除错误。\n\n**正确理解：**它们可能共享错误来源；还需要独立证据、程序测试和冲突处理。",
+      "**错误说法：**子 Agent 的任务边界天然清晰。\n\n**正确理解：**边界由任务拆分与文件/工具范围声明决定，不做声明就会互相覆盖。"
     ],
     "check": {
       "q": "设计三角色的只读分析流程，以假任务输出模拟成功、冲突、超时和取消；再给并行写代码画出文件归属表。",
@@ -6859,7 +6970,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "b6acd3ee2a9bc18a49a6341a759345572e25add794c61ab974a98eb433c0dd7b",
+        "source_hash": "77fceb4ad1d8f5923b491c9da88d845c8fb022ae347504e7832345999f1c97ea",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -6955,6 +7066,10 @@
             {
               "claim": "多个模型相互投票就能消除错误。",
               "correction": "它们可能共享错误来源；还需要独立证据、程序测试和冲突处理。"
+            },
+            {
+              "claim": "子 Agent 的任务边界天然清晰。",
+              "correction": "边界由任务拆分与文件/工具范围声明决定，不做声明就会互相覆盖。"
             }
           ],
           "rubric": [
@@ -7024,7 +7139,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "3536b32f8e38ff847f5bea9a91ada885cc8cdfa575e8faa2c696218bc1d58b32"
+        "adapter_hash": "c9a091111b6e7f609c22109e1cf25f16b9aeb43bdc0c2b60a9bab2b559e3518c"
       }
     }
   },
@@ -7071,7 +7186,8 @@
     ],
     "pitfalls": [
       "**错误说法：**Durable Harness 能自动让跨系统扣款恰好一次。\n\n**正确理解：**本地提交与外部服务之间仍有不确定窗口，需要外部幂等或对账。",
-      "**错误说法：**reduceLaneSnapshot 可以通过重放 UI 事件恢复全部运行。\n\n**正确理解：**它更新观察快照；执行恢复读取持久操作状态并按具体步骤处理。"
+      "**错误说法：**reduceLaneSnapshot 可以通过重放 UI 事件恢复全部运行。\n\n**正确理解：**它更新观察快照；执行恢复读取持久操作状态并按具体步骤处理。",
+      "**错误说法：**崩溃恢复后可以假装外部副作用没发生。\n\n**正确理解：**恢复流程必须先查询外部状态，再决定重试、补偿或终止。"
     ],
     "check": {
       "q": "用本地假扣款服务设计三处故障注入：意图前、外部成功后结算前、结算后；只画状态和构造模拟记录，不调用真实支付。",
@@ -7130,7 +7246,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "05383f6f94b3b1c467496a1cc1301bbd4f2c4af04340e4979964144374097bbe",
+        "source_hash": "077da1601fa84eb05e8f6c89f11e6c97a652883a70e291d678c2d1a0b7a3f388",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -7231,6 +7347,10 @@
             {
               "claim": "reduceLaneSnapshot 可以通过重放 UI 事件恢复全部运行。",
               "correction": "它更新观察快照；执行恢复读取持久操作状态并按具体步骤处理。"
+            },
+            {
+              "claim": "崩溃恢复后可以假装外部副作用没发生。",
+              "correction": "恢复流程必须先查询外部状态，再决定重试、补偿或终止。"
             }
           ],
           "rubric": [
@@ -7329,7 +7449,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "69e84c0cdf09ee17a401ae48703176ba7c85799238bcdd620ffceb6dfba9073d"
+        "adapter_hash": "df0f0f1cca13979f689acb6a09726df31f575c5c4fd4d8fa41fc8b09e12d6003"
       }
     }
   },
@@ -7376,7 +7496,8 @@
     ],
     "pitfalls": [
       "**错误说法：**GitHub 目录里存在的所有功能都是稳定 npm API。\n\n**正确理解：**实验源码、导出条件和发行文件清单决定真实可用范围。",
-      "**错误说法：**类型检查通过就说明权限和取消行为没有变化。\n\n**正确理解：**类型只约束部分接口形状，资源加载、事件时序和权限效果必须做行为回归。"
+      "**错误说法：**类型检查通过就说明权限和取消行为没有变化。\n\n**正确理解：**类型只约束部分接口形状，资源加载、事件时序和权限效果必须做行为回归。",
+      "**错误说法：**固定版本号就能锁定全部行为。\n\n**正确理解：**依赖图里的间接升级与运行环境差异仍会带来行为变化，回归测试不能省。"
     ],
     "check": {
       "q": "列出你将使用的十项 Pi API/行为契约，制作旧教材到 v0.85.1 的迁移矩阵，并给每项设计一个无需真实模型的验收案例。",
@@ -7417,7 +7538,7 @@
       "pi_agent": {
         "bank_id": "pi-agent-interview-30",
         "content_version": "1.0.0",
-        "source_hash": "240534da7711f593765ffb043e5198acc2e3470e85228221d1465e9778f4e449",
+        "source_hash": "f6613722124842a7c44d34442bccb135d4ba7789f67d994d739adb183032bd57",
         "source_baseline": {
           "repository": "https://github.com/earendil-works/pi",
           "tag": "v0.85.1",
@@ -7518,6 +7639,10 @@
             {
               "claim": "类型检查通过就说明权限和取消行为没有变化。",
               "correction": "类型只约束部分接口形状，资源加载、事件时序和权限效果必须做行为回归。"
+            },
+            {
+              "claim": "固定版本号就能锁定全部行为。",
+              "correction": "依赖图里的间接升级与运行环境差异仍会带来行为变化，回归测试不能省。"
             }
           ],
           "rubric": [
@@ -7589,7 +7714,7 @@
           "category": "production",
           "kind": "scenario"
         },
-        "adapter_hash": "4ca2c81155b6ba91bd94c8baecb36d30ba76f271b88be708d3d040cfccae4854"
+        "adapter_hash": "be3d445815112ffd6b8e3b263e491cf35ee5652741f750049885871580089846"
       }
     }
   }
