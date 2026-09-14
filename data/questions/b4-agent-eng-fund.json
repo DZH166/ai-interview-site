@@ -120,7 +120,7 @@
      "XL-LANGCHAIN-07"
     ],
     "before_hash": "0bac3456471112518d953e6729f3f5d09e3a5287d729a3ef4dae066584086884",
-    "output_hash": "e8ee02ee15a13dea5afa81d4550bcce31183c9700bbfceae1dab61e22bd09130"
+    "output_hash": "4cc772d4cacca93a5ed19222f881a2b97fde4b7ae8a3b5159c3e9ee323393d37"
    }
   }
  },
@@ -224,7 +224,7 @@
      "XL-TOOLS-13"
     ],
     "before_hash": "2ed5e42db632a1233d4c55aebeed1756e7f19b9bbceea019c7873b29a57141cb",
-    "output_hash": "ed022c120abf576524300c04efa3e909da36568384ebcb031f86674d9fed845f"
+    "output_hash": "84a3dacc791288c9f2fb3d6cd3376ab45b4bd6009c2c84a9befa14857cd69431"
    }
   }
  },
@@ -433,8 +433,7 @@
   ],
   "pitfalls": [
    "把KV容量、注意力矩阵和计算时间混作一个指标。",
-   "把数学精确等同浮点逐位一致。",
-   "把注意力变体的论文配置直接套到自己的模型与显存上。"
+   "把数学精确等同浮点逐位一致。"
   ],
   "check": {
    "q": "Q头32、KV头8时，KV缓存公式应填哪个？",
@@ -613,8 +612,7 @@
   ],
   "pitfalls": [
    "把相对偏好优化说成所有绝对概率都单调变化。",
-   "按模型角色数直接推断资源倍数。",
-   "把训练算法的差异当成不需要比较数据的差异。"
+   "按模型角色数直接推断资源倍数。"
   ],
   "check": {
    "q": "胜答案概率下降是否必然表示DPO目标更差？",

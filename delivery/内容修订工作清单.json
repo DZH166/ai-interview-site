@@ -48,6 +48,11 @@
      "field": "deep",
      "len": 194,
      "min": 200
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -59,6 +64,11 @@
      "field": "plain",
      "len": 79,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -75,6 +85,11 @@
      "field": "deep",
      "len": 176,
      "min": 200
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -124,6 +139,11 @@
      "field": "plain",
      "len": 79,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -151,6 +171,11 @@
      "field": "plain",
      "len": 85,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -162,6 +187,11 @@
      "field": "plain",
      "len": 64,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -178,6 +208,11 @@
      "field": "plain",
      "len": 73,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -189,6 +224,11 @@
      "field": "plain",
      "len": 80,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -200,6 +240,11 @@
      "field": "plain",
      "len": 76,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -238,6 +283,11 @@
      "field": "plain",
      "len": 72,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -249,6 +299,11 @@
      "field": "plain",
      "len": 79,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -335,6 +390,11 @@
      "field": "plain",
      "len": 69,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -346,6 +406,11 @@
      "field": "plain",
      "len": 73,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -362,6 +427,11 @@
      "field": "plain",
      "len": 84,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
@@ -378,6 +448,11 @@
      "field": "plain",
      "len": 73,
      "min": 100
+    },
+    {
+     "field": "pitfalls",
+     "len": 2,
+     "min": 3
     }
    ]
   },
