@@ -1,29 +1,6 @@
 {
  "generated": "2026-09-14",
  "note": "MIN_LEN/坑点数阈值与 content_audit.py 一致;本清单供后续内容批次,不改阈值",
- "count": 2,
- "questions": {
-  "AD-004": {
-   "file": "b10-adv.json",
-   "title": "LoRA 的秩(r)和目标模块怎么选?秩越大效果越好吗?",
-   "items": [
-    {
-     "field": "deep",
-     "len": 194,
-     "min": 200
-    }
-   ]
-  },
-  "AD-008": {
-   "file": "b10-adv.json",
-   "title": "GRPO 是什么?它和 PPO/DPO 在概念上怎么区分?",
-   "items": [
-    {
-     "field": "deep",
-     "len": 176,
-     "min": 200
-    }
-   ]
-  }
- }
+ "count": 0,
+ "questions": {}
 }
