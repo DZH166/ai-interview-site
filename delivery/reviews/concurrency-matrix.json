@@ -1,0 +1,76 @@
+{
+ "date": "2026-09-15",
+ "head": "617591acdc26efd4ab9ef03ba2b4f877808440f3",
+ "cases": [
+  {
+   "case": "同字段顺序写入",
+   "winner": "后写者",
+   "states": {
+    "a": "B写",
+    "b": "B写",
+    "disk": "B写",
+    "reopen": "B写"
+   },
+   "ok": true
+  },
+  {
+   "case": "不同字段并发",
+   "states": {
+    "pyDisk": "A的无冲突写入",
+    "pyReopen": "A的无冲突写入",
+    "rgDisk": "B的无冲突写入",
+    "rgReopen": "B的无冲突写入"
+   },
+   "ok": true
+  },
+  {
+   "case": "同毫秒双写(决胜稳定性)",
+   "states": {
+    "first": "A同毫秒版本",
+    "second": "A同毫秒版本",
+    "reopen": "A同毫秒版本"
+   },
+   "ok": true
+  },
+  {
+   "case": "双清空(计数与时刻不同)",
+   "states": {
+    "aEpoch": 2,
+    "bEpoch": 2,
+    "diskEpoch": 2
+   },
+   "ok": true
+  },
+  {
+   "case": "暂停恢复后旧页保存",
+   "states": {
+    "a": "A在B暂停时写的",
+    "b": "A在B暂停时写的",
+    "disk": "A在B暂停时写的",
+    "reopen": "A在B暂停时写的"
+   },
+   "ok": true
+  },
+  {
+   "case": "关闭前保存与对页写入竞争",
+   "states": {
+    "disk": "B在A关闭时保存的",
+    "reopen": "B在A关闭时保存的",
+    "b": "B在A关闭时保存的"
+   },
+   "conflictDrafts": "[]",
+   "ok": true
+  },
+  {
+   "case": "清空后新写入交错",
+   "states": {
+    "newDisk": "清空后B写的新记录",
+    "newReopen": "清空后B写的新记录",
+    "oldMem": "",
+    "oldDisk": ""
+   },
+   "ok": true
+  }
+ ],
+ "env": "隔离Chromium双页,固定种子,独立端口"
+}

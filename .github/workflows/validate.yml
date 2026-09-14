@@ -242,6 +242,13 @@ jobs:
           PORT: '8943'
         run: node tests/browser/remote-sync.js
 
+      - name: 并发压力基线(7情境矩阵:同字段/异字段/同毫秒/双清空/暂停恢复/关闭竞争/清空交错)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8944'
+        run: node tests/browser/concurrency-matrix.js
+
       - name: 学习记录完整性与真实版本恢复
         env:
           PW: playwright
