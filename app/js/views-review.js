@@ -518,14 +518,19 @@ const MaintainView = (() => {
       </div>`;
     $('#b-import').addEventListener('click', importBank);
     /* 存储健康度:记录体积同步可算;浏览器整体用量估计是异步的,回来再填 */
+    /* 两个口径分开说(阶段9):
+       ① st-size = 个人记录序列化后的 UTF-16 字符数折算 KB(JSON.stringify().length/1024),
+          只是「记录数据自身的字符规模」,不是浏览器分配的存储占用(键名/UTF-8编码/元数据都不在内);
+       ② st-quota = navigator.storage.estimate() 的 origin 总用量与配额估计,
+          是浏览器对整个源(含缓存等)的粗略估计,不是 localStorage 的专用配额。 */
     const stSize = $('#st-size', root);
-    if (stSize) stSize.textContent = Store.recordsSizeKB() + ' KB(本地预算约 5MB)';
+    if (stSize) stSize.textContent = Store.recordsSizeKB() + ' KB(序列化字符数口径;localStorage 总预算通常约 5MB,键名与编码开销未计)';
     const stQuota = $('#st-quota', root);
     if (stQuota) {
       if (navigator.storage && navigator.storage.estimate) {
         navigator.storage.estimate().then(est => {
           if (!est) return;
-          stQuota.textContent = '已用 ' + Math.round((est.usage || 0) / 1024) + ' KB / 配额约 ' + Math.round((est.quota || 0) / 1024 / 1024) + ' MB';
+          stQuota.textContent = '本源总用量 ' + Math.round((est.usage || 0) / 1024) + ' KB / 配额估计 ' + Math.round((est.quota || 0) / 1024 / 1024) + ' MB(整个源含缓存,非 localStorage 专用)';
         }).catch(() => { stQuota.textContent = '(估计失败)'; });
       } else {
         stQuota.textContent = '(浏览器不支持估计)';

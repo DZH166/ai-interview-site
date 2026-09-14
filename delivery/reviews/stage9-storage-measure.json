@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-14",
+  "purpose": "阶段9:存储健康度口径校准与容量压力实测",
+  "environment": "隔离Chromium(本机),独立端口,测试数据不触碰真实学习记录",
+  "sample": {
+    "description": "合法上限压力:100轮模拟面试×10题×600字主回答+600字追问回答(轮次上限处)+349题全部600字笔记",
+    "note": "审查报告指出此前「每题500字的单个样本」不足以称极端上限;本样本把追问、轮次上限、全部笔记同时压满"
+  },
+  "results": {
+    "serialized_size_kb": 1550.4,
+    "write_ms": 20,
+    "index_rebuild_ms": 5,
+    "export_backup_ms": 8,
+    "export_backup_kb": 1832,
+    "backup_roundtrip_ms": 39,
+    "rounds_kept": 100
+  },
+  "semantics_fixed": {
+    "st_size": "JSON.stringify().length/1024 = 序列化字符数口径(UTF-16字符),不含键名/UTF-8编码/浏览器元数据开销;维护页文案已明示",
+    "st_quota": "navigator.storage.estimate() = 整个 origin(含Cache等)的用量与配额估计,不是 localStorage 专用配额;维护页文案已明示"
+  },
+  "conclusion": "极端压力样本 1.55MB 仍低于 localStorage 约5MB 预算的 1/3,全部操作毫秒级;记录层迁 IndexedDB 继续缓行的决策有实测数据支撑;若未来逼近 3MB 再评估迁移(先迁导入题库/资料,记录层最后)",
+  "unverified": "真实设备的低端存储与隐私模式配额(浏览器差异)未实测;满额写入失败的恢复路径由既有 QuotaExceededError 处理与测试覆盖"
+}
