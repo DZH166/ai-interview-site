@@ -1,35 +1,8 @@
 {
  "generated": "2026-09-14",
  "note": "MIN_LEN/坑点数阈值与 content_audit.py 一致;本清单供后续内容批次,不改阈值",
- "count": 29,
+ "count": 16,
  "questions": {
-  "AG-002": {
-   "file": "agent.json",
-   "title": "工具调用(function calling)的完整流程是什么?模型真的在『执行』工具吗?",
-   "items": [
-    {
-     "field": "answer",
-     "len": 119,
-     "min": 120
-    },
-    {
-     "field": "plain",
-     "len": 81,
-     "min": 100
-    }
-   ]
-  },
-  "AG-004": {
-   "file": "agent.json",
-   "title": "MCP(Model Context Protocol)是什么?它解决什么问题?和 function calling 什么关系?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 67,
-     "min": 100
-    }
-   ]
-  },
   "AD-004": {
    "file": "b10-adv.json",
    "title": "LoRA 的秩(r)和目标模块怎么选?秩越大效果越好吗?",
@@ -90,39 +63,6 @@
      "field": "pitfalls",
      "len": 2,
      "min": 3
-    }
-   ]
-  },
-  "AD-011": {
-   "file": "b10-adv.json",
-   "title": "PagedAttention 和连续批处理(continuous batching)分别优化什么?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 66,
-     "min": 100
-    }
-   ]
-  },
-  "AG-005": {
-   "file": "b2-agent.json",
-   "title": "Agent 的记忆怎么做?短期记忆、长期记忆、任务状态分别存在哪?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 67,
-     "min": 100
-    }
-   ]
-  },
-  "LP-005": {
-   "file": "b2-llm.json",
-   "title": "LLM 流式输出有哪些实现方案?SSE、WebSocket、轮询该怎么选?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 69,
-     "min": 100
     }
    ]
   },
@@ -248,33 +188,6 @@
     }
    ]
   },
-  "AG-010": {
-   "file": "b4-agent-eng-fund.json",
-   "title": "LangChain / LlamaIndex 这类框架的价值和边界是什么?什么时候该裸写?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 79,
-     "min": 100
-    },
-    {
-     "field": "deep",
-     "len": 199,
-     "min": 200
-    }
-   ]
-  },
-  "AG-011": {
-   "file": "b4-agent-eng-fund.json",
-   "title": "怎么把内部系统能力封装成一个 MCP 服务器?写一个最小实现需要什么?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 88,
-     "min": 100
-    }
-   ]
-  },
   "FD-007": {
    "file": "b4-agent-eng-fund.json",
    "title": "长上下文的注意力变体(MQA/GQA/FlashAttention)解决什么问题?了解常识即可的三个名词。",
@@ -304,76 +217,6 @@
      "field": "pitfalls",
      "len": 2,
      "min": 3
-    }
-   ]
-  },
-  "AG-015": {
-   "file": "b6-agent1.json",
-   "title": "ReAct 和 Plan-and-Execute 两种 Agent 范式有什么区别?各适合什么任务?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 70,
-     "min": 100
-    },
-    {
-     "field": "deep",
-     "len": 185,
-     "min": 200
-    }
-   ]
-  },
-  "AG-016": {
-   "file": "b6-agent1.json",
-   "title": "Agent 的反思(reflection)模式是什么?什么时候值得多花这一轮?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 66,
-     "min": 100
-    }
-   ]
-  },
-  "AG-018": {
-   "file": "b6-agent1.json",
-   "title": "自研 Agent 怎么作为 MCP 客户端接入外部工具?宿主侧要处理什么?",
-   "items": [
-    {
-     "field": "answer",
-     "len": 115,
-     "min": 120
-    },
-    {
-     "field": "plain",
-     "len": 66,
-     "min": 100
-    },
-    {
-     "field": "deep",
-     "len": 197,
-     "min": 200
-    }
-   ]
-  },
-  "AG-019": {
-   "file": "b6-agent1.json",
-   "title": "MCP 服务器的三类原语里,resources 和 prompts 什么场景用?和 tools 怎么配合?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 79,
-     "min": 100
-    }
-   ]
-  },
-  "AG-022": {
-   "file": "b6-agent1.json",
-   "title": "LangGraph 式『图编排』是什么概念?和代码写流程相比取舍是什么?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 79,
-     "min": 100
     }
    ]
   },
@@ -453,17 +296,6 @@
      "field": "pitfalls",
      "len": 2,
      "min": 3
-    }
-   ]
-  },
-  "LP-001": {
-   "file": "llm-prompt.json",
-   "title": "temperature 和 top_p 到底在控制什么?什么任务该调高、什么任务该调低?",
-   "items": [
-    {
-     "field": "plain",
-     "len": 64,
-     "min": 100
     }
    ]
   }

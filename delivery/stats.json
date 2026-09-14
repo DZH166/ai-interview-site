@@ -1,5 +1,5 @@
 {
-  "content_hash": "7e25769d6385",
+  "content_hash": "56b7d4bd95ec",
   "questions_total": 349,
   "by_topic": {
     "agent": 61,
@@ -24,5 +24,5 @@
   "docs_total": 15,
   "sources_total": 27,
   "candidates_total": 150,
-  "data_js_kb": 2736.3
+  "data_js_kb": 2738.8
 }
