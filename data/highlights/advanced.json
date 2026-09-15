@@ -274,6 +274,1208 @@
           "why": "载荷≠峰值,算例的落点"
         }
       ]
+    },
+    "AD-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "每条样本人工/AI 双审",
+          "why": "质量维度的做法"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "500 条精品胜 5 万条平庸",
+          "why": "质量优先于规模的量化口径"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "避免模板化合成数据的『规整偏差』",
+          "why": "合成数据的首要风险"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "边界覆盖(应拒答/超范围/冲突输入",
+          "why": "覆盖度里最容易被漏的一维"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "同场景的答案风格统一",
+          "why": "一致性维度"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "500 道精品例题胜过 5 万道粘贴复制的题库",
+          "why": "白话版的规模纪律"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "只教答题不教拒答,学生成了有问必答的复读机",
+          "why": "边界样本缺位的后果"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "三个老师三种解法,学生精分",
+          "why": "风格不一致的后果"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "边界样本(不做什么)与能力样本(做什么)同样重要",
+          "why": "口述里最有分量的一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "数据版本化与模型绑定",
+          "why": "可复现的前提"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "训练时用模板 A 推理时用模板 B 是性能事故",
+          "why": "格式不一致的真实后果"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "先列能力矩阵再补数据,不是攒一堆看效果",
+          "why": "覆盖度的正确做法"
+        }
+      ]
+    },
+    "AD-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "微调前建立『通用能力基线』",
+          "why": "评估的前提动作"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "任务提升但通用下降=遗忘发生",
+          "why": "判据一句话"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "混入通用数据回放",
+          "why": "缓解手段之首"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "『通用回归』是微调验收的必选项",
+          "why": "验收清单里的硬项"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "只测任务不测通用是最常见的上线事故",
+          "why": "点出最常见的翻车方式"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "补课补到忘了本职",
+          "why": "灾难性遗忘的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "把所有科目都考一遍(通用基线),而不是只考数学",
+          "why": "评估的正确范围"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "安全拒答行为被冲掉",
+          "why": "最经典的翻车"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "安全评测是必选项",
+          "why": "验收清单里的另一硬项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "即不通过验收",
+          "why": "阈值口径:通用降幅超标即不通过(原短语含 > 会被 markdown 当引用块)"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "线上通用场景的差评率",
+          "why": "离线覆盖不了时的最后防线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "回放本质是『自己的后训练配比管理』",
+          "why": "把回放和配比管理接上"
+        }
+      ]
+    },
+    "AD-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "避免训练PPO式价值模型",
+          "why": "GRPO 最核心的机制差异"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不等于只能使用可验证规则奖励",
+          "why": "最常见的误传,必须否掉"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能保证固定减半",
+          "why": "禁止拿显存减半当结论"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "如果评分本身有偏差，组内比较同样会被误导",
+          "why": "算法不解决评分质量问题"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "算法不替你定义什么是好答案",
+          "why": "责任边界的收口句"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "全组奖励相同时要处理数值问题，而且没有组内差异信号",
+          "why": "组内归一化的边界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能按“对话不能定义奖励”断言GRPO无法应用",
+          "why": "常被拿来否定 GRPO 的错误推论"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不把奖励上涨直接当真实能力增长",
+          "why": "奖励投机,监控口径"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "过小的组让『相对优势』变成噪声",
+          "why": "组大小的取舍"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "组内优势为零不等于完整训练目标所有项都无梯度",
+          "why": "算例的边界说明"
+        }
+      ]
+    },
+    "AD-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "错误步骤可能碰对答案(虚假正反馈)",
+          "why": "ORM 的核心短板,最有区分度"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "过程奖励(PRM)对推理的每一步打分",
+          "why": "PRM 是什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "因信号可靠成为主力",
+          "why": "实践格局:谁是主力"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "可当『推理步骤的 judge』",
+          "why": "把训练侧思想接到评估工程,加分点"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "结果奖励=只看最终答案(对就满分)",
+          "why": "白话版定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "能精确定位『第三步开始错』",
+          "why": "PRM 的价值,画面感强"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『歪打正着』与『看似有理实则错』的步骤很难判",
+          "why": "PRM 的判分难点"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "PRM 每步打分(密集可定位,标注贵判分难)",
+          "why": "口述里的对照句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "训练侧的奖励设计思想直接搬进评估工程",
+          "why": "面试里能连起来讲的那句"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "模型学会迎合 PRM 的打分模式",
+          "why": "reward hacking 的过程版"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "PRM 的『过程对错』不可自动验证",
+          "why": "两者成本结构差异的根因"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "长链只有一个信号, credit assignment 难",
+          "why": "ORM 稀疏性的术语说法"
+        }
+      ]
+    },
+    "AD-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "最终输出分布与大模型逐 token 生成完全一致(数学保证)",
+          "why": "无损性的准确口径,标题问的就是它"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "速度却提升 2~3 倍",
+          "why": "收益量级"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "加速比取决于草稿接受率",
+          "why": "收益从哪来"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "草稿模型与大模型同词表同家族",
+          "why": "关键配置,部署时的实操点"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "你最终说出的内容,和你一个字一个字自己说,完全一样",
+          "why": "无损性的白话版,最直观"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "小助理猜得太烂(和大模型风格差太远)反而更慢",
+          "why": "加速不是无条件的"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "有精确的接受-拒绝机制保证",
+          "why": "不是抽样运气,是数学"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "数学保证输出分布与纯大模型一致(无损),速度 2~3 倍",
+          "why": "口述的结论句"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "同家族小模型+可预测任务高,创造性高温任务低但无损性不变",
+          "why": "接受率的影响因素 + 无损性不受影响"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "自托管选支持它的引擎白拿加速",
+          "why": "应用侧能立刻做的事"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "若草稿模型实现有 bug 或接受采样实现错误会破坏一致性",
+          "why": "无损性也有前提"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "投机解码更适合低延迟单流场景",
+          "why": "适用场景边界,大批量时收益下降"
+        }
+      ]
+    },
+    "AD-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "改善KV缓存的分块管理、分配与共享",
+          "why": "PagedAttention 优化什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "在合适边界加入或移出请求",
+          "why": "连续批处理优化什么"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不保证设备永远满负荷",
+          "why": "不许承诺满载"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "一项是在管理存储块，一项是在安排不同长度的请求进出",
+          "why": "两者分工的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "两种收益不能互换",
+          "why": "最容易被混为一谈的地方"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要把KV分页当成注意力算术复杂度优化",
+          "why": "常被误解的边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "共同前缀可以共享，分叉写入需按实现保持隔离",
+          "why": "共享的前提条件"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能只给一个平均吞吐",
+          "why": "压测口径:要看尾延迟"
+        }
+      ]
+    },
+    "AD-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "风格对齐(让输出符合特定语气/格式/结构)",
+          "why": "风格目标是什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "风格一致性极高",
+          "why": "风格数据的核心要求"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "能力注入(教会模型新任务/新知识的行为)",
+          "why": "能力目标是什么,与风格成对"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "防幻觉配平(知识边界外的拒答样本)",
+          "why": "能力数据的必备项,最容易漏"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "风格数据教不出能力",
+          "why": "混用的第一类风险"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "需要的是系统的课程(知识面覆盖+推理示范",
+          "why": "能力数据的要求,白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "礼仪课的教材教不了专业(风格样本没知识)",
+          "why": "风格数据缺能力的具象"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "专业课老师的板书风格各异(能力数据风格乱)",
+          "why": "能力数据坏风格的具象"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "风格=中量+极高一致性+输入多样",
+          "why": "风格数据画像的口述版"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "能力=大量+覆盖矩阵+推理链+拒答配平",
+          "why": "能力数据画像的口述版"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "分维的低分对应补对应的数据",
+          "why": "诊断到补数的闭环"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『知识注入式微调』的误区",
+          "why": "与 RAG 的边界,最容易走错"
+        }
+      ]
+    },
+    "AD-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "模型合并=把多个微调模型的权重以某种方式组合成一个模型",
+          "why": "定义句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "同基座的微调可合并(权重空间兼容)",
+          "why": "可行性的前提"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "任务间干扰:合并不了就互相拉扯",
+          "why": "最大的风险"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "合并后必须评测(各任务+通用)",
+          "why": "必做的验收"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "同基酒(同基座)能调,不同基酒(不同基座)分层没法混",
+          "why": "可行性前提的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "A 的味道+B 的味道可能变成怪味",
+          "why": "干扰的具象"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "鸡尾酒没有减法",
+          "why": "任务算术的边界,比喻覆盖不到"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "合并后必须三评(各任务+通用+安全)",
+          "why": "验收清单"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "任务相关(同域细分)合并,任务冲突路由",
+          "why": "合并 vs 路由的判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "先路由验证相容性再合并",
+          "why": "推进顺序"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "解决符号冲突",
+          "why": "TIES 解决什么问题"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "合并可能引入安全问题",
+          "why": "合并形态的遗忘,安全评测必做"
+        }
+      ]
+    },
+    "AD-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "功能契约、调度缓存、可观测性和维护状态",
+          "why": "选型的几个维度"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "兼容端点不代表所有参数和行为可零改动互换",
+          "why": "最容易被宣传误导的地方"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "接口外观相近，内部排队、缓存和算子路径仍可能不同",
+          "why": "引擎差异的实质"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "用自己需要的功能做小规模合同测试",
+          "why": "可执行的做法,替代看排名"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "缺少关键能力的快系统未必是合适选择",
+          "why": "功能门槛优先于性能"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能保证所有decode都加速",
+          "why": "APC 的作用边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "再比较性能与维护成本",
+          "why": "门槛之后的第二位比较"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "本题不预填引擎性能排行榜",
+          "why": "诚实标注"
+        }
+      ]
+    },
+    "AD-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "双人独立标注+仲裁",
+          "why": "一致性的保障流程"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "分歧的根因反哺指南",
+          "why": "指南迭代的机制,最容易被省掉的一步"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "覆盖任务类型/难度/长度",
+          "why": "分布代表性"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "位置偏差(先读到的偏好,随机化)",
+          "why": "最隐蔽的偏差,及对策"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "数据的质量决定 RLHF/DPO 的上限",
+          "why": "整题的落点"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "两个评委独立打分(一致性:都 say A 好才可信)",
+          "why": "一致性的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "先尝的总觉得好——位置偏差",
+          "why": "偏差具象化"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "分量大的觉得好——长度偏差",
+          "why": "偏差具象化"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "一致性(双人+Kappa+仲裁)",
+          "why": "五维之一的口述版"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "位置随机化/长度匹配/盲化",
+          "why": "偏差治理的三个动作"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "『好的拒答 vs 差的硬答』",
+          "why": "拒答在偏好层的学习,呼应 FD-002"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "无论算法,数据质量是上限",
+          "why": "把 DPO/PPO 之争拉回数据"
+        }
+      ]
+    },
+    "AD-019": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "一个模型同时训练多个任务",
+          "why": "MTL 的定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "一个基座+多个独立适配器",
+          "why": "多 LoRA 的定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "任务相关性强(共享知识多)→MTL",
+          "why": "选择判据之一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "任务独立性强(不同域/不同风格)→多 LoRA 路由",
+          "why": "选择判据之二"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "相关科目互相促进,但可能互相干扰",
+          "why": "MTL 的收益与代价"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "每科一个专家(独立适配器)",
+          "why": "多 LoRA 的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "LoRA 的切换是无损的(基座不变)",
+          "why": "比喻的准确边界"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "MTL=一个模型同时学多任务(共享知识,但干扰)",
+          "why": "对比句一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "多 LoRA=多适配器路由(隔离,但路由开销+基座绑定)",
+          "why": "对比句二"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "底层共享/顶层任务专属",
+          "why": "MTL 的层设计"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "共享基座+共享领域 LoRA",
+          "why": "混合策略,生产里的常见形态"
+        }
+      ]
+    },
+    "AD-020": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "多个 LoRA 适配器按需动态加载/切换/卸载",
+          "why": "机制核心"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "每个请求可路由到不同的 LoRA",
+          "why": "请求级路由,具体实现形态"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "按请求的任务/租户/语言路由到对应适配器",
+          "why": "路由维度"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "所有适配器必须基于同一基座",
+          "why": "硬约束,最容易忽略"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "多 LoRA(共享基座,省显存,适配器小)vs 多模型",
+          "why": "与多模型部署的对比"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "卡车(基座)买一次,货箱(适配器)按需换",
+          "why": "最贴切的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "所有货箱必须匹配卡车(同一基座)",
+          "why": "硬约束的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "多适配器同时活跃有上限",
+          "why": "显存约束"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "基座加载一次,适配器按需动态切换",
+          "why": "口述结论句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "合并零开销但不灵活,动态灵活但有切换开销",
+          "why": "与合并的取舍判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多租户多风格的产品用动态,单任务高吞吐用合并",
+          "why": "选型的实操口径"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "第三方适配器的安全审查",
+          "why": "安全面,容易漏"
+        }
+      ]
+    },
+    "AD-021": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "人类标注(金标准:贵、慢、但有真实的判断力)",
+          "why": "来源一及其定位"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "AI 反馈(RLAIF)",
+          "why": "来源二,名词要报得出"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "评委偏爱长答案→模型学会话多",
+          "why": "评委偏差如何被固化,最有说服力的例子"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "真实用户信号(点赞/踩、采纳率,EN-013)",
+          "why": "来源三"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "评委模型的偏差被固化",
+          "why": "合成偏好的首要风险"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "人类标注=真人评审(贵但真)",
+          "why": "白话版定位"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "让另一个 AI 当评委(便宜可量产,但评委的品味有偏差)",
+          "why": "RLAIF 的收益与代价一句话"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "人类做核心+校准,AI 做规模",
+          "why": "主流混合策略"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "多评委投票、人工抽检校准、分布审计",
+          "why": "质量保障的三个动作"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多评委投票(不同模型的评委,减少单一偏差)",
+          "why": "偏差缓解的具体手段"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "偏好数据的分布审计",
+          "why": "偏差检测动作"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "数据是模型行为的一面镜子",
+          "why": "收口句,面试可直接说"
+        }
+      ]
+    },
+    "AD-022": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "生成控制——提示词的多样性",
+          "why": "管线第一层"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "输出的自一致性(多次生成取一致部分,LP-014)",
+          "why": "合成数据特有的自检手段"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "人工抽检——抽样率(5~10%)",
+          "why": "验收环节"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "与真实数据的分布对比",
+          "why": "分布审计"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "自一致性(多次生成分歧大→不确定→丢弃)",
+          "why": "低质量样本的检测信号"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不超过总训练数据的 30~50%",
+          "why": "比例上限,实操最常被问"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "AI 出的题都是同一套路(规整偏差)",
+          "why": "最大风险的具象"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "真实考试变式就懵了",
+          "why": "后果"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "生成控制(多样性+自一致性",
+          "why": "管线四层的口述起点"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "模式崩溃+隐私+版权——合成不是免费午餐",
+          "why": "三类风险一次说完"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "合成数据训练的模型在真实测试集上的表现",
+          "why": "终极验证,不是看合成数据自己"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "偏移大→生成质量或多样性有问题",
+          "why": "分布距离这个信号怎么读"
+        }
+      ]
+    },
+    "AD-023": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "输入多样性——表达方式(正式/口语/简洁/详细)",
+          "why": "维度一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "难度梯度(简单/中等/困难/对抗)",
+          "why": "维度二,常被漏"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "输出多样性——同一输入的合理变化",
+          "why": "维度三,与唯一答案任务的区别"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "嵌入空间的覆盖度",
+          "why": "多样性的度量方式"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不是题量越多越好",
+          "why": "标题的反向回答"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "如果 5000 道题都是选择题,学生只会做选择题",
+          "why": "单一题型过拟合的具象"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "还有一些『陷阱题』(边界与对抗)",
+          "why": "教材比喻里对应边界样本"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "同意图不同说法",
+          "why": "输入多样性的最短说法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "嵌入覆盖度+主题矩阵+统计指标+与真实分布的对齐",
+          "why": "度量的四个口径"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "样样通样样松",
+          "why": "过多样性的风险"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "『退款』『我要退钱』『这个东西能退吗』",
+          "why": "同一意图不同说法的具体例子"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "空白=覆盖缺口",
+          "why": "主题矩阵怎么读"
+        }
+      ]
+    },
+    "AD-024": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "兼容端点不代表所有参数和行为可零改动互换",
+          "why": "本题的答案核心:兼容 ≠ 可换"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "TGI截至2026-09-12处于维护模式",
+          "why": "版本事实,连核查日期一起给"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "内部排队、缓存和算子路径仍可能不同",
+          "why": "接口外观相近背后的实质差异"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "兼容性是测出来的交集,不是宣传里的并集",
+          "why": "本题最好的收口句"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "兼容性可以做成一张可复跑矩阵",
+          "why": "可执行的做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "返回兼容的JSON外形，但不支持所依赖的参数语义",
+          "why": "最隐蔽的兼容陷阱"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要把官方网站的一项能力说明扩成对所有版本",
+          "why": "口径纪律"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "本题不预填引擎性能排行榜",
+          "why": "诚实标注"
+        }
+      ]
+    },
+    "AD-025": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "可验证域的自我提升",
+          "why": "self-play 在 LLM 里的主战场"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "用验证器(数学答案对错/代码测试通过)选最优",
+          "why": "机制具体形态"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "自我博弈产生训练数据(无需人类标注)",
+          "why": "为什么它省钱,杠杆在哪"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "开放对话没有客观验证器",
+          "why": "第一局限,也是域的边界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "模型偏好自己的输出模式→多样性丧失",
+          "why": "第二局限,自我强化的代价"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "应用层不直接用 self-play 训练",
+          "why": "应用岗相关性,最该说清的一句"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不用对手(人类标注),自己出题、自己回答、自己判对错",
+          "why": "白话版定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "因为棋类有客观胜负(可验证),所以能自我提升",
+          "why": "为什么棋类行、对话不行"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "可验证域的 RLVR",
+          "why": "口述里的定位"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "评估也要可验证",
+          "why": "对应用岗最有用的一条推论"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "验证器的质量决定上限",
+          "why": "整条链路的瓶颈"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "推理模型的评估也要用可验证的方式",
+          "why": "与 AD-012 的 judge 思想同源"
+        }
+      ]
     }
   }
 }
