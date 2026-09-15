@@ -1,0 +1,355 @@
+{
+  "base": "617591acdc26efd4ab9ef03ba2b4f877808440f3",
+  "reviewed": "ec4b3270f435a0974fd1dc852a2ab9b7ac12f435",
+  "date": "2026-09-15",
+  "node": 420,
+  "python": 109,
+  "browser": 274,
+  "failed_suites": 0,
+  "total": 803,
+  "code_changed": false,
+  "questions_total": 349,
+  "questions_changed_in_reviewed_batch": 55,
+  "audit": {
+    "hard": 0,
+    "numeric_warnings": 9,
+    "relative_length_warnings": 12,
+    "total_warnings": 21,
+    "fixed_thin_list": 0
+  },
+  "suites": [
+    {
+      "file": "tests/behavior-tests.js",
+      "exit": 0,
+      "passed": 124,
+      "failed": 0
+    },
+    {
+      "file": "tests/regression-tests.js",
+      "exit": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "file": "tests/express-card-test.js",
+      "exit": 0,
+      "passed": 63,
+      "failed": 0
+    },
+    {
+      "file": "tests/shell-cache-stamp-test.js",
+      "exit": 0,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "file": "tests/learning-records-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/project-card-test.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/pi-agent-test.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "file": "tests/ai-series-test.js",
+      "exit": 0,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "tests/srs-test.js",
+      "exit": 0,
+      "passed": 71,
+      "failed": 0
+    },
+    {
+      "file": "tests/remote-merge-test.js",
+      "exit": 0,
+      "passed": 43,
+      "failed": 0
+    },
+    {
+      "file": "tests/search-cache-test.js",
+      "exit": 0,
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "file": "tests/record-boundary-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/save-protocol-test.js",
+      "exit": 0,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "file": "tests/preview-restore-test.js",
+      "exit": 0,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "file": "tests/lp003_mock_test.py",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/path_exercise_test.py",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_a_test.py",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_test.py",
+      "exit": 0,
+      "passed": 23,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_layers_test.py",
+      "exit": 0,
+      "passed": 29,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_claims_test.py",
+      "exit": 0,
+      "passed": 7,
+      "failed": null
+    },
+    {
+      "file": "tests/ai-series-math-test.py",
+      "exit": 0,
+      "passed": 5,
+      "failed": null
+    },
+    {
+      "file": "tests/browser/ui-repro.js",
+      "exit": 0,
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/a11y-360.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/e2e-acceptance.js",
+      "exit": 0,
+      "passed": 46,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/project-evidence.js",
+      "exit": 0,
+      "passed": 28,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/pi-agent.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/ai-series.js",
+      "exit": 0,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/srs.js",
+      "exit": 0,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/followup.js",
+      "exit": 0,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/multitab.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/search-cache.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/hardening.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/remote-sync.js",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/learning-integrity.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/concurrency-matrix.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    }
+  ],
+  "axes": {
+    "Standards": [
+      "ST-01 Same-timestamp test omits divergent in-memory state",
+      "ST-02 Pause flag does not pause event reception",
+      "ST-03 Pagehide test never asserts the saved input copy"
+    ],
+    "Spec": [
+      "SP-01 Topic mismatch in appended misconceptions",
+      "SP-02 Prompt cache confused with content/response cache",
+      "SP-03 Reproducibility confused with cross-seed variability"
+    ],
+    "MainReview": [
+      "MR-01 Legacy project runs incorrectly previewed as no changes",
+      "MR-02 Project run updates absent from preview"
+    ]
+  },
+  "preview_evidence": {
+    "legacyRun": {
+      "preview": {
+        "ok": true,
+        "summary": {
+          "questionsTouched": 0,
+          "roundsAdded": 0,
+          "draftsAdopted": 0,
+          "draftsKept": 0,
+          "runsAdded": 0,
+          "runsMigrated": 0,
+          "perQuestion": {
+            "added": 0,
+            "overridden": 0,
+            "kept": 0,
+            "reverted": 0
+          },
+          "noChanges": true
+        },
+        "changes": {
+          "qids": [],
+          "drillIds": [],
+          "pids": [],
+          "sections": [],
+          "hasChanges": false
+        }
+      },
+      "ui": "没有需要恢复的内容\n✕\n\n这份备份与当前记录一致,导入不会产生任何变化。\n\n知道了",
+      "actual": {
+        "report": {
+          "qMerged": 0,
+          "roundsAdded": 0,
+          "notesUpdated": 0,
+          "draftsAdopted": 0,
+          "draftsKept": 0,
+          "draftNotes": [],
+          "runsAdded": 1,
+          "runsMigrated": 1,
+          "docPosAdopted": false,
+          "docPosKept": false
+        },
+        "runs": [
+          {
+            "ts": 100,
+            "runOutput": "legacy run payload",
+            "runId": "run-legacy-d9u3he",
+            "_legacy": true
+          }
+        ]
+      }
+    },
+    "overwrittenRun": {
+      "preview": {
+        "ok": true,
+        "summary": {
+          "questionsTouched": 0,
+          "roundsAdded": 0,
+          "draftsAdopted": 0,
+          "draftsKept": 0,
+          "runsAdded": 0,
+          "runsMigrated": 0,
+          "perQuestion": {
+            "added": 0,
+            "overridden": 0,
+            "kept": 0,
+            "reverted": 0
+          },
+          "noChanges": false
+        },
+        "changes": {
+          "qids": [],
+          "drillIds": [],
+          "pids": [
+            "proj-a-model-client"
+          ],
+          "sections": [],
+          "hasChanges": true
+        }
+      },
+      "ui": "确认恢复这份备份?\n✕\n题目记录变化\n无\n模拟面试轮次\n无新增\n未完成草稿\n无变化\n项目运行记录\n无新增\n阅读位置\n按「本地为空才采用」规则处理\n\n合并口径:逐记录按更新时间新者胜(明确清空也算新状态);同会话已完成/已放弃的旧草稿不会复活; 本机较新的内容不会被备份覆盖。校验不通过或写盘失败则全部不生效。\n\n取消\n确认恢复",
+      "actual": {
+        "runId": "r1",
+        "ts": 100,
+        "updatedAt": 200,
+        "runOutput": "replacement from backup"
+      }
+    }
+  },
+  "matrix_evidence": [
+    {
+      "fakePause": {
+        "pausedFlag": true,
+        "beforeResumeNote": "new while supposedly paused"
+      }
+    },
+    {
+      "sameTimestamp": {
+        "a": "A same millisecond",
+        "b": "B same millisecond",
+        "disk": "B same millisecond",
+        "reopen": "B same millisecond"
+      }
+    }
+  ],
+  "environment": "Isolated Chromium contexts; test fixtures only; no real learning storage touched",
+  "remote_ci": "https://github.com/DZH166/ai-interview-site/actions/runs/34873027371",
+  "remote_pages": "https://github.com/DZH166/ai-interview-site/actions/runs/34873026724"
+}
