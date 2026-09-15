@@ -1066,6 +1066,1150 @@
           "why": "details 的定位红线"
         }
       ]
+    },
+    "PI-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "区分主动阈值压缩和发生溢出后的恢复",
+          "why": "两条路径的分界,标题问的核心"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "阈值是 contextWindow 减 reserveTokens",
+          "why": "阈值口径,能报出这个就算答到机制"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "关键目标、权限和结论仍需结构化保存",
+          "why": "摘要之外必须自己做的那部分"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "摘要无法提供完全无损记忆",
+          "why": "压缩的能力边界红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分阈值压缩与溢出恢复",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说出同一次 run 内的工具后检查时机",
+          "why": "评分标准第 2 项,最容易被旧说法带偏"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提出结构约束保留和大工具结果治理",
+          "why": "评分标准第 5 项,要给出治理动作"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "中文和特殊内容可能偏差",
+          "why": "字符数除四是启发式,别当精确计费"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "恢复再次失败要向上暴露，不能无限压缩重试",
+          "why": "失败恢复的边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "治理大结果比反复摘要更早",
+          "why": "正确的优先顺序,先治源再补救"
+        }
+      ]
+    },
+    "PI-016": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不能从工具结果开始",
+          "why": "合法切点的硬规则,最能体现理解了机制"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "验证不能只看压缩率",
+          "why": "验收口径"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "检查工具配对、原始目标、限制、关键事实",
+          "why": "验收要看什么"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "摘要被截断时不能当作可靠检查点",
+          "why": "被截断的摘要不算通过"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "指出工具调用与结果配对风险",
+          "why": "评分标准第 1 项,标题的直接答案"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释 Token 预算和合法切点",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "给出结构与语义的双层验收",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "keepRecentTokens 比最近 N 条更贴近容量约束",
+          "why": "为什么不用条数,容量视角"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "之间的长段视为一个任务回合",
+          "why": "切在任务中段时的处理方式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "因此原始结果末尾的关键信息可能未进入摘要模型",
+          "why": "摘要本身的丢失点,很隐蔽"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不是独立验证文件真实修改的审计",
+          "why": "文件追踪的作用边界"
+        }
+      ]
+    },
+    "PI-017": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "这三个机制解决不同问题",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "二者都仍依附会话，并且有损",
+          "why": "两种摘要的共同局限"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不会自动识别客户身份、跨会话检索或更新偏好",
+          "why": "摘要做不到的三件事"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是开启摘要就自动得到",
+          "why": "责任边界红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分容量压缩、路径传递和跨会话记忆",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "指出默认摘要的有损与筛选边界",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "设计带来源和身份的业务记忆",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能作为唯一客户数据源",
+          "why": "摘要的定位红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "尤其不能承诺所有工具观察值原样保留",
+          "why": "分支摘要会跳过原始工具结果"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要把个人偏好无差别写进全局 AGENTS.md",
+          "why": "最危险的写入路径,会跨客户污染"
+        }
+      ]
+    },
+    "PI-018": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "它不是文件系统权限规则",
+          "why": "标题的直接答案:规则≠权限"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Pi 工具以进程真实权限运行",
+          "why": "真正的权限来源"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "但上下文文件默认仍可加载",
+          "why": "拒绝信任挡不住上下文文件,反直觉"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "提示词只能表达行为要求",
+          "why": "口径红线,不许说成访问控制"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分资源发现与提示词构建",
+          "why": "评分标准第 1 项,两步不能混"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明拒绝信任仍可能加载上下文文件",
+          "why": "评分标准第 4 项,最能体现读没读源码"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "以真实权限控制回答生产数据风险",
+          "why": "评分标准第 5 项,要落到账号与工具"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能讲成同目录所有文件全部合并",
+          "why": "override 只是选择优先级"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不是让子目录文件机械删除全部父级文本",
+          "why": "别虚构 ACL 式语义覆盖"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "信任不是对工具执行能力的沙箱",
+          "why": "信任的边界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "写一条禁止修改并不会撤销该权限",
+          "why": "最直白的安全红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "仍受提示遵循影响",
+          "why": "自然语言冲突没有强制层级"
+        }
+      ]
+    },
+    "PI-019": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "分析手册适合 Skill",
+          "why": "载体选择的第一个映射"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "SQL 查询工具需要 Extension 注册可执行工具",
+          "why": "知识 vs 执行的分界"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "MCP 是模型工具连接的协议层概念",
+          "why": "MCP 的准确定位"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "Pi 核心没有内置完整 MCP 支持",
+          "why": "版本事实,不能想当然"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能保证每次自动命中",
+          "why": "渐进式披露的局限"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "为分析手册、模板、SQL 工具选择正确载体",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明 Package 是分发组合单位",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "识别 Pi 核心与 MCP 扩展的边界",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "脚本需要 Agent 通过工具实际调用",
+          "why": "Skill 里的脚本不会自己跑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不会凭空增加数据库连接或文件访问能力",
+          "why": "模板只展开文本"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "包本身并不等于 Agent",
+          "why": "别把分发单位当执行引擎"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "模型可能漏读",
+          "why": "渐进式披露的真实风险"
+        }
+      ]
+    },
+    "PI-020": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "RPC 的 prompt 成功仅表示接收或排队，不是任务完成",
+          "why": "本题最容易搞错的一点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "取消与清空队列也须区分",
+          "why": "两个动作语义不同"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "通过标准输入输出的 JSONL 控制",
+          "why": "RPC 的机制:stdin/stdout 传 JSONL(原短语含 -- 可能被 markdown 变为破折号)"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "实际接入应优先受支持的本地 SDK 或 stdio RPC",
+          "why": "v0.85.1 的接入口径"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "按语言与进程边界选择 SDK 或 RPC",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "理解 prompt 接受确认不等于完成",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明 LF 分帧和取消队列语义",
+          "why": "评分标准第 4 项,协议细节"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "Pi 的内部接口不会自动替你完成网页服务与用户鉴权",
+          "why": "RPC 不等于现成的服务端"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "避免多个用户意外共享状态",
+          "why": "多用户接入的头号风险"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "实际模型失败稍后仍可能出现在事件流",
+          "why": "成功响应≠成功结果"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能看到一条 response 就把任务标记完成",
+          "why": "界面状态更新红线"
+        }
+      ]
+    },
+    "PI-021": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不是运行时权限系统",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "拒绝信任不会自动限制文件读取、命令执行或网络",
+          "why": "三样都不限制,点名才说得清"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "把 README 里的恶意要求误当指令",
+          "why": "提示词注入的具体形态"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能替代系统隔离",
+          "why": "能力边界红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释信任控制资源加载而非执行权限",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释提示词注入无法单靠提示词可靠防止",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "给出最小工具、挂载、凭据和网络方案",
+          "why": "评分标准第 4 项,要给出四件套"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明可写挂载与扩展代码的剩余风险",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "项目被拒绝信任不等于 read 被限制在项目内",
+          "why": "最反直觉的一条"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "模型是否遵循指令不是可靠权限检查",
+          "why": "为什么不能靠提示词兜底"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "Agent 仍能改动该目录",
+          "why": "可写挂载的剩余风险"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "非交互模式不会弹信任窗口",
+          "why": "CI/服务端场景的坑"
+        }
+      ]
+    },
+    "PI-022": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "避免带入默认 shell 和写文件能力",
+          "why": "裁剪的第一步,最容易被漏"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不能相信模型传入的身份",
+          "why": "安全红线,一句话"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "企业鉴权、数据治理和评测由应用实现",
+          "why": "责任边界,不许说成 Pi 自带"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "明确业务工具范围并去掉无关默认能力",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确描述工具名称列表和 customTools 的配合",
+          "why": "评分标准第 2 项,机制细节"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分提示词职责与服务端授权",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提出口径、越权、开销的验收指标",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "只添加业务工具并不会自动移除默认工具",
+          "why": "最危险的默认行为"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不提供租户授权",
+          "why": "cwd 不等于授权边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "查询参数使用指标、日期、维度等受约束字段",
+          "why": "工具该怎么设计才对"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能让模型自行指定管理员身份",
+          "why": "身份必须来自服务端"
+        }
+      ]
+    },
+    "PI-023": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不能阻止 read、shell、符号链接或扩展代码访问秘密",
+          "why": "标题的直接答案,四个绕过的入口"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "先从运行环境移除不必要的密钥",
+          "why": "最有效的一步,顺序也重要"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "无交互界面时默认拒绝高风险动作",
+          "why": "失败安全原则"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "系统隔离和后端权限负责真正限制能力",
+          "why": "责任边界收口句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确指出官方示例的入口与规则局限",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "覆盖读取、外传、路径别名和执行时变化",
+          "why": "评分标准第 2 项,四类绕过"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "设计参数绑定、过期与单次执行审批",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能因为接口没有弹窗就默认放行",
+          "why": "无 UI 时的正确行为"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能导致重复删除",
+          "why": "审批重放的具体后果"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "真实密钥应尽量不进入 Agent 环境",
+          "why": "比任何拦截都可靠的解法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "示例代码不是官方安全保证",
+          "why": "别把示例当产品"
+        }
+      ]
+    },
+    "PI-024": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "禁止客户端任意打开会话文件",
+          "why": "串话的根因,必须堵死"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "每个 SSE 连接只订阅有权查看的运行",
+          "why": "权限边界落在订阅上"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "单进程 busy 不能协调两个实例",
+          "why": "多实例的头号误区"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "需要会话单写者、队列或带租约和 fencing 的锁",
+          "why": "并发方案的具体选项"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "也必须重新绑定订阅",
+          "why": "替换会话时的必做动作"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "分开用户、会话、运行与连接身份",
+          "why": "评分标准第 1 项,四层身份"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确处理 subscribe 清理和 session 替换",
+          "why": "评分标准第 3 项,重复输出的直接原因"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "重复添加 listener 而未清理是重复输出的常见原因",
+          "why": "现象的根因,很具体"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "锁过期后旧执行器仍可能运行",
+          "why": "为什么需要 fencing"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "断线本身不代表用户要求撤销任务",
+          "why": "产品策略的地基"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "替换后 runtime.session 变了，旧订阅不会自动迁移",
+          "why": "SDK 层面的具体坑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "都不应单独当作任务完成",
+          "why": "完成判定口径"
+        }
+      ]
+    },
+    "PI-025": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不能只看最后输出",
+          "why": "口径纠正的第一步"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "流式 usage 若是累计值也不能逐次相加",
+          "why": "费用翻高最常见的误算"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "缓存缺失只能作为线索，零缓存不一定说明故障",
+          "why": "别把线索当结论"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "按已用加预留控制准入",
+          "why": "预算的正确做法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "纠正最后输出与多轮总成本的区别",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "避免累计流式用量重复计数",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "设计并发预留、结算和多维资源限制",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "未报告的工具资源开销不会凭空出现",
+          "why": "为什么账单和估算会有差"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "压缩或分支摘要会重置比较基线",
+          "why": "缓存统计的解释边界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "仅在结尾检查费用会超支",
+          "why": "预算检查的时机"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "并行子任务共享预算需要原子准入",
+          "why": "并发预算的具体做法"
+        }
+      ]
+    },
+    "PI-026": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不能证明真实模型会正确选择工具",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "优先用数据库结果、工具记录与规则断言评分",
+          "why": "客观评分优先,本题的方法论"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能只展示成功案例",
+          "why": "报告口径"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分单元测试、假模型集成与真实评测",
+          "why": "评分标准第 1 项,三层不能混"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "描述假模型可控响应及结论边界",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "固定数据与先定客观评分规则",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "报告重复、失败分母、成本与缺失数据",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "其结果不能证明语义理解质量",
+          "why": "假模型的能力边界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "缺失评分或遥测应保持缺失，不能补成成功或零",
+          "why": "数据诚实红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "对可计算结果用程序判定",
+          "why": "评分方式的选择原则"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "调试集和最终报告集分开，避免按题调提示词",
+          "why": "评测集纪律"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能把单次跑通当稳定能力",
+          "why": "单次结果的解释边界"
+        }
+      ]
+    },
+    "PI-027": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不自带完整企业知识库或 RAG 权限系统",
+          "why": "责任边界,标题的前提"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "禁止先把全部材料给模型再要求保密",
+          "why": "最危险的做法,反着做才安全"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "而不只是附一个链接",
+          "why": "有引用仍可能是幻觉"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "证据不足就澄清或拒答",
+          "why": "正确的兜底行为"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "明确 RAG 与企业数据权限需要外接",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "在服务端执行检索和数据库授权",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分引用合法与内容被证据支持",
+          "why": "评分标准第 4 项,本题的题眼"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "处理撤权后历史上下文、缓存和注入风险",
+          "why": "评分标准第 5 项,最容易漏"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能让模型覆盖",
+          "why": "过滤必须由后端保证"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "ID 合法仍不等于论断正确",
+          "why": "证据映射的边界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能只修下一次查询",
+          "why": "撤权要清历史"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "检索到的文字不能授予新权限",
+          "why": "注入预防的一句话红线"
+        }
+      ]
+    },
+    "PI-028": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Pi 默认核心没有内置团队编排",
+          "why": "先说清能力边界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能把子 Agent 的自我宣布成功当验证结果",
+          "why": "汇总环节的头号错误"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不独立的步骤应顺序执行",
+          "why": "该不该并行的判据"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "父任务分配并发、深度和费用预算",
+          "why": "树形预算的三项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分默认核心与子 Agent 扩展示例",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "处理共享文件写冲突与最终合并",
+          "why": "评分标准第 3 项,标题问的就是这个"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "覆盖树形预算限制和取消传播",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "独立进程仍可能访问同一目录",
+          "why": "上下文隔离≠文件隔离"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "禁止以最后一次写入覆盖作为冲突处理",
+          "why": "最容易偷懒的做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能靠取消回滚",
+          "why": "取消的边界,与 PI-006 呼应"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "示例的并发上限是它自己的实现策略",
+          "why": "别把示例当核心保证"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "合并由单一负责人完成并执行集成测试",
+          "why": "汇总的正确形态"
+        }
+      ]
+    },
+    "PI-029": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不能仅凭聊天记录知道一次外部操作的完成状态",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "崩溃落在中间时，外部效果仍然未知",
+          "why": "不确定窗口,最该讲清的一段"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能宣称框架保证外部恰好一次",
+          "why": "口径红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "扣款仍需业务幂等键、查询对账或人工处置",
+          "why": "正确做法,三选一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分经典会话恢复与持久操作恢复",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释 lane 及 accept/drive 的分离",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说清意图、效果、结算的不确定窗口",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不应把它直接等同一个企业用户",
+          "why": "lane 的定位"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不是重新播放全部历史模型调用",
+          "why": "恢复依赖的是状态,不是重放历史"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "默认策略是 never",
+          "why": "默认不重放,安全默认值"
+        }
+      ]
+    },
+    "PI-030": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "先列出真正用到的 API 和行为契约",
+          "why": "迁移的第一步"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "换对象后需要重绑订阅",
+          "why": "最容易被漏的迁移点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "本地 SDK 和标准输入输出 RPC 保持支持",
+          "why": "版本事实,别把实验入口当全部"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能以编译通过代替行为兼容",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "固定旧版与目标版并建立实际使用契约",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确说明会话替换与工具配置迁移点",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "指出 0.85.1 远程实验 source-only 边界",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "设计备份、分批切换及数据兼容降级",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能混用成一个“Pi API”",
+          "why": "DG 两篇基线不同"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "而不是只替换报错名字",
+          "why": "迁移的正确粒度"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "看到仓库源码不能推断标准安装可稳定使用",
+          "why": "源码可用≠发行可用"
+        }
+      ]
     }
   }
 }
