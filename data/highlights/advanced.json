@@ -1,0 +1,279 @@
+{
+  "topic": "advanced",
+  "checked_date": "2026-09-16",
+  "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验;该脚本还会算「标中字数占该字段比例」,超过 35% 报警、50% 报错——满屏黄等于没重点,这时要回去删条,不是放宽阈值。",
+  "questions": {
+    "AD-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "RAG从外部证据取信息",
+          "why": "两者最本质的分界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能简单说知识只归RAG、行为只归微调",
+          "why": "最常见的过度简化,标题问的就是怎么选"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "LoRA把权重增量限制在低秩形式",
+          "why": "LoRA 是什么,一句话"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "查到的资料也可能错，训练也不保证背住新事实",
+          "why": "两个方向都不是万能"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "瓶颈是「知识新鲜或私有」还是「行为风格或格式」",
+          "why": "可执行的选择判据"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "冻结基座不等于基座不参与反向传播",
+          "why": "LoRA 训练里的常见误判"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "训练、检索和两者组合都只是候选，不保证固定收益",
+          "why": "不许承诺固定收益"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不能从架构名称预填准确率",
+          "why": "诚实标注"
+        }
+      ]
+    },
+    "AD-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能合成一个“显卡一定够用”的结论",
+          "why": "两个手段不能相加成结论"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "INT4/INT8是位宽类别，GPTQ/AWQ是方法",
+          "why": "位宽/方法/表示三层别混"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "显存分三栏——权重、KV缓存、激活",
+          "why": "记账框架,可直接用"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "先量出哪栏最大,再选对应的压缩手段",
+          "why": "先测量再选型的动作"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不应简化成最终保留固定1%高精度权重",
+          "why": "AWQ 的常见讹传"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "低位宽不意味着所有算子原生以该位宽计算",
+          "why": "存储位宽≠计算精度"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不背固定2–4倍速度",
+          "why": "禁止背倍数"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "就遗漏了实际服务内存与质量",
+          "why": "只看文件大小的错误"
+        }
+      ]
+    },
+    "AD-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不需要显式奖励模型与PPO式在线循环",
+          "why": "DPO 与 PPO 最实质的差别"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "选型还要考虑偏好数据来源、分布和执行成本",
+          "why": "不是算法优劣题,是数据条件题"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "也不能推出DPO每一步都会让每个好答案的绝对概率上升",
+          "why": "对 DPO 最常见的过度承诺"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "有没有成对偏好数据?有且量大,DPO类更省",
+          "why": "可执行的选型判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "共享权重、部署实例与逻辑角色应分开记账",
+          "why": "「几个模型」的正确数法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不承诺每个绝对序列概率单调变化",
+          "why": "相对目标的准确含义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "而非把DPO等同人工偏好、GRPO等同规则奖励",
+          "why": "最常见的两处标签化"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "这不是训练轨迹模拟",
+          "why": "算术示例的适用边界"
+        }
+      ]
+    },
+    "AD-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不是越大越好",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "训练损失更低不能单独证明选择更好",
+          "why": "单一指标不足以选型"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "结论以自己的验证集为准,论文区间只作起点",
+          "why": "可执行的做法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "方向多了可表达的变化更多，但未必更符合真实任务",
+          "why": "秩的直觉及其上限"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "调整哪些层也不能机械等同“QKVO只学表达、FFN只存知识”",
+          "why": "常被当成规律的错误类比"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "每次只动 r 或目标层之一",
+          "why": "对照实验的纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "r是秩上界，实际训练后的秩未必等于r",
+          "why": "秩的准确定义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不宣称唯一正确配置",
+          "why": "口径纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "这张表本身就是最有说服力的答案",
+          "why": "面试时拿记录表代替形容词"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不是模型效果实验",
+          "why": "算术示例的适用边界"
+        }
+      ]
+    },
+    "AD-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "通过基座传播梯度来训练LoRA适配器",
+          "why": "QLoRA 的训练机制,一句话"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "但不能据此保证所有模型、长度和任务无损或必然能装下",
+          "why": "论文结论的适用边界,最容易过度引用"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "省了存储不等于省掉所有中间过程",
+          "why": "QLoRA 的常见误解"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "低精度也可能改变结果",
+          "why": "省显存的代价"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "显存峰值在权重还是激活",
+          "why": "落地自检要问的三问之一"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "两张24GB卡也不等价于一张任意可用的48GB卡",
+          "why": "算总账时的常见错觉"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能保证固定慢20–30%、差距小于1%或学习能力完全不受损",
+          "why": "三条常见的讹传数字,一次否掉"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "32.5GB不是训练峰值",
+          "why": "载荷≠峰值,算例的落点"
+        }
+      ]
+    }
+  }
+}
