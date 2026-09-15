@@ -1,0 +1,235 @@
+{
+  "topic": "python-backend",
+  "checked_date": "2026-09-16",
+  "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验;该脚本还会算「标中字数占该字段比例」,超过 35% 报警、50% 报错——满屏黄等于没重点,这时要回去删条,不是放宽阈值。",
+  "questions": {
+    "PY-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "列表(list)可变",
+          "why": "第一句定性"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "元组(tuple)不可变",
+          "why": "与列表对照"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "能当字典的键、放进集合",
+          "why": "不可带来的实际好处"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "买一样划一样,随时能加新条目",
+          "why": "列表的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "字典的键必须『稳定』",
+          "why": "为什么要哈希的直觉"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "可变的列表不能当键,元组可以",
+          "why": "最常考的一条"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "用列表装会增删改的同类数据",
+          "why": "选型规则一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "用元组装位置有含义的固定结构",
+          "why": "选型规则二"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "嵌套了可变对象的元组并不能哈希",
+          "why": "最容易被追问的例外"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "长度固定,一次性分配,没有扩容开销",
+          "why": "实现层差异"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『不可变』默认只保护顶层",
+          "why": "一句话点破常见误解"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "差别主要在容器本身,不是元素",
+          "why": "内存差异的准确定位"
+        }
+      ]
+    },
+    "PY-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "函数体里出现 yield,它就变成生成器函数",
+          "why": "定义机制"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "调用时不立刻执行,而是返回一个生成器对象",
+          "why": "惰性求值的起点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "内存占用恒定",
+          "why": "为什么用它,一句话"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "水厂(计算过程)不用一次把整桶水做好",
+          "why": "白话版的核心"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "桶会爆(10GB 日志装内存直接 OOM),水管永远不会",
+          "why": "内存问题的具象"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "生成器只能从头到尾遍历一次",
+          "why": "比喻的边界,也是真实限制"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "把「计算结果」变成「按需取结果」",
+          "why": "口述里最好用的一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "用生成器把模型输出的 token 流逐块推给前端",
+          "why": "与 LLM 应用的接点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "惰性求值 + 可暂停的函数",
+          "why": "机制的一句话概括"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "要用 async for 消费",
+          "why": "异步生成器的消费方式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "可避免 StopIteration 裸抛",
+          "why": "常见的边界处理"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "正是 asyncio 能『挂起等待、恢复执行』的底层基石之一",
+          "why": "与协程的因果关系"
+        }
+      ]
+    },
+    "PY-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "async/await 是单线程内的协作式并发",
+          "why": "定义句,标题问的就是这个"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "它解决『等』的浪费,不解决『算』的慢",
+          "why": "适用边界的最好说法"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "协程只在 await 处切换,不会被打断在普通语句中间",
+          "why": "与线程的本质差异"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "一处同步阻塞,全体卡死",
+          "why": "最致命的使用错误"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "服务员不会站在桌边干等",
+          "why": "并发含义的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "人多了,工资(内存)和互相碰撞(锁)都来了",
+          "why": "多线程的代价"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "整个大厅都得停摆",
+          "why": "阻塞后果的具象"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "asyncio 是单线程协作式并发",
+          "why": "口述第一句"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "单线程不等于没竞争",
+          "why": "主动说出这句会加分"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不要把没做过说成做过",
+          "why": "项目经验的口径纪律"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『单线程所以没竞争』是高频误区",
+          "why": "面试里要主动举反例"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "事件循环只持弱引用,要保存返回的 Task 引用",
+          "why": "create_task 的真实坑"
+        }
+      ]
+    }
+  }
+}
