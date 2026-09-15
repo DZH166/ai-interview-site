@@ -610,6 +610,462 @@
           "why": "串行也不能解决业务覆盖问题"
         }
       ]
+    },
+    "PI-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "统一协议不代表能力相同",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "跨模型不可复用的隐藏推理或签名会删除",
+          "why": "切换时真正丢的东西"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不支持图片的模型会看到省略占位符",
+          "why": "能力降级的具体形态"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "却不能保持完全相同的信息与效果",
+          "why": "提高可调用性 ≠ 等价,收口句"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "看见统一接口背后的能力差异",
+          "why": "考察价值,一句话点题"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "当前服务不可用时改用备用服务继续处理",
+          "why": "Failover 的定义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释统一协议不等于能力效果一致",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "举出跨模型签名图片工具ID转换",
+          "why": "评分标准第 3 项,要能举例"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分协议修复与外部动作事实",
+          "why": "评分标准第 4 项,安全相关"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能把同样函数签名理解为结果质量和价格等价",
+          "why": "统一接口最容易产生的错觉"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "源历史还在不代表目标请求包含原有全部信息",
+          "why": "降级后信息损失"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不代表工具从未执行或已经成功",
+          "why": "补出的错误结果只是协议修复"
+        }
+      ]
+    },
+    "PI-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Provider可能对单个请求按配置重试",
+          "why": "第一层重试的范围"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Agent Core收到最终error会结束本次循环，不负责通用业务重放",
+          "why": "第二层的边界,最容易搞错"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "额度耗尽不能一概按429重试",
+          "why": "错误码不等于可重试"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "结束、成功和数据已持久化是三个不同判断",
+          "why": "最该记住的收口句"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "失败后重新尝试某一明确范围的操作",
+          "why": "重试的定义,强调「明确范围」"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "重试之间增加等待时间，避免持续撞击繁忙服务",
+          "why": "退避的定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "同一业务操作重复提交不会重复产生业务效果",
+          "why": "幂等的定义,重试安全的前提"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分Provider请求重试与Session继续运行",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确分类额度限流和上下文溢出",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提出限定重试范围和业务幂等保障",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "这不是把所有工具从头再运行一遍",
+          "why": "重试范围的关键限定"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能把任意prompt Promise完成等同整个任务成功",
+          "why": "完成点的常见误判"
+        }
+      ]
+    },
+    "PI-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "AgentState 是运行中的状态",
+          "why": "五层里的第一层,定位要准"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "某次请求实际提供给模型的系统提示、消息与工具",
+          "why": "模型上下文是什么,标题问的核心"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "因此界面可见不代表本次模型可见",
+          "why": "最容易搞错的一对概念"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "排查遗忘应检查活动分支、压缩摘要和最终请求",
+          "why": "可执行的排查顺序"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把运行中的状态、真正发送给模型的数据和可恢复的历史分开",
+          "why": "考察价值,一句话说明分层意义"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "某一次模型请求实际能使用的输入信息",
+          "why": "术语表里的上下文定义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确区分五个概念而非全部称为记忆",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说出 AgentState 中至少两个非消息字段",
+          "why": "评分标准第 2 项,考细节"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "识别界面 display 与模型可见性的独立关系",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能靠把聊天记录重新发送给模型恢复一个正在执行的系统进程",
+          "why": "状态不等于消息数组"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "界面可见与模型可见是两个开关",
+          "why": "本题最有价值的一句"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "记忆是功能分类，不是单一组件",
+          "why": "别把记忆当成一个 API"
+        }
+      ]
+    },
+    "PI-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "每行一个 JSON 对象，便于追加和逐行读取",
+          "why": "JSONL 是什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "用 id 和 parentId 形成树",
+          "why": "树是怎么表达的"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "但不等于事务数据库",
+          "why": "标题问持久化保证,这句是定调"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "因此业务系统应控制单写者",
+          "why": "落地的唯一动作"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "可追加历史、分支重建和真正持久可靠性之间差异",
+          "why": "考察价值,点出三者不是一回事"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "已确认保存的数据在进程或设备故障后仍可恢复的程度",
+          "why": "持久可靠性的定义"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "防止把文本文件误认为带事务的数据库",
+          "why": "最常见的误判"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明 id、parentId、leafId 三者关系",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明活动路径不是物理文件末尾窗口",
+          "why": "评分标准第 3 项,最容易想当然"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "识别首次延迟落盘和叶子不单独持久化",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "文件物理最后几行不一定构成完整当前对话",
+          "why": "别用 tail 代替父链遍历"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不提供完整 Schema 校验、损坏修复、并发事务或恰好一次执行",
+          "why": "四大不提供的保证,一次否清"
+        }
+      ]
+    },
+    "PI-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不会把文件系统恢复到过去",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "它们都不自动撤销之前的写文件、数据库或网络操作",
+          "why": "分支≠回滚,最核心的边界"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "将会话分支与 Git 工作区或独立目录显式绑定",
+          "why": "正确做法,本题要给的方案"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "检验能否识别会话状态和真实世界副作用不在同一个时间线",
+          "why": "考察价值,点出两条时间线"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "避免产品把聊天分支包装成代码撤销",
+          "why": "最危险的产品设计"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "必须说明恢复的是哪类状态",
+          "why": "回滚的定义里就带着边界"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "明确指出会话导航不回滚文件",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确区分 tree、fork、clone 的输出",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提出会话与代码基线绑定的业务方案",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "没有把过去工具效果逐一撤销",
+          "why": "导航函数实际做了什么"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "看到的是当前磁盘，而非旧消息所描述的快照",
+          "why": "现象的最准描述"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能为了让界面看起来回到了过去而覆盖用户现有工作",
+          "why": "实施红线"
+        }
+      ]
+    },
+    "PI-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不是模型服务直接接受的格式",
+          "why": "两类消息的分界"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "display 只影响界面",
+          "why": "标题的核心,最短的一句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "普通 custom 会话条目不会进入模型",
+          "why": "容易与 custom_message 混淆"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "界面所需数据放受控 details",
+          "why": "正确做法:字段分层"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "避免把界面显示控制误当成对外数据发送控制",
+          "why": "本题最危险的一处误解"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "允许应用定义额外角色和数据的消息结构",
+          "why": "AgentMessage 的定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "仅读取和发送完成任务必要的数据字段",
+          "why": "数据最小化,落地原则"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确说明内部消息与模型消息不同",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明 transformContext 先于 convertToLlm",
+          "why": "评分标准第 2 项,两步的顺序"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确识别隐藏 custom 的发送行为",
+          "why": "评分标准第 3 项,泄露点"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "变换本次请求不等于同步改写会话历史",
+          "why": "变换的作用范围"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "它不是保密保险箱",
+          "why": "details 的定位红线"
+        }
+      ]
     }
   }
 }
