@@ -1069,6 +1069,35 @@ const MockView = (() => {
     go('#/mock/done');
   }
 
+  /* 阶段8:练后下一步建议——只基于本轮真实记录(作答/自评/追问),区分事实与推断。
+     事实 = 本轮实际写了什么;推断 = 「可能没讲清」的判断,由用户自评或未答触发,不自动打分。 */
+  function renderNextSteps(round) {
+    const unanswered = round.items.filter(it => !ExpressCard.itemAnswered(it));
+    const weakIds = round.items.filter(it => it.mark === 'weak').map(it => it.qid);
+    const fuMissing = round.items.filter(it => it.revealed && (it.followups || []).some(fu => !((fu.self || '').trim())));
+    const notes = [];
+    if (weakIds.length) notes.push({ fact: `你把 ${weakIds.length} 题标了「还不熟」(${weakIds.slice(0, 3).join(', ')}${weakIds.length > 3 ? '…' : ''})`,
+      step: '它们已进错题本与今日复习队列;明天复习时先不看答案,重写一遍回答再对照。', href: '#/review', label: '去复习队列' });
+    if (unanswered.length) notes.push({ fact: `${unanswered.length} 题本轮没有写下回答(${unanswered.slice(0, 3).map(i => i.qid).join(', ')}${unanswered.length > 3 ? '…' : ''})`,
+      step: '只对照参考不算练过;重开一轮时勾选这些题所在专题,先写再比。', href: '#/mock', label: '再练一轮' });
+    if (fuMissing.length) notes.push({ fact: `${fuMissing.length} 题的追问对照了参考但没写回答`,
+      step: '面试官会顺着回答追问——挑一题进学习页,把追问的回答补写一遍。', href: '#/study/' + (fuMissing[0].qid || ''), label: '去补追问' });
+    const answered = round.items.filter(it => ExpressCard.itemAnswered(it)).length;
+    if (answered && !notes.length) notes.push({ fact: `本轮 ${answered} 题都有真实作答且没有标记薄弱`,
+      step: '间隔重复会在到期后提醒你再看;现在可以导出表达卡带走,或去学新题。', href: '#/browse', label: '去学新题' });
+    if (!notes.length) return '';
+    return `
+      <div class="card" style="margin-top:12px;border-color:var(--primary)">
+        <h3 style="margin-top:0">下一步(基于本轮记录)</h3>
+        ${notes.map(n => `
+          <div style="margin:8px 0">
+            <div class="small"><b>事实:</b>${esc(n.fact)}</div>
+            <div class="small muted"><b>推断的下一步:</b>${esc(n.step)} <a class="rel-link" href="${esc(n.href)}">${esc(n.label)} →</a></div>
+          </div>`).join('')}
+        <p class="muted small" style="margin:6px 0 0">「事实」来自你本轮的实际操作;「下一步」是基于它的建议,不是评分。</p>
+      </div>`;
+  }
+
   function renderDone(root) {
     const round = state.round;
     if (!round) { renderConfig(root); return; }
@@ -1103,6 +1132,7 @@ const MockView = (() => {
           <a class="btn" href="#/home">返回工作台</a>
         </div>
         <p class="muted small" style="margin-top:8px">表达卡 = 你写的回答 + 面试口述版 + 参考要点,可下载 Markdown 或打印成 PDF。</p>
+        ${renderNextSteps(round)}
       </div>`;
     $('#m-again').addEventListener('click', () => { endSession(); state = null; go('#/mock'); });
     $('#m-card').addEventListener('click', () => exportExpressCard('round', 0));

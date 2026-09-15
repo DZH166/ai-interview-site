@@ -164,6 +164,13 @@ async function open(page, hash) {
       }));
     const card2 = await page.evaluate(() => { const r = buildExpressCard('round', 0); return r && r.ok ? r.markdown : 'ERR:' + (r && r.error); });
     check('完成页表达卡资格:只写追问可导出', card2.includes('只有追问的回答'), card2.slice(0, 80));
+    /* 阶段8:练后下一步建议——事实与推断分开,链接可用 */
+    check('下一步建议区分「事实」与「推断」,并给出可跳转出口',
+      await page.evaluate(() => {
+        const t = document.querySelector('.card').textContent;
+        return t.includes('基于本轮记录') && t.includes('事实:') && t.includes('推断的下一步')
+          && !!document.querySelector('.card a[href="#/review"]');
+      }));
     /* 首页:今天已写过模拟回答 + 数量口径 */
     await open(page, '#/home');
     check('首页「今天已写过模拟回答」认可只写追问的轮次',
