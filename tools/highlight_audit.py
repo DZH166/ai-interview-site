@@ -32,6 +32,8 @@ METACHARS = re.compile(r"[*`\[\]_|#<>\\]")
 # 会被渲染器替换掉的排版写法(短语里出现就不可靠)
 RISKY = re.compile(r"(--|\.\.\.|\(\d+\)\s*$)")
 MAX_SPANS = 12          # 单题标注上限:重点太多等于没有重点
+DENSITY_WARN = 0.35     # 单字段被标中的字数占比超过它 → 满屏黄,重点不"重"了
+DENSITY_ERROR = 0.50    # 过半都标了,等于没标
 
 
 def load_bank():
@@ -102,6 +104,20 @@ def check_spans(q, spans):
         by_field[field] = by_field.get(field, 0) + 1
     if not any(s.get("why") for s in spans):
         warns.append("没有任何 why,以后无法判断这条重点为什么重要")
+    # 密度:标中的字数占该字段的比例。占满了视觉上就没有对比,重点不再突出。
+    marked = {}
+    for s in spans:
+        if s.get("field") in FIELDS and (s.get("text") or "").strip():
+            marked[s["field"]] = marked.get(s["field"], 0) + len(s["text"])
+    for field, chars in sorted(marked.items()):
+        body = len(str(q.get(field) or ""))
+        if not body:
+            continue
+        ratio = chars / body
+        if ratio >= DENSITY_ERROR:
+            errors.append("%s: 标中 %d/%d 字(%.0f%%),过半都标等于没标" % (field, chars, body, ratio * 100))
+        elif ratio >= DENSITY_WARN:
+            warns.append("%s: 标中 %d/%d 字(%.0f%%),偏满,建议减到 1~3 条" % (field, chars, body, ratio * 100))
     return errors, warns, (len(spans), by_level, by_field)
 
 
@@ -133,6 +149,10 @@ def selftest():
         ("字段非法要报错",
          [{"field": "title", "level": "key", "text": "完全靠注意力", "why": "x"}],
          True),
+        ("整段都标上要报错(密度过半等于没标)",
+         [{"field": "answer", "level": "key",
+           "text": "Transformer 是完全靠注意力处理序列的架构;推理是自回归的逐 token 过程。", "why": "x"}],
+         True),
     ]
     bad = []
     for name, spans, should_fail in cases:
@@ -144,7 +164,9 @@ def selftest():
         for b in bad:
             print("  " + b)
         return False
-    print("标注审计器自检通过:%d 个用例(好标注放行 / 6 类坏标注全部命中)" % len(cases))
+    n_bad = sum(1 for _n, _s, should_fail in cases if should_fail)
+    print("标注审计器自检通过:%d 个用例(好标注放行 / %d 类坏标注全部命中)"
+          % (len(cases), n_bad))
     return True
 
 

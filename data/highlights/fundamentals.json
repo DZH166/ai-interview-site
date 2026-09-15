@@ -1,7 +1,7 @@
 {
   "topic": "fundamentals",
   "checked_date": "2026-09-16",
-  "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标,便于以后复读与复核。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验。",
+  "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验;该脚本还会算「标中字数占该字段比例」,超过 35% 报警、50% 报错——满屏黄等于没重点,这时要回去删条,不是放宽阈值。",
   "questions": {
     "FD-001": {
       "spans": [
@@ -20,9 +20,9 @@
     "FD-002": {
       "spans": [
         {"field": "answer", "level": "key", "text": "幻觉=模型生成『看起来很可信但与事实不符』的内容", "why": "定义句"},
-        {"field": "answer", "level": "key", "text": "模型学的是『预测下一个最可能的 token』,优化的是『像不像人话』而不是『真不真』", "why": "根因,所有追问都从这里展开"},
-        {"field": "answer", "level": "warn", "text": "幻觉无法根除,工程目标是『降低概率+快速发现+限制危害』", "why": "口径红线:不许承诺消除幻觉"},
-        {"field": "answer", "level": "term", "text": "事实类问题走工具(计算器/SQL)", "why": "最高性价比的对策"},
+        {"field": "answer", "level": "key", "text": "优化的是『像不像人话』而不是『真不真』", "why": "根因的短说法,所有追问都从这里展开"},
+        {"field": "answer", "level": "warn", "text": "工程目标是『降低概率+快速发现+限制危害』", "why": "口径红线:不许承诺消除幻觉"},
+        {"field": "plain", "level": "term", "text": "幻觉不全是『不知道』,还有『表达走样』和『被逼出来的迎合』", "why": "比喻覆盖不到的两种情况,补在这里"},
         {"field": "deep", "level": "term", "text": "事实性幻觉", "why": "两类幻觉的分水岭之一"},
         {"field": "deep", "level": "term", "text": "忠实性幻觉", "why": "RAG 场景真正要治的那一类"},
         {"field": "deep", "level": "key", "text": "RAG 场景的核心指标是 faithfulness(答案是否被检索证据支持)", "why": "评估指标口径"},
@@ -34,14 +34,13 @@
     },
     "FD-003": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "训练=用海量数据更新参数(学习),可全序列并行,成本一次性", "why": "训练三特征:更新参数/可并行/一次性"},
-        {"field": "answer", "level": "key", "text": "推理=参数冻结,逐 token 自回归生成(每步依赖上一步),成本随使用持续发生", "why": "推理三特征,与训练一一对照"},
-        {"field": "answer", "level": "key", "text": "参数量(7B/70B)是模型『脑子的大小』——决定能力上限与显存占用,与对话多长无关", "why": "参数量管什么:能力与显存,不管长度"},
-        {"field": "answer", "level": "key", "text": "上下文窗口是『一次能读进的资料页数』——运行时额度,与能力上限无关", "why": "窗口管什么:一次能读多少,不管能力"},
-        {"field": "answer", "level": "key", "text": "长对话贵在 KV Cache 与注意力计算,不在参数", "why": "本题落点:成本从哪来"},
+        {"field": "answer", "level": "key", "text": "决定能力上限与显存占用,与对话多长无关", "why": "参数量管什么;与长度无关是常错点"},
+        {"field": "answer", "level": "key", "text": "运行时额度,与能力上限无关", "why": "窗口管什么;与能力无关是镜像的常错点"},
+        {"field": "answer", "level": "key", "text": "长对话贵在 KV Cache 与注意力计算", "why": "本题落点:成本从哪来"},
         {"field": "answer", "level": "warn", "text": "换强模型改的是能力,不是窗口", "why": "最常见误区:以为换大模型就能吃长文档"},
         {"field": "plain", "level": "key", "text": "纸再大,脑子不够也答不了难题;脑子再好,纸不够也抄不下长资料", "why": "一句话记住两者独立"},
         {"field": "plain", "level": "warn", "text": "真实的『考试』按 token 计费,纸越大每场考试越贵", "why": "比喻的边界,顺带引出成本"},
+        {"field": "interview", "level": "key", "text": "训练更新参数、全并行、一次性成本;推理参数冻结、自回归逐 token、按使用付费", "why": "训练/推理的对照,放在口述段里说最顺"},
         {"field": "interview", "level": "term", "text": "推理优化的关键是 KV Cache", "why": "问到推理优化先答这个"},
         {"field": "deep", "level": "term", "text": "参数×精度字节数", "why": "权重显存的换算口径"},
         {"field": "deep", "level": "term", "text": "窗口 ↔ 单次可处理 token 总量(输入+输出共享)", "why": "窗口是输入输出共享的额度,常被误解为只算输入"}
@@ -49,12 +48,9 @@
     },
     "FD-004": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "评估分三层配合", "why": "总纲:自动指标/LLM-as-judge/人工三层"},
-        {"field": "answer", "level": "warn", "text": "便宜可回归,但与真实体验有距离", "why": "自动指标的定位与局限"},
-        {"field": "answer", "level": "key", "text": "LLM-as-judge——用强模型按评分细则给输出打分,规模化评估开放性任务", "why": "judge 的用途"},
-        {"field": "answer", "level": "warn", "text": "但要防偏差(偏长、偏自己风格、位置偏差),需人工抽检校准", "why": "judge 的三种已知偏差,不主动说会被追问"},
         {"field": "answer", "level": "key", "text": "先定义『对这道业务题什么算好』,再选工具", "why": "工程原则第一条:先定标准"},
         {"field": "answer", "level": "key", "text": "评测集版本化,任何变更跑回归", "why": "工程原则第二条:评估进流程"},
+        {"field": "answer", "level": "warn", "text": "但要防偏差(偏长、偏自己风格、位置偏差)", "why": "judge 的三种已知偏差,不主动说会被追问"},
         {"field": "plain", "level": "term", "text": "LLM judge 的偏差可以被『评分细则+多评审+随机化』部分修正", "why": "偏差的具体修法"},
         {"field": "deep", "level": "warn", "text": "没有业务定义的评估都是自嗨", "why": "一句话红线"},
         {"field": "deep", "level": "key", "text": "评分细则(rubric)拆维度打分(1~5)而不是整体印象", "why": "judge 的正确用法"},
@@ -64,10 +60,9 @@
     },
     "FD-005": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "Tokenization 是把文本切成模型最小处理单元(token)的过程", "why": "定义句"},
-        {"field": "answer", "level": "key", "text": "常见方案 BPE 按统计频率把高频字符组合并成词片,低频词拆成子词", "why": "BPE 的核心机制"},
+        {"field": "answer", "level": "key", "text": "常见方案 BPE 按统计频率把高频字符组合并成词片", "why": "BPE 的核心机制"},
         {"field": "answer", "level": "key", "text": "模型看到的不是字母而是 token ID", "why": "一切怪现象的根源"},
-        {"field": "answer", "level": "key", "text": "解法是给模型计算器/代码工具,而不是换更大模型", "why": "正确解法,也是工具调用存在的理由"},
+        {"field": "answer", "level": "key", "text": "给模型计算器/代码工具,而不是换更大模型", "why": "正确解法,也是工具调用存在的理由"},
         {"field": "plain", "level": "term", "text": "模型阅读像看『高频词缩写表』", "why": "最贴切的那个比喻"},
         {"field": "interview", "level": "key", "text": "计费用 tokenizer 精确算不用字符数估", "why": "工程铁律之一"},
         {"field": "interview", "level": "key", "text": "算术一律走工具", "why": "工程铁律之二"},
