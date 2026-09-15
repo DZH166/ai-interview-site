@@ -176,12 +176,18 @@ const QRender = (() => {
     return Markdown.render(text || '');
   }
 
+  /* 按字段渲染:套上人工精读挑出的重点标注(见 app/js/highlight.js)。
+     标注单独存放,不改题库原文,所以内容审计与融合适配器的哈希都不受影响。 */
+  function mdField(q, field) {
+    return Highlight.renderField(q.id, field, Markdown.render((q && q[field]) || ''));
+  }
+
   /* Optional full scenario prompt stays visible before any reference answer is opened. */
   function promptHtml(q) {
     return q.prompt ? `<div class="q-prompt" data-question-prompt="${esc(q.id)}">${mdHtml(q.prompt)}</div>` : '';
   }
   function deepHtml(q) {
-    return mdHtml(q.deep + (q.fusion_notes ? '\n\n## 融合补充：场景与边界\n\n' + q.fusion_notes : ''));
+    return mdField(q, 'deep') + (q.fusion_notes ? Markdown.render('\n\n## 融合补充：场景与边界\n\n' + q.fusion_notes) : '');
   }
 
   /* 概念(来自 data/concepts.json):题目→概念的正查与反查 */
@@ -225,11 +231,11 @@ const QRender = (() => {
     return `
       <div class="qf-part" data-part="answer">
         <div class="qf-label">直接答案</div>
-        <div class="qf-body">${mdHtml(q.answer)}</div>
+        <div class="qf-body">${mdField(q, 'answer')}</div>
       </div>
       <div class="qf-part" data-part="interview">
         <div class="qf-label">面试表达 · 口述版</div>
-        <div class="qf-body">${mdHtml(q.interview)}</div>
+        <div class="qf-body">${mdField(q, 'interview')}</div>
       </div>`;
   }
 
@@ -239,9 +245,9 @@ const QRender = (() => {
     const o = open !== false;
     return `
       ${section('answer', '答案与面试表达', answerFusionBody(q), o)}
-      ${section('plain', '大白话解释', mdHtml(q.plain), o)}
+      ${section('plain', '大白话解释', mdField(q, 'plain'), o)}
       ${section('deep', '原理拆解', deepHtml(q), o)}
-      ${section('example', '具体例子', mdHtml(q.example), o)}
+      ${section('example', '具体例子', mdField(q, 'example'), o)}
       ${section('followups', '常见追问', followupsHtml(q), o)}
       ${section('pitfalls', '常见误区', pitfallsHtml(q), o)}
       ${section('check', '理解检查', checkHtml(q), o)}
@@ -316,6 +322,6 @@ const QRender = (() => {
       </div>`;
   }
 
-  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, promptHtml, deepHtml, section,
+  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, mdField, promptHtml, deepHtml, section,
            answerFusionBody, standardSections, focusToggle, wireFocusToggle };
 })();

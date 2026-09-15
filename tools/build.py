@@ -33,6 +33,16 @@ def main():
     questions = []
     for f in sorted((ROOT / "data" / "questions").glob("*.json")):
         questions.extend(load_json(f))
+    # 重点标注:按题号合并各专题文件,重复即报错(否则谁覆盖谁看不出来)
+    highlights = {}
+    hdir = ROOT / "data" / "highlights"
+    if hdir.exists():
+        for f in sorted(hdir.glob("*.json")):
+            rec = load_json(f)
+            for qid, item in (rec.get("questions") or {}).items():
+                if qid in highlights:
+                    raise SystemExit(f"重复的重点标注: {qid}(见 {f.name})")
+                highlights[qid] = item
     docs = []
     for f in sorted((ROOT / "data" / "docs").glob("*.md")):
         text = f.read_text(encoding="utf-8")
@@ -65,6 +75,7 @@ def main():
         "paths": paths,
         "concepts": concepts,
         "projects": projects,
+        "highlights": highlights,
     }
     js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。 */\n"
           "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,
@@ -79,7 +90,7 @@ def main():
     shell_files = ["app/data.js", "app/index.html", "app/manifest.webmanifest",
                    "app/css/style.css",
                    "app/js/util.js", "app/js/srs.js", "app/js/store.js",
-                   "app/js/markdown.js",
+                   "app/js/markdown.js", "app/js/highlight.js",
                    "app/js/search.js", "app/js/common.js", "app/js/express.js",
                    "app/js/views-practice.js",
                    "app/js/views-knowledge.js", "app/js/views-review.js", "app/js/app.js"]

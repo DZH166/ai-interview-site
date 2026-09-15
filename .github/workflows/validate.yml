@@ -109,6 +109,10 @@ jobs:
         run: |
           python tools/content_audit.py --selftest
           python tools/verify_sources.py --selftest
+          python tools/highlight_audit.py --selftest
+
+      - name: 重点标注审计(每条标注必须逐字命中原文,不能重叠/重复)
+        run: python tools/highlight_audit.py --strict
 
       - name: 内容审计(十要素/交叉引用/学习路径引用)
         run: python tools/content_audit.py --strict
@@ -203,6 +207,13 @@ jobs:
           CHROME: default
           PORT: '8937'
         run: node tests/browser/ai-series.js
+
+      - name: 重点标注(逐条命中/级别可区分/窄屏不溢出/未标注题不误伤)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8941'
+        run: node tests/browser/highlight.js
 
       - name: SRS 到期建议(手动队列优先/还记得忘了/定向复盘重排/首页口径)
         env:
