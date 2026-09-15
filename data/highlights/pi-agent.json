@@ -154,6 +154,462 @@
           "why": "验收标准里的可执行项"
         }
       ]
+    },
+    "PI-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Run 是一次底层运行，通常包含多个 Turn",
+          "why": "两个层级的分界,第一句就得说清"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Turn 是一次助手响应加上它触发的工具调用和结果",
+          "why": "Turn 的准确口径"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "只表示这条消息完整，不能提前关闭任务",
+          "why": "消息结束 ≠ 运行结束,最常见的误判"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把文本、模型轮次、工具执行和整体完成分开",
+          "why": "考察价值,一句话说明为什么这题重要"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "一次助手响应及它触发的工具执行和结果",
+          "why": "术语表里的 Turn 定义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确区分Run与Turn",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分消息结束与运行结束",
+          "why": "评分标准第 4 项,最容易丢分"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明事件驱动界面与错误路径边界",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "Turn 不是一条聊天气泡，也不是一次工具调用",
+          "why": "先把常见误解排掉"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "工具执行前可能被校验或钩子阻断",
+          "why": "时序图容易画错的地方"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "并非副作用已发生的证明",
+          "why": "事件名不等于结果,红线"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不把工具调用开始标记为执行成功",
+          "why": "验收标准里的判据"
+        }
+      ]
+    },
+    "PI-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "流式输出中的工具参数是预览状态",
+          "why": "整题的前提"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Schema只能证明结构，不能证明完整意图",
+          "why": "标题的直接答案"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "提前执行会把一个展示优化变成真实的数据破坏",
+          "why": "后果最重的一句,面试的收口"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "响应分成许多片段逐步到达，而非一次性收到全部内容",
+          "why": "Streaming 的定义"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "尚未完全生成的结构化参数文本",
+          "why": "部分 JSON 的定义"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "会改变文件、数据库、订单等外部状态的操作",
+          "why": "副作用的定义,判断边界的依据"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "能在延迟优化和不可逆副作用之间作出正确取舍",
+          "why": "考察价值,点出取舍本质"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释部分解析与最终意图不同",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确说明length全部不执行",
+          "why": "评分标准第 3 项,最硬的一条"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提出只预览不提前产生副作用的优化",
+          "why": "评分标准第 5 项,要给出正确优化方向"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "这是根据工具反馈重新生成，不是静默把旧参数再执行一次",
+          "why": "错误结果回来的正确语义"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "工具执行次数为0",
+          "why": "验收标准里的硬指标"
+        }
+      ]
+    },
+    "PI-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Steering是运行中转向消息",
+          "why": "两个队列的分界,先说清是什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "在当前助手轮次和整批工具完成后、下一次模型调用前注入",
+          "why": "注入时机,标题问的就是「何时生效」"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Follow-up是后续任务",
+          "why": "另一个队列的定位"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能把“消息已排队”显示成“操作已停止”",
+          "why": "界面语义红线,最常见的误导"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "让模型在后续轮次改变方向的排队消息",
+          "why": "术语表里的 Steering 定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "通知异步操作应尽快停止的对象，操作方需配合处理",
+          "why": "取消是协作机制,不是强杀"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确说明Steering在完整工具批次后生效",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确说明Follow-up自然停止时消费",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解释默认one-at-a-time与all",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "也不会在它们之间因为新steering而自动跳过后者",
+          "why": "最常被旧教程讲错的地方"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "保持one-at-a-time语义",
+          "why": "队列消费的准确语义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "已经完成的外部动作不会自动撤销",
+          "why": "取消的边界,安全相关"
+        }
+      ]
+    },
+    "PI-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "在没有新工具、Steering和Follow-up时自然结束",
+          "why": "自然结束的准确条件"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "shouldStopAfterTurn允许整轮助手与工具完成后优雅退出",
+          "why": "优雅退出的位置与语义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "Pi没有自动替每个业务设好这些上限",
+          "why": "责任边界,不许说成内核能力"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "允许当前工作单元完成，再阻止后续单元开始",
+          "why": "优雅停止的定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "通知进行中的操作尽快结束，而非自动撤销副作用",
+          "why": "取消的定义,边界写在定义里"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "对轮数、时间、调用次数或金额设置可检查的上限",
+          "why": "预算的定义,四类上限"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "列出自然结束与模型错误停止路径",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确说明shouldStopAfterTurn位置",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明Abort协作与副作用不回滚",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不是抢断正在执行的动作",
+          "why": "优雅停止不等于强停,最易混"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能拿它当绝对预算闸门",
+          "why": "terminate 的作用边界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "“已取消”不必然意味着外部世界没有变化",
+          "why": "取消后的现实,安全相关"
+        }
+      ]
+    },
+    "PI-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "工具失败应抛异常，由循环转成isError=true",
+          "why": "失败的正确报告方式,标题问管道就要答这个"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "只返回“失败了”文本仍可能被当成功",
+          "why": "最容易写错的一行代码"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "content是发给模型的文本或图片",
+          "why": "content 与 details 的分工,先说 content"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "前置钩子修改已校验参数后，本版不会自动重新校验",
+          "why": "最容易被忽略的安全缺口"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "在运行时检查外部参数是否满足声明的结构规则",
+          "why": "运行校验的定义,区别于类型检查"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "明确向调用者报告当前操作失败的程序机制",
+          "why": "throw 的定义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "完整排列预处理校验前钩子执行后钩子结果",
+          "why": "评分标准第 1 项,管道顺序"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分类型检查与运行时校验",
+          "why": "评分标准第 2 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分content与details的受众",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "模型参数来自运行时，仍须检查",
+          "why": "为什么类型检查不够"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "字段替换不是深度合并",
+          "why": "后置钩子改结果时的坑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能假定模型自动读到所有细节",
+          "why": "details 不会自动进上下文"
+        }
+      ]
+    },
+    "PI-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "默认先按顺序做各工具预检，再并发执行允许的工具",
+          "why": "默认调度行为,评分标准第 1 项"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "按助手原始调用顺序排列",
+          "why": "结果消息的顺序规则"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "或本批任一工具声明sequential，整批会串行",
+          "why": "整批转串行的条件"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "但这不是跨进程锁",
+          "why": "内置保护的边界,最容易当成万能"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "结果因多个操作先后交错而发生不可控变化",
+          "why": "竞争条件的定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "更新时检查版本是否仍一致，不一致则拒绝覆盖",
+          "why": "乐观并发的做法,可直接落地"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明默认顺序预检后并发执行",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分执行完成顺序与结果消息顺序",
+          "why": "评分标准第 2 项,本题核心区分"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "准确说明任一sequential导致整批串行",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "前置钩子顺序运行不等于每个工具的执行也顺序运行",
+          "why": "预检顺序≠执行顺序"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能只靠数组位置或工具名称猜测",
+          "why": "要靠 toolCallId 关联"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "两个完整覆盖即使串行，后一个仍可覆盖前一个",
+          "why": "串行也不能解决业务覆盖问题"
+        }
+      ]
     }
   }
 }
