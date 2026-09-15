@@ -840,6 +840,17 @@ const Store = (() => {
        - 复习原因按整套覆盖而非并集(并集会让已取消的原因永远复活);
        - 未采用任何值时**不提升** _updatedAt(不给没用上的数据盖新时间)。
      返回 {cur, noteChanged}。 */
+  /* 同时间戳的稳定决胜规则(阶段5):内容哈希大者胜。
+     与输入顺序、书写位置无关;对 note/status/fav 统一适用。
+     空值语义:同刻下「明确清空」视为比「有值」更强的信号(清空优先)。 */
+  function sameTieBreak(curVal, incVal, curAt, incAt) {
+    if (incAt !== curAt) return null;
+    const curEmpty = curVal === '' || curVal === false || curVal == null;
+    const incEmpty = incVal === '' || incVal === false || incVal == null;
+    if (incEmpty !== curEmpty) return incEmpty ? 'inc' : 'cur';   /* 清空优先 */
+    return contentHash(JSON.stringify(incVal)) > contentHash(JSON.stringify(curVal)) ? 'inc' : 'cur';
+  }
+
   function mergeQuestionRecord(cur, inc) {
     const incAt = inc._updatedAt || 0, curAt = cur._updatedAt || 0;
     let adopted = false, noteChanged = false;
@@ -848,6 +859,10 @@ const Store = (() => {
     });
     if (inc.note !== undefined) {
       if (incAt > curAt) { if (cur.note !== inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; } }
+      else if (incAt === curAt && incAt > 0) {
+        const win = sameTieBreak(cur.note, inc.note, curAt, incAt);
+        if (win === 'inc' && cur.note !== inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; }
+      }
       else if ((cur.note === undefined || (!curAt && !cur.note)) && inc.note) { cur.note = inc.note; noteChanged = true; adopted = true; }
     }
     if (inc.status !== undefined) {
@@ -855,6 +870,13 @@ const Store = (() => {
         if (cur.status !== inc.status) {
           cur.status = inc.status; adopted = true;
           /* 状态被备份清空时,由状态转换派生的 SRS 排期一并清(与 setStatus('') 语义一致) */
+          if (inc.status === '' && cur.srs) delete cur.srs;
+        }
+      }
+      else if (incAt === curAt && incAt > 0) {
+        const win = sameTieBreak(cur.status, inc.status, curAt, incAt);
+        if (win === 'inc' && cur.status !== inc.status) {
+          cur.status = inc.status; adopted = true;
           if (inc.status === '' && cur.srs) delete cur.srs;
         }
       }
@@ -1014,11 +1036,16 @@ const Store = (() => {
     return incoming;
   }
 
-  /* 预览:同一套合并规则跑一遍(不改任何状态),返回四类计数的明细(后续轮3)。
-     新增=本地没有该题/该轮;覆盖=备份更新而替换本地的字段;保留=本地较新未采用;
-     撤销=备份明确清空而本地有值。 */
-  function previewRecordsMerge(jsonText) {
+  /* ---- 统一恢复计划生成器(MR-01/MR-02 修复,任务书阶段1) ----
+     预览与正式导入共用同一份流程:外壳校验 → 规范化(旧runId迁移/旧drillTries迁移) →
+     合并 → 差异计算。迁移产生的身份用确定性哈希,预览与确认两次计算结果一致。
+     不修改 Store 内存、传入对象或磁盘。返回 {incoming, merged, report, changes, entities}。 */
+  function computeRestorePlan(jsonText, source) {
     const incoming = parseRecordsBackup(jsonText, ['aiiv-records']);
+    /* 深拷贝后规范化:迁移直接改 incoming 的副本(原对象不动),确定性 ID 两次计算一致 */
+    incoming.ui = incoming.ui || {};
+    incoming.ui.projectRuns = incoming.ui.projectRuns || {};
+    migrateLegacyRuns({ ui: { projectRuns: incoming.ui.projectRuns } });
     const sigBefore = recordsSigs(data);
     const merged = JSON.parse(JSON.stringify(data));
     merged.mock.rounds = merged.mock.rounds.slice();
@@ -1030,19 +1057,74 @@ const Store = (() => {
     mergeUi(merged, incoming, report);
     migrateLegacyDrillTries(merged);
     const changes = diffSigs(sigBefore, recordsSigs(merged));
-    /* 逐题归类(预览粒度到题) */
-    const perQuestion = { added: 0, overridden: 0, kept: 0, reverted: 0 };
-    const localQ = data.questions || {}, incQ = incoming.questions || {};
+    const entities = describeRestoreEntities(data, incoming, merged, changes, report);
+    return { incoming, merged, report, changes, entities };
+  }
+
+  /* 按实体描述变化(MR-02):每条带稳定ID、前后摘要、原因与动作。 */
+  function describeRestoreEntities(local, incoming, merged, changes, report) {
+    const out = { questions: [], rounds: [], runs: [], drafts: [], notes: [] };
+    const clip = t => { t = String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); return t.length > 60 ? t.slice(0, 60) + '…' : t; };
+    const localQ = local.questions || {}, incQ = incoming.questions || {}, mgdQ = merged.questions || {};
     Object.keys(incQ).forEach(qid => {
-      const cur = localQ[qid], inc = incQ[qid] || {};
-      if (!cur) { perQuestion.added++; return; }
+      const cur = localQ[qid], inc = incQ[qid];
+      if (!cur) {
+        out.questions.push({ id: qid, action: 'added', reason: '本地没有该题记录', after: clip(inc.note) });
+        return;
+      }
       const incAt = inc._updatedAt || 0, curAt = cur._updatedAt || 0;
-      const clearRev = ['note', 'status', 'fav'].some(k => inc[k] !== undefined && incAt > curAt && (inc[k] === '' || inc[k] === false) && (cur[k] === undefined || cur[k]));
-      if (clearRev) perQuestion.reverted++;
-      else if (incAt > curAt && changes.qids.includes(qid)) perQuestion.overridden++;
-      else if (changes.qids.includes(qid)) perQuestion.overridden++;   /* 计数/时间戳补齐也算采用 */
-      else perQuestion.kept++;
+      const changed = changes.qids.includes(qid);
+      const clearRev = ['note', 'status', 'fav'].some(k => inc[k] !== undefined && incAt > curAt && (inc[k] === '' || inc[k] === false) && cur[k]);
+      if (clearRev) out.questions.push({ id: qid, action: 'reverted', reason: '备份更新的状态明确清空(撤销)', before: clip(cur.note), after: clip(inc.note) });
+      else if (changed && incAt > curAt) out.questions.push({ id: qid, action: 'overridden', reason: '备份更新(新者胜)', before: clip(cur.note), after: clip(inc.note) });
+      else if (changed) out.questions.push({ id: qid, action: 'overridden', reason: '备份补齐本机缺失的计数/时间戳', before: clip(cur.note), after: clip(mgdQ[qid].note) });
+      else out.questions.push({ id: qid, action: 'kept', reason: '本机较新,备份未采用' });
     });
+    const existRoundIds = new Set((local.mock.rounds || []).map(r => r.id || roundId(r)));
+    ((incoming.mock || {}).rounds || []).forEach(r => {
+      const rid = roundId(r);
+      if (!existRoundIds.has(rid)) out.rounds.push({ id: rid, action: 'added', reason: '本地没有这一轮',
+        after: clip((r.items || []).length + ' 题 · ' + (r.items || []).filter(i => (i.self || '').trim()).length + ' 题有回答') });
+    });
+    const localRuns = local.ui.projectRuns || {}, incRuns = incoming.ui.projectRuns || {}, mgdRuns = merged.ui.projectRuns || {};
+    Object.keys(incRuns).forEach(pid => {
+      const localList = localRuns[pid] || [];
+      const localById = {}; localList.forEach(r => { if (r.runId) localById[r.runId] = r; });
+      const announced = {};
+      (incRuns[pid] || []).forEach(r => {
+        if (!r.runId) return;
+        const hit = localById[r.runId];
+        announced[r.runId] = true;
+        if (!hit) out.runs.push({ pid, id: r.runId, action: 'added', reason: '本地没有这条运行记录', after: clip(r.runOutput) });
+        else if ((r.updatedAt || 0) > (hit.updatedAt || 0) && (hit.runOutput || '') !== (r.runOutput || '')) {
+          out.runs.push({ pid, id: r.runId, action: 'overridden', reason: '同runId备份更新(新者胜)',
+            before: clip(hit.runOutput), after: clip(r.runOutput) });
+        }
+      });
+      /* 迁移条目:规范化后获得确定性ID、本地没有对应记录 → 与正式导入同口径预告 */
+      (mgdRuns[pid] || []).forEach(r => {
+        if (r.runId && r._legacy && !localById[r.runId] && !announced[r.runId]) {
+          out.runs.push({ pid, id: r.runId, action: 'added', reason: '旧格式记录迁移(补齐确定性ID)', after: clip(r.runOutput), migrated: true });
+          announced[r.runId] = true;
+        }
+      });
+    });
+    if ((incoming.mock || {}).draft && !(local.mock || {}).draft) {
+      out.drafts.push({ id: incoming.mock.draft.sessionId || '(旧格式)', action: 'added', reason: '本地没有未完成草稿', after: clip(JSON.stringify(incoming.mock.draft.answers || {})) });
+    }
+    if (report.runsMigrated > 0) out.notes.push('备份中有 ' + report.runsMigrated + ' 条旧格式项目运行记录,已补齐确定性ID后合并(与正式导入同一流程)。');
+    if (report.draftsAdopted > 0) out.notes.push('恢复了 ' + report.draftsAdopted + ' 份未完成草稿(仅本地没有时)。');
+    if (report.draftsKept > 0) out.notes.push('保留本机 ' + report.draftsKept + ' 份项目草稿(本机较新)。');
+    return out;
+  }
+
+  /* 预览:返回恢复计划摘要(不改任何状态)。预览与导入共用 computeRestorePlan。 */
+  function previewRecordsMerge(jsonText) {
+    const plan = computeRestorePlan(jsonText);
+    const changes = plan.changes, entities = plan.entities, report = plan.report;
+    const pq = { added: 0, overridden: 0, kept: 0, reverted: 0 };
+    entities.questions.forEach(q => { pq[q.action] = (pq[q.action] || 0) + 1; });
+    const runsChanged = entities.runs.filter(r => r.action === 'added' || r.action === 'overridden').length;
     return {
       ok: true,
       summary: {
@@ -1050,32 +1132,20 @@ const Store = (() => {
         roundsAdded: report.roundsAdded,
         draftsAdopted: report.draftsAdopted, draftsKept: report.draftsKept,
         runsAdded: report.runsAdded, runsMigrated: report.runsMigrated,
-        perQuestion, noChanges: !changes.hasChanges
+        perQuestion: pq,
+        runsChanged,
+        entities,
+        noChanges: !changes.hasChanges && runsChanged === 0
       },
       changes
     };
   }
 
+  /* 正式导入:执行同一份计划(重新计算,保证拿到最新基线上的结果),原子写入。 */
   function importRecords(jsonText) {
-    const incoming = parseRecordsBackup(jsonText, ['aiiv-records']);
-
-    /* 在副本上合并,校验+写入都成功才替换内存状态 */
-    const merged = JSON.parse(JSON.stringify(data));
-    merged.mock.rounds = merged.mock.rounds.slice();
-    if (!merged.ui.projectRuns) merged.ui.projectRuns = {};
-    const report = newReport();
-    /* 先给两份数据里缺 runId 的历史运行记录补齐确定性 ID,再合并 */
-    report.runsMigrated = migrateLegacyRuns({ ui: { projectRuns: incoming.ui && incoming.ui.projectRuns } });
-
-    mergeQuestions(merged, incoming.questions, report);
-    mergeRounds(merged, incoming.mock, report);
-    mergeAttempts(merged, incoming.drillAttempts);
-    mergeUi(merged, incoming, report);
-
-    /* 迁移:旧格式题目记录里的 drillTries → 顶层 drillAttempts(作用于待提交副本) */
-    migrateLegacyDrillTries(merged);
-
-    /* 原子写入:直接写 localStorage 成功后才替换内存 */
+    const plan = computeRestorePlan(jsonText);
+    const merged = plan.merged, report = plan.report;
+    /* 原子写入:直接写 localStorage 成功后才替换内存状态 */
     try {
       merged.ui.savedAt = Date.now();
       localStorage.setItem(KEY_RECORDS, JSON.stringify(merged));
@@ -1412,6 +1482,15 @@ const Store = (() => {
       bumpRev();
       notifyInvalidate();
     }
+    /* 收敛传播(ST-01 修复):合并结果与磁盘不同时(哪怕内存没变,如同刻决胜本页胜出),
+       必须把合并结果写回磁盘,否则对页看不到本页的决胜,双方各持己见永不收敛。
+       静默直写(不触发本页 storage 事件;对页会收到并按同一规则合并)。 */
+    try {
+      const mergedRaw = JSON.stringify(result.merged);
+      if (mergedRaw !== localStorage.getItem(KEY_RECORDS) && validateRecordsObj(JSON.parse(mergedRaw)).length === 0) {
+        localStorage.setItem(KEY_RECORDS, mergedRaw);
+      }
+    } catch (e) { /* 传播失败不影响本页内存;saveNow 前合并会再收敛 */ }
     return { ok: true, changed: result.changes.hasChanges, changes: result.changes,
       report: result.report, staleEpoch: result.staleEpoch };
   }

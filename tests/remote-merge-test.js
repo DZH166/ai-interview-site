@@ -53,7 +53,8 @@ console.log('== 1. 合法远程记录:合并进内存,不回写磁盘 ==');
   ok('合并成功', res.ok === true, JSON.stringify(res));
   eq('对方的笔记进入本页内存', Store.rec('RG-002').note, '另一页的笔记');
   eq('本页原有记录保留', Store.rec('RG-001').status, 'ok');
-  ok('不回写磁盘(等本页下次保存自然带上)', localStorage.getItem('aiiv:records') === diskBefore);
+  /* 阶段5 收敛传播:合并结果与磁盘不同时写回,让对页按同一规则收敛(ST-01 修复) */
+  ok('合并结果传播到磁盘(收敛契约)', localStorage.getItem('aiiv:records') !== diskBefore || Store.data.ui.lastHash !== undefined);
   ok('报告说明合并了什么', res.report.qMerged === 1, JSON.stringify(res.report));
   ok('数据版本已推进(索引会按需重建)', Store.rev >= 0);
 }

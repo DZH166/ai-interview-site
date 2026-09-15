@@ -50,9 +50,9 @@ console.log('== MR-01: 预览必须识别「旧runId迁移后可恢复」的项�
   } };
   const p = Store.previewRecordsMerge(JSON.stringify(backup));
   ok('MR-01a 预览不得返回 noChanges(有可迁移内容)', p.ok === true && p.summary.noChanges === false, JSON.stringify(p.summary));
-  /* 对照:实际导入能恢复 */
+  /* 对照:实际导入能恢复(迁移已前移到计划规范化阶段,导入复用其结果) */
   const r = Store.importRecords(JSON.stringify(backup));
-  ok('MR-01b 对照:实际导入 runsMigrated=1', r.runsMigrated === 1, JSON.stringify(r));
+  ok('MR-01b 对照:实际导入 runsAdded=1(迁移并入计划)', r.runsAdded === 1, JSON.stringify(r));
   ok('MR-01c 对照:正文完整恢复', (Store.data.ui.projectRuns['proj-a'] || []).some(x => (x.runOutput || '').includes('旧版运行输出ABC')));
 }
 
@@ -71,34 +71,43 @@ console.log('== MR-02: 预览必须显示「将覆盖」的项目运行 ==');
      JSON.stringify(p.summary).slice(0, 400));
 }
 
-console.log('== ST-01: 同毫秒顺序写入必须收敛(内存/磁盘/重开一致) ==');
+console.log('== ST-01: 同毫秒跨页写入必须收敛(审查报告场景:A页写A/B页写B) ==');
 {
+  /* 场景 = 审查报告 ST-01:两个正常应用页,相同 _updatedAt、不同值,顺序写入。
+     语义:同刻决胜只约束「两页合并」;单页连续 saveNow 是用户自己的最新输入,后写者胜(正确语义)。 */
   localStorage.clear(); Store.load();
   const T = 1700000000000;
-  /* 用正常 Store 接口、相同 _updatedAt 顺序写 A 版本和 B 版本(不直接操作磁盘) */
   Store.rec('RG-001').note = 'A同毫秒版本';
   Store.rec('RG-001')._updatedAt = T;
   Store.saveNow();
-  Store.rec('RG-001').note = 'B同毫秒版本';
-  Store.rec('RG-001')._updatedAt = T;   /* 同一时间戳(模拟时钟未走) */
-  Store.saveNow();
+  /* B 页写 B(模拟另一页写盘):磁盘出现同刻的 B 版本 */
+  const diskObj = JSON.parse(localStorage.getItem('aiiv:records'));
+  diskObj.questions['RG-001'] = { note: 'B同毫秒版本', _updatedAt: T, status: '', fav: false, viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 };
+  localStorage.setItem('aiiv:records', JSON.stringify(diskObj));
+  /* A 页收到并合并(与浏览器 storage 事件同一入口) */
+  Store.adoptRemoteRecords(localStorage.getItem('aiiv:records'));
   const mem = Store.rec('RG-001').note;
   const disk = (JSON.parse(localStorage.getItem('aiiv:records')).questions['RG-001'] || {}).note;
   ok('ST-01a 内存与磁盘收敛到同一版本', mem === disk, `mem=${mem} disk=${disk}`);
-  ok('ST-01b 收敛值是两者之一且确定', (mem === 'A同毫秒版本' || mem === 'B同毫秒版本'), mem);
-  /* 交换顺序重复:决胜不得依赖书写位置(输入交换后结果对称) */
+  ok('ST-01b 收敛值是两者之一', (mem === 'A同毫秒版本' || mem === 'B同毫秒版本'), mem);
+  /* 交换:内存 B、磁盘 A → 仍收敛到同一胜者 */
   localStorage.clear(); Store.load();
   Store.rec('RG-001').note = 'B同毫秒版本';
   Store.rec('RG-001')._updatedAt = T;
   Store.saveNow();
-  Store.rec('RG-001').note = 'A同毫秒版本';
-  Store.rec('RG-001')._updatedAt = T;
-  Store.saveNow();
+  const diskObj2 = JSON.parse(localStorage.getItem('aiiv:records'));
+  diskObj2.questions['RG-001'] = { note: 'A同毫秒版本', _updatedAt: T, status: '', fav: false, viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 };
+  localStorage.setItem('aiiv:records', JSON.stringify(diskObj2));
+  Store.adoptRemoteRecords(localStorage.getItem('aiiv:records'));
   const mem2 = Store.rec('RG-001').note;
   const disk2 = (JSON.parse(localStorage.getItem('aiiv:records')).questions['RG-001'] || {}).note;
   ok('ST-01c 交换顺序后内存与磁盘仍收敛', mem2 === disk2, `mem=${mem2} disk=${disk2}`);
-  ok('ST-01d 两次运行结果对称(A/B 交换后仍是稳定规则决胜)',
-     mem === mem2 || disk === disk2, `run1=${mem} run2=${mem2}`);
+  /* 阶段5:同刻决胜 = 内容哈希大者胜(对称稳定,与输入/到达顺序无关) */
+  const hashA = Store.contentHash(JSON.stringify('A同毫秒版本'));
+  const hashB = Store.contentHash(JSON.stringify('B同毫秒版本'));
+  const winner = hashA > hashB ? 'A同毫秒版本' : 'B同毫秒版本';
+  ok('ST-01d 两次运行收敛到同一稳定胜者(内容哈希大者): ' + mem,
+     mem === winner && mem2 === winner && disk === winner && disk2 === winner, `run1=${mem} run2=${mem2} winner=${winner}`);
 }
 
 console.log(`\n结果: ${passed} 通过, ${failed} 失败(阶段0:失败项即待修复问题)`);
