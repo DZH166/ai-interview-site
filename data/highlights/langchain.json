@@ -1,0 +1,361 @@
+{
+  "topic": "langchain",
+  "checked_date": "2026-09-16",
+  "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验;该脚本还会算「标中字数占该字段比例」,超过 35% 报警、50% 报错——满屏黄等于没重点,这时要回去删条,不是放宽阈值。",
+  "questions": {
+    "LC-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "接口名称不等于执行机制",
+          "why": "整题的定调句,标题问的就是「究竟保证什么」"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "默认stream也可能只产出一次最终结果",
+          "why": "流式接口不等于逐块输出"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "应检查具体组件、依赖和增量转换能力",
+          "why": "该做的动作,替代看方法名猜"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "却不意味着底层工作变成可随时中止的异步网络请求",
+          "why": "包一层 async 的真实语义"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "流式入口也不保证每一步都边算边输出",
+          "why": "同一误解的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "哪一层在什么条件下才是真的异步/流式",
+          "why": "面试该说清的层次"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "底层可能重用同步实现",
+          "why": "实现层的真相"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "取消等待不保证线程里的同步工作已停止",
+          "why": "取消的真实边界,容易过度承诺"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "用小段输入实测首块到达时间与末块差异",
+          "why": "可执行的验证方法"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "也不要把尚在运行的线程报成已经停止",
+          "why": "诚实标注,不许把设计说成结果"
+        }
+      ]
+    },
+    "LC-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "其执行基础是LangGraph",
+          "why": "一句话点出运行机制,常被追问"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "只向模型提供定义，不单独完成执行循环",
+          "why": "bind_tools 的作用边界,最易混淆"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "身份、对象权限、业务约束和预算",
+          "why": "框架不管、业务必须管的四件事"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把工具菜单告诉模型，和真正建立接单、验单、执行、回传的流程，是两件事",
+          "why": "同一结论的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "框架不管、业务必须管",
+          "why": "面试时的加分句式"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不必把身份字段交给模型填写",
+          "why": "可信上下文怎么传,具体做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "无后续工具请求、策略终止、预算或中断是不同结束原因",
+          "why": "「为什么停了」要能分开答"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "此例是设计验收，不声称已运行SDK",
+          "why": "诚实标注"
+        }
+      ]
+    },
+    "LC-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "节点从开头重新执行",
+          "why": "重跑的准确范围,标题问的就是它"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是冻结进程后从下一行继续",
+          "why": "最常被误解的机制"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "使用正确线程身份",
+          "why": "能被恢复的前提条件"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "而不是按录像暂停键",
+          "why": "机制的最准确比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "给每个外部动作一个业务幂等键",
+          "why": "保护副作用的标准做法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "幂等键保证的是「重做也不重复产生后果」",
+          "why": "状态恢复与幂等键各管什么,一句话分清"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "内存后端的生命周期不能冒充永久耐久",
+          "why": "别把内存后端当持久化"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "幂等键应绑定业务操作，不为每次重试重新随机生成",
+          "why": "幂等键最容易写错的地方"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "批准只适用于当时的目标、参数和权限",
+          "why": "审批有效性,安全相关的关键口径"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "仍需考虑已执行但未记录的未知结果",
+          "why": "挪动发送时机不能消灭所有崩溃窗口"
+        }
+      ]
+    },
+    "LC-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "构造入口、状态、消息、工具错误和结构化输出契约",
+          "why": "迁移要逐项对照的五件事"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "能导入模块不等于行为兼容",
+          "why": "整题的结论句,标题的答案"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "哪些代码在什么时机运行",
+          "why": "迁移真正关心的问题"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "可读写哪些状态、异常向谁传播",
+          "why": "行为清单里的两条"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不能只改import宣布完成",
+          "why": "最常见的假迁移"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "前后处理和包裹调用的职责不同",
+          "why": "middleware 两种形态的分工"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能把旧教程当当前默认",
+          "why": "版本判断纪律"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "即使最终文本相近，也属于行为变化",
+          "why": "判行为兼容不能只看最终输出"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不使用“启动无报错”代替验收",
+          "why": "验收口径,可直接引用的红线"
+        }
+      ]
+    },
+    "LC-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "用Java接口代理组织AI能力",
+          "why": "AI Services 到底是什么"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "根据同名品牌推断接口兼容",
+          "why": "最常犯的错:看名字当成移植版"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "版本和抽象独立",
+          "why": "独立的含义,选型的关键前提"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不会把业务授权、事务和模型质量问题自动解决",
+          "why": "代理的能力边界"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "数一数代理帮你省了什么、藏了什么",
+          "why": "可执行的评估办法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "藏在代理后面的细节就要显式拆出来",
+          "why": "什么时候不该用代理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能只因为用了接口代理就假定线程安全或租户隔离",
+          "why": "状态与并发的红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "核对JDK、模型适配模块及文档版本",
+          "why": "跨语言迁移要先核对的三样(原短语含 create_agent 的下划线,会被 markdown 吃掉)"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "本题没有安装或运行Java框架",
+          "why": "诚实标注"
+        }
+      ]
+    },
+    "LC-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "更多搜索和更长报告不会自动提高真实性",
+          "why": "最容易误以为的等价关系"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "关键主张有可追溯支持、重要分歧已呈现、未确定项明确",
+          "why": "完成标准的正确口径"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "说明每条结论由什么支持、哪些材料不同意、还缺什么",
+          "why": "研究的白话定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "给报告配证据表",
+          "why": "可执行的做法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "反例材料单独一列而不是删掉",
+          "why": "分歧的呈现方式,容易漏"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "区分事实、推断和建议",
+          "why": "综合阶段的三分法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "来源冲突不能靠多数投票或模型自信度直接裁决",
+          "why": "最容易被自动化掉的错误做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "而不是让另一个模型在两个数字之间取平均",
+          "why": "具体反例,很有画面感"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "缺证据的性能数值留空说明",
+          "why": "留白比编一个结论更专业"
+        }
+      ]
+    }
+  }
+}
