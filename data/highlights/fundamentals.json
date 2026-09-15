@@ -5,71 +5,1484 @@
   "questions": {
     "FD-001": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "完全靠注意力处理序列的架构", "why": "一句话定义,面试开口第一句"},
-        {"field": "answer", "level": "key", "text": "Q 和所有 token 的 K 做点积算『相关度』", "why": "自注意力的最小机制描述"},
-        {"field": "answer", "level": "key", "text": "所有位置可以同时算(矩阵乘法并行)", "why": "相比 RNN 的本质优势,直接导致大模型可行"},
-        {"field": "plain", "level": "warn", "text": "真实机制里 Q/K/V 都是可学习的线性投影,不是真的卡片", "why": "比喻的边界,不说会被追问打回"},
-        {"field": "deep", "level": "term", "text": "缩放点积注意力", "why": "机制的标准名字"},
-        {"field": "deep", "level": "warn", "text": "除以根号维度让分布保持平稳(数值稳定性)", "why": "最常见的追问点:为什么要除以根号 d"},
-        {"field": "deep", "level": "key", "text": "注意力本身对顺序完全无敏感", "why": "位置编码存在的唯一理由"},
-        {"field": "deep", "level": "key", "text": "长上下文的两大成本来源:注意力计算 O(n²) 增长、KV Cache 显存线性增长", "why": "应用岗必须知道到的深度"},
-        {"field": "example", "level": "key", "text": "『他』的新表示里融入了『小明』的 V", "why": "指代消解的具体落点,讲例子时的收口句"},
-        {"field": "interview", "level": "key", "text": "多头让不同子空间学不同关系", "why": "多头的作用,口述里不能漏"}
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "完全靠注意力处理序列的架构",
+          "why": "一句话定义,面试开口第一句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Q 和所有 token 的 K 做点积算『相关度』",
+          "why": "自注意力的最小机制描述"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "所有位置可以同时算(矩阵乘法并行)",
+          "why": "相比 RNN 的本质优势,直接导致大模型可行"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "真实机制里 Q/K/V 都是可学习的线性投影,不是真的卡片",
+          "why": "比喻的边界,不说会被追问打回"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "缩放点积注意力",
+          "why": "机制的标准名字"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "除以根号维度让分布保持平稳(数值稳定性)",
+          "why": "最常见的追问点:为什么要除以根号 d"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "注意力本身对顺序完全无敏感",
+          "why": "位置编码存在的唯一理由"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "长上下文的两大成本来源:注意力计算 O(n²) 增长、KV Cache 显存线性增长",
+          "why": "应用岗必须知道到的深度"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "『他』的新表示里融入了『小明』的 V",
+          "why": "指代消解的具体落点,讲例子时的收口句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "多头让不同子空间学不同关系",
+          "why": "多头的作用,口述里不能漏"
+        }
       ]
     },
     "FD-002": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "幻觉=模型生成『看起来很可信但与事实不符』的内容", "why": "定义句"},
-        {"field": "answer", "level": "key", "text": "优化的是『像不像人话』而不是『真不真』", "why": "根因的短说法,所有追问都从这里展开"},
-        {"field": "answer", "level": "warn", "text": "工程目标是『降低概率+快速发现+限制危害』", "why": "口径红线:不许承诺消除幻觉"},
-        {"field": "plain", "level": "term", "text": "幻觉不全是『不知道』,还有『表达走样』和『被逼出来的迎合』", "why": "比喻覆盖不到的两种情况,补在这里"},
-        {"field": "deep", "level": "term", "text": "事实性幻觉", "why": "两类幻觉的分水岭之一"},
-        {"field": "deep", "level": "term", "text": "忠实性幻觉", "why": "RAG 场景真正要治的那一类"},
-        {"field": "deep", "level": "key", "text": "RAG 场景的核心指标是 faithfulness(答案是否被检索证据支持)", "why": "评估指标口径"},
-        {"field": "deep", "level": "warn", "text": "提示词写『必须回答、不要说不知道』等于强制它编", "why": "很多人的提示词正在制造幻觉"},
-        {"field": "deep", "level": "key", "text": "不要承诺『消除幻觉』,要设计『发现幻觉的系统』", "why": "价值观题的标准答法"},
-        {"field": "example", "level": "key", "text": "从『编造』变成『有据的不知道』", "why": "例子要落到的目标状态"},
-        {"field": "interview", "level": "key", "text": "我不会承诺消除幻觉——目标是把概率压低、让错误能被发现", "why": "面试表达里的收口句"}
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "幻觉=模型生成『看起来很可信但与事实不符』的内容",
+          "why": "定义句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "优化的是『像不像人话』而不是『真不真』",
+          "why": "根因的短说法,所有追问都从这里展开"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "工程目标是『降低概率+快速发现+限制危害』",
+          "why": "口径红线:不许承诺消除幻觉"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "幻觉不全是『不知道』,还有『表达走样』和『被逼出来的迎合』",
+          "why": "比喻覆盖不到的两种情况,补在这里"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "事实性幻觉",
+          "why": "两类幻觉的分水岭之一"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "忠实性幻觉",
+          "why": "RAG 场景真正要治的那一类"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "RAG 场景的核心指标是 faithfulness(答案是否被检索证据支持)",
+          "why": "评估指标口径"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "提示词写『必须回答、不要说不知道』等于强制它编",
+          "why": "很多人的提示词正在制造幻觉"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不要承诺『消除幻觉』,要设计『发现幻觉的系统』",
+          "why": "价值观题的标准答法"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "从『编造』变成『有据的不知道』",
+          "why": "例子要落到的目标状态"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我不会承诺消除幻觉——目标是把概率压低、让错误能被发现",
+          "why": "面试表达里的收口句"
+        }
       ]
     },
     "FD-003": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "决定能力上限与显存占用,与对话多长无关", "why": "参数量管什么;与长度无关是常错点"},
-        {"field": "answer", "level": "key", "text": "运行时额度,与能力上限无关", "why": "窗口管什么;与能力无关是镜像的常错点"},
-        {"field": "answer", "level": "key", "text": "长对话贵在 KV Cache 与注意力计算", "why": "本题落点:成本从哪来"},
-        {"field": "answer", "level": "warn", "text": "换强模型改的是能力,不是窗口", "why": "最常见误区:以为换大模型就能吃长文档"},
-        {"field": "plain", "level": "key", "text": "纸再大,脑子不够也答不了难题;脑子再好,纸不够也抄不下长资料", "why": "一句话记住两者独立"},
-        {"field": "plain", "level": "warn", "text": "真实的『考试』按 token 计费,纸越大每场考试越贵", "why": "比喻的边界,顺带引出成本"},
-        {"field": "interview", "level": "key", "text": "训练更新参数、全并行、一次性成本;推理参数冻结、自回归逐 token、按使用付费", "why": "训练/推理的对照,放在口述段里说最顺"},
-        {"field": "interview", "level": "term", "text": "推理优化的关键是 KV Cache", "why": "问到推理优化先答这个"},
-        {"field": "deep", "level": "term", "text": "参数×精度字节数", "why": "权重显存的换算口径"},
-        {"field": "deep", "level": "term", "text": "窗口 ↔ 单次可处理 token 总量(输入+输出共享)", "why": "窗口是输入输出共享的额度,常被误解为只算输入"}
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "决定能力上限与显存占用,与对话多长无关",
+          "why": "参数量管什么;与长度无关是常错点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "运行时额度,与能力上限无关",
+          "why": "窗口管什么;与能力无关是镜像的常错点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "长对话贵在 KV Cache 与注意力计算",
+          "why": "本题落点:成本从哪来"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "换强模型改的是能力,不是窗口",
+          "why": "最常见误区:以为换大模型就能吃长文档"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "纸再大,脑子不够也答不了难题;脑子再好,纸不够也抄不下长资料",
+          "why": "一句话记住两者独立"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "真实的『考试』按 token 计费,纸越大每场考试越贵",
+          "why": "比喻的边界,顺带引出成本"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "训练更新参数、全并行、一次性成本;推理参数冻结、自回归逐 token、按使用付费",
+          "why": "训练/推理的对照,放在口述段里说最顺"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "推理优化的关键是 KV Cache",
+          "why": "问到推理优化先答这个"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "参数×精度字节数",
+          "why": "权重显存的换算口径"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "窗口 ↔ 单次可处理 token 总量(输入+输出共享)",
+          "why": "窗口是输入输出共享的额度,常被误解为只算输入"
+        }
       ]
     },
     "FD-004": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "先定义『对这道业务题什么算好』,再选工具", "why": "工程原则第一条:先定标准"},
-        {"field": "answer", "level": "key", "text": "评测集版本化,任何变更跑回归", "why": "工程原则第二条:评估进流程"},
-        {"field": "answer", "level": "warn", "text": "但要防偏差(偏长、偏自己风格、位置偏差)", "why": "judge 的三种已知偏差,不主动说会被追问"},
-        {"field": "plain", "level": "term", "text": "LLM judge 的偏差可以被『评分细则+多评审+随机化』部分修正", "why": "偏差的具体修法"},
-        {"field": "deep", "level": "warn", "text": "没有业务定义的评估都是自嗨", "why": "一句话红线"},
-        {"field": "deep", "level": "key", "text": "评分细则(rubric)拆维度打分(1~5)而不是整体印象", "why": "judge 的正确用法"},
-        {"field": "deep", "level": "key", "text": "评测集+自动指标+judge 组成 CI 门禁", "why": "从学术概念落到工程的标志"},
-        {"field": "interview", "level": "key", "text": "评估是工程流程,不是一次性打分", "why": "口述收口句"}
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "先定义『对这道业务题什么算好』,再选工具",
+          "why": "工程原则第一条:先定标准"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "评测集版本化,任何变更跑回归",
+          "why": "工程原则第二条:评估进流程"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "但要防偏差(偏长、偏自己风格、位置偏差)",
+          "why": "judge 的三种已知偏差,不主动说会被追问"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "LLM judge 的偏差可以被『评分细则+多评审+随机化』部分修正",
+          "why": "偏差的具体修法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "没有业务定义的评估都是自嗨",
+          "why": "一句话红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "评分细则(rubric)拆维度打分(1~5)而不是整体印象",
+          "why": "judge 的正确用法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "评测集+自动指标+judge 组成 CI 门禁",
+          "why": "从学术概念落到工程的标志"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "评估是工程流程,不是一次性打分",
+          "why": "口述收口句"
+        }
       ]
     },
     "FD-005": {
       "spans": [
-        {"field": "answer", "level": "key", "text": "常见方案 BPE 按统计频率把高频字符组合并成词片", "why": "BPE 的核心机制"},
-        {"field": "answer", "level": "key", "text": "模型看到的不是字母而是 token ID", "why": "一切怪现象的根源"},
-        {"field": "answer", "level": "key", "text": "给模型计算器/代码工具,而不是换更大模型", "why": "正确解法,也是工具调用存在的理由"},
-        {"field": "plain", "level": "term", "text": "模型阅读像看『高频词缩写表』", "why": "最贴切的那个比喻"},
-        {"field": "interview", "level": "key", "text": "计费用 tokenizer 精确算不用字符数估", "why": "工程铁律之一"},
-        {"field": "interview", "level": "key", "text": "算术一律走工具", "why": "工程铁律之二"},
-        {"field": "deep", "level": "key", "text": "计费与窗口按 token(不可用字符数估算,要用 tokenizer 精确计数)", "why": "成本与窗口都按 token 算"},
-        {"field": "deep", "level": "key", "text": "问题出在表示粒度而非『智力』", "why": "解释数不清字母的本质,面试加分句"},
-        {"field": "deep", "level": "key", "text": "算术/计数/日期运算交给工具(计算器、代码解释器、SQL)", "why": "确定性计算外包清单"},
-        {"field": "deep", "level": "warn", "text": "『不信任模型算术』仍是工程铁律", "why": "即使新模型改进了数字切分也不改这条"}
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "常见方案 BPE 按统计频率把高频字符组合并成词片",
+          "why": "BPE 的核心机制"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "模型看到的不是字母而是 token ID",
+          "why": "一切怪现象的根源"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "给模型计算器/代码工具,而不是换更大模型",
+          "why": "正确解法,也是工具调用存在的理由"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "模型阅读像看『高频词缩写表』",
+          "why": "最贴切的那个比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "计费用 tokenizer 精确算不用字符数估",
+          "why": "工程铁律之一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "算术一律走工具",
+          "why": "工程铁律之二"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "计费与窗口按 token(不可用字符数估算,要用 tokenizer 精确计数)",
+          "why": "成本与窗口都按 token 算"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "问题出在表示粒度而非『智力』",
+          "why": "解释数不清字母的本质,面试加分句"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "算术/计数/日期运算交给工具(计算器、代码解释器、SQL)",
+          "why": "确定性计算外包清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『不信任模型算术』仍是工程铁律",
+          "why": "即使新模型改进了数字切分也不改这条"
+        }
+      ]
+    },
+    "FD-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "偏好排序训练一个奖励模型",
+          "why": "RLHF 的机制核心"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "对齐(alignment)是这一整类工作的目标:让模型有用、诚实、无害",
+          "why": "对齐的目标口径"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "工程上仍要给模型明确的拒答通道并奖励拒答",
+          "why": "应对迎合倾向的工程动作"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "用户施压时倾向给出确定答案",
+          "why": "迎合倾向的表现,与 FD-002 呼应"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "它可能学成『取悦型员工』",
+          "why": "副作用的最短说法"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "DPO 是不用奖励模型的简化路线",
+          "why": "常被追问的对比项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "要用「允许拒答+评估奖励拒答」来压制",
+          "why": "可落地的对策"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "对齐不增加知识",
+          "why": "最容易被误解的一条"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "迎合倾向(sycophancy)是对齐的已知副作用",
+          "why": "术语名,英文可检索"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "模型的拒答行为、格式偏好、语气都是对齐训练的产物",
+          "why": "应用岗视角:提示词要顺着已训练行为设计"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "对齐不改变知识边界",
+          "why": "呼应「对齐不增加知识」的复述口径"
+        }
+      ]
+    },
+    "FD-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "MQA/GQA改变查询头与KV头的共享结构",
+          "why": "省的是 KV 表示(容量账)"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "减少显存访问及中间矩阵物化",
+          "why": "FlashAttention 省的是访存与物化"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "数学目标仍是稠密注意力",
+          "why": "不是换了数学,别当成近似算法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "一项是在减少要保存的历史份数，一项是在改变计算时的数据搬运方法",
+          "why": "两本账分开记的最短说法"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "少搬运不意味着所有乘加消失",
+          "why": "常见误解"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能承诺所有GQA必掉同样精度或所有框架自动启用最佳实现",
+          "why": "不许打包承诺,面试的诚实边界"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "第三张还取决于硬件和内核",
+          "why": "三张账单里最容易漏的那张"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不能相乘后直接宣称端到端吞吐提升",
+          "why": "数字不能相乘是这个例子的落点"
+        }
+      ]
+    },
+    "FD-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "模型的知识全部来自训练语料",
+          "why": "定义层"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不是忘了,是从来没学过",
+          "why": "一句话定性,常被说成「忘了」"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "是推理时注入(RAG/工具/联网),不是等模型更新",
+          "why": "补知识只有这一条路"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "语料构成决定长尾知识质量",
+          "why": "长尾薄弱是结构性的,不是运气"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "他不是忘了,是压根没机会知道",
+          "why": "比喻里的定性句"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "它会用训练语料里最相近的旧信息流畅地填补,连『我在猜』的信号都没有",
+          "why": "比无知更危险的地方"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "时效事实必须走工具或检索",
+          "why": "铁律一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "判断『模型怎么知道的』要回看请求内容",
+          "why": "证据链思维,排查时先看请求"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "企业应用=RAG 的根本原因",
+          "why": "从语料偏置直接推出架构选择"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "生产固定版本号(LP-008)、变更当发布管理",
+          "why": "把模型升级纳入发布管理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不会,除非平台明确说明联网",
+          "why": "「模型会实时更新吗」的标准否定答法"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "事实来自工具,模型负责理解与表达",
+          "why": "正确链路的收口句"
+        }
+      ]
+    },
+    "FD-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "注意力本身对顺序无感",
+          "why": "位置编码存在的理由,直接对上 FD-001 的同一结论"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把『token 在第几位』注入表示",
+          "why": "位置编码干的事,一句话"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把位置信息实现为对 Q/K 向量的旋转",
+          "why": "RoPE 的机制,与正弦编码的分界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "外推能力决定『标称窗口之外还能不能用』",
+          "why": "把位置编码和窗口问题接上"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "让『你俩相隔多远』直接体现在对视的角度里",
+          "why": "相对位置的最直观说法"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "外推还依赖训练与插值技巧,不是 RoPE 自动保证",
+          "why": "比喻的边界,也是常见误解"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "外推扩展的窗口要用大海捞针实测有效能力",
+          "why": "工程动作:标称不等于有效"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "块状处理(RAG)的跨块关系不靠位置编码靠检索组织",
+          "why": "RAG 场景的落点,容易考"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "位置插值(PI,把位置缩放映射进训练范围)",
+          "why": "外推的主流做法,报得出名字"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "块内位置编码独立(跨块关系靠 RAG 组织,不靠位置编码)",
+          "why": "与 interview 的口径一致,原理层复述"
+        }
+      ]
+    },
+    "FD-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "总参数与激活参数是两种口径",
+          "why": "最重要的一条:两种口径不能混"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "延迟用自己的负载实测",
+          "why": "该做的动作,替代拍脑袋换算"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "激活参数相同不代表速度等同某个稠密模型",
+          "why": "宣传里最常被偷换的一步"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "看到MoE宣传先拆两个数——总参数与激活参数",
+          "why": "可执行的自检第一步"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "路由均衡与专家负载,它们决定真实吞吐",
+          "why": "自检第二步"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "两者都不足以单独预测实际延迟",
+          "why": "两个口径都不能单独外推"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要把某个专家自动命名为数学或语言专家",
+          "why": "禁止用人类分工类比替代证据"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不要把“671B/37B”两项直接转换成知识覆盖",
+          "why": "报告数字时的诚实边界"
+        }
+      ]
+    },
+    "FD-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "蒸馏=让小模型(学生)学习大模型(教师)的输出分布/行为",
+          "why": "定义句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "更关键的是软标签",
+          "why": "与硬标签的分界,暗知识在哪"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "任务上教师模型打样,蒸馏出专属小模型替代教师部署",
+          "why": "成本路径的完整动作"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "窄任务蒸馏效果好,通用能力蒸馏有损",
+          "why": "期望管理红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "窄领域(某类客服)能干八成好,通才领域(复杂推理)还是请老师",
+          "why": "同一件事的白话版,面试可直接说"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "学生学教师的软标签(概率分布里的暗知识)",
+          "why": "口述里的机制句"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "蒸馏不增加知识",
+          "why": "与 FD-008 的边界继承一致"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "它和量化是组合拳:蒸馏换模型,量化压部署",
+          "why": "把压缩手段串起来的收口句"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "与教师软标签的 KL 散度",
+          "why": "学生损失里的关键项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "学生『会做题但不会举一反三』",
+          "why": "通用能力有损的具体表现"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "教师错误会被学生放大继承",
+          "why": "数据过滤的理由"
+        }
+      ]
+    },
+    "FD-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "有限beam并不保证全空间序列最优",
+          "why": "最常被误解的一点"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "概率更高也不自动等于事实更正确",
+          "why": "把「模型分高」和「事实对」分开"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "共同前缀KV可以共享",
+          "why": "多分支为什么没那么贵"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "beam暂时留几条路，但丢掉的路也可能后来更好",
+          "why": "近似搜索的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不凭感觉调",
+          "why": "调参纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "有限候选不等于全局最优保证",
+          "why": "原理层复述同一结论"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "具体算力和内存不应简单承诺恒为beam宽度倍数",
+          "why": "不许拿宽度做线性外推"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "也不代表吞吐按相同比例提升",
+          "why": "算例的落点:省内存不等于省时间"
+        }
+      ]
+    },
+    "FD-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "SFT也属于后训练",
+          "why": "分类归属,容易被答错"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "配比影响行为倾向,质量决定上限",
+          "why": "本题落点:配比 vs 质量"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是所有模型必须依次经过的三阶段定律",
+          "why": "不许把配方说成定律"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "也可能改变任务能力和事实表现",
+          "why": "比喻覆盖不到的地方"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "行为变化时先区分『配比变了』『质量变了』『流程变了』",
+          "why": "可执行的归因清单"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "数据来源、监督信号和优化目标应分别描述",
+          "why": "原理层的三分法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "先找错误来源，再比较提示、检索与训练",
+          "why": "应用侧的正确顺序"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "继续训练模型不能替代业务检查",
+          "why": "权限/外部状态的错不该靠训练解决"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不表示所有应用都应训练自己的模型",
+          "why": "配方案例的适用边界"
+        }
+      ]
+    },
+    "FD-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是把模型参数换算为业务能力百分比的公式",
+          "why": "最常被误用成换算表"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "还会受到推理成本和部署目标影响",
+          "why": "算力最优不等于服务最优"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把缩放律当路标而不是合同",
+          "why": "最容易记住的收口句"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不保证换一个任务仍按原比例提升",
+          "why": "外推的边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "训练算力最优不等于总服务成本最优",
+          "why": "训练与部署目标分离"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要写参数翻倍就能力翻倍",
+          "why": "写作纪律,也是一句话红线"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不是所有模型必须遵守的配方",
+          "why": "算术示例的适用边界"
+        }
+      ]
+    },
+    "FD-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "词表=BPE 训练时决定的『token 词典』",
+          "why": "定义句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "训练语料的语言分布决定『哪些语言的高频词被合并成单 token』",
+          "why": "多语言效率差异的根源"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "中文 1 字常=1~2 token",
+          "why": "最该记住的具体口径"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "tokenizer 是模型选型的隐藏维度",
+          "why": "把 tokenizer 提升到选型维度"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "手册页数有限,编手册时哪种语言的内容多,就给哪种语言多造缩写",
+          "why": "词表预算分配的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "现代词表是多语言混合训练的,只是配比仍然偏英文",
+          "why": "比喻的边界"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "中文 token 更多:计费、窗口、生成延迟都被放大",
+          "why": "三个后果一次说完"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "选型把 tokenizer 效率当隐藏维度",
+          "why": "口述里的行动项"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "fertility 率:每词平均 token 数",
+          "why": "度量语言效率的指标名"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "中文场景的成本与窗口规划必须用中文实测",
+          "why": "算例的落点,可直接执行"
+        }
+      ]
+    },
+    "FD-016": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "encoder-only(BERT 类,双向注意力看全文)——理解类任务",
+          "why": "三类分工之一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "decoder-only(GPT 类,因果注意力自回归)——生成类任务",
+          "why": "三类分工之二,现代 LLM 主流"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "encoder-only 统治 embedding/轻量分类侧",
+          "why": "现状判断,面试常问格局"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "你调用的 embedding 模型是 encoder-only",
+          "why": "落到应用岗能感知的事实"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "encoder-only 像『审阅专家』",
+          "why": "三个工种里最好用的那个比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "作家的工作方式最适合互联网级训练数据(下一句预测)和规模化",
+          "why": "decoder-only 胜出的常识解释"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "简单分类用 encoder 小模型比 LLM 便宜两个量级",
+          "why": "最有说服力的具体数字对比"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "架构分工就是成本分层的底层逻辑",
+          "why": "口述收口句"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "所以嵌入调用便宜、快、输出向量",
+          "why": "架构决定成本特征的因果链"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "重排的交叉编码器=encoder-only 结构",
+          "why": "容易不知道的同类项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "LLM 做复杂判断,encoder 小模型做高频轻任务",
+          "why": "混合架构的标准组合"
+        }
+      ]
+    },
+    "FD-017": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "学习有助于解释数据的统计结构",
+          "why": "机制层的最小说法"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是完整能力机制已经得到证明",
+          "why": "不许把解释说成已证明"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "机制解释仍在研究,评测是唯一凭证",
+          "why": "三层证据观,面试的分寸感"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不能当作保证任意复杂推理出现的定理",
+          "why": "直觉的边界"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "拆成「哪些任务、什么数据量、何种评测下观察到X」",
+          "why": "可执行的拆解句式"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多任务表现是实验观察，内部机制的理论解释存在多种视角",
+          "why": "同一口径的原理层复述"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "顺畅续写不等于任务完成",
+          "why": "一句话红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "记录错误类型而非只展示成功样本",
+          "why": "做对照实验的纪律"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "本题未执行模型实验",
+          "why": "诚实标注,不许把设计说成结果"
+        }
+      ]
+    },
+    "FD-018": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "数据敏感+稳定需求→开源私有化",
+          "why": "决策典型一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "快速验证+通用能力→闭源 API",
+          "why": "决策典型二"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "开源可微调/可改解码/可深度集成",
+          "why": "可控性维度的具体含义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "『开源免费』不是免费",
+          "why": "最常被算错的一笔账"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "配方自己定(可微调)、食材自己选(可控)",
+          "why": "可控性的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "闭源的『菜单不能改』在 LLM 场景有细化",
+          "why": "可控性是分层的,不是非黑即白"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "主流是混合分层",
+          "why": "口述先给结论"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "开源的隐性成本我会强调:评估选版/运维/安全补丁",
+          "why": "把隐性成本列成清单"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "阶段制——验证期(API 快)、成长期(混合)、成熟期",
+          "why": "选型不是一次决定,是随阶段演进"
+        }
+      ]
+    },
+    "FD-020": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "基准只是初筛不是结论",
+          "why": "整题的定性句"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "评测题可能出现在训练数据中",
+          "why": "数据泄漏,分数虚高的根源"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "基准的题型/语言/难度与实际使用不同",
+          "why": "分布偏差的三轴"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "基准粗筛(排除明显差的)→自有评测集实测",
+          "why": "正确流程的前两步"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "高考状元不一定会做粤菜",
+          "why": "一句话解释 MMLU 高的局限"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "基准的『数据泄漏』是高考没有的问题",
+          "why": "比喻的边界"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "泄漏/偏差/静态/覆盖不全",
+          "why": "四局限的口述版,背下来"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "没有自有评测,选型就是赌博",
+          "why": "口述里最有分量的一句"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "知名基准的泄漏率可能 30%+",
+          "why": "量化泄漏的严重程度"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "用更新的/私有的基准+自有评测集",
+          "why": "应对泄漏的两条路"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "三层互补",
+          "why": "基准/自有评测/人工三层的关系"
+        }
+      ]
+    },
+    "FD-024": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不更新模型参数",
+          "why": "ICL 与微调的分界线"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不应把任务定位等某一假说当定论",
+          "why": "机制未定论,不许包装成唯一解释"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "ICL效果随任务与示例变化,实测后固定示例方案",
+          "why": "可执行的做法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "这与把知识永久训练进参数不同",
+          "why": "白话层的分界"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "而不是用户是否点击了“新会话”按钮",
+          "why": "最容易被误解的点:忘了≠会话结束"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "通常不改变参数，但会改变当前条件分布",
+          "why": "原理层对同一件事的准确说法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "模型参数不变时，这不是一次微调实验",
+          "why": "实验设计的定性红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "“会话结束就忘了”的说法",
+          "why": "被点破的常见误解"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不能预先承诺500条数据一定更稳",
+          "why": "不许拿未做的实验下结论"
+        }
+      ]
+    },
+    "FD-025": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "输出空间固定且有限",
+          "why": "判别式的本质特征"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "输出空间开放且无限",
+          "why": "生成式的本质特征,两者对照记"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "任务输出是『有限类别中的选择』→判别式",
+          "why": "选型判据"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "判别式做前置路由(意图分类)",
+          "why": "混合架构里判别式的两个位置之一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "两类的协作是 AI 应用的常态",
+          "why": "生产事实,别只答二选一"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "裁判便宜快准;作家贵慢灵活",
+          "why": "成本特征的一句话对照"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "用 LLM 做简单分类是用作家当裁判",
+          "why": "最常犯的选型错误"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "判别式路由+生成式执行+判别式校验",
+          "why": "口述版的三段式架构"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "用 LLM 做高频分类是成本浪费",
+          "why": "成本口径"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "LLM 的价值在『开放输出』",
+          "why": "把 LLM 用在对的地方"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "输出空间不匹配",
+          "why": "选型错误的根因"
+        }
+      ]
+    },
+    "FD-026": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "反复重算整个前缀",
+          "why": "KV Cache 到底省了什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "长上下文依旧增加时间与显存",
+          "why": "省了重算不等于成本不涨"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不等于让所有decode计算消失",
+          "why": "常见误解:以为有缓存就不算注意力了"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "保留已经做过的中间工作，下一步少重做",
+          "why": "一句话解释 KV Cache"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不能一概当无损加速",
+          "why": "分页/量化/滑窗/压缩各有代价"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "整个生成过程累积计算不能被概括成整体O(n)",
+          "why": "复杂度口径不能简化成 O(n)"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "也不是扩容上下文窗口",
+          "why": "APC 的作用边界"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "长上下文的瓶颈是 KV Cache,不是权重",
+          "why": "算例的结论句,面试可直接说"
+        },
+        {
+          "field": "example",
+          "level": "term",
+          "text": "MHA(无 GQA 分组)KV 头数=查询头数",
+          "why": "换架构后 KV 差数倍的原因"
+        }
+      ]
+    },
+    "FD-027": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "会『续写任何文本』",
+          "why": "Base 的行为特征,训练目标决定的"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是一组互斥的训练阶段标签",
+          "why": "别把 Instruct/Chat 当训练阶段"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "去读具体模型的模型卡/训练说明",
+          "why": "正确的选型动作"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "自托管时拿 Base 直接当助手用是最常见的翻车",
+          "why": "最常见的实操事故"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "Base 像一个『读了所有书但没上过班』的人",
+          "why": "Base 行为的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "头衔比喻提醒你『命名是提供方起的,不是行业标准』",
+          "why": "比喻的落点,直接对应结论"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "它是纯预训练的续写引擎——这是训练目标决定的",
+          "why": "口述里能讲死的那部分"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我习惯去读模型卡",
+          "why": "可复述的习惯动作"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "可见名字与训练阶段不对应",
+          "why": "两个一手反例共同证明的点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "能讲出『名字≠能力,查模型卡』这个层次",
+          "why": "面试分寸:比背过时结论强"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "读它的模型卡与 chat template,不要读名字",
+          "why": "反例的结论句"
+        }
+      ]
+    },
+    "FD-028": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "不保证所有位置的信息都能被同样可靠地使用",
+          "why": "标称与有效的分界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "而不是所有模型都必然呈同幅度U形的定律",
+          "why": "别把经验现象当定律"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "能把很多材料放上桌，不代表每次都能准确找到并综合需要的部分",
+          "why": "白话层的分界"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "用这条曲线而不是标称值做切分与预算决策",
+          "why": "可执行的做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "区分训练长度、接口上限和任务实测有效长度",
+          "why": "三个长度不是一个东西"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能只靠问题中的关键词就猜出答案",
+          "why": "位置对照的测试泄漏"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "而不是直接宣称扩大窗口就能解决",
+          "why": "不许用扩窗口替代治理"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不预填“中间必错”的结果",
+          "why": "诚实标注,类似「本题未执行实验」"
+        }
       ]
     }
   }
