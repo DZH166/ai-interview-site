@@ -1,0 +1,30 @@
+[
+ {
+  "id": "AD-001",
+  "changed_fields": [
+   "pitfalls"
+  ],
+  "title": "微调(fine-tuning)和 RAG 怎么选?LoRA 是什么?"
+ },
+ {
+  "id": "AD-002",
+  "changed_fields": [
+   "pitfalls"
+  ],
+  "title": "量化(quantization)和 KV Cache 是怎么把大模型塞进普通显卡的?"
+ },
+ {
+  "id": "AD-004",
+  "changed_fields": [
+   "plain"
+  ],
+  "title": "LoRA 的秩(r)和目标模块怎么选?秩越大效果越好吗?"
+ },
+ {
+  "id": "PI-025",
+  "changed_fields": [
+   "pitfalls"
+  ],
+  "title": "回答没变，Token 费用却翻高：怎样定位缓存、用量和预算问题？"
+ }
+]
