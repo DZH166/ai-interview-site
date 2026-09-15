@@ -1,0 +1,26 @@
+{
+ "date": "2026-09-15",
+ "head": "0e5d54891ee62975275f7faf3a298b8cad68c62e",
+ "cases": [
+  {
+   "case": "S1 同毫秒顺序写",
+   "states": {
+    "a": "A同毫秒版本",
+    "b": "A同毫秒版本",
+    "disk": "A同毫秒版本",
+    "reopen": "A同毫秒版本"
+   },
+   "converged": true
+  },
+  {
+   "case": "S3 关闭副本往返",
+   "draftRestored": true
+  },
+  {
+   "case": "S4 反向验证",
+   "divergence": true,
+   "aMem": "B保存的新版",
+   "diskV": "B保存的新版"
+  }
+ ]
+}

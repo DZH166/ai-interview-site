@@ -565,17 +565,40 @@ const MaintainView = (() => {
           const p = Store.previewRecordsMerge(text);
           if (p.summary.noChanges) { modal('没有需要恢复的内容', '<p>这份备份与当前记录一致,导入不会产生任何变化。</p>', [{ label: '知道了' }]); return; }
           const pq = p.summary.perQuestion;
+          /* 阶段3:计划绑定本地基线版本;确认时重新预览,基线变了就重算并说明差异,不悄悄换结果 */
+          const planBaseline = Store.rev + '|' + localStorage.getItem('aiiv:records');
+          const execRestore = () => {
+            try {
+              const pNow = Store.previewRecordsMerge(text);
+              const nowBaseline = Store.rev + '|' + localStorage.getItem('aiiv:records');
+              if (nowBaseline !== planBaseline) {
+                modal('基线已变化,恢复计划已重新计算',
+                  '<p>预览期间本机记录发生了变化(另一标签页写入、撤销或清空)。</p>' +
+                  previewMergeHtml(pNow) +
+                  '<p class="muted small">显示的是**重新计算后**的计划,与最初预览可能不同。</p>', [
+                    { label: '取消' },
+                    { label: '按新计划恢复', primary: true, onClick: () => {
+                        try {
+                          const r = Store.importRecords(text);
+                          window.rebuildIndex();
+                          modal('导入完成(记录合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
+                          App.route();
+                        }
+                        catch(e2) { toast('导入失败(记录未变动): ' + e2.message, 'err'); return false; }
+                      } }
+                  ]);
+                return;
+              }
+              const r = Store.importRecords(text);
+              window.rebuildIndex();
+              modal('导入完成(记录合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
+              App.route();
+            }
+            catch(e) { toast('导入失败(记录未变动): ' + e.message, 'err'); return false; }
+          };
           modal('确认恢复这份备份?', previewMergeHtml(p), [
             { label: '取消' },
-            { label: '确认恢复', primary: true, onClick: () => {
-                try {
-                  const r = Store.importRecords(text);
-                  window.rebuildIndex();
-                  modal('导入完成(记录合并详情)', mergeReportHtml(r), [{ label: '知道了' }]);
-                  App.route();
-                }
-                catch(e) { toast('导入失败(记录未变动): ' + e.message, 'err'); return false; }
-              } }
+            { label: '确认恢复', primary: true, onClick: execRestore }
           ]);
         }
         catch(e) { toast('导入失败(记录未变动): ' + e.message, 'err'); }
