@@ -1,0 +1,27 @@
+== 阶段0 复现输出(HEAD 147a179, 2026-09-15) ==
+
+--- node tests/baseline2/issues-node-test.js ---
+== MR-01: 预览必须识别「旧runId迁移后可恢复」的项目记录 ==
+  FAIL MR-01a 预览不得返回 noChanges(有可迁移内容) {"questionsTouched":0,"roundsAdded":0,"draftsAdopted":0,"draftsKept":0,"runsAdded":0,"runsMigrated":0,"perQuestion":{"added":0,"overridden":0,"kept":0,"reverted":0},"noChanges":true}
+  PASS MR-01b 对照:实际导入 runsMigrated=1
+  PASS MR-01c 对照:正文完整恢复
+== MR-02: 预览必须显示「将覆盖」的项目运行 ==
+  PASS MR-02a 预览不得返回 noChanges(有覆盖)
+  FAIL MR-02b 预览提供项目运行覆盖明细(r1 新旧正文) {"questionsTouched":0,"roundsAdded":0,"draftsAdopted":0,"draftsKept":0,"runsAdded":0,"runsMigrated":0,"perQuestion":{"added":0,"overridden":0,"kept":0,"reverted":0},"noChanges":false}
+== ST-01: 同毫秒顺序写入必须收敛(内存/磁盘/重开一致) ==
+  PASS ST-01a 内存与磁盘收敛到同一版本
+  PASS ST-01b 收敛值是两者之一且确定
+  PASS ST-01c 交换顺序后内存与磁盘仍收敛
+  FAIL ST-01d 两次运行结果对称(A/B 交换后仍是稳定规则决胜) run1=B同毫秒版本 run2=A同毫秒版本
+
+结果: 6 通过, 3 失败(阶段0:失败项即待修复问题)
+失败项:
+  - MR-01a 预览不得返回 noChanges(有可迁移内容)
+  - MR-02b 预览提供项目运行覆盖明细(r1 新旧正文)
+  - ST-01d 两次运行结果对称(A/B 交换后仍是稳定规则决胜)
+
+(exit=1)
+
+浏览器侧 ST-01 四态(隔离Chromium双页,正常saveNow接口,同_updatedAt顺序写):
+ST01STATES {"a":"A同毫秒版本","b":"B同毫秒版本","disk":"B同毫秒版本"}
+→ A内存不收敛(A版本 vs 磁盘B版本);复现脚本场景与注入方式见本文件与 tests/baseline2/。
