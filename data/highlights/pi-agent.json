@@ -1,0 +1,159 @@
+{
+  "topic": "pi-agent",
+  "checked_date": "2026-09-16",
+  "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验;该脚本还会算「标中字数占该字段比例」,超过 35% 报警、50% 报错——满屏黄等于没重点,这时要回去删条,不是放宽阈值。",
+  "questions": {
+    "PI-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "真正读取文件或请求业务系统的是宿主程序",
+          "why": "模型与会话的分界,整题的地基"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Harness 是承载这条循环的运行框架",
+          "why": "Harness 是什么"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "选择标准应是任务不确定性、可验证性、权限与成本",
+          "why": "选型判据,标题问的就是这个"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "而不是哪个概念更先进",
+          "why": "最容易被带偏的比法"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "接收上下文并生成文本或结构化调用的模型",
+          "why": "LLM 的准确定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "通过模型决策、工具执行和反馈循环推进任务的系统",
+          "why": "Agent 的定义,三个环节缺一不可"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "主要执行顺序和分支由开发者预先规定的流程",
+          "why": "Workflow 的定义,与 Agent 对照"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分模型生成与宿主执行",
+          "why": "评分标准第 1 项,必须拿到分"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "区分Harness与Agent本身",
+          "why": "评分标准第 3 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "按任务确定性比较Agent和Workflow",
+          "why": "评分标准第 4 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "混合方案允许外层工作流固定验收和审批，内层 Agent 自主探索",
+          "why": "混合方案的具体形态"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能替你证明业务需求适合自主执行",
+          "why": "框架能力的边界,不许过度归因"
+        }
+      ]
+    },
+    "PI-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "pi-ai 负责统一模型、消息、鉴权与流式协议",
+          "why": "四层分工之一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "分层的价值是替换界面或模型时不重写循环",
+          "why": "分层到底买到什么"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "代价是必须理解每层提供和没有提供的保证",
+          "why": "分层的代价,常被忽略"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "把终端交互、业务策略和模型适配耦合在一起",
+          "why": "分层要避免的耦合"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把模型调用等依赖从外部传给程序，方便替换和测试",
+          "why": "依赖注入的作用"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确区分四个主要层次",
+          "why": "评分标准第 1 项"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "说明streamFn可替换与测试价值",
+          "why": "评分标准第 4 项,测试接缝"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "指出兼容层及复用不等于完整生产保障",
+          "why": "评分标准第 5 项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "学习时应区分当前公共接口与兼容层",
+          "why": "读源码时的分界"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要为拿到流式文本就把终端组件直接嵌入后端服务",
+          "why": "最常见的复用错误"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能证明真实模型在业务任务上足够准确",
+          "why": "假模型测试的边界"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "提出一个无需付费模型的可替换测试点",
+          "why": "验收标准里的可执行项"
+        }
+      ]
+    }
+  }
+}
