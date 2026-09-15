@@ -193,6 +193,7 @@ const BrowseView = (() => {
         <span class="muted">${nb.pos} / ${nb.total}</span>
         <button class="btn btn-small" data-go="${nb.next || ''}" ${nb.next ? '' : 'disabled'}>下一题 →</button>
         <span class="flex1"></span>
+        ${QRender.focusToggle()}
         <a class="btn btn-small" href="#/study/${qid}">完整学习页</a>
       </div>
       ${QRender.recordBar(qid)}
@@ -200,21 +201,12 @@ const BrowseView = (() => {
       <h2 class="q-title-sm">${esc(q.title)}</h2>
       ${QRender.promptHtml(q)}
       <div class="rel-links">${QRender.relLinks(q)}</div>
-      <div class="q-secs">
-        ${QRender.section('answer', '直接答案', QRender.mdHtml(q.answer), false)}
-        ${QRender.section('plain', '大白话解释', QRender.mdHtml(q.plain), false)}
-        ${QRender.section('deep', '原理拆解', QRender.deepHtml(q), false)}
-        ${QRender.section('example', '具体例子', QRender.mdHtml(q.example), false)}
-        ${QRender.section('interview', '面试表达', QRender.mdHtml(q.interview), false)}
-        ${QRender.section('followups', '常见追问', (q.followups || []).map((fu, i) => `<div class="fu"><div class="fu-q">追问 ${i + 1}:${esc(fu.q)}</div><div class="fu-a">${QRender.mdHtml(fu.a)}</div></div>`).join(''), false)}
-        ${QRender.section('pitfalls', '常见误区', `<ul class="pf-list">${(q.pitfalls || []).map(p => `<li>${QRender.mdHtml(p)}</li>`).join('')}</ul>`, false)}
-        ${QRender.section('check', '理解检查', StudyView.checkHtml(q), false)}
-        ${QRender.section('sources', '出处与核查状态', QRender.verifyBlock(q), false)}
-      </div>`;
+      <div class="q-secs">${QRender.standardSections(q)}</div>`;
     wireDetail(root);
   }
 
   function wireDetail(root) {
+    QRender.wireFocusToggle(root);
     $$('#q-detail [data-go]', root).forEach(btn => {
       btn.addEventListener('click', () => { if (btn.dataset.go) select(root, filters(), btn.dataset.go); });
     });
@@ -460,6 +452,7 @@ const StudyView = (() => {
           <button class="btn btn-small" data-nav="${nb.next || ''}" ${nb.next ? '' : 'disabled'}>下一题 →</button>
           <span class="muted">${nb.pos} / ${nb.total}</span>
           <span class="flex1"></span>
+          ${QRender.focusToggle()}
           <button class="btn btn-small" id="expand-all">展开全部</button>
           <button class="btn btn-small" id="collapse-all">折叠全部</button>
         </div>
@@ -468,17 +461,7 @@ const StudyView = (() => {
         <h1 class="q-title">${esc(q.title)}</h1>
         ${QRender.promptHtml(q)}
         <div class="rel-links">${QRender.relLinks(q)}</div>
-        <div class="q-secs">
-          ${QRender.section('answer', '直接答案', QRender.mdHtml(q.answer), false)}
-          ${QRender.section('plain', '大白话解释', QRender.mdHtml(q.plain), false)}
-          ${QRender.section('deep', '原理拆解', QRender.deepHtml(q), false)}
-          ${QRender.section('example', '具体例子', QRender.mdHtml(q.example), false)}
-          ${QRender.section('interview', '面试表达', QRender.mdHtml(q.interview), false)}
-          ${QRender.section('followups', '常见追问', (q.followups || []).map((f, i) => `<div class="fu"><div class="fu-q">追问 ${i + 1}:${esc(f.q)}</div><div class="fu-a">${QRender.mdHtml(f.a)}</div></div>`).join(''), false)}
-          ${QRender.section('pitfalls', '常见误区', `<ul class="pf-list">${(q.pitfalls || []).map(p => `<li>${QRender.mdHtml(p)}</li>`).join('')}</ul>`, false)}
-          ${QRender.section('check', '理解检查', checkHtml(q), false)}
-          ${QRender.section('sources', '出处与核查状态', QRender.verifyBlock(q), false)}
-        </div>
+        <div class="q-secs">${QRender.standardSections(q)}</div>
         <div class="q-note-box">
           <label class="note-label">为什么没掌握(可多选,排进今日复习的理由)</label>
           <div class="reason-group" id="reason-group">
@@ -520,6 +503,7 @@ const StudyView = (() => {
   }
 
   function wire(root, qid) {
+    QRender.wireFocusToggle(root);
     $$('.q-sec-head', root).forEach(h => {
       h.addEventListener('click', () => {
         const sec = h.parentElement;

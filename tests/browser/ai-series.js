@@ -35,9 +35,10 @@ async function open(page, hash) {
     await page.waitForFunction(() => document.querySelector('#f-topic')?.value === 'langchain');
     check('framework category has six questions', await page.locator('.q-item[data-qid]').count() === 6);
     await open(page, '#/study/LC-003');
-    check('new scenario prompt is visible before answers', await page.locator('[data-question-prompt="LC-003"]').isVisible() && !await page.locator('[data-sec="answer"] .q-sec-body').isVisible());
-    await page.locator('[data-toggle="deep"]').click();
+    check('scenario prompt and fused answer arrive together without clicking', await page.locator('[data-question-prompt="LC-003"]').isVisible() && await page.locator('[data-sec="answer"] .q-sec-body').isVisible());
+    check('fusion keeps written answer and spoken version as separate labelled parts', await page.locator('[data-sec="answer"] [data-part="answer"]').isVisible() && await page.locator('[data-sec="answer"] [data-part="interview"]').isVisible());
     check('new question explains replay and displays fusion notes', (await page.locator('[data-sec="deep"]').innerText()).includes('融合补充'));
+    check('every analysis block is expanded on arrival', await page.evaluate(() => Array.from(document.querySelectorAll('.q-secs .q-sec')).every(s => s.classList.contains('open'))));
     await open(page, '#/study/AG-004?a=answer');
     check('existing MCP question uses corrected nondependency explanation', (await page.locator('[data-sec="answer"]').innerText()).includes('不要求模型必须原生支持'));
     await open(page, '#/study/AD-004?a=deep');

@@ -37,24 +37,29 @@ async function open(page, hash) {
     await open(page, '#/browse?t=pi-agent');
     await page.waitForFunction(() => document.querySelector('#f-topic')?.value === 'pi-agent');
     check('category filter displays exactly thirty questions', await page.locator('.q-item[data-qid]').count() === 30 && (await page.locator('#f-count').innerText()).includes('30'));
-    check('the full question is visible before revealing an answer', await page.locator('[data-question-prompt="PI-001"]').isVisible() && !await page.locator('[data-sec="answer"] .q-sec-body').isVisible());
+    check('scenario prompt and fused answer are both visible on arrival', await page.locator('[data-question-prompt="PI-001"]').isVisible() && await page.locator('[data-sec="answer"] .q-sec-body').isVisible());
+    check('fused card keeps the written answer and the spoken version apart', await page.locator('[data-sec="answer"] [data-part="answer"]').isVisible() && await page.locator('[data-sec="answer"] [data-part="interview"]').isVisible());
+    await page.locator('[data-focus-toggle]').click();
+    check('focus toggle collapses the whole answer body for self-testing', !await page.locator('#q-detail .q-secs').isVisible() && await page.locator('[data-question-prompt="PI-001"]').isVisible());
+    await page.locator('[data-focus-toggle]').click();
+    check('focus toggle restores the one-shot view', await page.locator('#q-detail .q-secs').isVisible());
     for(const id of ['PI-004', 'PI-013', 'PI-024', 'PI-029']) {
       const original = source.questions.find(q => q.id === id);
       await open(page, '#/study/' + id);
       check(id + ' retains its full scenario prompt', (await page.locator('[data-question-prompt="' + id + '"]').innerText()).replace(/\s/g, '') === original.question.replace(/\s/g, ''));
-      await page.locator('[data-toggle="deep"]').click();
       const complete = await page.evaluate(bodies => {
         const body = document.querySelector('[data-sec="deep"] .q-sec-body').textContent.replace(/\s/g, '');
         return bodies.every(text => { const el = document.createElement('div'); el.innerHTML = Markdown.render(text); return body.includes(el.textContent.replace(/\s/g, '')); });
       }, original.explanation.map(e => e.body));
       check(id + ' displays every full explanation paragraph', complete);
-      await page.locator('[data-toggle="followups"]').click();
       check(id + ' has three nested follow-ups', await page.locator('[data-sec="followups"] .fu').count() === 3);
-      await page.locator('[data-toggle="interview"]').click();
-      const spoken = await page.locator('[data-sec="interview"]').innerText();
-      check(id + ' keeps all five rubric criteria', original.rubric.every(r => spoken.includes(r.criterion)));
-      await page.locator('[data-toggle="sources"]').click();
+      const fused = await page.locator('[data-sec="answer"]').innerText();
+      check(id + ' keeps all five rubric criteria', original.rubric.every(r => fused.includes(r.criterion)));
       check(id + ' retains the exact pinned source URL', await page.locator('[data-sec="sources"] a').first().getAttribute('href') === original.sources[0].url);
+      await page.locator('[data-toggle="pitfalls"]').click();
+      check(id + ' can still collapse a single block on demand', !await page.locator('[data-sec="pitfalls"] .q-sec-body').isVisible());
+      await page.locator('[data-toggle="pitfalls"]').click();
+      check(id + ' expands back after the manual collapse', await page.locator('[data-sec="pitfalls"] .q-sec-body').isVisible());
     }
     await page.setViewportSize({ width: 360, height: 800 });
     check('long Pi question fits 360px without page overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

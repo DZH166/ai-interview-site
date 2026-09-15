@@ -219,24 +219,59 @@ const QRender = (() => {
       ${myConcepts.length ? `<div class="rel-row"><span class="rel-label">本题涉及概念:</span>${myConcepts.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''}`;
   }
 
-  /* 学习页主体(完整展开结构) */
+  /* 答案与面试表达的融合卡:先给一版能直接用的说法。
+     两段各留小标题,不把书面答案和口述表达揉成一段——否则读者分不清哪句能直接说出口。 */
+  function answerFusionBody(q) {
+    return `
+      <div class="qf-part" data-part="answer">
+        <div class="qf-label">直接答案</div>
+        <div class="qf-body">${mdHtml(q.answer)}</div>
+      </div>
+      <div class="qf-part" data-part="interview">
+        <div class="qf-label">面试表达 · 口述版</div>
+        <div class="qf-body">${mdHtml(q.interview)}</div>
+      </div>`;
+  }
+
+  /* 区块清单只有一份,学习页与浏览详情共用,避免两处漂移。
+     默认全部展开:进来一次性看全;要自测时用「只看题干」整体收起,不必逐个点开。 */
+  function standardSections(q, open) {
+    const o = open !== false;
+    return `
+      ${section('answer', '答案与面试表达', answerFusionBody(q), o)}
+      ${section('plain', '大白话解释', mdHtml(q.plain), o)}
+      ${section('deep', '原理拆解', deepHtml(q), o)}
+      ${section('example', '具体例子', mdHtml(q.example), o)}
+      ${section('followups', '常见追问', followupsHtml(q), o)}
+      ${section('pitfalls', '常见误区', pitfallsHtml(q), o)}
+      ${section('check', '理解检查', checkHtml(q), o)}
+      ${section('sources', '出处与核查状态', verifyBlock(q), o)}`;
+  }
+
+  /* 「只看题干」开关:默认全展开的配套出口,保住「先自己答一遍」的自测用法 */
+  function focusToggle() {
+    return '<button class="btn btn-small" data-focus-toggle aria-pressed="false">只看题干</button>';
+  }
+
+  function wireFocusToggle(root) {
+    $$('[data-focus-toggle]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const host = btn.closest('.study-wrap, #q-detail') || root;
+        const on = host.classList.toggle('focus-mode');
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.textContent = on ? '显示答案与解析' : '只看题干';
+      });
+    });
+  }
+
+  /* 学习页主体 */
   function studyBody(q) {
     return `
       ${metaLine(q)}
       <h1 class="q-title">${esc(q.title)}</h1>
       ${promptHtml(q)}
       ${relLinks(q)}
-      <div class="q-secs">
-        ${section('answer', '直接答案', mdHtml(q.answer), false)}
-        ${section('plain', '大白话解释', mdHtml(q.plain), false)}
-        ${section('deep', '原理拆解', deepHtml(q), false)}
-        ${section('example', '具体例子', mdHtml(q.example), false)}
-        ${section('interview', '面试表达', mdHtml(q.interview), false)}
-        ${section('followups', '常见追问', followupsHtml(q), false)}
-        ${section('pitfalls', '常见误区', pitfallsHtml(q), false)}
-        ${section('check', '理解检查', checkHtml(q), false)}
-        ${section('sources', '出处与核查状态', verifyBlock(q), false)}
-      </div>
+      <div class="q-secs">${standardSections(q)}</div>
       <div class="q-note-box">
         <label class="note-label">我的笔记(会参与全文搜索)</label>
         <textarea id="note-area" placeholder="写下你的理解、易错点或自己的例子……">${esc(Store.rec(q.id).note || '')}</textarea>
@@ -281,5 +316,6 @@ const QRender = (() => {
       </div>`;
   }
 
-  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, promptHtml, deepHtml, section };
+  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, promptHtml, deepHtml, section,
+           answerFusionBody, standardSections, focusToggle, wireFocusToggle };
 })();
