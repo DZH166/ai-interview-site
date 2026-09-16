@@ -1,0 +1,1071 @@
+{
+  "topic": "rag",
+  "checked_date": "2026-09-16",
+  "note": "",
+  "questions": {
+    "RG-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "回答之前先『查资料』",
+          "why": "一句话定义 RAG 的本质"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "用检索到的『非参数记忆』补充模型参数里『记不全、记不新』的知识",
+          "why": "原始论文定位,核心概念"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "RAG 的上限由『检索质量』决定,不是挂上 RAG 就万事大吉",
+          "why": "最值钱的红线口径"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "答不上可以说『资料里没有』",
+          "why": "拒答通道,可追溯价值"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "RAG 就是先检索后生成",
+          "why": "口述开篇收束句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "相比微调灌知识,RAG 更新成本低、可审计",
+          "why": "RAG vs 微调的判据"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "RAG 知识在库,改文档即生效,可审计可撤销",
+          "why": "RAG 相对微调的核心优势"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "微调改的是模型的『行为模式』",
+          "why": "讲清微调改的是什么"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "混合检索",
+          "why": "关键术语名称"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "检索为空时拒答或转人工",
+          "why": "红线:绝不硬答"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "模型明确说『资料未涉及』而不是编造",
+          "why": "拒答通道的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "这是 RAG 提示词该有的拒答通道",
+          "why": "提示词设计要点"
+        }
+      ]
+    },
+    "RG-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "整篇文档压缩成一个向量会把多主题『平均』掉",
+          "why": "切分硬原因二:语义稀释"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "块太大→召回不准、上下文浪费;太小→信息碎片化、缺上下文",
+          "why": "大小两端的代价,判据"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "按『小节』做卡最合理",
+          "why": "切分粒度的直觉"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "每块还应该带着『来自哪本书、哪一章、第几页』,这是引用和过滤的依据",
+          "why": "元数据的作用"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "结构感知切分",
+          "why": "推荐策略的术语"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "切分质量直接决定检索上限",
+          "why": "口述收束句,高性价比优化点"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "父子块(parent-child / small-to-big)",
+          "why": "标准手段的术语"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "检索用小块(向量准),命中后把它的父块(整节)喂给模型(上下文全)",
+          "why": "父子块如何兼顾两端"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "overlap 防接缝,但过大会让同一内容出现在多块里,检索时挤占 top-k 名额、存储翻倍",
+          "why": "overlap 的代价红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "建一个小型标注问答集(50~200 条:问题→应命中的文档位置),对不同 size/策略跑召回率",
+          "why": "调优方法,别拍脑袋"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "50 页 PDF 政策手册,固定 500 字符硬切把表格切成两半",
+          "why": "反面例子:硬切破坏表格"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "修复组合:①解析阶段识别表格,整表保留",
+          "why": "修复手段"
+        }
+      ]
+    },
+    "RG-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "训练目标是『语义相近的文本在向量空间里也相近』",
+          "why": "Embedding 的训练目标定义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "但对精确符号(错误码、型号、人名)不敏感,也会混淆『相似但不相关』的内容",
+          "why": "向量检索的失败模式红线"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "『如何退货』和『退款流程』坐标很近",
+          "why": "语义匹配直觉"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "像『E-4021』『型号 AX-9』这种符号,在『意思空间』里没有明显的位置,向量反而容易忽略它",
+          "why": "精确符号弱点的实例"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "Embedding 是把文本映射成语义向量,训练目标是相近语义在向量空间相近",
+          "why": "口述定义"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "但向量检索对精确符号弱、对相似不相关的内容有误伤",
+          "why": "引出混合检索的判据"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "对比学习",
+          "why": "Embedding 的训练方式术语"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "向量归一化(缩到单位长度)后,内积与余弦等价",
+          "why": "为什么向量库默认用内积"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『近似』意味着可能漏掉真最近邻,用召回率换速度",
+          "why": "ANN 的权衡红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "两者失败模式互补",
+          "why": "需要 BM25 的原因"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "『修改购方名称的操作步骤』(命中,无共同关键词)",
+          "why": "向量语义命中的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "RRF 融合后:『修改购方名称』与『发票抬头 FAQ』都进 top2,互补成功",
+          "why": "混合检索互补的实例"
+        }
+      ]
+    },
+    "RG-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把『答错』拆成四段独立故障,一段段排除",
+          "why": "分类定位的总框架"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "排查顺序固定:先看『检索回来的原文里到底有没有答案』",
+          "why": "排查第一刀,固定顺序"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "骂厨师之前,先开冰箱、再看案台",
+          "why": "排查顺序的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "排查时别忘了先确认『问题本身问的是什么』",
+          "why": "第 0 种可能的红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我把 RAG 答错拆成四类:语料没有、检索没中、上下文组织乱、生成不遵循",
+          "why": "口述四类框架"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "一是一定要有 trace 日志,没有日志一切白搭",
+          "why": "工程红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "修法:补充/更新数据源;建立『知识库准入清单』;检索为空时拒答或转人工,绝不硬答",
+          "why": "语料缺失的修法与红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "常见根因:用户问题与文档措辞不同",
+          "why": "检索没中的高频根因"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "正确块被排在中间(lost in the middle)",
+          "why": "上下文组织的典型坑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "硬约束提示(『只使用资料中的信息;资料不足时回答「资料中未提及」,禁止推测』)",
+          "why": "生成遵循的提示词红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "排除①②,进入③",
+          "why": "排查流程落点"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "跑回归集:该类 12 条 case 全部通过,其他 138 条无退化",
+          "why": "修复须回归评测的红线"
+        }
+      ]
+    },
+    "RG-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "再用重排模型对『问题+每个候选段落』逐对精细打分,选出真正相关的 top 3~5",
+          "why": "rerank 的核心动作"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "答案常被排在 5 名以外时",
+          "why": "值得加 rerank 的时机"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "重排=技术面试官把每份简历和 JD 放在一起细读再打分",
+          "why": "rerank 的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "没有海选,面试官忙不过来;没有面试,录用的人不对",
+          "why": "召回+重排两段缺一不可"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "rerank 解决的是召回噪声:双塔检索快但 query 和文档没有词级交互",
+          "why": "为什么 rerank 更准"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "上线前一定对比加与不加的端到端指标",
+          "why": "上线的工程红线"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "向量检索(双塔)把 query 和 doc 各自独立编码成向量",
+          "why": "双塔机制"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "注意力能对齐『能改吗』和『修改步骤』这种细粒度对应",
+          "why": "交叉编码器为什么准"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "召回 top-k(k=50~100,双路混合)→ rerank 输出相关性分 → 按分排序取 top-n(n=3~6)→ 进提示词",
+          "why": "rerank 的标准流程参数"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "知识库很小(几十条)或召回已经很准时,rerank 收益有限",
+          "why": "不该加 rerank 的边界"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "相关答案排第 1 但三个『相似不相关』紧贴其后",
+          "why": "召回噪声的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "分差拉开,前 3 进入提示词,噪声被挤出",
+          "why": "rerank 效果的实例"
+        }
+      ]
+    },
+    "RG-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "向量检索匹配『语义』,BM25 匹配『精确词』",
+          "why": "两路各自的强项"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "两者的失败模式几乎不重叠",
+          "why": "混合检索互补的核心结论"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "两路证词合并,比任何一路单独作证都可靠",
+          "why": "混合互补的直觉"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "RRF 公式是倒数求和(1/排名),不是简单相加名次",
+          "why": "RRF 公式术语"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "混合检索解决的是失败模式互补:语义改写靠向量,精确符号靠 BM25",
+          "why": "混合检索的核心判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我会上评测集验证混合确实≥单路,再串 rerank 精排",
+          "why": "上线须验证的红线"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "BM25 一句话:基于词频的经典打分",
+          "why": "BM25 一句话定义"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "查询词在文档出现越多、词越稀有、文档越短越精确,分数越高",
+          "why": "BM25 的打分直觉"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "k 常取 60(平滑用)",
+          "why": "RRF 平滑参数细节"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "加权分数:各路分数归一化后加权(如 0.6 向量 + 0.4 BM25),可调但脆",
+          "why": "加权融合脆弱的红线"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "E-4021 语义信号弱,结果跑偏",
+          "why": "向量路对精确符号弱的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "两路互补正是价值所在",
+          "why": "混合检索价值收束句"
+        }
+      ]
+    },
+    "RG-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "查询改写在检索前用轻量手段把问题变成『可检索』的形式",
+          "why": "改写的定义"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "指代消解与补全、同义扩展、复合问题拆分",
+          "why": "三类主要改写手段术语清单"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把口语、指代、多问合成一句『管理员听得懂』的话",
+          "why": "改写的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "翻译还会拆句(复合问题拆成多个子查询分别检索)并顺手做元数据过滤",
+          "why": "改写还会拆句与过滤"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "查询改写是修「检索没找对」的第一杠杆",
+          "why": "改写定位:修检索没中"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "改写规则本身也要进评测集回归",
+          "why": "改写须回归的红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "把最近几轮+新问题交给轻量模型改写成独立完整的问题",
+          "why": "指代消解的作法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "复合问题(『A 和 B 哪个便宜,各自退货政策是什么』)拆成子问题分别检索",
+          "why": "问题拆分的作法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "让模型从问题中提取结构化过滤条件(时间=2024、产品=Pro、类型=政策)转成元数据过滤",
+          "why": "自查询的作法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "扩展与拆分会放大延迟,按查询复杂度路由(简单查询直通)",
+          "why": "扩展成本的红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "改写后(用于检索):「MacBook Pro 电池循环次数超过 1000 次后怎么处理/更换政策」",
+          "why": "多轮改写的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "问题:「2024 年新员工年假政策」",
+          "why": "自查询的实例"
+        }
+      ]
+    },
+    "RG-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "ANN(近似最近邻)索引是让『百万级向量里找最近的 K 个』从秒级降到毫秒级的算法",
+          "why": "ANN 的定义与价值"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "用『可能漏掉个别真最近邻』换速度",
+          "why": "近似的本质权衡红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "HNSW=把人群分成『熟人圈子套圈子』",
+          "why": "HNSW 比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "真实算法参数(nprobe/efSearch)可以在『速度↔召回』之间连续调",
+          "why": "速度召回可调的直觉"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "ANN 是用近似换速度:HNSW 是图,快且召回高但吃内存",
+          "why": "口述三种索引对比"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "我会主动说「小规模直接 pgvector 别引新组件」",
+          "why": "选型红线:小规模别引新组件"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "HNSW:多层跳表式图,上层稀疏长边快速跳,下层稠密短边精搜",
+          "why": "HNSW 机制术语"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "IVF:先 k-means 聚成 nlist 个簇,查询只扫最近的 nprobe 个簇",
+          "why": "IVF 机制术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "先问『真的需要独立向量库吗』",
+          "why": "选型前先问的红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "别只看厂商宣传值,用自己的数据分布测",
+          "why": "实测召回-延迟的红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "一个数据库搞定向量+元数据+权限过滤,运维零新增",
+          "why": "小规模用 pgvector 的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "已有 ES 集群且要 BM25+向量混合",
+          "why": "复用既有技术栈的实例"
+        }
+      ]
+    },
+    "RG-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "分两层评:检索层看『该找到的找到了没』",
+          "why": "评估分两层的框架"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "RAGAS 类框架提供自动指标,但阈值要在自己业务上校准",
+          "why": "自动指标须校准的红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "先看『他翻到的页码对不对』(检索层)",
+          "why": "检索层优先的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "自动指标(LLM-as-judge)像『助教批改』,便宜但不等于真相",
+          "why": "自动指标不等于真相"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "基础是先建 50~200 条带期望出处的评测集",
+          "why": "评测集是前提"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "任何改动必须跑回归,退化就回滚",
+          "why": "改动须回归的红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "评测集要版本化,随系统演进维护",
+          "why": "评测集维护要点"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "faithfulness:答案的每个论断是否被检索证据支持(LLM-as-judge 或 NLI 判定,输出 0~1)",
+          "why": "忠实度指标术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "引用正确率:被标注的引用是否真的支持对应句子(防『引用表演』)",
+          "why": "防引用表演"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "任何改动(切分/模型/提示词/rerank)必须跑回归评测",
+          "why": "改动须回归红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "应拒答正确拒答率",
+          "why": "应拒答评测指标"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "质量提升显著,成本可接受 → 灰度 20% → 全量",
+          "why": "灰度上线决策实例"
+        }
+      ]
+    },
+    "RG-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "解析质量直接决定 RAG 上限",
+          "why": "解析是第一公里"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "解析错误率高于 1~2% 就先修解析再谈检索",
+          "why": "解析验收红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "菜没洗干净(乱码、页眉残留)、切得乱七八糟(表格被切碎)",
+          "why": "解析差则后续全废"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "要么整条做(小表整块),要么按部位分(按行组)",
+          "why": "表格处理两类做法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "解析我按「先分类再选路」:有文本层直接抽,扫描件 OCR,混排逐页判断",
+          "why": "解析总思路"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "最重要的是解析验收:抽样人工比对+覆盖率统计,解析错误率高就先修解析",
+          "why": "解析须验收红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "保留结构标记(标题层级/列表)喂给切分",
+          "why": "结构标记喂给切分"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "这是『答案被切碎』的重灾区",
+          "why": "表格是切碎重灾区"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "清洗清单:页眉页脚/水印/页码去除;乱码与编码修复;阅读顺序重排(双栏 PDF 直接抽是横着读的)",
+          "why": "清洗清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『看不见的丢失』比可见的乱码更危险",
+          "why": "隐性丢失更危险的红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "一份 60 页的 PDF 政策手册(混排:正文+3 个大表+组织架构图)",
+          "why": "混排文档实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "3 个大表 → 每表生成『表格说明+整表』chunk(带表头)",
+          "why": "大表处理实例"
+        }
+      ]
+    },
+    "RG-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "切分时给每块稳定 ID 与元数据(文档、章节、页码)",
+          "why": "引用数据基础"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "用轻量模型/NLI 判断每个带引用的句子是否真被对应块支持",
+          "why": "句级校验防线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "好引用=读者点开脚注能看到原话(可验证)",
+          "why": "好引用的标准"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "比不标更糟,因为它借用了『有出处』的信任",
+          "why": "引用表演更糟的红线"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "模型很擅长把引用标得很好看,不校验等于裸奔",
+          "why": "必须校验的红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "前端引用必须可点击跳原文并显示版本日期,这是用户信任的基础",
+          "why": "前端可点击可溯源"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "全局唯一且稳定(文档重建时保持可追溯,用 内容hash+版本 而非自增号)",
+          "why": "稳定 ID 设计要点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "要求『逐句标注』而非『整段标一个』",
+          "why": "粒度决定可校验性"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "每个论断句取其标注的块,用 NLI/轻量模型判断 entailment(支持/矛盾/无关)",
+          "why": "对齐与判定术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "矛盾→拦截该句或整答降级;全部无引用且含事实→触发拒答改写",
+          "why": "处置逻辑红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "当年未休年假可按日薪 300% 折算",
+          "why": "引用对齐实例"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "这是模型编造",
+          "why": "未支持即编造的实例"
+        }
+      ]
+    },
+    "RG-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "检索为空/分数低于阈值、证据互相冲突且无法判定、问题超出知识库范围(自查询判断)、模型自评『证据不足』",
+          "why": "什么时候拒的判据"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "宁可说不知道,不可一本正经地编",
+          "why": "拒答核心红线"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "硬编一个答案才是零分",
+          "why": "编造代价红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "漏答率(该答没答)和错答率(不该答硬答),两头都要看",
+          "why": "两类错误都要看"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "编造的代价远高于拒答,但必须监控过度拒答率防止产品不可用",
+          "why": "两类错误权衡红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "高频拒答聚起来就是知识库建设清单",
+          "why": "拒答反哺知识库"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "top-k 分数断层(第一名远低于历史正常水平)",
+          "why": "检索层触发信号"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "话术统一管理,别让每个 prompt 各写一套",
+          "why": "话术统一红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "阈值过高→过度拒答,过低→硬答幻觉。灰度调参,监控双指标",
+          "why": "阈值权衡红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "原则:风险越高越偏保守,但要量化过度拒答率防止『把产品做成摆设』",
+          "why": "保守但有量化底线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "应答组 top1 分数:0.62 ~ 0.95(中位 0.81)",
+          "why": "阈值标定分布实例"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "过度拒答率 = 3%(每周人工抽检确认是否真该拒)",
+          "why": "过度拒答率监控实例"
+        }
+      ]
+    },
+    "RG-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "变体都围绕标准 RAG 的某个短板",
+          "why": "变体的统一视角"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "选型原则:先用标准管线+评测找瓶颈,再针对性上变体",
+          "why": "变体选型纪律"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "父子块=卡片上写小索引,借书时给你整本书那一章(检索准、看得全)",
+          "why": "父子块比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "GraphRAG 的图谱构建成本很高,不是所有库都值得画这张网",
+          "why": "GraphRAG 成本红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我把变体按「解决什么短板」记",
+          "why": "口述记忆法"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "先跑标准管线+评测找到瓶颈,再针对性上变体",
+          "why": "先标准后变体红线"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "父子块/small-to-big(RG-002 已述):检索小块(向量准)→回填父块(上下文全)。成本低,几乎是标配",
+          "why": "父子块机制术语"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "HyDE:让模型先生成『假设答案』,用假设答案的向量去检索(以文找文),再真答案生成",
+          "why": "HyDE 机制术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "图谱构建与维护很贵(LLM 抽取全库),更新要重算社区。适用:实体关系密集的领域(情报、医药、企业知识网络),普通 FAQ 库不值",
+          "why": "GraphRAG 成本与适用红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "每个变体都要过评测集(RG-009),证明在『你的数据』上值得它的复杂度",
+          "why": "变体须过评测"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "人工看 top5 常有正确块但排名 6~10 → 父子块+rerank(成本++)",
+          "why": "父子块+rerank 实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "用户问题口语化、同义变体多 → 多查询改写(成本+)",
+          "why": "多查询改写实例"
+        }
+      ]
+    },
+    "RG-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "解析→切分→向量化→写入时带版本与内容 hash,未变的块 ID 不变(增量更新)",
+          "why": "增量更新管线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "核心原则:索引是派生物,一切以文档真相源为准,任何派生都可重建",
+          "why": "索引是派生物原则"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不是把旧书撕了随便塞新页(原地覆盖)",
+          "why": "红线:别原地覆盖"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "书架上『新书到货』前先少量上架试卖(灰度)",
+          "why": "灰度切换比喻"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "最容易漏的是三个联动:语义缓存失效、旧引用的可追溯访问、更新后的检索回归",
+          "why": "三个联动易漏红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "大改版双版本灰度可回滚",
+          "why": "双版本可回滚"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "查询默认只取 status=生效 的最新版本(元数据过滤,见 RG-007 自查询);保留下线版本供引用回溯",
+          "why": "版本过滤与回溯"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "管线幂等:同一输入跑两次结果一致(可安全重试)",
+          "why": "幂等可重试"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "大改版→双版本并存+灰度(新版本服务 10% 流量,评测对比后全量);出问题秒级回滚",
+          "why": "双版本灰度切换"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "更新后跑评测集(RG-009),特别是涉及被更新主题的 case",
+          "why": "更新须回归红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "120 块中 87 块未变(复用)",
+          "why": "增量比对复用实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "v3 置为生效(过滤条件切换),v2 标记 archived(仍可访问)",
+          "why": "版本切换与归档实例"
+        }
+      ]
+    }
+  }
+}

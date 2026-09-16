@@ -1,0 +1,1075 @@
+{
+  "topic": "agent",
+  "checked_date": "2026-09-16",
+  "note": "",
+  "questions": {
+    "AG-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Agent允许模型在运行时决定部分后续行动",
+          "why": "Agent与工作流的核心区别：运行时由模型决定部分行动"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "因此不能说工作流输出必然确定",
+          "why": "红线：嵌套模型的动态工作流输出也可能不确定"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "关键是哪些决策交给模型、哪些由程序控制",
+          "why": "判据：看控制权归属而非代码形态"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "说不出来就说明这道题还没掌握",
+          "why": "自检红线：能举出模型兜底的具体判断点"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "先用能满足目标的简单方案，而非按概念先进程度排序",
+          "why": "选型收束句，可直接口述"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线：设计例子不等于落地经验"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "模型选择动作并不自动赋予执行权限",
+          "why": "易混点：选择动作≠执行权限"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "步骤不确定也不意味着必须无限自主",
+          "why": "红线：不确定性不等于无限制自主"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "效果与成本需同任务集比较",
+          "why": "判据：比较责任分配而非架构名字"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "可允许Agent选择查询工具",
+          "why": "例子：受控探索的落点"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "最终批准仍由可信规则或人员决定",
+          "why": "红线：高影响动作必须人工/规则兜底"
+        }
+      ]
+    },
+    "AG-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "模型提出调用，宿主校验并执行",
+          "why": "核心链路：模型只提调用，执行在宿主"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "模型没有因为输出函数名就执行代码",
+          "why": "红线：模型不真正执行工具"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "真正执行的是宿主程序",
+          "why": "比喻收束：执行主体是宿主"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "申请单填对了不等于有权限，程序返回了也不等于业务目标已达到",
+          "why": "红线：分工与责任边界"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "格式有效、获得授权、操作成功和结果正确是不同关卡",
+          "why": "四关判据，可口述"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "工具名、用途、参数和错误约定影响选择",
+          "why": "注册描述的要点"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能让模型填一个tenantId就获取权限",
+          "why": "红线：授权来自服务端"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "超时可能意味着结果未知",
+          "why": "易错点：超时不等于失败"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "写操作重试前核对幂等与业务结果",
+          "why": "红线：重试前的幂等核对"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "检查登录主体权限",
+          "why": "例子：权限在校验环节"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "返回受控错误，不猜测执行某个相似工具",
+          "why": "红线：未注册工具不猜测执行"
+        }
+      ]
+    },
+    "AG-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "设计目标不是『永不失败』,而是『失败时可控、可恢复、可归因』",
+          "why": "核心结论，可收束口述"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "对不可逆、高影响、低置信度的动作(付款、发邮件、删除)设审批闸门",
+          "why": "红线：高风险动作审批"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "转账这种事必须你签字他才动(审批闸门)",
+          "why": "比喻收束：审批闸门"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "比喻的局限:真实系统里『重试』本身也要设次数",
+          "why": "红线：重试本身需限次"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "高风险动作走审批闸门,暂停在状态机里而不是丢掉",
+          "why": "口述收束句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "目标不是永不失败,是失败可控、可恢复、可归因",
+          "why": "口述核心结论"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "全程 trace 和审批留痕是标配",
+          "why": "红线：可观测与留痕是标配"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "超限不是静默放弃,而是『尽力而为的汇报』",
+          "why": "预算到线行为：如实汇报"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "终止并转人工,不要让模型反复撞墙",
+          "why": "红线：系统性失败转人工"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不可逆且高影响(付款、删除、对外发送):必须审批",
+          "why": "风险矩阵判据"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "出票失败(500)→ 代码退避重试 2 次",
+          "why": "例子：瞬时故障退避重试"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "死循环检测:连续 3 次『查询同一航班』→ 中止并汇报",
+          "why": "红线：死循环检测"
+        }
+      ]
+    },
+    "AG-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "MCP定义宿主侧如何与服务交换工具、资源和提示等能力",
+          "why": "MCP定义：宿主侧能力交换"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能保证任意服务零配置兼容、自动授权或安全",
+          "why": "红线：标准化不保证零配置安全"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "二者不是缺一不可的依赖链",
+          "why": "判据：MCP与FC非强依赖"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "三层名单对齐后才谈权限收敛",
+          "why": "做法：名单对齐再收敛权限"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "程序也可直接调用协议能力",
+          "why": "补充：普通程序也能调协议"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能从某模型产品不支持某接入方式，推出推理与工具调用在原理上不兼容",
+          "why": "红线：接入方式≠原理不兼容"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "只读提示不是安全证明",
+          "why": "红线：只读提示非安全证明"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不把新旧握手混用",
+          "why": "做法：版本明确不混用"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "普通调试程序也可以直接发请求",
+          "why": "例子：程序直连协议"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "无论哪条路，服务端都重新检查授权",
+          "why": "红线：服务端重新鉴权"
+        }
+      ]
+    },
+    "AG-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "应分清线程状态、当前模型输入、跨线程记忆和业务执行状态",
+          "why": "核心：四类状态要分清"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "也不会自动被提炼为可靠长期记忆",
+          "why": "红线：持久化≠可靠长期记忆"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "长期索引与任务进度表不是同一个东西",
+          "why": "判据：长期索引≠任务进度"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "答不出的那类就是设计缺口",
+          "why": "自检红线：答不出即缺口"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "存储介质、权限、读取注入和删除更新规则需要分别设计",
+          "why": "做法：分别设计四要素"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不是“任务结束一定清空”和“必须向量数据库”",
+          "why": "红线：短期≠清空、长期≠向量库"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "只把本步必要且有权访问的内容提供给模型",
+          "why": "做法：按需装配上下文"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "InMemory实现的进程生命周期不能冒充数据库耐久性",
+          "why": "红线：内存实现非持久"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "检查点保存消息和流程状态",
+          "why": "例子：checkpointer作用"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "用户修改偏好后，后续读取应采用新版本",
+          "why": "红线：读取应采用最新版本"
+        }
+      ]
+    },
+    "AG-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "提示词约束是软的,不是安全边界",
+          "why": "核心认知：提示词非安全边界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "真正的防线在代码层",
+          "why": "红线：防线在代码层而非提示"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "保险柜钥匙根本不发给员工(最小权限)",
+          "why": "比喻收束：最小权限"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "访客只能隔着玻璃说话(内容隔离)",
+          "why": "红线：内容隔离"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提示词不是安全边界,防线在代码层",
+          "why": "口述核心立场"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "目标不是根除,是被注入时损失可控",
+          "why": "红线：损失可控即可"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "间接注入(更危险):藏在外部内容里",
+          "why": "判据：间接注入更危险"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "工具白名单+最小权限(API token 只读、限定目录、限定操作类型)",
+          "why": "做法：权限层最硬"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "把『数据』与『指令』放进不同的消息角色",
+          "why": "做法：结构层分隔"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "网页内容进上下文 → 模型视其为指令",
+          "why": "例子：间接注入链路"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "外发类动作触发审批闸门,人工看到『要把用户列表发给 evil.com』直接拒绝",
+          "why": "红线：外发审批"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "工具调用日志留下攻击痕迹用于溯源",
+          "why": "做法：监控层留痕"
+        }
+      ]
+    },
+    "AG-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "三种模式按『计划的固定程度』排",
+          "why": "分类判据"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "允许『计划修订』而不是硬执行一个过时计划",
+          "why": "红线：允修订而非硬执行"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "计划让专业的人(模型)起草,但图纸摊在桌面上,你能看、能改、能停",
+          "why": "比喻收束：显式计划可干预"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "计划要有『验收判据』和人工确认点",
+          "why": "红线：验收判据必要"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "计划是显式 JSON,带依赖、完成判据和风险点",
+          "why": "口述：预规划形态"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "执行中允许 replan,绝不硬磕过时计划",
+          "why": "红线：允许 replan"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "我还会防两个坑:子任务丢全局约束,和计划过细错得更多",
+          "why": "失效模式：丢约束/过细"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "步骤固定可枚举 → 固定工作流(代码写死,LLM 只做步骤内的模糊处理)",
+          "why": "判据：固定工作流"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "每步完成后对照判据;失败或新信息出现时允许 replan(回到 planner 更新计划,而不是死磕)",
+          "why": "做法：对照判据后 replan"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "拆解后的子任务丢失全局约束(各干各的,拼不起来)",
+          "why": "红线：丢全局约束"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "『整理这个月所有发票并汇总报销』的预规划",
+          "why": "例子：预规划场景"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "执行到 step4:2 张抬头不匹配",
+          "why": "例子：计划内人工介入点"
+        }
+      ]
+    },
+    "AG-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "它解决的问题是『单个上下文装不下或角色会互相干扰的大任务』",
+          "why": "价值：上下文隔离/角色专业化"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "多数业务用『工作流+单 agent』就够",
+          "why": "红线：多数不需多agent"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "『不同专业各自干、互不干扰』(水电/泥瓦/油漆各有各的规范和工具)",
+          "why": "判据：才分包"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "任何一步没写清楚就会各干各的",
+          "why": "红线：交接靠手写消息"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "价值在上下文隔离和角色专业化",
+          "why": "口述价值"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "简历上写多智能体要能答「为什么拆、交接 schema、怎么防错误传播」,答不上反而暴露",
+          "why": "红线：能讲清才写"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "适合角色专业化、每步上下文可独立",
+          "why": "判据：流水线拓扑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "否则单 agent+结构化工作流更便宜可控(Anthropic 的 simple-first 原则同样适用)",
+          "why": "做法：优先单agent"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "上下文交接损耗(agent 间消息是有损压缩,关键约束可能丢)",
+          "why": "风险：交接损耗"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "能讲清『为什么拆、怎么交接、怎么防错误传播』是加分;讲不清反而是减分,慎写",
+          "why": "面试定位：慎写"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "为什么拆:全库上下文装不下;执行/评审角色需要隔离(避免自己评自己)",
+          "why": "例子：拆的动因"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "人工:审批合并(AG-003 闸门)",
+          "why": "例子：人工介入点"
+        }
+      ]
+    },
+    "AG-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "LLM 输出不确定,但『可断言的性质』是确定的",
+          "why": "核心思想：测性质"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "测性质而不是测全文",
+          "why": "红线：别测全文"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "要改成『没有错别字、三点都提到、没跑题』(性质断言)",
+          "why": "比喻：性质断言"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "性质断言本身也是代码,写得糙会有漏判",
+          "why": "红线：断言质量要打磨"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提示词输出做「性质断言」(schema、关键字段、禁词)配缓存跑 CI",
+          "why": "口述：契约层"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "发布门禁卡在契约层全过+质量分不低于基线",
+          "why": "红线：发布门禁"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "这些是确定性代码,100% 覆盖",
+          "why": "单元层：确定性代码全测"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "契约(分钟级,每次提交):固定输入→真实/缓存 LLM 输出→断言性质",
+          "why": "契约层做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "LLM 调用缓存(相同输入返回缓存结果)让 CI 又快又省钱",
+          "why": "做法：缓存降本"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "契约层全过+端到端关键路径过+质量分不低于基线-ε,才可灰度",
+          "why": "红线：灰度门禁"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "契约层测试示例(pytest 风格)",
+          "why": "例子：契约层"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "没有调用 refund(不该退的 case)、最终回复包含政策引用编号",
+          "why": "例子：端到端断言"
+        }
+      ]
+    },
+    "AG-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "框架可以复用模型、工具、检索和运行机制",
+          "why": "框架价值：复用"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不把框架限定为演示或把自研说成天然更可靠",
+          "why": "红线：框架/自研都非天然优"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "自写能直接控制细节，也把兼容、状态和错误处理责任交给团队",
+          "why": "自写代价：责任自担"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不能靠几百行或一天工期的口号决策",
+          "why": "红线：别口号决策"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "关键契约仍需可见、可测和可维护",
+          "why": "口述：关键契约可见"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "公共抽象、供应商适配、高层Agent和图状态编排承担不同职责",
+          "why": "判据：职责分层"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能由“统一API”推出所有模型可无损互换",
+          "why": "红线：统一API≠无损互换"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "锁版本并验证实际使用的接口",
+          "why": "做法：锁版本验证"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "框架管模型接入与工具注册表,自写管状态机与权限",
+          "why": "混用策略：分工"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "验收同样的权限、暂停、恢复、错误和产物，再比较维护成本",
+          "why": "例子：按约束比较"
+        }
+      ]
+    },
+    "AG-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "最小演示不能替代生产服务",
+          "why": "红线：演示≠生产"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "接入还要处理参数、错误、授权和版本",
+          "why": "做法：接入四要素"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "stdin/stdout并不意味着没有序列化或安全风险",
+          "why": "红线：stdio也有安全风险"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "SSE可作为HTTP响应载体，不是模型执行机制",
+          "why": "口述：SSE非执行机制"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "日志不要污染stdio协议输出",
+          "why": "做法：协议/业务分开"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不能以连接成功替代业务正确",
+          "why": "红线：连接≠业务正确"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "避免一句“Inspector能连上”就宣布全部完成",
+          "why": "红线：别只看能连上"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "为报销查询定义工具名、输入schema、可信身份来源",
+          "why": "例子：封装四要素"
+        }
+      ]
+    },
+    "AG-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "只看最终答案会漏掉四类问题",
+          "why": "核心：答案对不够"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "危险对(对了答案但越权调工具/调了不该调的)",
+          "why": "红线：越权危险对"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "考核外卖员不能只看『饭送到了』",
+          "why": "比喻：不只看结果"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "评估还要看每步决策『当时的信息下是否合理』",
+          "why": "红线：评估决策合理性"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "所以轨迹评估评过程:工具选择正确性、参数质量、步数成本预算、安全合规、轨迹稳定性",
+          "why": "口述：评过程维度"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "高危任务全量轨迹评测,低风险只做答案级",
+          "why": "做法：按风险分级"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "稳定性:同一 case 多次运行的轨迹方差(过大=脆弱)",
+          "why": "维度：稳定性"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "高危自动化任务全量轨迹评测,低频低风险只做答案级+线上监控",
+          "why": "做法：风险分级"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "单轮评『一次生成』,轨迹评『决策序列』",
+          "why": "关系：维度正交"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "judge rubric:『每步决策是否基于当时可得信息合理』(1-5)",
+          "why": "例子：judge rubric"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "无越权工具、无未审批写操作",
+          "why": "红线：安全断言"
+        }
+      ]
+    },
+    "AG-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "主循环是『状态+步进+终止』的 while",
+          "why": "核心：循环结构"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "终止时都有『尽力而为的汇报』而不是静默退出",
+          "why": "红线：汇报而非静默"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "直到他写结项报告(正常终止)、预算用完(强制收工)",
+          "why": "比喻：终止条件"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "出问题能看日志复盘,而不是『他干了三天,谁也不知道干了啥』",
+          "why": "红线：每轮写日志"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "主循环就是「状态+步进+终止」的 while",
+          "why": "口述：循环结构"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "非正常终止都要生成「完成到哪卡在哪」的汇报",
+          "why": "红线：汇报"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "上下文组装用事实区+最近步而不是全量历史",
+          "why": "做法：上下文组装"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "『已确认事实区+最近 N 步』(AG-005 短期记忆管理)",
+          "why": "做法：组装策略"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "预算终止与异常终止都要生成『完成到哪/卡在哪/建议』的汇报",
+          "why": "红线：体面失败"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "循环是 Agent 的心脏,工作流是骨架(AG-001)",
+          "why": "关系：循环vs工作流"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "见 deep 中的伪代码骨架",
+          "why": "例子：骨架位置"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "面试时建议能默画出",
+          "why": "做法：能默画循环"
+        }
+      ]
+    },
+    "AG-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "工具结果的四条设计约定",
+          "why": "核心：四条约定"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "自愈的关键在错误消息里带『怎么改』",
+          "why": "红线：错误消息带改法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "『前方限行,建议改走二环』(可自愈)",
+          "why": "比喻：可读错误可自愈"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『hint』字段是设计出来的 convention,不是导航自带",
+          "why": "红线：hint是规范"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "统一信封(ok/data/error/hint)、错误消息面向模型可读且带修正指引",
+          "why": "口述：四条约定"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "模型改得对不对,取决于错误消息写得好不好",
+          "why": "红线：自愈率看错误文案"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不同码对应不同自愈策略(参数错→模型改;权限→终止转审批;限流→代码层退避,不必让模型知道细节)",
+          "why": "做法：错误码映射"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "瞬时错误(网络/限流)代码层退避重试,对模型透明",
+          "why": "做法：瞬时错误透明"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "错误消息不泄漏内部细节(路径/SQL/其他租户数据)",
+          "why": "红线：不泄漏内部细节"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "模型下一轮:再试一次相同参数(没学到任何修正信息)→ 死循环",
+          "why": "例子：无约定死循环"
+        }
+      ]
+    },
+    "AG-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "ReAct交替使用推理、行动和观察，可以据反馈更新计划",
+          "why": "判据：ReAct特点"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "没有一种范式天然更省钱或更正确",
+          "why": "红线：无天然更优"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "一种做法是逐步探索，一种是先列里程碑再推进",
+          "why": "两种范式类比"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "出现连续失败或关键假设被推翻",
+          "why": "做法：退回逐步探索时机"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "没有一种范式天然更省钱或更正确",
+          "why": "口述收束"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能当成用户已实现的项目经历",
+          "why": "口径红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不能说ReAct天生不能规划或纠偏",
+          "why": "红线：非能力缺陷"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要让旧迭代器继续执行已失效计划",
+          "why": "做法：重规划触发"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "先算自己的会话形态落在哪个量级,再谈范式成本",
+          "why": "做法：成本按实际账"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "只解释为什么应累计而非看最后一轮长度",
+          "why": "例子：累计而非末轮"
+        }
+      ]
+    }
+  }
+}

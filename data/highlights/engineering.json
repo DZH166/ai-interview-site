@@ -1,0 +1,1141 @@
+{
+  "topic": "engineering",
+  "checked_date": "2026-09-16",
+  "note": "engineering 专题重点标注:不改题库原文,只记录要突出的短语。",
+  "questions": {
+    "EN-001": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "分层做,风险递增",
+          "why": "框架总纲"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "必须配阈值、隔离维度(用户/租户)与敏感场景禁用",
+          "why": "语义缓存红线"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "语义缓存必须按用户/租户隔离,否则就是串数据事故",
+          "why": "租户隔离红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "健康咨询窗口(敏感场景)干脆不贴告示",
+          "why": "敏感场景禁用"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "失效策略和监控是缓存能不能上生产的关键",
+          "why": "上生产关键"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "阈值、租户隔离、敏感场景禁用、误答率抽检四件套",
+          "why": "语义缓存四件套"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "缓存 key 忘掉一个参数就是事故源",
+          "why": "精确缓存坑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "误答代价高的场景(医疗、法律)默认关闭",
+          "why": "语义缓存红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "稳定内容放提示最前面",
+          "why": "前缀缓存设计"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "它不改变输出,只是计费/加速优化",
+          "why": "前缀缓存与语义缓存区别"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "用一点命中率换正确率,值得",
+          "why": "阈值权衡结论"
+        }
+      ]
+    },
+    "EN-002": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "先复现,再分段取证,定位到具体环节才动手改",
+          "why": "排查第一原则"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "失败与差评请求全量保留内容,正常请求按比例采样",
+          "why": "日志留存红线"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "要脱敏、分级存储、设保留期,否则排查系统自己变成合规事故",
+          "why": "日志合规红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "没有单据,神仙也只能吵架",
+          "why": "日志必要性"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "先复现再动手",
+          "why": "口述收束"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "case 沉淀进评测集,让同类问题不再复发",
+          "why": "反馈闭环"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "LLM 应用调试 80% 的痛源于『只有输入和最终输出,中间是黑盒』",
+          "why": "可观测基线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "严禁『提示词改动+模型升级』同时上线,归因会失灵",
+          "why": "变更管理红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "失败/差评请求全量存内容;正常请求内容按比例采样",
+          "why": "分级存储"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "差评自动进标注队列,人工定性后沉淀成评测集 case",
+          "why": "反馈闭环机制"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "问题在②检索:改写引入偏差",
+          "why": "定位结论"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "该文档标题里没有『公司付款』字样",
+          "why": "检索偏差根因"
+        }
+      ]
+    },
+    "EN-003": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "先算清、再砍量、再降价、再缓存",
+          "why": "四步总纲"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "防止省钱省出质量事故",
+          "why": "成本优化红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "直接上来就『全换小功率灯泡』(全线换便宜模型)通常是最差选择",
+          "why": "反模式"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "LLM 的『换小模型』有质量风险",
+          "why": "换模型红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "全程盯「单位成本+质量分」双指标",
+          "why": "双监控"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "错答比贵更贵",
+          "why": "质量红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "分类、抽取、格式化用小模型(便宜 5~10 倍)",
+          "why": "分层路由"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "每次换挡要有质量护栏(评测集对齐)",
+          "why": "路由护栏"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "为了省钱把上下文砍到模型『失忆』(质量崩)",
+          "why": "反模式红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "JSON 输出比长散文省 token",
+          "why": "结构化输出"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "全量换小模型无灰度",
+          "why": "反模式红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "45% 的 FAQ 类问题转小模型",
+          "why": "路由效果示例"
+        }
+      ]
+    },
+    "EN-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "按数据特征分家",
+          "why": "选型总纲"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "一份数据一个『真相源』,其他都是可重建的副本",
+          "why": "真相源原则"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "向量这种『索引型数据』更像书的目录",
+          "why": "向量非真相源"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "可以随时按正文重新编,所以它绝不是真相源",
+          "why": "向量可重建"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "核心原则是「一份数据一个真相源,派生数据可重建」",
+          "why": "口述收束"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "向量库坏了能靠管线重跑",
+          "why": "健壮性来源"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "embedding 模型版本变更=全量重建",
+          "why": "向量重建"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "建库管线要能幂等重跑",
+          "why": "重建管线要求"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "注意访问权限(签名 URL 而不是公开桶)",
+          "why": "对象存储红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "先写真相源再更新派生",
+          "why": "一致性顺序"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "跨库没有分布式事务",
+          "why": "一致性红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "重建管线:documents+chunks → embedding → 向量库(模型升级时全量重跑)",
+          "why": "重建管线示例"
+        }
+      ]
+    },
+    "EN-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "发布流程:评测门禁 → 灰度(按比例/白名单/功能开关)→ 观察核心指标 → 全量",
+          "why": "发布流程"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "提示词与模型版本可秒级切回",
+          "why": "回滚能力"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "版本要自己钉死",
+          "why": "供应商版本红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "真实灰度是按流量比例随机分配,且新旧版本要同时在线",
+          "why": "灰度真相"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "全部指针化,发布回滚都是秒级",
+          "why": "配置层指针化"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "发布前写好回滚预案并演练",
+          "why": "回滚预案"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "固定版本号+多供应商熔断,防上游静默变更",
+          "why": "供应商治理红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "发布=切指针(秒级),回滚=切回上一指针",
+          "why": "配置层发布"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "回滚预案(发布前必须写好)",
+          "why": "回滚预案红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "staging 用影子流量(复制生产请求打新版本但不返回用户)做预演",
+          "why": "影子流量"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "按功能开关(新功能独立开关,出问题单点关闭不动其他)",
+          "why": "功能开关"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "提示词 v14 指针上线,灰度 10% 流量",
+          "why": "灰度示例"
+        }
+      ]
+    },
+    "EN-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "先拆解再优化",
+          "why": "总纲"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "首 token 时间(TTFT)才是用户体感",
+          "why": "TTFT 第一指标"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "P95 靠分层 trace 定位长尾",
+          "why": "长尾定位"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "TTFT 是第一指标",
+          "why": "体感指标"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "但要过质量评估",
+          "why": "小模型质量红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "延迟优化要和质量成本一起在评测集上找工作点",
+          "why": "权衡收束"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "P95 长尾的常见真凶是冷缓存、重试叠加和长请求",
+          "why": "长尾真凶"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "区分 TTFT(首字节)与总时长",
+          "why": "度量区分"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "缓存命中/未命中分开统计(长尾常在未命中路径)",
+          "why": "缓存统计"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "重试叠加(一次 429 +30s)",
+          "why": "重试长尾"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "用『质量-延迟-成本』三角在评测集上找工作点",
+          "why": "权衡框架"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "优化后:TTFT ≈ 0.9+0.7+0.2+1.6 ≈ 3.4s(体感)",
+          "why": "体感收益示例"
+        }
+      ]
+    },
+    "EN-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "向量检索必须带租户过滤",
+          "why": "检索层红线"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "核心纪律:过滤条件由服务端注入(从鉴权态取),绝不信任客户端传参",
+          "why": "服务端注入纪律"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "最隐蔽的风险是『快递柜』(共享缓存)",
+          "why": "共享缓存串数据"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "『服务端注入过滤』是关键",
+          "why": "服务端注入"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "RAG 最容易漏这层",
+          "why": "检索层易漏"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "语义缓存串数据是头号事故",
+          "why": "缓存红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "配行级安全(RLS)兜底",
+          "why": "行级隔离"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "入库漏标,后面全白搭",
+          "why": "入库标 tenant 红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "工具执行时校验当前租户",
+          "why": "Agent 链式攻击防线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "防止『读侧注入→跨租户写』的链式攻击",
+          "why": "链式攻击"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "断言:缓存不会串",
+          "why": "越权测试"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "B 用户直接请求 A 的文档 ID → 404(不暴露存在性)",
+          "why": "404 不暴露存在性"
+        }
+      ]
+    },
+    "EN-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "答题框架(四步)",
+          "why": "四步框架"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "决策有依据、权衡说清楚",
+          "why": "面试官想听"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不是名词堆砌",
+          "why": "反模式"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "却说不出任何一个『为什么』",
+          "why": "新手通病"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "框架要经得起中途变形",
+          "why": "框架弹性"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "挑 3~4 个关键决策讲透权衡",
+          "why": "决策讲透"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "每个决策我都给依据",
+          "why": "依据意识"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "权限怎么做:检索预过滤+服务端注入,绝不后过滤",
+          "why": "权限决策"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "为什么 pgvector 不上专用引擎",
+          "why": "选型决策"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "缓存:前缀缓存放心开",
+          "why": "缓存决策"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "主流程中型模型+复杂问题路由旗舰",
+          "why": "模型决策"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "带权限预过滤的混合检索",
+          "why": "架构示例"
+        }
+      ]
+    },
+    "EN-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "你对外承诺的部分(服务可达性、延迟分位)你能控制",
+          "why": "SLA 自控面"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "模型可用性不是你能承诺的",
+          "why": "上游单列"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "菜市场的供应(上游 API)不是你说了算",
+          "why": "上游不可控"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『供应商配额』还按 token 分",
+          "why": "配额按 token"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "LLM 应用的瓶颈常是 token 配额不是服务器",
+          "why": "容量瓶颈"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "稳态压在配额 60~70% 以下",
+          "why": "余量设计"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "容量瓶颈常是 TPM 而不是服务器",
+          "why": "容量瓶颈"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "扩容手段排序(便宜到贵):缓存削峰",
+          "why": "扩容排序"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "online 挤占 offline 或反之都是事故",
+          "why": "批在隔离"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "混沌演练(上游断供演练!)",
+          "why": "可用性工程"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "生成质量依赖上游,上游故障自动降级并公告",
+          "why": "SLA 条款"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "降级链:主供应商 → 备用供应商(配额独立核算)→ 缓存 → 排队",
+          "why": "降级链"
+        }
+      ]
+    },
+    "EN-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "自建 ELK 能记日志但缺语义聚合",
+          "why": "ELK 短板"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "选型判据:规模与合规",
+          "why": "选型判据"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "这些专科功能全是重复发明",
+          "why": "自建重复造轮子"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "强合规与深度定制场景,自建反而可控",
+          "why": "自建合理场景"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "语义级 trace(提示词/成本自动聚合)",
+          "why": "三层之一"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "合规(数据不出域常一票否决)",
+          "why": "合规一票否决"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "按维度聚合(版本/模型/功能/租户)",
+          "why": "语义聚合"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "工程带宽是真实成本",
+          "why": "自建成本账"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "数据出境(对话内容送 SaaS 平台——企业场景常被一票否决)",
+          "why": "合规维度"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "自建信号:数据不出域硬约束",
+          "why": "自建信号"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "中型团队+企业数据 → 开源自托管是常见甜点",
+          "why": "选型甜点"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "个人项目 → SaaS 免费档",
+          "why": "个人项目选型"
+        }
+      ]
+    },
+    "EN-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把『评测标准先行』作为 LLM 功能的开发起点",
+          "why": "EDD 起点"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "提示词/检索/模型的每次变更都必须过门禁",
+          "why": "变更过门禁"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "两者互补:LLM 应用的确定性代码层照常 TDD,概率层用 EDD",
+          "why": "EDD 与 TDD"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "两种验收方式共存于同一个工地",
+          "why": "分层共存"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『验收清单』本身会随认识演进(评测集版本化)",
+          "why": "评测集演进"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "开发循环被评测驱动,变更必须过门禁",
+          "why": "口述收束"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "评测集即活文档",
+          "why": "评测集是文档"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "评测集是活的资产",
+          "why": "活的资产"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "用 TDD 思路写 LLM 测试(断言精确文本)——脆弱且误导",
+          "why": "反模式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "从 20 个真实 case 开始,宁小勿无",
+          "why": "冷启动"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "评测集即行为规范文档",
+          "why": "活文档"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "0.79 通过 → PR → CI 复跑 → 灰度 10%",
+          "why": "门禁到灰度"
+        }
+      ]
+    },
+    "EN-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "四个边界逐一划清",
+          "why": "四边界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "用户删会话→级联删消息/摘要/缓存",
+          "why": "删除权级联"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "合规要求高时禁用真实用户数据训练",
+          "why": "训练红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "能回答四问——『存哪了、存多久、谁能看、拿去干嘛了』",
+          "why": "四问框架"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "高风险就别用真实数据练",
+          "why": "训练红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "一条对话会衍生消息/摘要/向量/缓存/日志五份副本",
+          "why": "派生副本"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "PII 脱敏在入口做且保持一致性",
+          "why": "入口脱敏"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "设计期就要画『数据血缘图』(一条输入的去向全景)",
+          "why": "血缘图"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "用户删除请求必须遍历所有派生",
+          "why": "级联删除"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "模型记忆风险(成员推断/提取攻击的评估)",
+          "why": "记忆风险"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "按租户隔离 key 清除",
+          "why": "缓存清除"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "匿名化校验后保留 / 含 PII 则移除",
+          "why": "样本保留"
+        }
+      ]
+    },
+    "EN-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "飞轮四环",
+          "why": "四环总纲"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "bad case 沉淀评测集(回归防线)",
+          "why": "资产化"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "闭环要有时效(周级,不是季度级)",
+          "why": "时效红线"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "反馈成本高",
+          "why": "采集门槛"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "信号清洗是 LLM 飞轮的特有环节",
+          "why": "信号清洗"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "反馈成本要低到一键",
+          "why": "一键反馈"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "闭环要周级时效——月级就转不动了",
+          "why": "周级时效"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "行为信号比显式反馈量大且无偏",
+          "why": "行为信号"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "行为信号比显式反馈量大且无偏",
+          "why": "行为信号"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "先做反馈率优化(入口显眼/时机自然/激励)",
+          "why": "低反馈率对策"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "『检索类』TOP 问题=「发票抬头修改」召回不足 → 改写规则+术语表更新",
+          "why": "驱动示例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "验证:该类差评率 0.9%→0.4%(两周)",
+          "why": "验证示例"
+        }
+      ]
+    },
+    "EN-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "网关收住六件事",
+          "why": "六件事"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "前缀/语义缓存接入点、退避重试统一策略",
+          "why": "缓存重试收口"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "网关管『传输与治理』,不管『提示词业务逻辑』",
+          "why": "网关边界"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "供应商出事自动换备选(降级)",
+          "why": "降级"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "平台管采购不管菜谱",
+          "why": "红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "接口归一(方言适配+能力探测+版本固定)",
+          "why": "接口归一"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "业务提示词不进网关",
+          "why": "红线一"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "供应商模型版本号透传管理(防 latest 漂移,LP-008)",
+          "why": "版本固定"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "网关不放业务提示词(变业务系统)",
+          "why": "反模式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "它挂了全部业务挂",
+          "why": "单点风险"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "能力探测:模型能力矩阵(支持 JSON schema?vision?函数调用?)驱动路由",
+          "why": "能力矩阵"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "网关路由决策(示意)",
+          "why": "示例标题"
+        }
+      ]
+    },
+    "EN-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "人工升级(HITL,AG-003)",
+          "why": "转人工"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "语义缓存(高频 FAQ,EN-001 分诊开)",
+          "why": "缓存分诊"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "从路由工作流到受控 Agent",
+          "why": "演进路径"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『转人工』是产品体验的一部分(不是失败)",
+          "why": "转人工体验"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "高峰期不排队、病历不串人、费用可控",
+          "why": "规模三难"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "转人工是体验设计(上下文摘要移交,不是失败兜底)",
+          "why": "转人工设计"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "写操作的确认与审批闸门(退款不能裸执行)",
+          "why": "写操作闸门"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "退款类写操作必须确认+审批闸门",
+          "why": "退款闸门"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "路由错误代价不对称,阈值偏保守",
+          "why": "路由保守"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "FAQ 缓存直出 60%、简单问题小模型",
+          "why": "成本账"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "FAQ: 语义缓存(EN-001, 按租户)",
+          "why": "架构示例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "工具: 查订单/退款(写操作确认+审批)",
+          "why": "工具示例"
+        }
+      ]
+    }
+  }
+}

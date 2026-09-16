@@ -230,6 +230,1382 @@
           "why": "create_task 的真实坑"
         }
       ]
+    },
+    "PY-004": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "失败直接返回 422",
+          "why": "校验失败状态码"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "脏数据根本到不了你的代码",
+          "why": "校验的价值:脏数据进不了业务"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "安检口当场拦下",
+          "why": "校验在进入业务前发生"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "安检只查『格式』,不查『业务合理』",
+          "why": "校验只保证形不保证业务合理"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "格式合法但不合理",
+          "why": "温度越界这类口径归业务代码管"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "框架进函数前自动校验",
+          "why": "校验时机"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "失败返回 422 带字段级错误",
+          "why": "校验失败返回什么"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "nginx 缓冲会破坏流式效果",
+          "why": "流式坑二:反向代理缓冲"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "mode='before' 的自定义校验器最先跑",
+          "why": "v2 校验顺序:before 先执行"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "异步任务只有在 await 处才能被取消",
+          "why": "流式取消语义:纯 CPU 段取消不了"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "反向代理(nginx)默认可能缓冲流式响应",
+          "why": "生产注意:代理缓冲破坏流式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "校验只保证『形』",
+          "why": "校验边界:只管格式"
+        }
+      ]
+    },
+    "PY-005": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "只捕获你能处理的异常",
+          "why": "规范核心一:捕获具体类型"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "裸 except 吞掉一切错误导致线上问题无声消失",
+          "why": "最常见 misuse"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "只对着火点喷(捕获具体异常)",
+          "why": "捕获具体异常的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "把整栋楼罩住(裸 except)",
+          "why": "裸 except 的比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "吞掉异常=把火警铃拆了",
+          "why": "吞异常的危害"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "捕获具体类型、处理或上抛、保留异常链",
+          "why": "原则三要点"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "业务层把底层异常转成带语义的业务异常",
+          "why": "分层设计:底层异常转业务异常"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "最忌讳裸 except",
+          "why": "红线:线上问题会无声消失"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "except 从具体到一般排列",
+          "why": "捕获顺序:具体到一般"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "from e 保留原始堆栈",
+          "why": "异常链保留根因"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "except: pass(吞)",
+          "why": "反模式清单之一"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "用异常控制正常分支",
+          "why": "反模式:别用异常当流程控制"
+        }
+      ]
+    },
+    "PY-006": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "接收函数并返回新函数",
+          "why": "装饰器定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "声明式、可嵌套、可被框架管理生命周期",
+          "why": "依赖注入比装饰器更进一步"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "套上去就多了保护/充电(新行为)",
+          "why": "装饰器在不改原函数上叠加行为"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "退房自动回收",
+          "why": "依赖注入统一生命周期"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "装饰器是『包一层』,依赖注入是『按需供给+统一生命周期』",
+          "why": "两者机制不同"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "记得 functools.wraps 保元信息",
+          "why": "装饰器要点:保留原函数元信息"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "优先用 Depends 而不是自制装饰器",
+          "why": "框架推荐做法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "增强「函数行为」用装饰器,供给「请求上下文」用依赖注入",
+          "why": "分工原则"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "@ 在定义时立即执行(装饰)",
+          "why": "装饰器执行时机"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "按请求缓存同一依赖的结果",
+          "why": "依赖注入的缓存语义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "路由上优先用 Depends 而不是自制装饰器",
+          "why": "框架路由注册约束"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "横切『函数行为』(重试/日志)",
+          "why": "选型分工:横切行为用装饰器"
+        }
+      ]
+    },
+    "PY-007": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "等网络用 asyncio(async/await)",
+          "why": "选型决策一"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "线程只对『等待型』任务有效",
+          "why": "GIL 限制:线程只适合等待型"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "单线程管所有等待",
+          "why": "协程本质"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "人多只在『等人送菜』时有用",
+          "why": "线程受 GIL 限制"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "真实 GIL 在 I/O 时会释放",
+          "why": "比喻局限:别把 GIL 说死"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "等网络用 asyncio,同步 SDK 用线程池兜底",
+          "why": "选型口诀"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "任何并发都要配并发上限",
+          "why": "工程细节一"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "async 路由混入阻塞调用会卡死事件循环",
+          "why": "工程细节三:async 路由红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "GIL 只影响 CPython 的 Python 字节码执行",
+          "why": "GIL 作用范围"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "进程间通信要序列化(pickle),大对象传参成本高",
+          "why": "跨进程传参注意"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "def 路由自动进线程池",
+          "why": "FastAPI 路由调度规则"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "async def 路由里别放阻塞调用",
+          "why": "async 路由红线"
+        }
+      ]
+    },
+    "PY-008": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "连接/读/写/池四类必须显式设置",
+          "why": "超时必配:四类分项"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "默认无超时是挂死之源",
+          "why": "默认无超时是生产挂死根因"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "超时=『响了 30 秒没接就挂』",
+          "why": "超时比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "连接复用=别每次都重新拨号,保持热线(连接池)",
+          "why": "连接池比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "分项超时(流式的 read 是块间隔语义,适合 LLM)",
+          "why": "超时分项设置"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "同步 requests 绝不能进 async 路由",
+          "why": "红线:sync 不能进 async"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "读超时覆盖『首 token 延迟』",
+          "why": "LLM 读超时语义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "流式请求读超时语义是『两次数据块之间的最大间隔』",
+          "why": "流式超时的准确口径"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "客户端生命周期=应用生命周期",
+          "why": "客户端生命周期管理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "同步 requests 在 async 服务里是事故(阻塞事件循环)",
+          "why": "sync 进 async 是事故"
+        }
+      ]
+    },
+    "PY-009": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "结构化(JSON)而不是纯文本",
+          "why": "规范一:结构化日志"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "绝不打敏感信息(密钥、身份证、完整用户内容按策略脱敏)",
+          "why": "规范三:敏感信息红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "用 logger 而不是 print",
+          "why": "规范四:用 logger"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "结构化日志的价值在于『机器可查询』",
+          "why": "结构化日志的核心价值"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "print 像店员口头转述",
+          "why": "print 不持久,重启即丢"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "『不侵犯顾客隐私』(打码)",
+          "why": "脱敏比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "敏感信息入口脱敏",
+          "why": "脱敏纪律"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "排查「为什么答错」全靠这些中间证据",
+          "why": "LLM 专属日志的排查价值"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "模型调用(用量/成本/版本)、检索证据(top-k ID 与分数)",
+          "why": "三层专属日志"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "按需取关键字段",
+          "why": "避免日志膨胀"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "ERROR 需要人介入",
+          "why": "分级:ERROR 含义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "密钥永不入日志(Exception 里可能带 header——logger 要过滤)",
+          "why": "敏感治理红线"
+        }
+      ]
+    },
+    "PY-010": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "密钥等敏感配置来自环境变量或密钥管理服务",
+          "why": "密钥正确来源"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "Git 历史永久留痕",
+          "why": "硬编码后果一:泄漏不可逆"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "Git 泄漏是永久性的",
+          "why": "红线:Git 泄漏不可撤销"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "泄漏后必须立即作废重发密钥",
+          "why": "泄漏应急动作"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "搬家换锁(轮换密钥)也不用拆门",
+          "why": "轮换密钥无需改代码"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "Git 历史是永久的,泄漏只能吊销重发",
+          "why": "密钥红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "缺配置 fail fast",
+          "why": "启动时校验原则"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "永远不输出配置明文",
+          "why": "日志/错误不泄露配置"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "缺配置直接 fail fast(启动失败好过运行中神秘错误)",
+          "why": "启动时校验优于运行时崩溃"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "泄漏应急:立即吊销→轮换→排查影响面",
+          "why": "泄漏处理标准流程"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "在日志/错误信息里输出配置对象(密钥进日志)",
+          "why": "反模式"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "任何配置打印都要 mask 敏感字段",
+          "why": "掩码原则"
+        }
+      ]
+    },
+    "PY-011": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "fixture 管理测试的前置资源",
+          "why": "fixture 用途"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "用 yield 做清理",
+          "why": "fixture 用 yield 清理"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "单元测试要快(毫秒级)、独立(互不依赖)、确定(不依赖真实外部服务)",
+          "why": "单测三原则"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不依赖整台机器(外部服务)",
+          "why": "单测独立性"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "mock=用假件代替真件",
+          "why": "mock 用途比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "mock 的风险是『假件行为和真件不一样』",
+          "why": "mock 的局限风险"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "只 mock 边界不 mock 内部",
+          "why": "mock 边界原则"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "重点测 token 裁剪、重试逻辑(假 429)和幂等",
+          "why": "LLM 后端测试重点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "autouse 谨慎用(隐式依赖难排查)",
+          "why": "fixture 坑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不要 mock 被测函数内部逻辑——那是自欺",
+          "why": "mock 边界红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "mock 返回结构按真实响应 schema 建",
+          "why": "mock 要贴近真实结构"
+        }
+      ]
+    },
+    "PY-012": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "with 语句是『确保清理』的语法",
+          "why": "with 本质"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "离开时无论正常还是异常都调用",
+          "why": "不管异常都清理"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "异步版本是 async with",
+          "why": "异步版 with"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不管住得开心还是中途吵架退房(exit 都会执行)",
+          "why": "exit 必然执行"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "房间就一直占着(资源泄漏)",
+          "why": "不清理的后果"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "enter 领资源、exit 必然执行释放",
+          "why": "with 语义口述"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "contextmanager 里要 try/finally 的坑",
+          "why": "生成器上下文管理器的坑"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "返回 True 会吞掉异常(慎用——通常用于特定可恢复场景,如锁获取失败转策略)",
+          "why": "exit 返回 True 语义"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "yield 前=enter,yield 后=exit",
+          "why": "@contextmanager 写法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "AI 后端高频对象:httpx.AsyncClient、asyncpg 连接、asyncio.Semaphore",
+          "why": "异步协议高频对象"
+        }
+      ]
+    },
+    "PY-013": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "声明式,优先用,零代码",
+          "why": "第一层优先用"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "单字段的业务校验与归一化",
+          "why": "第二层单字段"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "能单字段的不用 model 级——层次越深,报错信息越难定位",
+          "why": "选择原则:浅层优先"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "第一道自动安检门(类型与约束,机器自动查)",
+          "why": "第一层比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "能在第一道解决就别排到第三道——越靠后,旅客越难知道『到底哪一项不合格』",
+          "why": "越靠后越难定位"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "v2 里校验与序列化是分开的两套流程",
+          "why": "比喻局限:v2 关键"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "声明式约束优先(零代码、报错自动定位)",
+          "why": "三层第一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "extra=forbid 拒绝未知字段",
+          "why": "v2 要点二"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "格式校验进模型,查库的业务校验进 service 层",
+          "why": "工程纪律:分层"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "团队级类型字典,一致性来源",
+          "why": "声明层复用"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "mode='before' 处理原始输入",
+          "why": "field_validator before 模式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "业务校验与格式校验分层(格式进 Pydantic,业务进 service 层——查数据库的校验别塞进模型)",
+          "why": "工程纪律:校验分层"
+        }
+      ]
+    },
+    "PY-014": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "中间件工作在 HTTP 层(请求/响应对象)",
+          "why": "中间件作用域:报文层"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "与『HTTP 报文』相关的横切用中间件,与『业务语义/当前用户』相关的用依赖",
+          "why": "经验法则"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "只看『有没有卡』(报文层),不知道你上几楼干什么",
+          "why": "中间件只看报文不懂语义"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "中间件其实能改写请求/响应(不只是看)",
+          "why": "比喻局限:中间件能力更强"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "全量作用的横切(日志/trace/限流/CORS)走中间件",
+          "why": "分界一:报文层横切"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "流式接口在 BaseHTTPMiddleware 下有兼容性坑,要实测",
+          "why": "坑二:流式兼容"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "调用链是洋葱模型",
+          "why": "中间件洋葱模型"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "中间件抛异常要自己转响应(还没进 FastAPI 的异常处理链)",
+          "why": "中间件异常要自管"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "需要路由参数/用户身份/依赖缓存/异常体系→依赖注入",
+          "why": "决策清单:依赖"
+        }
+      ]
+    },
+    "PY-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "lifespan 是应用级生命周期的统一入口(yield 前启动、yield 后清理)",
+          "why": "lifespan 定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "资源随应用生灭,优雅停机时正确关闭(不丢在途请求)",
+          "why": "原因二:生命周期对齐"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "打烊时按顺序关好(优雅停机)",
+          "why": "打烊=优雅停机"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "『等最后一位顾客结完账』(在途请求处理完)再落闸",
+          "why": "在途请求处理"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "lifespan 只管『进程级』资源",
+          "why": "比喻局限:两级别别搞混"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "启动建连接池/HTTP 客户端/调度器,关闭逆序清理",
+          "why": "lifespan 职责"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "跨请求复用进 lifespan,每请求独立进 Depends",
+          "why": "分层判据"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "优雅停机要覆盖流式请求的长尾时长",
+          "why": "要点二:流式长尾"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "判据:资源的生命周期跟谁——跨请求复用→lifespan;每请求独立→Depends(yield 型)",
+          "why": "资源分层判据"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "K8s 的 terminationGracePeriodSeconds 要覆盖最长的在途请求(流式请求尤其长,LP-005)",
+          "why": "优雅停机配合 K8s"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "启动期暴露配置问题好过运行期 500",
+          "why": "启动失败语义"
+        }
+      ]
+    },
+    "PY-016": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "绝不全局共享(会话不线程/协程安全)",
+          "why": "纪律一:会话不共享"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "连接池在引擎上配",
+          "why": "纪律二:连接池在引擎"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "长事务是敌人——LLM 调用等慢操作绝不放进数据库事务里(连接被占住,池耗尽)",
+          "why": "纪律四:慢操作出事务"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不能几个人共用一个盘(会话不共享)",
+          "why": "会话不共享比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『一边占着餐盘一边打电话聊半小时』(事务里做慢操作)",
+          "why": "慢操作比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "事务里的 await 要小心",
+          "why": "async 陷阱"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "会话每请求一个(yield 依赖管理生命周期,不全局共享)",
+          "why": "纪律一"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "事务里绝不放慢操作——LLM 调用拆出事务,先读后调再写,连接占用毫秒级",
+          "why": "纪律三"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "并发任务不能共享会话",
+          "why": "异步坑二"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "事务里 await LLM 调用——连接被独占整个 LLM 时长,并发一高池耗尽",
+          "why": "陷阱一:事务里调 LLM"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "懒加载关系(async 下 lazy load 报错,用 selectinload/joinedload 显式加载)",
+          "why": "陷阱二:懒加载"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "池利用率=active/total 进大盘",
+          "why": "监控大盘"
+        }
+      ]
+    },
+    "PY-017": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "分布式锁(任务去重/并发互斥——必须带过期时间与持有者标识,防死锁与误删)",
+          "why": "用法二红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "限流计数器(按用户/租户的 RPM 令牌桶——原子操作 INCR+EXPIRE 或 Lua)",
+          "why": "用法三"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "白板记最近聊到哪(会话缓存,擦了能重写)",
+          "why": "会话缓存比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "常用资料贴墙上免得每次翻档案(缓存旁路)",
+          "why": "缓存旁路比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "白板上的东西丢了不算事故(都能从档案重建)",
+          "why": "铁律比喻:可重建"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "缓存三防(穿透/击穿/雪崩)",
+          "why": "缓存纪律"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "锁要 setnx+过期+持有者校验且优先考虑幂等替代",
+          "why": "锁纪律"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "默认永久的 key 和几 MB 的大 key 都是事故源",
+          "why": "铁律二"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "能用数据库唯一约束/幂等键解决就不要锁(锁是最后的手段,AG-003 的幂等优先)",
+          "why": "锁判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "缓存旁路:读:缓存→未命中→DB→写缓存(带 TTL);写:更新 DB→失效缓存(不是更新缓存,避免并发写脏)",
+          "why": "缓存旁路模式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "默认永久的 key 是事故源",
+          "why": "运维纪律:TTL 全覆盖"
+        }
+      ]
+    },
+    "PY-018": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "延迟分位(P95/P99)与资源监控(EN-002 的观测体系)确认慢在哪(CPU/IO/等待)",
+          "why": "流程一:量化"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "py-spy 在线采样生产进程(无侵入,看火焰图找热点函数)",
+          "why": "流程二:采样"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "优化后同基准复测,警惕『优化了不痛的地方』",
+          "why": "流程四:验证"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "先看报告哪项异常(监控分位),再做专项检查",
+          "why": "先量化再采样"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『感觉数据库慢』结果热点在 JSON 序列化",
+          "why": "常见误诊一"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "py-spy 在线采样看火焰图(生产无侵入首选,cProfile 本地基准)",
+          "why": "采样工具"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "先看数据库监控再归因 Python,很多『Python 慢』是 SQL 慢",
+          "why": "纪律:先查 DB"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "无侵入——线上首选",
+          "why": "工具一"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "很多『Python 慢』其实是 SQL 慢——先看 DB 监控再归因",
+          "why": "工具矩阵提示"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "同步 IO 混入 async(time.sleep/requests 阻塞事件循环,PY-003——表现为整个服务周期性卡顿而非单点慢)",
+          "why": "热点模式四"
+        }
+      ]
+    },
+    "PY-019": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "uvicorn 是 ASGI 服务器(单进程事件循环)",
+          "why": "部署基础"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "受内存(每 worker 一份应用+连接池,PY-015)与下游容量约束",
+          "why": "worker 受约束"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "gunicorn 是『连锁经营管理公司』——帮你开 N 家分店、一家着火自动重开(进程守护)、装修升级不歇业(优雅重启)",
+          "why": "gunicorn 角色"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "分店数不是越多越好",
+          "why": "worker 非越多越好"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "worker 翻倍只会把连接池翻倍打爆数据库",
+          "why": "worker 翻倍打爆下游"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "uvicorn 默认无请求超时",
+          "why": "超时需代理兜底"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "容器里 worker 与 K8s 副本二选一扩展,别两层都放大",
+          "why": "扩展二选一"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多 worker 利用多核;worker 崩溃时 gunicorn 拉起新的(进程守护)",
+          "why": "多 worker 动机"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "worker 数增加不会突破下游容量,反而乘大连接池",
+          "why": "worker 决策:瓶颈在下游"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "uvicorn 无请求超时默认——靠反向代理(nginx/网关)的读超时兜底",
+          "why": "超时兜底"
+        }
+      ]
+    },
+    "PY-020": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把一类运行时错误提前到提交前(函数签名错、None 传播、字段拼写——mypy 在 CI 拦截)",
+          "why": "价值一:提前拦截"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "重构信心(改函数签名,所有调用点立刻标红——大重构的安全网)",
+          "why": "价值二:重构安全网"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "改一面墙时不知道牵连哪些房间(mypy 标红所有调用点)",
+          "why": "重构安全"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "类型系统把这些接口写成机器可查的契约,拼错字段在 CI 就红,而不是线上 400",
+          "why": "接口契约"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "运行时错误提前到 CI(None 传播/拼写/签名)、重构安全网(调用点全标红)",
+          "why": "价值一二"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "策略是渐进式:存量豁免只减不增,新代码 strict",
+          "why": "渐进式策略"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "Optional 没检查——LLM 应用最常见崩溃源",
+          "why": "拦截 None 传播"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "类型即接口文档(消息结构 TypedDict/Pydantic 模型定义后,mypy 强制全链路一致)",
+          "why": "设计:类型即文档"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "全库 strict 一次到位是灾难(存量报警淹死人)",
+          "why": "渐进式采用"
+        }
+      ]
+    },
+    "PY-021": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "yield from iterable——把子可迭代对象委托出去(自动转发 yield 与异常)",
+          "why": "能力一:yield from"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "send(value) 向生成器内部传值(yield 表达式的返回值),生成器变成『可交互的协程』",
+          "why": "能力二:双向通信"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "yield from 像『水龙头串联』(总闸下面接分闸,水与故障都自动传递)",
+          "why": "yield from 比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "yield from 做管道组合(值与异常自动透传,子生成器 return 成委托结果)",
+          "why": "层一"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "close 抛 GeneratorExit 触发 finally 清理,throw 注入取消/超时",
+          "why": "层三"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "yield from 的语义完整版:委托迭代(值转发)+双向(send/throw 透传到子生成器)+子生成器 return 值作为表达式结果",
+          "why": "yield from 完整语义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "必须先 next() 启动到第一个 yield 才能 send(否则 TypeError)",
+          "why": "send 前置条件"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "这些原语是 asyncio 协程的前身与底层(async/await 是 yield from 的语法化)",
+          "why": "与 async 谱系"
+        }
+      ]
+    },
+    "PY-022": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "gather——已知一批协程、要全部结果、顺序对应输入(简单聚合)",
+          "why": "原语一:gather"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "单个子任务自己以 CancelledError 结束不算失败,不会触发兄弟取消",
+          "why": "TaskGroup 细节"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "完成一个处理一个(流式消费结果,不等全批,如并发检索先到先用)",
+          "why": "原语三:完成即处理"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "TaskGroup=『纪律版全体集合』——有人走丢全团原地等(取消其他),保证没人被落下(结构化)",
+          "why": "TaskGroup 比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "固定批次 gather/TaskGroup,动态流 Queue",
+          "why": "信号一:结果依赖"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "gather 默认语义的坑——第一个异常抛出但其余任务变孤儿继续跑",
+          "why": "gather 默认坑"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "队列管任务流解耦,信号量管同时数",
+          "why": "Queue vs Semaphore"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "gather 默认:第一个异常抛出,但其余任务继续跑(孤儿任务!结果被丢弃仍在消耗资源)",
+          "why": "gather 最危险默认"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "子任务抛普通异常(非 CancelledError)→ 取消兄弟任务 → await 处抛 ExceptionGroup",
+          "why": "TaskGroup 规则a"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "Semaphore 管『同时进行数』,Queue 管『任务流与解耦』",
+          "why": "分工"
+        }
+      ]
+    },
+    "PY-023": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "装饰器声明 retry 条件(哪个异常)",
+          "why": "声明化"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "策略与业务解耦(改重试策略不动业务代码)",
+          "why": "比手写好一"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不配置就对所有异常无限重试——必须显式 stop",
+          "why": "坑一:默认无限重试"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不配钩子=重试静默发生",
+          "why": "坑四:可观测性"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "门口挂制度牌『失败→指数退避 2/4/8 秒→最多 3 次→每次都上报』——统一、可审计、可调整",
+          "why": "tenacity 价值比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "制度牌默认写的是『永远重试』(不配 stop 就是无限)",
+          "why": "坑:默认无限"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "条件(只重瞬时错误)×等待(指数+抖动)×停止(次数/时长)×钩子(日志指标)正交组合",
+          "why": "声明化正交"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "重试库管单请求策略,熔断管系统策略,两者互补",
+          "why": "体系认知"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "策略是『基础设施参数』(随上游健康度调整)——集中配置(不同上游不同策略)而非散在各调用点",
+          "why": "策略业务解耦"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "无 stop 默认无限重试——lint/评审 checklist 强制 stop",
+          "why": "坑一治理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "重试是单请求策略,熔断是系统策略——连续失败该熔断而不是继续重试",
+          "why": "与熔断配合"
+        }
+      ]
     }
   }
 }
