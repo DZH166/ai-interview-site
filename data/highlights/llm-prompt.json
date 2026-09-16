@@ -1630,6 +1630,444 @@
           "why": "流式的特殊处理"
         }
       ]
+    },
+    "LP-025": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "变量清单显式化",
+          "why": "四条里的第一条"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "缺变量报错而非渲染空",
+          "why": "最实用的那条纪律"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "防用户内容伪造模板指令",
+          "why": "模板层注入防线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "同一模板+同一变量=字节级相同输出",
+          "why": "渲染确定性,缓存与测试的前提"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "缺变量直接报错不渲染",
+          "why": "白话版纪律"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『尊敬的,您的订单已发货』",
+          "why": "缺变量事故的具象,很有画面感"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "用户内容可以伪装成系统指令改变模型行为",
+          "why": "注入的真实危害等级"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "缺必填报错不渲染空",
+          "why": "口述第一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "标记转义+结构隔离",
+          "why": "防线做法"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "用户内容伪装系统指令是大事故",
+          "why": "危害分级,体现判断力"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "防线是转义+隔离+渲染后结构校验三层",
+          "why": "三层防线一次说完"
+        }
+      ]
+    },
+    "LP-026": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "共享角色/规则/输出风格的比例",
+          "why": "共性的具体内容(原短语含 > 会被 markdown 当引用块)"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "指令越多遵循率越低",
+          "why": "干扰风险的机制解释"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不同步合住会互相锁死",
+          "why": "迭代节奏维度的后果"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "默认一任务一提示",
+          "why": "经验倾向,先给结论"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "万能提示只在『任务高度同构+高频切换』时用",
+          "why": "什么条件下才合并"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "一份岗位说明书写五个岗位",
+          "why": "合并的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "每条都『大概遵循』",
+          "why": "稀释的具象"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "共性条款(公司守则)抽出来共享(组件化)",
+          "why": "正确解法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "决策四问:共性比例、干扰风险、迭代节奏、评测独立性",
+          "why": "口述骨架,背下来"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "合并版的单任务得分 vs 分立版",
+          "why": "合并决策要做的对照"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "指令稀释通常让合并版单任务降 2~5%",
+          "why": "量化预期"
+        }
+      ]
+    },
+    "LP-027": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "编号是引用的技术基础",
+          "why": "引用编号的技术地位(原短语含方括号会被 markdown 吃掉)"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "仅依据证据回答、逐论断标注编号",
+          "why": "行为规则的核心"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "显式的拒答话术模板",
+          "why": "拒答通道要写成模板而非泛泛要求"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "只有禁令没有出口→模型硬编",
+          "why": "最常见的模板设计错误"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "块格式变化=模板版本变化",
+          "why": "契约意识,容易漏"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "资料区(证据块)编号装订",
+          "why": "开卷考比喻的对应"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "只说『用资料』没说『编号标注』",
+          "why": "引用失效的根因"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "证据块没有来源元数据",
+          "why": "想说依据也说不出"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "禁令必须配出口",
+          "why": "口述要点二,最该记的"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不写『以最新为准』,冲突时行为随机",
+          "why": "冲突处理不确定的后果"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "检索器改格式=模板升版本",
+          "why": "契约意识的落地动作"
+        }
+      ]
+    },
+    "LP-028": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "judge 不是猜卷人",
+          "why": "第一要点:必须给完整背景"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "总分为维度聚合而非整体印象",
+          "why": "rubric 的核心纪律"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "逼 judge 展示依据,分数更稳",
+          "why": "强制理由的作用"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "让 judge 打『整体质量 1~10』(不可复现)",
+          "why": "最常见的坑"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "自我偏好(评自己的输出,FD-006)",
+          "why": "四种偏差里最隐蔽的"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "给阅卷人(judge 模型)的不是一张卷子",
+          "why": "白话版的核心区别"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不能脱离上下文盲评",
+          "why": "盲评为什么不可信"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "阅卷人偏心(偏爱长答案或自己的文风)",
+          "why": "偏差的具象"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "rubric 结构化",
+          "why": "口述五要点之二"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "方差大=rubric 有歧义",
+          "why": "稳定性自检的判据,很实用"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "judge prompt 也版本化",
+          "why": "评估口径的版本纪律"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "自我偏好用异族 judge",
+          "why": "偏差的具体对策"
+        }
+      ]
+    },
+    "LP-029": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "系统提示用英文",
+          "why": "指令语言策略的主流选择"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "输出语言与指令语言解耦",
+          "why": "最容易混为一谈的一点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "few-shot 示例本地化",
+          "why": "内容本地化里最关键的一项"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "每个支持的语言独立评测子集",
+          "why": "评测策略"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能只测英文",
+          "why": "最常见的偷懒"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "机翻提示词(语义漂移)",
+          "why": "反模式第一条"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "手册(系统提示)用总部语言",
+          "why": "指令语言选择的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "英文示例教不出地道中文回答",
+          "why": "示例必须本地化的理由"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "总部考核通过不代表巴黎分店合格",
+          "why": "评测必须分语言的直觉解释"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "英文指令输出跟用户",
+          "why": "口述里最实用的组合"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "评测每语言独立子集",
+          "why": "评测口径"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "机翻提示词、单语言评测推广、改源版忘同步",
+          "why": "三条反模式一次说完"
+        }
+      ]
+    },
+    "LP-030": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "示例也是资产",
+          "why": "管理视角的起点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "按输入检索最相似的 k 个示例",
+          "why": "动态选择的机制"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "典型样本+边界样本+负样本",
+          "why": "质量配比的三类"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "超预算时优先保边界样本",
+          "why": "预算取舍的优先级"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "只保留输入输出的骨架",
+          "why": "示例压缩的做法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "按当前订单的类型,从档案里挑最像的三份",
+          "why": "检索式 few-shot 的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "防『只收难题』的偏差",
+          "why": "示例库的偏差风险"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "档案室需要一个管理员",
+          "why": "检索器本身也是组件"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "示例入库管理",
+          "why": "工程化第一条"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "长尾输入收益大",
+          "why": "什么时候值得上检索式"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "示例库是资产也是攻击面",
+          "why": "安全视角,容易漏"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "检索式 vs 静态对照+示例消融",
+          "why": "评估怎么做"
+        }
+      ]
     }
   }
 }
