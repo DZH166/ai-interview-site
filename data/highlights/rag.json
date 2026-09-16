@@ -1066,6 +1066,2476 @@
           "why": "版本切换与归档实例"
         }
       ]
+    },
+    "RG-015": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "权限必须在检索链路全程生效",
+          "why": "权限落地的总红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把当前用户的权限集合(从鉴权态解析,服务端注入)作为过滤条件与向量检索同时生效",
+          "why": "查询侧预过滤做法"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "你借书时,管理员只在你有资格的书架里找(检索过滤)",
+          "why": "检索过滤比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『热门书复印本』(缓存)被放到了公共区",
+          "why": "缓存串权限隐蔽坑"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "入库侧:解析时从源系统(Confluence/SharePoint/网盘)拉取文档 ACL",
+          "why": "入库侧 ACL 快照"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "检索请求带 filter(引擎的预过滤语义,RG-008)",
+          "why": "查询侧预过滤语义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "模型可能从块内容推断出敏感信息组合",
+          "why": "聚合泄漏风险红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "派生内容继承 ACL 是铁律",
+          "why": "派生内容必须继承权限的红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "权限落地抓三点:入库打 ACL 快照并同步过期;查询用服务端注入的权限集合做预过滤",
+          "why": "口述三要点收束"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "派生内容(摘要块、表格描述)必须继承 ACL",
+          "why": "派生内容继承 ACL 红线"
+        }
+      ]
+    },
+    "RG-016": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "现代多语言 embedding 模型(训练语料覆盖多语言,对齐到同一语义空间)可以做到『中文问题命中英文文档』",
+          "why": "多语言 embedding 跨语言命中"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "混合检索的关键词路是单语言的——BM25 对跨语言无效",
+          "why": "关键词路跨语言失效红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "多语言 embedding 像一个懂多国语言的图书管理员",
+          "why": "多语言 embedding 比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『按书名关键字翻找』(BM25)的老管理员只会字面匹配",
+          "why": "关键词路字面匹配失效"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "多语言 embedding 训练时用平行语料(同一句话的多语言版本)做对比学习",
+          "why": "对齐原理"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "构造跨语言评测集(每种语言 30~50 条:问题+目标文档)",
+          "why": "跨语言评测集做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "常见组合:向量路跨语言 + 查询翻译补关键词路",
+          "why": "混合检索组合建议"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "术语一致性(产品名不翻译)要维护术语表",
+          "why": "术语一致性红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "跨语言的核心是多语言 embedding 把各语言对齐到同一语义空间",
+          "why": "口述核心定义"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "专用单语言模型在各自语言上通常仍更强,全语言一个模型是取舍",
+          "why": "单语vs多语权衡红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "库:英文 HR 手册(源文档)+ 中文翻译版(重要文档入库时生成)",
+          "why": "双语入库做法"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "直接命中英文 「Paternity Leave Policy」(多语言 embedding)",
+          "why": "向量路跨语言命中实例"
+        }
+      ]
+    },
+    "RG-017": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "文档(非结构化)走 RAG,数据库(结构化)走 Text2SQL/工具查询",
+          "why": "形态分流判据"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "Text2SQL 的可靠做法不是让模型裸生成 SQL 直连生产库",
+          "why": "禁止裸连生产库红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "RAG 是查『资料柜』(文档,答案在里面某句话)",
+          "why": "两者形态差异比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "容易查错、查慢、甚至写出危险语句",
+          "why": "裸连生产库风险"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "误用形态:把数据库内容导出成文档做 RAG(数据更新即过期、聚合问题答不了)",
+          "why": "误用形态红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "模型只面对 5~20 个语义清晰的视图与字段,不面对 200 张原始表",
+          "why": "语义层收敛"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "执行:只读账号+超时+行数上限(防全表扫描拖垮库)",
+          "why": "执行护栏"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "只读是底线;行级权限在 SQL 层强制(租户条件注入,EN-007)",
+          "why": "安全底线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我按数据形态分:文档走 RAG,数据库走受控查询",
+          "why": "口述分流"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "最难的不是生成 SQL 而是歧义——「销售额」的口径是组织问题,语义层是唯一解",
+          "why": "歧义须语义层红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "Agent 拆解(AG-007):",
+          "why": "混合编排总入口"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "明细如下(表格)…」(SQL 透明可查)",
+          "why": "SQL 透明可查"
+        }
+      ]
+    },
+    "RG-018": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "RAG 请求的 token 账单结构:输入=system+检索证据(大头,随 top-k×块大小)+历史+问题;输出=回答(相对小)",
+          "why": "成本结构大头是证据"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "嵌入与建库成本是一次性/低频的,别与在线成本混算",
+          "why": "别混算建库成本红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "检索证据是主菜(最贵——你夹了多少块全看 k 和块大小)",
+          "why": "证据是最贵部分"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "证据不是越少越好——是『精准的少』,这要靠 rerank 和压缩实现,不是硬砍",
+          "why": "精准的少不是硬砍"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "典型分布:证据占输入 60~80%",
+          "why": "证据占大头"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "top-k 与块大小的乘积是预算上限,按『覆盖问题所需最小证据』设计",
+          "why": "证据预算上限"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "块内精筛:命中块只取与问题相关的句子/段落(轻量模型或相似度句子筛选)",
+          "why": "块内精筛"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "建库成本单独记账:embedding(一次性+增量)、解析(OCR 按页计费)、rerank 建模——是资本性投入,按『知识库生命周期』摊销",
+          "why": "建库成本单独摊销红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "RAG 成本大头是证据 token——所以第一刀不是换小模型,是控证据预算",
+          "why": "口述成本优先项"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "别把没做过说成做过",
+          "why": "诚实红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "优化前(单次问答):",
+          "why": "优化前成本基线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "质量:评测集忠实度 0.88→0.89(证据更精了),无回退",
+          "why": "优化后质量不回退"
+        }
+      ]
+    },
+    "RG-019": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "塞 100 页进窗口,每次都按全量 token 计费且中间内容易被忽略(lost in the middle)",
+          "why": "长上下文失效模式"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "RAG 像『图书管理员先帮你翻到那三页』——便宜、快、翻错了他背锅(可评估)",
+          "why": "RAG 优势比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "大窗口确实比 RAG 片段检索更合适",
+          "why": "全局综合大窗口占优"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "输入成本差 40 倍",
+          "why": "成本差数量级"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "RAG 证据集中、注意力密度高;但 RAG 可能漏检(检索故障四分类,RG-004)——两者失败模式不同,可互检",
+          "why": "失败模式互补"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "长上下文『知识』仍来自提示词内容,内容过期问题一样存在",
+          "why": "长上下文也受时效限制"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我会答:互补不替代",
+          "why": "口述核心"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "生产上最常见的是 RAG 检索+大窗口组装的组合",
+          "why": "生产常用组合"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "RAG:检索『退货条件』命中 3 块(3K token)",
+          "why": "RAG 成本引用实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "长上下文更合适(全局综合)",
+          "why": "全局综合大窗口占优"
+        }
+      ]
+    },
+    "RG-020": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "R 检索:目标=『找对且找全』",
+          "why": "R 环节目标"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "三环节失败可以互相伪装——排查前先分清在哪一环",
+          "why": "先定环再修红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "翻书(R)——翻错页全完",
+          "why": "开卷考试比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "任何一步错了,最终答案都错,而且看起来都像『模型不行』",
+          "why": "任一步错全盘错"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "R 的量化口径:recall@k(找全)、MRR(找对)、空检率",
+          "why": "R 环节指标"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "冲突标注(多版本时声明以最新为准)、拒答指令与『仅依据资料』硬约束",
+          "why": "A 环节工程细节"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『A 丢了条件』常被误诊为『G 不听话』;『R 排序第 6』常被误诊为『A 塞太多』",
+          "why": "互伪装误诊红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "把『RAG 答错了』切成三段,每段有自己的指标与修法",
+          "why": "元框架"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我把 RAG 拆三段讲:R 找对找全",
+          "why": "口述三段框架"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "关键是三段失败会互相伪装——所以我的排查一定从 trace 的中间产物开始,先定环再修",
+          "why": "从 trace 排查红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "R 失败:正确块在第 7 名没进 top-5",
+          "why": "R 失败判据实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "看 trace 里证据块的位置与内容",
+          "why": "trace 分层判据"
+        }
+      ]
+    },
+    "RG-021": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "HyDE 的做法:先用 LLM 根据问题生成一段『假设性答案』",
+          "why": "HyDE 做法定义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "事实错误不影响大局,因为检索匹配的是『形态与主题』,不是事实",
+          "why": "事实错误不影响红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "HyDE 就是这个『先编后搜』",
+          "why": "HyDE 比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "真实 HyDE 用的是向量相似不是关键词",
+          "why": "双路并用"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "表述形态错位",
+          "why": "HyDE 适用前提术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "对时效敏感库慎用(假设可能是旧知识)",
+          "why": "时效库风险红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "缓解:假设答案与原问题双路检索后 RRF 融合,原问题路保底",
+          "why": "双路融合保底"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "上 HyDE 前后跑 recall@k 对比",
+          "why": "须评测验证"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "HyDE 的洞察是「问句和答案在向量空间形态错位」",
+          "why": "口述核心洞察"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "工程上我必配双路:假设答案路+原问题路 RRF 融合,防假设偏见带偏",
+          "why": "双路防偏见红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "怎么把发票抬头改成公司?",
+          "why": "用户查询示例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "请直接写一段可能包含答案的知识库条目(可含错误)",
+          "why": "假设答案生成提示"
+        }
+      ]
+    },
+    "RG-022": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "HyDE 在查询侧——在线为每个问题生成假设答案去检索",
+          "why": "HyDE 变换侧"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "HyPE 在建库侧——离线为每个文档块生成多个『它可能被怎么问到』的假设问题",
+          "why": "HyPE 变换侧"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "HyDE=客人每次来,现场派一个员工『猜客人会怎么问』再去匹配",
+          "why": "HyDE 比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "HyPE=开店前把每件商品可能被问到的问题都写在标签上",
+          "why": "HyPE 比喻"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "一父多索引",
+          "why": "HyPE 索引结构术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "HyPE 失败于『问题分布外』(真实问法不在预生成的假设里",
+          "why": "HyPE 分布外失败红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "HyPE 的 LLM 成本在建库时一次性付出(库更新时增量补),在线零额外开销",
+          "why": "成本结构对比"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "都应与原始向量检索并存(保留一条『朴素路』做保底与对照)",
+          "why": "保留朴素路保底红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "两者同源于「问句-答案形态错位」,差别在变换侧",
+          "why": "口述核心"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "生产上无论用哪个都保留朴素向量路做保底,用评测集验证增益",
+          "why": "朴素路保底红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "for chunk in chunks:",
+          "why": "HyPE 建库遍历块"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "for q in questions:",
+          "why": "为每个块生成假设问题"
+        }
+      ]
+    },
+    "RG-023": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "语义切分在『句子向量相似度骤降处』断开,让每块主题内聚",
+          "why": "语义切分定义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "对结构清晰的文档(本身有标题层级)收益有限——结构感知切分(RG-002)已经免费拿到了边界",
+          "why": "有结构文档不必语义切分"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "语义切分像『按话题切』——发现前后句子『说的不是一件事』了才下刀",
+          "why": "语义切分比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "语义切分判定的是『向量相似度骤降』",
+          "why": "判定的是相似度非理解"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "相似度低于移动平均 X 个标准差处断开",
+          "why": "骤降点判定"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "无结构长文本(访谈记录、聊天导出、自由写作)——没有标题可依赖",
+          "why": "语义切分适用场景"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "结构切分直接拿边界",
+          "why": "有结构文档不必语义切分"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "语义切分不是默认更优,必须实测(RG-009)",
+          "why": "必须实测红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "语义切分按「向量相似度骤降」找话题边界,块的主题纯度更高",
+          "why": "口述核心"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "无结构纯文本才上语义切分",
+          "why": "必须实测红线"
+        }
+      ]
+    },
+    "RG-024": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "块增强=让每个孤立的块携带足够的上下文",
+          "why": "块增强定义"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "上下文块头——在块前拼接文档标题+章节路径",
+          "why": "上下文块头术语"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "在碎片上方补一行『(《差旅制度》第 4 节·交通费·2024 版)』",
+          "why": "块头补上下文实例"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "增强还可以是『主动生成』的",
+          "why": "增强也可是主动生成"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "上下文块头(contextual chunk headers)三件套:文档标题+章节路径+文档级摘要",
+          "why": "块头三件套术语"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "标题要选『有信息量的』(部门/主题/版本),不要塞页码噪声",
+          "why": "标题噪声红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "元数据增强:适用范围/生效日期/密级——除了检索,还是权限过滤(RG-015)与版本管理(RG-014)的基础",
+          "why": "元数据的双重作用"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "增强不是越多越好,噪声标题也会稀释向量信号",
+          "why": "增强非越多越好红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "块增强四招:上下文块头(标题+章节路径拼进块文本)",
+          "why": "口述块头"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "每项增强逐项开关跑评测确认边际收益——噪声增强也会稀释向量",
+          "why": "逐项评测红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "原块:「报销比例为实际发生额的 70%,上限 800 元/晚。」",
+          "why": "原块无上下文"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "①嵌入信号含『住宿标准』",
+          "why": "块头提升检索实例"
+        }
+      ]
+    },
+    "RG-025": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "稠密嵌入:文本→固定维度的紧凑向量(如 1024 维,几乎每维非零)",
+          "why": "稠密定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "两者是互补而非二选一——现代检索栈常见『稠密(语义)+稀疏(词面)』混合",
+          "why": "互补而非二选一"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "稠密=把整段话压成一个密集的『意思指纹』",
+          "why": "稠密比喻"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "SPLADE 是学出来的点亮规则(还会点亮同义词的格子",
+          "why": "SPLADE 扩展同义词"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "稠密:维度固定(384~3072),语义压缩,同义/跨语言/隐含主题可匹配",
+          "why": "稠密本质"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "保留词面精确性的同时获得语义扩展——『E-4021』『AX-9』这类精确符号依旧强",
+          "why": "learned sparse 价值"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多语言→稠密(稀疏跨语言弱,需分词器/翻译,RG-016)",
+          "why": "多语言选稠密"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "本质区别在表示空间:稠密是固定维度语义指纹,泛化好但不可解释",
+          "why": "口述本质区别"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "稀疏侧从 BM25 升级到 learned sparse 是低风险的增强路径",
+          "why": "低风险增强路径"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "查询「错误码 E-4021」:稀疏全胜(精确词面),稠密大概率跑偏",
+          "why": "精确符号稀疏胜"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "doc 侧扩展点亮了『退款』",
+          "why": "SPLADE 扩展同义词"
+        }
+      ]
+    },
+    "RG-026": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "值得微调的信号:①领域术语错位(医疗/法律/内部黑话,通用模型不敏感)",
+          "why": "微调信号"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "用对比学习损失(InfoNCE 类)训练,锚定『难负例』质量是效果关键",
+          "why": "难负例是效果关键红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "微调=带它入行:拿你们行业里『问题-正确文档』的配对让它反复练习",
+          "why": "微调比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "要防止把通用语义能力练坏(灾难性遗忘,AD-001)",
+          "why": "防灾难性遗忘红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "改写/块增强/混合检索/rerank 全部用尽且评测显示瓶颈在『向量区分度』",
+          "why": "微调是最后手段红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "难负例质量决定微调上限",
+          "why": "难负例决定上限"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "留出通用检索测试集(监控通用能力退化)、混合通用数据回放",
+          "why": "防灾难性遗忘红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "领域 recall@k/MRR 提升 ≥ 有意义阈值(如 +5%)+ 通用集不退化 + 端到端忠实度验证",
+          "why": "验收三条件"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "微调嵌入是「最后一张牌」:先穷尽改写/增强/混合/rerank,评测确认瓶颈在向量区分度才动",
+          "why": "口述微调纪律"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "最后别忘了重嵌入全库的成本",
+          "why": "重嵌入成本红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "命中被采纳的块(手术安全核查)",
+          "why": "正例构造"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "当前模型 top10 里相似度最高的『错误答案』",
+          "why": "难负例定义"
+        }
+      ]
+    },
+    "RG-027": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "Matryoshka 嵌入(套娃模型)是训练时就设计好的降维友好",
+          "why": "套娃嵌入术语"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "典型组合:二值量化+重打分(1-bit 存储、原向量精排 top 候选)是亿级规模的主流方案",
+          "why": "工业组合"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "降维=把 1024 维砍到 256 维(整段信息均匀变少,像把文章缩写到 1/4 长)",
+          "why": "降维比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "二值量化几乎必然要『重打分』兜底",
+          "why": "二值必重打分红线"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "Matryoshka(模型训练时保证前缀可用,截断即可用)",
+          "why": "套娃机制术语"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "32×节省+位运算超快(汉明距离)",
+          "why": "二值量化收益"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "原向量重打分取 top-k(两阶段检索)",
+          "why": "两阶段检索标配"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "每一步用 recall@k 对照全精度基线(RG-009),退化超阈值即回退",
+          "why": "实测对照基线红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "量化砍数值精度(维度不变,INT8 平滑、二值激进但快 32 倍)",
+          "why": "量化机制"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "决策顺序:先量化后降维",
+          "why": "决策顺序红线"
+        }
+      ]
+    },
+    "RG-028": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "向量检索天然倾向返回『彼此高度相似』的块——同一件事的五种说法占满 top-k",
+          "why": "相关性导致冗余"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不适用:找唯一事实的精确查询(多样性是噪声)",
+          "why": "不适用场景红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "MMR 像『会做拼盘的编辑』:第一篇选最相关的",
+          "why": "MMR 比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "MMR 用的差异度量是向量距离",
+          "why": "差异度是向量距离"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "逐个选块:每轮从候选中选『相关性高且与已选集合最不相似』的那个",
+          "why": "MMR 选择逻辑"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "评测显示 top-k 内部冗余高(向量相似度矩阵偏高的库)",
+          "why": "适用信号"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "唯一事实查询(『退货时限几天』)——多样性会挤出正确块",
+          "why": "不适用场景红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "替代手段:按来源配额轮询(每文档最多 2 块)、聚类后每簇选代表",
+          "why": "替代手段"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "MMR 解决「相关但不多样」",
+          "why": "口述核心"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "综述/对比/多来源问题开,唯一事实查询关",
+          "why": "适用边界红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "best = argmax over candidates of:",
+          "why": "MMR 选择公式"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "selected.append(best)",
+          "why": "MMR 选中追加"
+        }
+      ]
+    },
+    "RG-029": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Context Recall=『该有的证据进来没』——参考答案所需的信息被检索上下文覆盖的比例",
+          "why": "Recall 定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "把『检索质量』从笼统的 recall@k 细化到『覆盖』与『排序』两个正交维度",
+          "why": "两正交维度"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "Recall=『该抄的段落都抄到了吗』(漏了就是没米下锅)",
+          "why": "两指标比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "前者是『找』的问题(换检索姿势)",
+          "why": "修法不同"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "Context Recall:参考答案中的每个主张能否被检索上下文支持,支持率均值",
+          "why": "Recall 定义"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "Context Precision:按(是否相关/排名位置)加权——相关块排名越靠前分数越高,噪声块排前会拉低",
+          "why": "Precision 定义"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "切分/解析质量问题(RG-002/010)",
+          "why": "都低指向数据层红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "Context 指标之后再看 Faithfulness(是否遵循证据)与 Response Relevancy(是否答所问)——四者拼出完整诊断矩阵",
+          "why": "四格诊断矩阵"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我把这对指标讲成「覆盖与排序」两个正交维度",
+          "why": "口述两正交维度"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "两者都低指向数据层",
+          "why": "都低指向数据层红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "检索层修(改写/调k/混合)",
+          "why": "健康区修法"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "数据层怀疑",
+          "why": "诊断落点"
+        }
+      ]
+    },
+    "RG-030": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "噪声敏感度=『检索结果里混入无关/错误文档时,答案跟着变错的程度』",
+          "why": "定义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "忠实于证据的模型应该忽略噪声,而不是被带偏",
+          "why": "抗噪纪律红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "抗噪强的学生扫一眼就放一边,只引用真正相关的",
+          "why": "抗噪比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "把噪声里的错误数字直接采纳,而不显出任何犹豫",
+          "why": "安静带偏更危险"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "线上检索必然带噪声——两者的成绩差就是系统的真实鲁棒性",
+          "why": "真实鲁棒性"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "高噪声敏感度的系统,检索质量一波动,答案质量跟着崩,且难归因",
+          "why": "噪声敏感危害"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『资料中与问题无关的部分请忽略;只引用你实际使用的编号』——让模型显式丢弃噪声",
+          "why": "抗噪提示词红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "强模型抗噪普遍更好(注意力更可判别),评估时作为选型维度",
+          "why": "模型侧抗噪"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "噪声敏感度=检索混入无关文档时答案变错的程度",
+          "why": "定义"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "过度抗噪会漏掉弱相关正确证据",
+          "why": "抗噪平衡红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "正常检索(自然含噪)",
+          "why": "现实组基线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "额外注入 3 条无关块",
+          "why": "注噪组"
+        }
+      ]
+    },
+    "RG-031": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "rerank 不是银弹,常见失败模式五种",
+          "why": "总起"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "级联放大(rerank 分数被下游当绝对置信度用,分数尺度变化引发拒答误判)",
+          "why": "级联放大红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "重排是『第二轮面试官』,它自己也会看走眼",
+          "why": "重排比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "最后 HR 把面试分当唯一录取标准(级联放大)",
+          "why": "级联放大比喻"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "分语言评测 rerank 增益,某语言增益为负",
+          "why": "语言失配修法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "查询类型错位:精确符号类查询在 rerank 后反而掉",
+          "why": "查询类型错位红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "rerank 分数只用于排序,不要直接当『相关性置信度』做拒答/分支决策",
+          "why": "级联放大红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "rerank 上线时建立『分桶基线』,任何上游变更(嵌入/切分/提示词)后重跑分桶回归",
+          "why": "分桶基线预防"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "诊断核心是「分桶评测」——全局指标好看不等于每类查询都受益",
+          "why": "口述诊断核心"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "rerank 分数只管排序,别直接当置信度用",
+          "why": "级联放大红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "修法:英文路由到多语言 rerank 模型;符号类查询跳过 rerank",
+          "why": "修法实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "全局指标恢复了,分桶才暴露问题——这就是分桶的价值",
+          "why": "分桶价值"
+        }
+      ]
+    },
+    "RG-032": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "级联失败=多阶段管线里,上游一个小误差被下游逐级放大",
+          "why": "定义级联失败本质"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "它隐蔽在『每一步指标都正常』里——单看改写/检索/重排各自达标,串起来却错。",
+          "why": "级联失败最隐蔽特征"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "每张骨牌单看都没倒,连起来全倒。",
+          "why": "级联的比喻收束"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "真实管线的阶段间不是纯串联,常有并行路融合,那也是防护手段之一。",
+          "why": "比喻的边界红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "级联失败是「每步指标都正常,串起来全错」",
+          "why": "口述核心定义"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "评测必须跑端到端,增强阶段要能独立关闭做消融",
+          "why": "端到端评测红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "保底路:原问题直接检索的结果始终参与融合(RRF 最低权重)",
+          "why": "保底路兜底机制"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "级联失败是质量事故;级联成本是延迟/费用叠加(EN-006 的长尾)——两者都源于多阶段,防护手段不同",
+          "why": "区分质量事故与成本"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "端到端评测:评测集必须跑完整管线(不只单测各阶段)——级联失败只有串测能暴露",
+          "why": "只有串测能暴露"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "每加一个『增强阶段』,都要回答三个问题——它能被独立关闭吗?失败时管线是否仍有保底路?端到端评测能否暴露它的负效应?答不全就不上。",
+          "why": "加增强阶段的红线"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "差评 case:问『年假跨年清零规则』,答案引用了无关的《薪酬细则》。",
+          "why": "级联失败真实实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "修:融合权重重调(保底路保底)+ 改写语义一致性校验 + 端到端评测加此 case",
+          "why": "修复落点"
+        }
+      ]
+    },
+    "RG-033": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "会话漂移=多轮检索的主题被历史内容拖偏",
+          "why": "定义会话漂移"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "修复:改写提示词显式区分『延续意图』与『新话题』;话题切换检测(意图分类跳变时重置检索上下文);关键约束常驻(不进摘要不随轮丢弃)",
+          "why": "修复三件套"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "前者是『拖后腿的旧话题』,后者是『丢掉的有效约束』——漂移是双向的",
+          "why": "漂移是双向的"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "走三轮后导购把这条忘了,开始推荐零售装",
+          "why": "约束丢失的比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "会话漂移有两种:旧主题污染新检索(改写把历史词拼进 query,召回两不沾)和早期约束丢失",
+          "why": "口述两种形态"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "我会强调原问题日志——没有它漂移 case 无法回溯",
+          "why": "原问题日志红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "后向污染:旧主题词残留进新 query(改写把历史词也拼进去),检索召回两个主题的混合块,证据彼此稀释",
+          "why": "后向污染形态"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "约束丢失:早期约束(身份/偏好/范围限定)随窗口滚动或摘要被压掉,后续检索与生成失去前提(LP-002 的滑动窗口代价)。",
+          "why": "约束丢失形态"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "话题切换重置:意图跳变时清空『话题记忆』,只保留 profile",
+          "why": "话题切换重置做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "与纯聊天记忆的区别:多轮 RAG 的漂移直接影响检索质量(检索 query 被污染),比纯对话的记忆问题更『硬』——修复优先级更高",
+          "why": "比纯对话更硬"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "轮1:用户「退货要什么凭证?」 → 检索:退货凭证",
+          "why": "可消歧直答实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "常驻约束:profile 含 {身份: 企业采购} → 正确",
+          "why": "常驻约束防丢失实例"
+        }
+      ]
+    },
+    "RG-034": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "在 RAG 中的价值集中在『证据消化难』的环节:多文档冲突裁决",
+          "why": "推理模型价值场景"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不值的地方:简单事实查询(证据一读就懂,推理预算纯浪费——更贵更慢)",
+          "why": "不值场景红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "推理模型像『喜欢打草稿的学霸』:给一道需要综合三段资料、注意冲突条件的题,他草稿一打答案又准又稳",
+          "why": "推理模型比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "我的判据是「证据消化难度」:多文档冲突、多跳、严格条件判断→推理模型花得值",
+          "why": "口述判据"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "前提是检索要对——瓶颈在 R 的话,想得再多也白想",
+          "why": "瓶颈在检索红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多文档冲突:两份制度说法不一,需要按时间/层级裁决(RG-014 的版本冲突)",
+          "why": "价值场景一"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "多跳问题:答案要 A→B→C 串联(『A 部门的审批人所在部门的预算规则』)",
+          "why": "价值场景二"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "路由错误代价不对称(该用没用=答错,不该用用了=贵慢),阈值可调(RG-018/EN-003 的成本路由同构)",
+          "why": "路由代价不对称"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "与 RG-019(长上下文)的同构:都是『能力增强×成本』的权衡,解法都是路由——按需分配,不全局一刀切。",
+          "why": "同构结论"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "路由器:规则(含对比词/多实体/时间词)+分类器兜底;",
+          "why": "路由实现实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "路由决策记日志,定期用评测集校准路由准确率",
+          "why": "路由校准实例"
+        }
+      ]
+    },
+    "RG-035": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①可消歧——上下文或常识能确定唯一意图(多轮里的『那个』),改写补全后直接检索(RG-007)",
+          "why": "可消歧档"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "③信息缺失严重——缺关键参数(金额/时间/对象),先问再查",
+          "why": "信息缺失档红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "如果你们正在聊某件事(上下文可消歧)→直接办",
+          "why": "可消歧比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "最差的做法是猜——猜错一路检索、生成、回复全白费",
+          "why": "猜的代价红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "可消歧直接答(condense 补全)、歧义可枚举就选项澄清",
+          "why": "口述三档框架"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "别让主模型边想边猜——轻量分类器先判歧义类型再路由",
+          "why": "别让主模型猜红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "澄清的交互设计(问得好不好决定体验):一次问全(列出所有缺失项的选项,不要挤牙膏式追问);选项化(按钮优于开放问答)",
+          "why": "澄清交互设计"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "答案冲突严重时必须澄清(两份制度的『报销比例』不同,分情况作答等于没答)",
+          "why": "冲突必须澄清红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "决策链实现:意图/歧义分类器(轻量)→ 三档路由(直接答/分叉答/澄清)→ 分类器错误要靠用户行为反馈修正",
+          "why": "决策链实现"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "过度澄清=烦,RG-012 的两类错误平衡在交互层的体现",
+          "why": "过度澄清红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "「发票抬头能改吗?」→ 已开发票 / 未开发票,流程不同",
+          "why": "歧义可枚举澄清实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "→ condense:「线上退货的时间限制?」→ 检索直答",
+          "why": "可消歧直接答实例"
+        }
+      ]
+    },
+    "RG-036": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①结构——代码有语法树与符号系统(函数/类/导入),切分要按语法边界(AST)而不是字符数",
+          "why": "结构差异本质"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "③时效——代码库高频变更,索引要跟随提交(增量+分支感知),过期索引给出的调用关系是错的",
+          "why": "时效差异红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "找一个函数定义,不如直接查路牌(符号索引)",
+          "why": "符号索引优于语义"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "代码的『调用图』是有向的(谁调用谁),比双向道路多一层方向信息",
+          "why": "调用图方向信息"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "code RAG 的三个本质差异:结构按 AST 切(符号自包含)",
+          "why": "口述本质差异"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "检索信号加符号与调用图(纯语义对「谁调用了 X」很弱)",
+          "why": "纯语义弱红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "AST/语法切分:函数/类为块(完整定义自包含),超长函数按逻辑段再切(带签名头);跨文件结构(模块/包)做上层块",
+          "why": "AST切分做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "调用图:import/relation 边——多跳检索(改 X 要看谁受影响)的依赖",
+          "why": "调用图作用"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "索引跟随 git 提交增量更新(RG-014 的版本纪律在代码域:commit hash 即版本)",
+          "why": "时效必须跟提交"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "生成端配合(EN-017 的评审助手):上下文=diff+完整受影响文件+被调用符号定义+相关测试——『看 diff 不看全貌』是误报主源",
+          "why": "生成端上下文"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "→ RRF 融合 → 上下文组装:函数定义 + 调用方 + 相关测试",
+          "why": "多路融合组装实例"
+        }
+      ]
+    },
+    "RG-037": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①样板噪声——导航/页脚/侧栏/cookie 横幅占页面大半",
+          "why": "特有问题一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "③动态渲染——JS 渲染的 SPA 需要无头浏览器(成本高)",
+          "why": "特有问题三"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "最佳实践:能拿到源(Markdown/API)绝不爬渲染页",
+          "why": "能拿源绝不爬红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "同一篇文章在早报晚报各登一遍(URL 重复)要剪掉一份",
+          "why": "URL重复比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "有些文章是『墨迹干透才看得见』的(JS 渲染)——最好直接找编辑要原稿(源数据)",
+          "why": "优先源数据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "网页入库四个特有问题:样板噪声(readability+站点选择器)",
+          "why": "口述四问题"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "能拿源(API/Markdown 导出)绝不爬渲染页;爬了必抽样质检",
+          "why": "总原则红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "①优先源:Help Center 平台(Zendesk/Confluence)的 API/导出",
+          "why": "抽取策略优先源"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "URL 归一化(参数排序/锚点/分页合并/打印版剔除)、内容 hash 去重(跨 URL 重复)、语言/区域版本标记",
+          "why": "URL与内容治理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "HTML→Markdown(标题层级/列表/表格转 Markdown,RG-002 的结构感知切分依赖它)",
+          "why": "结构保留"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "每站点抽样 20 页人工比对(正文完整性/样板残留/结构正确)",
+          "why": "抽样验收红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "抽样质检:20 页/站点 → 正文完整率 ≥98% 才放量",
+          "why": "网页解析抽样验收红线"
+        }
+      ]
+    },
+    "RG-038": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①表达容量——高维区分更细粒度的语义差异,recall 上限更高",
+          "why": "维度权衡一"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "中等维度(768~1536)常已接近天花板",
+          "why": "维度权衡三"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "结论倾向:大多数应用 768~1536 维足够,3072 维旗舰的价值在极细粒度区分场景",
+          "why": "结论倾向"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "1024 维是『街区级地图』,3072 维是『门牌级地图』——找一栋楼(细粒度区分)门牌级更好",
+          "why": "维度比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "维度是「表达容量×存储延迟」的权衡,且边际递减——多数场景 768~1536 够用",
+          "why": "口述权衡"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "维度的钱不如花在 rerank——同成本下重排边际收益更高",
+          "why": "维度钱不如rerank"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "同模型套娃截断(256/512/768/1536)跑评测集 recall@k——典型曲线:768→1536 提升 1~3%",
+          "why": "边际递减结论"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "维度只在你『同模型截断』或『同家族对比』时才是可控变量",
+          "why": "跨模型不可比红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "1000 万向量:768 维 FP32≈30GB,1536≈60GB,3072≈120GB",
+          "why": "存储数学示例"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "与 rerank 的联动:『中维度检索+强 rerank』通常优于『高维检索+无 rerank』",
+          "why": "维度与rerank联动"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "决策:1024 维(+0.02 recall 的 3072 不值 2× 存储)",
+          "why": "维度拐点决策实例"
+        }
+      ]
+    },
+    "RG-039": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①开源交叉编码器(bge-reranker 类)——可私有化、延迟可控(自部署)",
+          "why": "开源路线取舍"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "③LLM 当 reranker(listwise/pointwise 打分)——最强语义理解",
+          "why": "LLM路线取舍"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "基线纪律:先无 rerank 基线,再逐个实测(RG-009)",
+          "why": "无基线红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "请总工程师亲自把关(LLM reranker)——眼光最好,但一小时看不了几件(慢贵)",
+          "why": "LLM reranker比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "样品要寄出去(数据出域)且每件都收费",
+          "why": "商用API出域代价"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "开源自部署(可私有化可微调——领域术语强的库这是核心优势,代价是 GPU 运维)",
+          "why": "口述开源路线"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "LLM reranker(最强语义+理由可读,贵慢 10~100×,只适合小候选集或离线)",
+          "why": "LLM路线边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "微调:领域难例对(RG-026 的难负例思想)可显著提升领域表现——这是相对商用 API 的核心优势",
+          "why": "开源可微调优势"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "代价:数据出域(文档内容发第三方——合规评估,EN-012)、网络延迟(20~100ms)、按量计费(高频场景成本可观,RG-018 的账)",
+          "why": "商用API代价"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "成本与延迟比交叉编码器高 10~100×,只适合 top 5~10 的小候选集或离线",
+          "why": "LLM候选集限制"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "决策流程:无 rerank 基线 → 合规约束筛查(出域?)→ 延迟与成本预算 → 候选实测(同评测集)→ 领域微调需求评估 → 分桶验证(RG-031)",
+          "why": "决策流程"
+        }
+      ]
+    },
+    "RG-040": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "RRF(倒数排名融合)——只用排名不碰分数量纲,稳健默认(RG-006)",
+          "why": "RRF默认稳健"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "某路静默失败(向量服务挂了只剩 BM25,质量降级无告警——要每路健康监控)",
+          "why": "静默失败红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "⑤级联过滤——某路高置信直接短路(精确 ID 命中直接置顶)",
+          "why": "级联过滤策略"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "RRF=『只看各评委的名次,不看打分』(不同评委打分尺度不同,名次最公平)",
+          "why": "RRF比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "某位评委缺席了没人发现(某路静默失败)",
+          "why": "静默失败比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "合并策略按成熟度演进:冷启动 RRF(零调参稳健)",
+          "why": "口述演进"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "某路静默失败(必须每路健康告警——这是级联失败的起点)",
+          "why": "静默失败级联起点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "冷启动:RRF(k=60 默认)——零调参稳健",
+          "why": "冷启动策略"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "健康监控:每路独立返回数/延迟/分数分布——某路空结果或延迟尖刺告警(RG-032 的级联防护:静默失败是级联的起点)",
+          "why": "健康监控红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "分数透传:融合后保留每路的原始贡献(排查『为什么这个块排第一』需要各路证据,RG-004 排查的依赖)",
+          "why": "分数透传"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "融合改进常只提升 recall 一两个点,但它是免费的(纯排序逻辑)",
+          "why": "融合免费收益"
+        }
+      ]
+    },
+    "RG-041": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①离线评测门禁(RG-009 的评测集,快而便宜)",
+          "why": "第一层门禁"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "②影子评估(shadow)——线上真实流量复制一份打新版本,结果不返回用户只记录对比",
+          "why": "影子评估定义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "离线全绿≠线上安全;影子评估专抓这个",
+          "why": "全量赌一把红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "影子评估=请真实的客人免费试吃新菜但不正式上菜单(真实口味反馈,零风险——不吃坏肚子)",
+          "why": "影子评估比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "直接全量=所有客人菜单一夜全换——翻车就是全店翻车",
+          "why": "全量翻车比喻"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "RAG 改动的上线三层:离线评测门禁(便宜,先挡)",
+          "why": "口述三层"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "多轮指代这类评测集盲区的回归,影子专抓",
+          "why": "影子抓盲区"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "流量复制:真实查询异步发给新版本(不阻塞用户路径,不影响延迟);比例可全量或采样",
+          "why": "影子流量复制"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "成本:影子流量也调 LLM(双倍推理成本)——采样控制(约 10~50%)与时段控制(低峰)",
+          "why": "影子成本红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "发布节奏串联:离线门禁→影子(1~3 天)→A/B(按 LP-019 统计)→灰度放量(EN-005)→全量+监控(EN-002)",
+          "why": "发布节奏串联"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "紧急修复(hotfix)可缩短流程但至少过离线门禁+小流量观察",
+          "why": "hotfix也过门禁"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "更差的 7 条聚类:全部是『多轮指代』场景(改写回归!)",
+          "why": "影子抓评测集盲区实例"
+        }
+      ]
+    },
+    "RG-042": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "单轮检索必然失败:没有一轮查询能同时命中三段分散的证据",
+          "why": "单轮必然失败"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "共同要点:中间结果的传递设计(上一跳的答案作为下一跳的查询条件)、跳数上限与预算",
+          "why": "共同工程点"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "一次『随机翻找』(单轮检索)不可能撞到答案,必须每跳根据上一跳的发现决定下一步",
+          "why": "接力寻宝比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "迭代检索的每跳也消耗 LLM 调用(成本随跳数线性)",
+          "why": "每跳成本红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "多跳检索三解法:静态分解(拆子问题,适合跳数可预判)",
+          "why": "口述三解法"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "评估必须用带跳链标注的多跳评测集,逐跳诊断断在哪",
+          "why": "逐跳诊断红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "实现:LLM 把复合问题拆成子问题清单(依赖关系标注,AG-017 的 DAG)→子问题并行/串行检索→合并生成",
+          "why": "查询分解"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "风险:分解错误(拆出的子问题偏离原意,后续全错——级联失败,RG-032)",
+          "why": "分解错误级联"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "判断要不要支持多跳:分析线上查询日志的多跳占比",
+          "why": "看线上占比"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "占比低时,『识别多跳问题→诚实告知限制/转人工』比建设多跳管线便宜;占比高(法务/调研产品)才值得建",
+          "why": "低占比不建管线红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "Q:「我们供应商 A 的 CEO 毕业于哪所大学?」",
+          "why": "多跳问题实例"
+        }
+      ]
+    },
+    "RG-043": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①RAG 路——表格转文本/Markdown 入向量库,小表效果尚可",
+          "why": "RAG路定位"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "③混合路——RAG 定位到相关表格+Text2SQL 精确查询表内数据(先找到『哪张表』再『算』)",
+          "why": "混合路定位"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "表头/单位/口径的元数据至关重要(『销售额』含不含税)",
+          "why": "表格元数据红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "小课程表能背,但问『三年级一共多少人』它就开始数手指头(数不可靠)",
+          "why": "RAG路聚合弱比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "问的是『表格里写了什么』(RAG)还是『按表格算出什么』(SQL)",
+          "why": "选型分界"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "表格 QA 三条路:RAG(小表事实查找,聚合天生弱——模型数数不可靠)",
+          "why": "口述三路"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "字段口径元数据(含不含税——口径不清不是模型问题)、切分保表头(RG-010)",
+          "why": "口径生死点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "适合:精确值查找(『A 产品价格』)、行级事实(『张三的部门』)",
+          "why": "RAG路适合"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "失效:聚合(『平均/合计/占比』——LLM 算术不可靠)、跨行推理(『比平均高多少』)",
+          "why": "RAG路失效"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "表格元数据的关键性:字段口径(『销售额』含税?)、单位(万元/元)、时间粒度——这些决定答案对错",
+          "why": "元数据关键性"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "口径不清是表格 QA 的事故大头(不是模型问题,是定义问题)",
+          "why": "口径事故大头"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "路由器:意图分类(事实/聚合/混合)→ 分流",
+          "why": "表格QA路由实例"
+        }
+      ]
+    },
+    "RG-044": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①实体抽取与关系建图(离线,LLM 从文档抽实体与关系)",
+          "why": "社区摘要起点"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "查询时:全局问题→用高层社区摘要回答(便宜且覆盖全)",
+          "why": "查询时全局走摘要"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "成本重心在离线建图与摘要(全库 LLM 调用),更新时要重算受影响社区",
+          "why": "主要维护成本"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "回答『这本书主要讲了什么』不能靠翻每一页(向量检索是逐页的),要靠『目录和章节总结』",
+          "why": "全局问题比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "『社区』是算法按连接密度圈的,不一定对应人类可读的『章节』",
+          "why": "社区不对应用户分类"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "GraphRAG 的社区摘要是三层管线:实体关系建图→社区检测(Leiden 聚团)",
+          "why": "口述三层管线"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "三低就别上,向量 RAG 够",
+          "why": "三低别上红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "成本:全库 LLM 调用,百万 token 级——这是 GraphRAG 的主要代价",
+          "why": "主要代价"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "全局搜索(global search):问题→映射到相关高层社区摘要→map-reduce 生成答案(『文档集的主要风险主题』);不需遍历细节,成本=摘要数量级",
+          "why": "全局搜索模式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "社区摘要的维护成本使 GraphRAG 只适合『静态或低频更新的知识密集库』",
+          "why": "适用边界红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "增量:变更文档影响的子图重算(社区边界可能漂移——重算范围控制是工程难点,RG-014 的版本问题在图上的形态)",
+          "why": "增量重算难点"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "→ global search:L1/L2 摘要中定位『定价』相关社区 → 汇总生成",
+          "why": "全局搜索实例"
+        }
+      ]
+    },
+    "RG-045": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①检索层——空检率/低分率(健康)、recall@k 抽检(质量)",
+          "why": "检索层指标"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "④业务层——差评率/解决率/拒答率(分类聚类的);行动:按聚类派单(EN-013 飞轮)",
+          "why": "业务层指标"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "没有行动指引的指标是装饰",
+          "why": "可行动标准红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "RAG 大盘像汽车的仪表盘:车速/油温/发动机转速各是各的表(分层)",
+          "why": "仪表盘比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "画不出行动的指标就不上盘",
+          "why": "无行动不上盘红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "RAG 大盘按管线四层:检索(空检率/分数分布/各路健康)",
+          "why": "口述四层"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "设计纪律是「可行动」:每指标配阈值+第一排查动作+归属(runbook)",
+          "why": "可行动纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "检索层:QPS/延迟(P50/P95)、空检率(无结果或全低分)、分数分布(漂移检测——embedding 或语料变化的信号)、各召回路健康(RG-040)",
+          "why": "分层指标清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "没有阈值没有行动,这只是好看的数字",
+          "why": "反例与改造先导"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "指标间联动视图:差评率升→下钻到该时段的检索空率/faithfulness 抽检(从业务到管线的下钻路径是预置的,不是临时写查询)",
+          "why": "联动下钻"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "季度审计:每个指标的上次行动时间(从不触发行动的指标降权或移除)",
+          "why": "季度审计红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "责任:检索负责人;SLA:15 分钟内给出初步归因",
+          "why": "runbook可行动实例"
+        }
+      ]
+    },
+    "RG-046": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①来源——业务方访谈(什么问题最重要)+历史客服记录/工单(真实问题金矿)",
+          "why": "来源挖掘"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "②起步规模——30~50 条『宁小勿无』",
+          "why": "起步规模"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "第一版的目标是『能发现灾难』(大幅退化),不是『精确度量』",
+          "why": "心态红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "抓 30 道最招牌、最容易翻车的菜,让家人按『能不能吃、咸淡对不对』试一轮(能发现灾难就行)",
+          "why": "试菜比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "等『准备好了』再建评测集——永远等不到",
+          "why": "别等齐红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "冷启动四步:来源(历史记录最值钱+业务访谈+文档抽样)",
+          "why": "口述四步"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "四个反模式我背下来:等够了再建/全合成/只有正例/建完不动",
+          "why": "四反模式红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "历史记录:客服工单/FAQ 搜索日志/内部求助群——真实问题分布,天然覆盖高频;隐私脱敏后使用(EN-012)",
+          "why": "历史记录最值钱"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "没有边界集的系统会学会『有问必答』",
+          "why": "边界集红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "规模里程碑:30→100(月级)→200+(季度),门槛随之收紧(EN-011 的阶段门槛)",
+          "why": "规模里程碑"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "反模式:『等数据够了再建』(永远等不到);『全靠合成』(规整偏差,真实分布盲区);『评测集只有正例』(边界盲区);『建完不动』(死资产)",
+          "why": "四反模式"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "→ 第一版:43 条,能防灾难,够开业",
+          "why": "冷启动成果实例"
+        }
+      ]
+    },
+    "RG-047": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "单阈值(相似度)只是信号之一,融合框架把五类信号加权决策",
+          "why": "单阈值不够"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "⑤历史信号——同类问题的历史拒答/差评率(这类问题系统历来答不好)",
+          "why": "历史信号"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "设计纪律:每个信号独立监控(哪个信号误判可归因)、决策留痕(拒答理由可解释)、阈值可按主题分级(RG-012)",
+          "why": "设计纪律红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "拒答决策像医生问诊:不能只量体温(单一相似度)",
+          "why": "问诊比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "单一体温 37.8 度就拒收,会把大量正常人也拒了;全面评估才准",
+          "why": "单阈值误拒红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "拒答融合的五类信号:检索(分数/断层)、主题覆盖先验、模型两级自评、多路一致性、历史聚类表现——单相似度阈值的信息量太少",
+          "why": "口述五类信号"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "覆盖:主题分类器(问题主题→库内该主题的文档密度表)——密度低=先天不足(拒答与主题相关的先验)",
+          "why": "覆盖信号"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "规则树(起步):硬规则(空检→必拒)+加权投票(软信号)+否决项(合规类问题必转人工,LP-009);可解释、可调试",
+          "why": "规则树起步"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "决策输出设计:不只输出『拒/答』,输出『置信分+理由』——高置信直接答;中置信答+标注不确定性;低置信拒答(带理由与出口,RG-012 的话术)",
+          "why": "三态输出"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "融合器本身要评估——用标注集测『应答误拒率/应拒误答率』(RG-012 的两类错误),对比单阈值基线证明融合价值",
+          "why": "融合器自身评估红线"
+        }
+      ]
+    },
+    "RG-048": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "①共享池——平台维护的通用知识(产品手册/行业规范,所有租户可读,平台方管理更新)",
+          "why": "共享池定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "②租户池——各租户的私有知识(内部文档,严格隔离,RG-015 的 ACL)",
+          "why": "租户池定义"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "公共图书馆(共享池)所有人能看,图书馆管更新;私家书房(租户池)只有自己能进",
+          "why": "双池比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "私家书房的资料优先",
+          "why": "租户优先红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "双池架构:共享池(平台知识,平台治理)+租户池(私有知识,严格隔离)",
+          "why": "口述双池"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "引用展示区分来源类型——『平台知识』与『贵司文档』的信任与责任不同",
+          "why": "来源区分红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "物理分池(两个索引/集合)——隔离彻底、性能独立",
+          "why": "物理分池"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "冲突声明:租户与共享池内容冲突时,提示词要求『以租户文档为准并注明平台通用做法不同』(RG-014 的冲突标注思想)",
+          "why": "冲突租户优先红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "共享池更新=平台级事件(影响所有租户——变更通知/灰度/回滚,RG-014 全套)",
+          "why": "共享池治理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "共享池质量的全局评测(RG-046)+租户池质量的租户评测(EN-025)",
+          "why": "两层评测红线"
+        }
+      ]
     }
   }
 }

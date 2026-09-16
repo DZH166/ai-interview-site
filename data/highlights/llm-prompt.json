@@ -2068,6 +2068,1280 @@
           "why": "评估怎么做"
         }
       ]
+    },
+    "LP-031": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "冲突处理是综合任务的质量分水岭",
+          "why": "综合任务最关键的判据"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "观点不一致时呈现各方+来源,不强行调和",
+          "why": "跨文档冲突的红线口径"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "分水岭是『部门间说法冲突』",
+          "why": "综合任务的核心矛盾"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "两阶段的『定向提取』比盲总结准",
+          "why": "两阶段优于盲摘要的判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "三态指令显式写,不写模型就随机调和",
+          "why": "冲突三态指令必须显式写"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "覆盖防护:按文档号逐一确认",
+          "why": "防遗漏的覆盖检查做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不写冲突指令的后果:模型随机采信或调和出假结论",
+          "why": "漏写冲突指令的事故后果"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "版本型:『以日期最新的为准,并说明存在不同版本』",
+          "why": "版本型冲突的标准处理"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "观点型:『呈现各方观点与来源,不裁决』",
+          "why": "观点型冲突的标准处理"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "比盲摘要省(每文档只出相关要点)、比直读准(两阶段的聚焦)",
+          "why": "两阶段方案的核心收益"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "冲突处注明『不同文档规定不一致』并引用双方编号与日期",
+          "why": "冲突处必须注明并引用"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "覆盖所有提到的主题,不遗漏",
+          "why": "防遗漏的覆盖要求"
+        }
+      ]
+    },
+    "LP-032": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "『你是资深专家』(空标签,模型无法执行)",
+          "why": "空标签无法执行的反例"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "角色设定的有效成分:知识边界声明",
+          "why": "有效角色的核心成分"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "有用的是销售手册(行为准则:怎么报价、什么不能承诺)",
+          "why": "行为准则是有效成分"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "「你只使用本店现有食材,不确定在库的菜品要先查库存」才是能执行的角色",
+          "why": "可执行角色的具体例子"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "每句话要能回答「模型据此做什么不同的行为」",
+          "why": "角色有效性的检验标准"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "滥用还会强化自信输出",
+          "why": "标签滥用的危害"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "角色不能凌驾规则(越狱邀请函)",
+          "why": "角色不得凌驾安全红线"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "能力与边界声明(『你基于知识库回答,知识截止 2024-06』",
+          "why": "有效成分之一:能力边界"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "不承诺未在文档中的服务条款",
+          "why": "禁止红线的示例"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "把角色设定里的每句话问『模型据此能做什么不同的行为』",
+          "why": "角色标签的装饰检验"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "空标签:无法执行,幻觉不减少",
+          "why": "空角色标签的危害"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "「以主管税务机关答复为准」",
+          "why": "不确定时标注的标准话术"
+        }
+      ]
+    },
+    "LP-033": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "过于复杂的 schema 是设计味道",
+          "why": "复杂 schema 的反模式信号"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不支持时的降级(枚举+可选字段模拟)",
+          "why": "联合类型不支持时的降级"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不设上限用户能填一万行",
+          "why": "数组不设上限的风险"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "表单为填的人设计(模型是填表人)",
+          "why": "schema 以模型能力为准"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "反复失败的 schema 是设计味道,不是模型不行",
+          "why": "失败归设计而非模型"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "联合类型的兼容降级(枚举+条件字段)",
+          "why": "联合类型的降级做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "嵌套反映了真实领域结构(订单-明细)时保留",
+          "why": "嵌套保留的判据"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "JSON Schema 只有 anyOf/oneOf(没有 manyOf)",
+          "why": "联合类型关键字的事实"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "元素唯一性(uniqueItems 的支持)",
+          "why": "数组唯一性的陷阱"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "每步 schema 简单成功率高,代价是多次调用",
+          "why": "渐进构建的取舍"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "扁平版通常更稳",
+          "why": "扁平化更稳的结论"
+        },
+        {
+          "field": "example",
+          "level": "term",
+          "text": "扁平化 vs 深嵌套",
+          "why": "两种 schema 形态对照"
+        }
+      ]
+    },
+    "LP-034": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "两者都要求『变更-动机-验证-结论』的闭环",
+          "why": "迭代的最小闭环"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "批量改动(一次改五处,归因失效)",
+          "why": "批量改动破坏归因"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "记录里必须链接评测报告(可复核)",
+          "why": "记录须可复核"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "厨师离职(人员变动)配方失传",
+          "why": "不记录的代价"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "结论要提炼通用经验(个案→模式→设计规范的三层沉淀)",
+          "why": "知识的三层沉淀"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "单变量(多变量归因失效)",
+          "why": "单变量纪律"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "改完不测=没改",
+          "why": "必须验证"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "一次实验一个变更",
+          "why": "单变量纪律"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "知识的沉淀层级:实验记录(个案)→模式总结",
+          "why": "知识沉淀层级"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "记录的成本与收益(5 分钟记录 vs 重复踩坑)",
+          "why": "记录的成本收益"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "比代码注释更有价值的组织记忆",
+          "why": "实验记录的组织价值"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "避免重复实验,且继承之前的用户反馈洞察",
+          "why": "可检索避免重复实验"
+        }
+      ]
+    },
+    "LP-035": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "长对话后模型对早期系统指令的遵循下降",
+          "why": "褪色现象"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "指令的『权重』不是永久的",
+          "why": "指令需维护的核心认知"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "关键的几条(安全红线、输出格式)每隔几天在晨会上重申一遍",
+          "why": "关键指令定期重申"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "检测到违规苗头就针对性提醒",
+          "why": "漂移检测触发重申"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "指令在长对话里是需要维护的资产,不是一次写入永久生效的",
+          "why": "指令需维护的核心认知"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "压缩可能把指令摘要掉",
+          "why": "压缩加剧褪色"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "关键约束完整重申放在近期位置",
+          "why": "重申的放置位置"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "重申放『近期上下文的末尾附近』(接近当前输入的位置,注意力权重高)",
+          "why": "重申的放置位置"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "连续 2 轮格式异常→重申",
+          "why": "漂移触发阈值"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "压缩可能加剧褪色(指令被摘要掉)",
+          "why": "压缩与褪色的张力"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "指令遵循随对话长度的衰减在多项公开评测中有报道",
+          "why": "褪色的机理有实证"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "你必须严格遵循:1)只输出 JSON",
+          "why": "重申的关键约束示例"
+        }
+      ]
+    },
+    "LP-036": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "修复后必须重校验(schema,PY-031)",
+          "why": "修复后必须重校验"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "修复管道是兜底不是依赖",
+          "why": "根治优先于修复"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "修完必须重新安检(再跑 schema 校验)",
+          "why": "修复后必重校验"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "修复率高说明上游打包有问题",
+          "why": "修复率是上游信号"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "有损修复(截断/填充)按业务容忍度配置(资金场景禁用)",
+          "why": "有损修复的限制"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "修复管道是兜底不是依赖",
+          "why": "修复非依赖"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "修复后必须重跑 schema 校验",
+          "why": "修复器的防线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "有损修复的启用按业务容忍度配置(资金/合规场景禁用有损,直接重试或降级)",
+          "why": "有损修复的禁用场景"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "修复后的 schema 重校验是必须步骤",
+          "why": "重校验是必须步骤"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "修复率是长度配置的信号",
+          "why": "修复率诊断根因"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "高频修复类型→上游治理",
+          "why": "高频错误治上游"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "修复后必须:重跑 schema 校验 + 记录修复事件",
+          "why": "修复后必做两步"
+        }
+      ]
+    },
+    "LP-037": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "压缩必须过评测门禁",
+          "why": "压缩必须过门禁"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "先删冗余(无损)再考虑有损压缩",
+          "why": "压缩的优先级"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "压缩前要分清『冗余』与『强调』",
+          "why": "冗余与强调的区分"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "每层压缩都要过评测(省 token 不能省质量)",
+          "why": "评测门禁"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "先结构优化(预算/证据压缩)再提示词压缩",
+          "why": "压缩的优先级"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "同位置重复压缩,跨位置重申保留",
+          "why": "与重申的张力"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "净收益要算总账(压缩自身的成本)",
+          "why": "成本总账"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "粒度剪枝可能破坏关键 token",
+          "why": "自动压缩的风险"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "跨位置的重复(重申)保留,同位置的重复(同一段里说三遍)压缩",
+          "why": "冗余与强调的区分"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "压缩之前先做结构优化",
+          "why": "压缩的优先级"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "指令动词+对象保留,修辞删除",
+          "why": "低损压缩的原则"
+        },
+        {
+          "field": "example",
+          "level": "term",
+          "text": "同位置重复压缩,跨位置强化保留",
+          "why": "压缩与重申的配合"
+        }
+      ]
+    },
+    "LP-038": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "拒答话术四要素",
+          "why": "四要素之首"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "详细解释为什么拒答(防绕过)",
+          "why": "反模式:解释防绕过"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "差的说法=『没有』(冷冰冰)",
+          "why": "冷冰冰拒答的反模式"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "诚实+替代+升级",
+          "why": "拒答三要素"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "拒答话术四要素:诚实声明+原因类别+替代路径+一致体系",
+          "why": "四要素框架"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "合规(不给细节防绕过)",
+          "why": "合规拒答不解释细节"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "『知识库中暂无』≠『我不知道』",
+          "why": "措辞精确边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "缺口给时间预期『正在完善』,超范围给边界说明,合规给替代渠道",
+          "why": "分场景话术"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "替代路径的点击率(出口的有效性)",
+          "why": "出口有效性评测"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "如有相关法律问题,建议咨询执业律师",
+          "why": "合规拒答话术"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "共同点:诚实+有出口+不分原因细节",
+          "why": "四种话术的共同点"
+        }
+      ]
+    },
+    "LP-039": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "典型冲突:『回答要简洁』vs『要包含所有细节』",
+          "why": "冲突优先级分层"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "『不要编造』vs『必须回答』",
+          "why": "典型冲突的消解"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "好的公司有明确的价值排序(冲突时哪个优先)",
+          "why": "价值排序类比"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "分层,冲突时高层胜",
+          "why": "分层优先"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "消解(合并/条件化/删除)",
+          "why": "分层"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "冲突变成条件分支",
+          "why": "场景化消解"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "褪色靠重申(LP-035),冲突靠消解",
+          "why": "与褪色的区分"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "层内冲突=设计问题(合并消解),层间冲突=分层胜出",
+          "why": "层内与层间处理"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "『默认 X,但 Y 时 Z』",
+          "why": "条件化消解模式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "冗余或过时的指令删除",
+          "why": "删除冗余指令"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "两者都可能被误诊为『模型不听话』",
+          "why": "误诊风险"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "随机偏向(有时简洁漏细节,有时冗长)",
+          "why": "未消解的随机行为"
+        }
+      ]
+    },
+    "LP-040": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "关键约束的迁移(白名单条目进新会话)",
+          "why": "衔接关键:约束迁移"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "摘要丢关键信息=体验断裂",
+          "why": "摘要质量红线"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "前情提要不能漏关键剧情(白名单)",
+          "why": "摘要须含白名单"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "拆成上下集,上集做个『前情提要』(摘要),下集带着提要继续",
+          "why": "分段衔接类比"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "分段三触发:褪色(重申后仍漂移)、主题转换、长度水位",
+          "why": "三触发"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "衔接三件:摘要(要点式)+约束迁移(白名单原样)+未决事项",
+          "why": "三衔接"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "重申后仍漂移=升级到分段",
+          "why": "褪色升级分段"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "关键约束迁移(白名单条目原样,AG-031)",
+          "why": "约束原样迁移"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "单一信号不触发,组合触发",
+          "why": "多信号融合"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "分段的代价:上下文的完全重置",
+          "why": "分段的代价"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "关键约束迁移(白名单 3 条原样)",
+          "why": "约束迁移"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "格式失败连续 2 次(褪色信号)",
+          "why": "分段触发信号"
+        }
+      ]
+    },
+    "LP-041": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "迁移版提示词过门禁(EN-021)才切流",
+          "why": "门禁后切流"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "旧提示词+旧模型的组合保留",
+          "why": "回滚预案"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "模型的『理解方式』差异是系统性的",
+          "why": "差异是系统性的"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "适配的工作量可能大",
+          "why": "适配成本"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "提示词+模型是一组(捆绑迁移)",
+          "why": "捆绑迁移核心认知"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不是只换模型不改提示词",
+          "why": "必须改提示词"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "差异大的维度=适配的重点",
+          "why": "摸底定位适配重点"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "基于差异的定向调整",
+          "why": "定向适配非重写"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "适配后的提示词过门禁(EN-021)→灰度(EN-005)→全量",
+          "why": "门禁灰度流程"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "迁移是整体的切换(模型+提示词作为一组)",
+          "why": "整体切换"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "评测集双跑对比(质量/格式/拒答/语气 分维)",
+          "why": "摸底清单"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "灰度切流(EN-005)+回滚预案(旧组合保留)",
+          "why": "灰度与回滚"
+        }
+      ]
+    },
+    "LP-042": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "改一处破多处=耦合",
+          "why": "维护信号"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "指令条数与遵循率负相关",
+          "why": "指令数信号"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "改一处坏三处(耦合)",
+          "why": "耦合信号"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "是『维护困难+行为不稳』才重构",
+          "why": "重构判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "重构的触发:评测退化+维护困难+遵循下降",
+          "why": "重构触发"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "提示词只有评测这一道安全网",
+          "why": "评测是唯一安全网"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "每次改动必须跑",
+          "why": "评测纪律"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "改一处破多处(耦合的信号",
+          "why": "耦合信号"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "重构不改行为是前提",
+          "why": "重构前提"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "保持行为不变的重写",
+          "why": "重构定义"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "拆分+组件化+压缩的组合重构",
+          "why": "组合重构"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "改一处破两处",
+          "why": "重构前耦合"
+        }
+      ]
+    },
+    "LP-043": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "源词→各语言的固定译法+禁止译法",
+          "why": "术语表结构"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "术语是产品资产的组成部分",
+          "why": "术语的资产属性"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "客户困惑(同一个东西三个名字)",
+          "why": "不一致的代价"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "所有语言、所有材料、所有 AI 回答都遵守",
+          "why": "全渠道一致"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "术语一致性四机制:术语表(结构化,版本化)",
+          "why": "四机制之首"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "术语的一致性是可程序化保证的",
+          "why": "程序化保证"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "输入中出现的源词→其译法注入",
+          "why": "注入策略"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "违规的处置:自动替换(简单)/标记人工(复杂)",
+          "why": "违规处置"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "术语表的 owner(品牌/领域团队)",
+          "why": "治理 owner"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "全渠道的术语统一",
+          "why": "全渠道一致"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "glossary.scan(output)",
+          "why": "输出校验扫描调用"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "违规变体扫描",
+          "why": "校验扫描"
+        }
+      ]
+    },
+    "LP-044": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "没有消费者的字段不要",
+          "why": "无消费者则不设"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "字段粒度与业务操作对齐",
+          "why": "粒度对齐判据"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "一个大 text 塞所有内容",
+          "why": "大 text 反模式"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "模型能填(输入上下文里有这个信息",
+          "why": "模型能填判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "字段设计四判据:下游要用(谁消费)",
+          "why": "四判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "字段级的质量矩阵定位设计问题",
+          "why": "字段级评测"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "每个字段问『谁用它』",
+          "why": "下游消费者判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "结构化输出只有一个 content 字段塞所有内容",
+          "why": "大 text 退化症状"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "按下游的消费者拆字段",
+          "why": "大 text 修复"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "字段多=提示词长=遵循率降",
+          "why": "字段与遵循率"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "大 text(没有明确的消费者)",
+          "why": "大 text 反模式示例"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "过度设计(没有消费者)",
+          "why": "过度设计反模式示例"
+        }
+      ]
+    },
+    "LP-045": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "纠正的处理是信任的关键时刻",
+          "why": "信任关键时刻"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "处理得差(敷衍/争论/不改进)摧毁信任",
+          "why": "处理差的后果"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "承认+修正+记住(该记的)",
+          "why": "处理三动作"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "敷衍(『好的』然后下次还咸)是最伤信任的",
+          "why": "敷衍最伤信任"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "频繁纠正=系统性问题的诊断",
+          "why": "元信号诊断"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "承认+修正+验证的三步",
+          "why": "处理三步"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "用户也可能记错,FD-002 的双向",
+          "why": "查证的双向性"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "一次性的→不存",
+          "why": "一次性不存"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "纠正不只是个案处理,是系统的诊断信号",
+          "why": "元信号的系统诊断"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "你说得对,我之前理解有误",
+          "why": "承认话术"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "之前的回答基于旧版政策,抱歉",
+          "why": "即时修正示例"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "事实纠正→知识库的版本检查",
+          "why": "持久层判断"
+        }
+      ]
+    },
+    "LP-046": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能把训练能力当执行保证",
+          "why": "运行时责任红线"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "工具能力可包括调用时机、工具选择、参数生成与结果利用",
+          "why": "工具能力范围"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "训练决定「先验倾向」,运行时决定「每一次是否放行」",
+          "why": "训练与运行时分界"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "两条曲线缺一条都说明系统没有闭环",
+          "why": "评测要闭环"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能概括为固定SFT+RLHF必经路线",
+          "why": "训练方法不可概括"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "仍须负责工具描述、校验、授权、执行反馈和任务评估",
+          "why": "运行时责任清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "论文中的方法不能推断为所有闭源服务的真实配方",
+          "why": "方法边界红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "schema通过仍不等于权限和业务正确",
+          "why": "schema通过非业务正确"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "任何一层缺失时降级策略是拒绝执行并转人工",
+          "why": "责任矩阵降级"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "模型负责候选与参数,规则引擎负责权限与限额",
+          "why": "责任矩阵"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "有订单ID且有权限、缺ID应澄清、无权限应拒绝",
+          "why": "三类离线样本"
+        }
+      ]
+    },
+    "LP-047": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能按协议名承诺固定延迟",
+          "why": "不能按协议名承诺延迟"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "也不能说WebRTC永远直连或只有UDP路径",
+          "why": "不能神话WebRTC"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "迟到即失效的才走实时通道",
+          "why": "实时通道判据"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "确认类消息宁可重传也不能丢",
+          "why": "确认消息可靠性"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "控制消息和媒体数据可以采用不同契约",
+          "why": "媒体与控制分开设计"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不能按协议名承诺固定延迟",
+          "why": "延迟不可承诺"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "媒体强调连续播放和拥塞适应，任务控制强调身份、顺序、确认和状态",
+          "why": "媒体与控制分别设计"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "信令不强制必须用WebSocket",
+          "why": "信令非必须 WebSocket"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "只有测量条件与目标一致，才能讨论WebRTC或WebSocket方案在该场景中的取舍",
+          "why": "取舍须基于测量"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "网络传输优化无法解释全部端到端延迟",
+          "why": "优化非全部延迟"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不要把本地停止播放当作服务端工作已经结束",
+          "why": "本地停止非服务端结束"
+        }
+      ]
     }
   }
 }
