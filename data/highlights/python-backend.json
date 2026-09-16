@@ -1606,6 +1606,1584 @@
           "why": "与熔断配合"
         }
       ]
+    },
+    "PY-024": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "三级方案按任务特征选",
+          "why": "后台任务的选型总纲"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "轻量收尾(发通知/写审计日志),进程死任务丢(不可靠,只做可丢的事)",
+          "why": "BackgroundTasks 的能力边界红线"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "定时任务无锁多实例重复执行",
+          "why": "定时任务最经典的线上事故"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "出餐口顺手擦桌子(快、顺手、但打烊就没人擦了——可丢)",
+          "why": "BackgroundTasks 的白话定位"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "把外卖订单写在下餐垫纸上(BackgroundTasks 做关键业务,一打扫就没了)",
+          "why": "误用 BackgroundTasks 的后果"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "BackgroundTasks 只做可丢的轻收尾",
+          "why": "口述里的一句话纪律"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "定时调度多实例必须分布式锁或专用实例",
+          "why": "定时调度的判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "任务 ID 幂等、参数只传 ID(对象重新查库——参数里的状态可能过期)",
+          "why": "任务设计的做法清单"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "重试策略显式(PY-023)、死信处理(重试耗尽进死信队列人工处理)",
+          "why": "队列任务的可靠性检查项"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "重复执行的任务(发重复通知)是经典事故",
+          "why": "多实例调度的事故口径"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "worker 独立进程(不与 API 混部——资源隔离,PY-019)",
+          "why": "部署边界判据"
+        },
+        {
+          "field": "example",
+          "level": "term",
+          "text": "参数传 ID,不传对象",
+          "why": "任务参数序列化的核心原则"
+        }
+      ]
+    },
+    "PY-025": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "幂等=同一操作执行多次与执行一次效果相同",
+          "why": "幂等的标准定义"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "幂等表(键+请求指纹+响应+状态)与业务操作同事务",
+          "why": "标准实现的原子性要求"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "没有幂等键的重试是赌博",
+          "why": "幂等与重试的依赖红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "凭同一个取件码只会放进同一个柜子",
+          "why": "幂等的白话直觉"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "支付类重复请求应该返回『已在处理』而不是『再付一次成功』",
+          "why": "最容易答错的语义区分"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "幂等三件套:客户端幂等键、服务端幂等表",
+          "why": "口述版的三件套收束句"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "同键不同参数要拒绝(指纹校验,客户端 bug 的探针)",
+          "why": "最容易漏的校验点"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "幂等记录保留期覆盖重试窗口",
+          "why": "保留期与重试窗口的匹配判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "支付类→重复请求返回首次结果或『处理中』(绝不再执行)",
+          "why": "写操作防重复提交的红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "语义混乱的事故:『重复请求返回新结果』的支付接口——重试变成双倍扣款",
+          "why": "语义选错的事故后果"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "并发同键:唯一约束挡住第二个(插入冲突)",
+          "why": "并发场景的实现要点"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "幂等记录保留期(24~72h 覆盖重试窗口)+清理任务(过期删除)",
+          "why": "保留期取值与清理配套"
+        }
+      ]
+    },
+    "PY-026": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "深分页性能塌方(OFFSET 100000 要扫描并丢弃 10 万条)",
+          "why": "offset 的性能死穴"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "数据变动时页错位(插入/删除导致重复或漏读)",
+          "why": "offset 的正确性死穴"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "无限滚动/导出/同步(API 场景,深)→游标必选",
+          "why": "分页选型的决策句"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "游标像『书签』——上次看到哪,夹个书签,下次从书签继续",
+          "why": "游标的白话定义"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "同秒多条记录时仅按时间戳游标会漏读",
+          "why": "单一排序键的漏读陷阱"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "offset 两个死穴:深分页扫描浪费(O(n))与页漂移",
+          "why": "口述版的两死穴框架"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "游标(时间戳+ID 复合键,唯一性!)性能恒定无错位,代价是不能跳页",
+          "why": "游标的定义与代价"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "对『导出/同步』是正确性问题不只是性能",
+          "why": "页漂移的严重性定位"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "游标编码:对外不暴露原始值(编码/加密 base64,防止客户端篡改跳页探测)",
+          "why": "游标的安全做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "漏读的根源就是排序列不唯一",
+          "why": "复合游标的根因"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "向量检索的分页(特殊性:top-k 之后没有『第 2 页』——要么加大 k 要么重查询",
+          "why": "检索分页与 DB 分页是两个体系"
+        }
+      ]
+    },
+    "PY-027": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "脱敏的四层防线:①入口最小化",
+          "why": "脱敏的分层框架"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "黑名单字段:password/token/secret 永不出现在日志",
+          "why": "脱敏的硬红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "靠『开发者记得不打敏感信息』的约定必然失败——脱敏必须在基础设施层强制",
+          "why": "本题最值钱的口径"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不能指望每个员工记得『这份文件要碎』",
+          "why": "为什么必须管道强制"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "LLM 日志的难点是『非结构化对话』",
+          "why": "脱敏的 LLM 特有难点"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "脱敏四层防线:入口字段打标(类型级脱敏指令)、formatter 强制",
+          "why": "口述版四层防线"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "脱敏必须在基础设施层强制——靠开发者自觉的方案必然漏",
+          "why": "核心立场句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "验证方式:攻击自己的日志",
+          "why": "验收手段"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "正则兜底覆盖『非结构化文本』(用户消息里的 PII,PY-009 的 NER 增强)",
+          "why": "正则兜底的适用范围"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "异常信息脱敏(异常里可能带 SQL/请求头——repr 过滤)",
+          "why": "最易漏的泄漏点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "『默认安全』的验证方式就是攻击自己的日志",
+          "why": "默认安全怎么验"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "第三方库的日志(请求库可能打 header——配置其 logger 级别或覆写)",
+          "why": "第三方日志的失控点"
+        }
+      ]
+    },
+    "PY-028": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "边界纪律:router 不写业务",
+          "why": "分层第一条纪律"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "service 不碰 HTTP 对象(可脱离 FastAPI 测试)",
+          "why": "分层的收益与判据"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "infra 可替换(接口抽象,LLM 供应商切换不动 service)",
+          "why": "面向接口的分层动机"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "厨房直接跑菜市场采购(service 里写 SQL)——换个供应商全厨房翻桌",
+          "why": "越界的具体后果"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "LLM 应用的『厨房』特别厚(LLM/检索/工具编排),所以分层纪律比普通 CRUD 更重要",
+          "why": "LLM 应用为何更依赖分层"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "LLM 应用的特有三层:prompts(版本化,LP-021)、pipelines(Agent 编排,AG-013)",
+          "why": "LLM 应用独有的分层"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "纪律判据:router 不写业务、service 不碰 HTTP、infra 面向接口",
+          "why": "口述版判据清单"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "依赖方向:router→service→repository/infra→core,单向",
+          "why": "依赖方向是分层的骨架"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "循环依赖=分层失败的信号(用事件/回调解)",
+          "why": "分层失败的报警信号"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "domain 被所有层引用但不依赖任何层(纯模型)",
+          "why": "依赖倒置的落点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "router:≤10 行原则(解析→调 service→返回);不 import infra",
+          "why": "router 厚薄的可执行判据"
+        }
+      ]
+    },
+    "PY-029": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "选型口诀:边界用 Pydantic(不可信数据),内部用 dataclass(可信数据),接口适配用 TypedDict",
+          "why": "三者选型的口诀"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "边界数据用 dataclass(校验缺失)",
+          "why": "反模式一,最常踩"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "Pydantic=带安检的快递箱(进出边界都要查",
+          "why": "Pydantic 的白话定位"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "外面寄来的包裹不安检直接放冰箱(边界用 dataclass,危险)",
+          "why": "边界不校验的危险"
+        },
+        {
+          "field": "plain",
+          "level": "term",
+          "text": "TypedDict=货架标签",
+          "why": "TypedDict 是说明书不是容器"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "核心是『信任边界』意识:数据从哪来决定用什么容器",
+          "why": "选型背后的统一原则"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "演进策略:原型全 Pydantic,热点换 dataclass",
+          "why": "渐进式演进的做法"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "messages 数组是 TypedDict",
+          "why": "LLM 场景的典型分布"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "边界:API 请求/响应(PY-004)、LLM 返回解析(LP-003)、配置(PY-010)→Pydantic",
+          "why": "边界的清单"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "内部:组装器的片段(PY-022 Segment)、服务层的中间结果、领域实体→dataclass",
+          "why": "内部的清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "Pydantic v2(Rust 核心)校验已经很快,但仍是 dataclass 的数倍",
+          "why": "性能差异的准确口径"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "判断:内部数据的实例化频率(每请求数百次→dataclass 的开销差可见)",
+          "why": "何时值得换 dataclass"
+        }
+      ]
+    },
+    "PY-030": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "总预算(时间与次数的双上限)、决策留痕(每步的尝试与结果进 trace,LP-004/AG-024)",
+          "why": "组合器的内部职责清单"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "tenacity 管『重试』这一半,组合器加『降级链+预算+留痕』——包装 tenacity 而不是重造",
+          "why": "与 tenacity 的职责边界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "fn 的幂等前提显式",
+          "why": "可用于重试的安全前提"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "自动挡=预先编好的预案(先重试 3 次每次退避→换备用路线→都不行给兜底答复)",
+          "why": "组合器的白话流程"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "代码的『幂等前提』检查",
+          "why": "比喻装不下的工程约束"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "主调用按 policy 重试→逐级 fallback(每级自带超时)→final 兜底→全失败抛聚合异常",
+          "why": "口述版执行流程"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "幂等守卫(不可重试的操作超时直接降级——超时≠未执行)",
+          "why": "最易答错的红线口径"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "连接失败可重试,超时不可重试因为可能已执行",
+          "why": "可重试与不可重试的判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "组合器是『单请求』的韧性;熔断(连续失败的状态)在组合器外层或由其上报失败计数",
+          "why": "组合器与熔断的分层"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "组合器管这一次怎么办,熔断管接下来还要不要试",
+          "why": "两层职责的一句话区分"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "每步:trace 记录(尝试序号/耗时/失败原因)、预算检查(时间超限直接进入下一级)",
+          "why": "留痕与预算的落点"
+        },
+        {
+          "field": "example",
+          "level": "term",
+          "text": "生成不可重试→超时不重试,直接降级",
+          "why": "代码里的幂等守卫写法"
+        }
+      ]
+    },
+    "PY-031": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "原则:静态检查为主(零运行时成本)、运行时校验只放在信任边界",
+          "why": "校验分层的总原则"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "『边界校验、内部信任』是性能与安全的平衡点",
+          "why": "最能被追问的一句话"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "运行时全量校验的性能代价(每次调用都校验)与收益",
+          "why": "为什么不建议全量运行时校验"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "查边界,信内部,内部靠『单据系统』(mypy)保证不调包",
+          "why": "白话版的分工原则"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "内部类型也拦不住值错误(类型对值错:传了负数给 int 参数)",
+          "why": "比喻局限,也是真实盲区"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "assert 会被 -O 跳过(不能当安全检查)",
+          "why": "最常踩的坑之一"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "校验失败不重试(数据问题重试无意义)",
+          "why": "与重试分类的衔接"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "原则:查边界信内部——全量运行时校验的性能代价换不来收益",
+          "why": "口述版原则句"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "mypy 管『代码内部声明的类型一致』(静态),运行时校验管『外部数据符合声明』(动态)——两道岗互补",
+          "why": "静态与动态校验的分工"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "分级策略:外部输入全校验、内部关键契约抽验(mypy 覆盖大部分)、性能热点零运行时校验(靠测试与类型)",
+          "why": "分级校验的可执行策略"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "注意 python -O 会跳过 assert(不能当安全检查)",
+          "why": "assert 不能当安全设施"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "信任降级点:用户生成内容进入系统(UGC 的任何位置)",
+          "why": "边界识别清单里最易漏的一项"
+        }
+      ]
+    },
+    "PY-032": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "contextvars 提供『协程/任务本地的全局变量』",
+          "why": "contextvars 的标准定义"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "传统全局变量在并发下被请求互相覆盖(PY-003);层层传参污染所有函数签名",
+          "why": "为什么需要它:两个反例"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "contextvars 是异步安全的隐式上下文——每个请求一个独立的值槽",
+          "why": "FastAPI 日志靠它的原因"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "每个客人的抽屉是独立的(并发请求互不覆盖)",
+          "why": "请求隔离的白话"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "contextvars 的值还可以在任务创建时被复制或隔离",
+          "why": "上下文继承语义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "三个陷阱我会主动讲:Task 的上下文继承时机",
+          "why": "口述里主动加分的陷阱清单"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "reset 纪律(长连接泄漏)",
+          "why": "长连接场景必须主动说出的坑"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "读取时缺失即失败(租户上下文缺失就是请求错乱的前兆)",
+          "why": "防御性编程的口径"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "每个 Task/协程继承创建时的上下文快照(copy-on-write 语义)",
+          "why": "机制的核心表述"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "后台任务要显式传上下文或依赖继承时机",
+          "why": "后台任务最易错的地方"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "reset 的纪律(中间件 finally reset,防长连接的上下文泄漏——WebSocket 长连接的上下文生命周期)",
+          "why": "长连接的泄漏红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "隐式上下文只装『环境』不装『数据』",
+          "why": "隐式与显式的边界判据"
+        }
+      ]
+    },
+    "PY-033": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "默认参数在函数定义时求值一次(不是每次调用)",
+          "why": "整题的机制根因"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "危险在于静默(没有报错,数据悄悄串)",
+          "why": "为什么这个陷阱可怕"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "默认参数导致多轮对话串历史(不同请求共享一个列表,会话错乱的经典事故)",
+          "why": "LLM 场景最典型的踩点"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "第一位客人吃了苹果,后面的客人看到的盘里少一个苹果(共享+被污染)",
+          "why": "共享与污染的白话"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不可变默认(数字/字符串)完全安全",
+          "why": "陷阱专挑可变对象,别扩大化"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "默认参数在定义时求值一次——可变默认被所有调用共享,append 直接污染",
+          "why": "口述版第一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "工程防线:ruff B006 进 CI 静态拦截",
+          "why": "工程化拦截手段"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "正确写法 None 哨兵+函数体内创建",
+          "why": "正确写法的标准答法"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "可变默认在调用间共享且可被修改(函数体内的 append/pop 直接改它)",
+          "why": "机制层表述"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "所有实例共享——实例赋值才创建实例属性,append 直接改类属性",
+          "why": "兄弟陷阱:类属性可变默认"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "三个 lambda 都返回 2(捕获变量 i 不是值 i)",
+          "why": "兄弟陷阱:闭包晚绑定"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "Pydantic 模型字段的可变默认",
+          "why": "同类陷阱的 Pydantic 版"
+        }
+      ]
+    },
+    "PY-034": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "任何『长得像』的类自动满足(无需继承)",
+          "why": "Protocol 的核心机制:结构化子类型的定义句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "mypy 静态检查契约,运行时仍是鸭子式",
+          "why": "开发期与运行期的分工"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "实现方不需要知道协议存在",
+          "why": "选 Protocol 而不是 ABC 的判据"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不查证件,能干活的都算",
+          "why": "鸭子类型的白话定义"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "Protocol 还可以声明属性类型与默认实现",
+          "why": "比喻局限:Protocol 比岗位要求更强"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "第三方应满足的接口用 Protocol,需要运行时注册/默认实现的用 ABC",
+          "why": "口述里最该直接说出的选型判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "协议最小化:只声明调用方真正用的方法",
+          "why": "接口设计的做法"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "ABC=名义子类型(必须继承,运行时可 isinstance 检查,可提供默认实现)",
+          "why": "与结构子类型对照的标准说法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "只查方法存在不查签名",
+          "why": "运行时校验不完整,最容易被追问"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "定义『第三方也应满足』的接口→Protocol(解耦);框架内部需要运行时注册/检查/默认实现→ABC",
+          "why": "选择清单:两类接口各归哪种抽象"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "运行时的安全保障靠测试与边界校验",
+          "why": "Protocol 保证不了什么,必须业务自己补"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "三个实现(无需继承,签名匹配即满足)",
+          "why": "代码示例里的一句话结论"
+        }
+      ]
+    },
+    "PY-035": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "引用对象但不增加引用计数",
+          "why": "weakref 的定义句"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "缓存的上限与 TTL(PY-017)是第一道",
+          "why": "预防层次的第一道防线"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "弱引用处理『注册但不拥有』的语义",
+          "why": "什么时候才该用 weakref 的判据"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "Python 的 GC(分代回收)其实能处理纯循环引用",
+          "why": "纠正常见误解:纯循环不是 weakref 的主场"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "我想知道它在不在,但我不想因为它在而在",
+          "why": "弱引用语义最好懂的一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "弱引用解决「引用但不拥有」",
+          "why": "口述第一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "预防层次:TTL 上限→弱引用→显式生命周期",
+          "why": "可直接背出来的分层清单"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "WeakKeyDictionary(键为弱引用——监听器注册表:对象死了监听自动移除)",
+          "why": "弱引用家族里最常用的一员"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "WeakValueDictionary(值为弱引用——对象回收条目消失)",
+          "why": "缓存场景对应的一员"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "环上某一边用弱引用,打破环",
+          "why": "破循环引用的做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "大多数缓存问题用 TTL+上限解决,weakref 用于『语义上确实不拥有』的场景",
+          "why": "工具红线:别拿 weakref 当万能解"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "事件总线:监听者销毁自动退订",
+          "why": "弱引用的典型落地场景"
+        }
+      ]
+    },
+    "PY-036": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "密钥走秘密管理(绝不入 Git,PY-010)",
+          "why": "配置分层里的红线"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "只差异『必须不同的』(密钥/端点/模型版本),其余默认一致",
+          "why": "多环境差异的核心原则"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "总部的经营手册(代码+默认配置)所有店一样",
+          "why": "配置分层的白话版"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "最大的坑:各店配方悄悄不一样",
+          "why": "环境间配置漂移的具象"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "最小差异原则(staging 与 prod 除密钥规模外尽量一致",
+          "why": "口述里最好用的一条原则"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "长期存活的开关是技术债",
+          "why": "功能开关的纪律"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "热更新按类型选:阈值开关热调,行为配置走发布",
+          "why": "生效方式的选择判据"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "差异清单文档化:每环境一份配置快照(脱敏)+diff 说明",
+          "why": "治理做法:差异可见化"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "配置漂移检测:定期对比各环境生效配置(允许的差异白名单外=告警)",
+          "why": "漂移的检查项"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "开关的用途分级(发布开关:灰度用,完成即删;运维开关:降级预案",
+          "why": "feature flag 的分类清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "禁止在测试里读生产配置(PY-010 的环境隔离)",
+          "why": "测试环境红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "环境差异清单(文档化示例)",
+          "why": "示例本身就是一份可抄的差异登记表"
+        }
+      ]
+    },
+    "PY-037": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "LLM 流式的标准模式",
+          "why": "这个语法在 LLM 后端里的定位"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "同步生成器在 async 管道里会阻塞",
+          "why": "最容易踩的一处"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "数据源是异步的→async;纯 CPU 的转换→同步即可",
+          "why": "同步还是异步的选择判据"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "同步阻塞整个事件循环",
+          "why": "白话里点出的后果"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "上游取消→下游的 finally 清理",
+          "why": "生成器层的取消传播语义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "异步生成器是 LLM 流式的标准模式",
+          "why": "口述开场句"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "管道的每层都要 async",
+          "why": "同步层会阻塞事件循环,管道纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "async generator 的 aclose(或 async for 的正常结束/GC)触发 finally",
+          "why": "清理时机的机制"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "天然的背压(生产不会快于消费)",
+          "why": "生成器管道最重要的性质"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "多层 async 生成器的串联(每层 await 上游 yield 下游)",
+          "why": "管道组合的做法与逐层异步要求"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "超时(asyncio.timeout 包住整个流的消费,LP-004)",
+          "why": "流式超时的正确包法"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "多层异步管道(示意)",
+          "why": "示例的骨架说明"
+        }
+      ]
+    },
+    "PY-038": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "按异常类型分别捕获组内的异常",
+          "why": "这个语法到底做了什么"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "可以匹配组内的部分异常(其余继续传播)",
+          "why": "与普通 except 的关键区别"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "并发失败的业务分类(PY-005 的层次:哪些可重试哪些终止)",
+          "why": "设计判据:分支要跟业务分类对齐"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "普通 except 是『抓到一封处理一封』(对组不适用)",
+          "why": "用错语法的后果"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "没分拣到的类型继续往上抛(上级处理)",
+          "why": "未匹配异常的走向"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "部分匹配:出现了哪些类型哪些分支执行,未匹配的继续传播",
+          "why": "口述里必须说准的语义"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "每分支=一类策略:瞬时重试/参数回喂/权限终止",
+          "why": "分支设计的清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "哪个类型的子组存在,对应分支就执行(两类都有才都执行",
+          "why": "分支执行规则,最容易被答错"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "未匹配的类型 → 打包成新的组继续传播",
+          "why": "未处理异常不会被静默吞掉"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "裸组兜底(未预期的类型不能静默——记录+上抛)",
+          "why": "兜底分支的纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "嵌套的组(fanout 内的 TaskGroup)的递归处理",
+          "why": "嵌套场景的处理项"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "并发失败的业务分类(示意)",
+          "why": "示例要表达的落点"
+        }
+      ]
+    },
+    "PY-039": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "参数对象——相关参数打包成 dataclass/Pydantic",
+          "why": "重构第一选项"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "原则:签名是接口文档(参数=函数的能力声明)",
+          "why": "签名设计的核心原则"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "参数对象(LLMParams)是标准解",
+          "why": "LLM 场景的结论句"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "它还可以有校验(Pydantic 的约束)、默认值的组合逻辑",
+          "why": "参数对象比单纯打包多出来的价值"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "参数过多的重构三选",
+          "why": "口述先给框架"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "业务函数禁用(签名是文档,kwargs 是文档黑洞)",
+          "why": "kwargs 的使用边界红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "签名是接口:加参数=接口变更,走评审",
+          "why": "签名演进的纪律"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "参数的分组使用(某些参数总是一起用=一个职责的信号)",
+          "why": "拆函数的判据"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "业务函数避免(签名是文档,kwargs 是文档的黑洞)",
+          "why": "kwargs 合理场景的反面"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "场景预设(extraction/creative 的工厂——LP-001 的参数策略的代码化)",
+          "why": "参数策略落地的做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "新参数的加入评审(签名是接口——加参数=接口变更,LP-021 的评审)",
+          "why": "签名演进的流程项"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "场景预设的调用(可读性)",
+          "why": "示例的对照点"
+        }
+      ]
+    },
+    "PY-040": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "依赖倒置(A 依赖 B 的接口,B 实现——接口定义在 A 侧或独立接口模块)",
+          "why": "解法里最常用的一条"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "提取共享(公共部分下沉到第三个模块",
+          "why": "解法一:下沉公共部分"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "循环=职责划分错的信号",
+          "why": "最值钱的口径:循环是设计问题不是技术问题"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "B 用到时再 import——治标,审批的死锁还在,只是没被发现",
+          "why": "延迟导入只是遮掩"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "不一定报错,可能拿到半成品模块",
+          "why": "比死锁更隐蔽的表现"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "循环依赖四解:提取共享(公共下沉)、依赖倒置",
+          "why": "口述的四解框架"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "循环是重构的信号——不是消除循环,是修正职责",
+          "why": "面试里最能加分的收束句"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "纯类型依赖不触发运行时导入",
+          "why": "纯类型循环解法的原理"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "只解决类型循环,运行时的循环仍要重构",
+          "why": "该解法的适用边界"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "类型下沉到 domain(prompts 依赖 domain 的类型,service 依赖两者)",
+          "why": "LLM 应用典型循环的解法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "契约的定义(分层矩阵:哪些层可以依赖哪些层",
+          "why": "import 纪律的落地形式"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不应该 import services(它更底层)",
+          "why": "示例点明的分层方向"
+        }
+      ]
+    },
+    "PY-041": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "f-string(3.6+,首选——可读、快、支持表达式)",
+          "why": "选型第一句"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "f-string 不做转义",
+          "why": "三种注入的同一根源"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "用户内容直接写上信纸(注入:SQL/HTML/提示词的三种注入场景)",
+          "why": "白话里的红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "信纸的规矩不能破(参数化/转义)",
+          "why": "对应的正确做法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "注入的三场景(SQL 参数化/HTML 转义/提示词的组装器隔离",
+          "why": "三种注入各自的解法,可当清单背"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "日志的惰性求值(级别过滤时 f-string 白算)",
+          "why": "容易被忽略的性能红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "用户内容未经处理直接进入『有语法语义的容器』——容器的语法被劫持",
+          "why": "三种注入的共同根源,一句话说透"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "f-string 拼 JSON 是错误做法(转义与合法性的坑)",
+          "why": "明确的反模式"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "复杂嵌套的痛苦是 3.12 的 PEP 701 解决",
+          "why": "版本相关的口径"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "f-string 编译为高效字节码(比 format/% 快)",
+          "why": "性能结论"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "三种注入的同一根源",
+          "why": "示例的落点"
+        }
+      ]
+    },
+    "PY-042": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Python 的赋值是引用传递(变量是对象的标签)",
+          "why": "理解一切的根基"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "浅拷贝(嵌套的可变对象仍共享",
+          "why": "最常见的坑"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "浅拷贝够用(一层结构/不可变元素)用浅(快)",
+          "why": "浅深拷贝的选择判据"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "改子文件夹的内容,原件也变了(浅拷贝的嵌套共享)",
+          "why": "比喻里的坑"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "变量赋值从不复制对象(除非显式 copy)",
+          "why": "最根本的一条"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "一层结构浅拷贝够,嵌套可变用 deepcopy 或不可变设计(frozen)",
+          "why": "口述选择判据"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "所有引用 base 的会话的 system 被篡改(浅拷贝的嵌套共享)",
+          "why": "LLM 场景最真实的踩点"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "变量=名字到对象的绑定;赋值=名字的重新绑定(不复制);函数传参=绑定传递",
+          "why": "引用语义的精确表述"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "不可变设计(frozen dataclass,共享安全)、重建(推导式构造新对象)",
+          "why": "deepcopy 的替代方案清单"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "含资源的对象不能深拷贝",
+          "why": "deepcopy 的限制红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "引用共享是并发错的近亲",
+          "why": "与并发的关联,面试加分点"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "修:copy.deepcopy(base) 或重建消息列表",
+          "why": "示例给的修法"
+        }
+      ]
+    },
+    "PY-043": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "边界防御(不可信输入的类型断言,Pydantic 优先",
+          "why": "合理检查场景一:边界"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "过度检查(每个函数查每个参数",
+          "why": "反模式一:Java 化"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "运行时检查只放边界与关键契约(PY-031 的两道岗)",
+          "why": "现代姿势的判据"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "显式检查像『关键岗位查证书』",
+          "why": "白话定性"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "不可信查,可信信类型标注",
+          "why": "一句话判据"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "多分派(singledispatch/match)",
+          "why": "合理场景里的优雅替代"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "LLM 返回解析查,内部 messages 构造信",
+          "why": "LLM 场景的分布结论"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "边界(PY-031):HTTP/MQ/LLM 返回的输入——Pydantic 优先(声明式),裸 isinstance 兜底",
+          "why": "边界检查的做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "type() 代替 isinstance(破坏子类——isinstance 是正确的类型检查)",
+          "why": "最常见的写法错误"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "检查的歧视(只接受自己的类,拒绝 duck——过度封闭",
+          "why": "反模式:违背结构匹配精神"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "静态查不到运行时的数据",
+          "why": "mypy 的边界,别把它说神"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "合理的显式检查:边界+分派",
+          "why": "示例给的判断标准"
+        }
+      ]
+    },
+    "PY-044": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "切片越界不报错,返回空/截断——与索引的越界报错不同",
+          "why": "最关键的语义差异"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "numpy/array 的切片是视图(改视图改原——库的差异)",
+          "why": "库之间的差异,踩过才知道"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "可变序列的切片赋值的长度不匹配(可以不匹配——插入或删除)",
+          "why": "反直觉的一条"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "把『切片安全』当成『索引安全』",
+          "why": "白话里点出的误解"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "numpy 的切片是『同一块面包的托盘视图』",
+          "why": "视图语义的具象"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "stop 不含、越界宽容(与索引的区别",
+          "why": "口述第一句"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "大列表分页用 islice(切片拷贝的浪费)",
+          "why": "可操作的性能做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "宽容的双刃剑:安全(不用边界检查)与掩盖(空结果可能是 bug 的信号",
+          "why": "口径最完整的一句"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "list 切片=拷贝;numpy 数组切片=视图(零拷贝,改视图改原",
+          "why": "拷贝与视图的对照"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "只需要遍历用迭代器/islice,不需要切片",
+          "why": "性能做法"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "链式切片的中间对象(多次切片的中间拷贝——合并切片)",
+          "why": "容易忽略的开销"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "大列表的分页:切片拷贝 vs islice",
+          "why": "示例的对照点"
+        }
+      ]
     }
   }
 }

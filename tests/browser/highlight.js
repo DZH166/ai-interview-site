@@ -56,13 +56,27 @@ const expectedSpans = annotated.reduce((n, id) => n + highlights[id].spans.lengt
     check('audit actually exercised every annotated question', new Set(rows.map(r => r.id)).size === annotated.length,
       `${new Set(rows.map(r => r.id)).size} / ${annotated.length}`);
 
-    /* ---- 未标注的题:一个 mark 都不该有(证明不会误伤) ---- */
-    const unannotated = await page.evaluate(ids => {
-      const q = Data.allQuestions().find(x => !ids.includes(x.id));
-      const html = QRender.mdField(q, 'answer') + QRender.mdField(q, 'deep') + QRender.mdField(q, 'plain');
-      return { id: q.id, marks: (html.match(/<mark/g) || []).length };
+    /* ---- 不会误伤:同一段正文,题号不同 → mark 必须一个都不出现 ----
+       原来这里是「从题库里找一道未标注的题」,但 349 题已全部标完,find() 返回
+       undefined,整条断言在 100% 覆盖那天变成崩溃。改成差分探针,既耐久又比原来强:
+         · 同一段正文挂**真题号** → 必须出现 mark(正对照:否则「哪儿都没 mark」也能蒙混过关)
+         · 同一段正文挂**幽灵题号** → 一个 mark 都不能有(证明标注按题号精确匹配,不误伤)
+         · 若将来又出现未标注的题,顺带要求它同样干净(LEAK: 前缀用于报告)
+       三半合并在一条断言里,断言数量恒定为 12,不随题库覆盖度漂移。 */
+    const probe = await page.evaluate(ids => {
+      const src = Data.question(ids[0]);
+      const ghost = Object.assign({}, src, { id: 'ZZ-000' });
+      const count = q => (QRender.mdField(q, 'answer') + QRender.mdField(q, 'deep') + QRender.mdField(q, 'plain')).match(/<mark/g) || [];
+      const left = Data.allQuestions().find(x => !ids.includes(x.id));
+      return {
+        src: src.id,
+        real: count(src).length,
+        ghost: count(ghost).length,
+        other: left ? (count(left).length === 0 ? left.id + ' 干净' : 'LEAK:' + left.id) : '题库已全覆盖',
+      };
     }, annotated);
-    check('unannotated question renders no marks (' + unannotated.id + ')', unannotated.marks === 0);
+    check(`marks are keyed to the question id, not the text (${probe.src} 真号 ${probe.real} 个 / 幽灵号 ${probe.ghost} 个 / ${probe.other})`,
+      probe.real > 0 && probe.ghost === 0 && !probe.other.startsWith('LEAK:'));
 
     /* ---- 真实页面上确实显示出来了 ---- */
     const first = annotated[0];
