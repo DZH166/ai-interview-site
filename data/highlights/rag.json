@@ -3536,6 +3536,462 @@
           "why": "两层评测红线"
         }
       ]
+    },
+    "RG-066": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "Agent 的检索是『按需的多次检索』",
+          "why": "工具化的第一处差异:粒度从整条管线变单次调用"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "控制的转移——管线的控制权从代码转移到模型",
+          "why": "工具化最本质的变化"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "精细管线的质量优势在复杂查询上仍存在",
+          "why": "边界:工具化简化了管线但不等于精细管线没价值"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "侦探(Agent)自己决定查什么、查几次、查多深",
+          "why": "口述核心比喻"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "灵活但依赖侦探的能力",
+          "why": "红线:框架不保证效果,取决于 Agent 自身能力"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "控制权从代码到模型(Agent 决定策略)",
+          "why": "口述收束句第一条差异"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "简单→独立 RAG,复杂→Agent+检索工具",
+          "why": "混合路由的判据"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "系统提示中的检索指引",
+          "why": "检索策略靠提示词引导,不是框架自动给的"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "简单问题→独立 RAG(直通管线);复杂问题→Agent+检索工具(动态策略)",
+          "why": "路由分界的具体做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "Agent 使用检索的策略评测(AG-012 的轨迹评测)",
+          "why": "须业务自建的评测点,不只评检索器"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不适用于:实时数据",
+          "why": "工具描述里写明边界的范例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "可能再 search(细化/换角度) → 综合回答",
+          "why": "Agent 迭代检索的循环形态"
+        }
+      ]
+    },
+    "RG-067": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "换嵌入模型(向量空间变)、改切分参数(块变)、修文档解析 bug(内容变)",
+          "why": "三类必须重建的触发条件"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "内容变更→增量(只重嵌变更块,RG-014);模型变更→全量(空间变了)",
+          "why": "增量还是全量的唯一判据"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "新分类的书架在旁边先摆好(并行构建)",
+          "why": "不停服的做法直觉"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "换了分类的标准(嵌入模型)——增量修补没用,必须全部重新分类",
+          "why": "换模型时增量无效的红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "并行构建→评测→灰度→切换→旧版本保留",
+          "why": "不停服五步,可直接说出口"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "门禁(recall 不降才切)",
+          "why": "切换的评测红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "嵌入模型变更(空间变,必须全量)",
+          "why": "全量重建的硬条件"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "解析 bug 修复(内容变,受影响文档的增量)",
+          "why": "解析修复走增量,别误当全量"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "新索引的 recall@k 不低于旧索引(否则不切换,回滚)",
+          "why": "重建的评测门禁红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "切换不是终点,监控是保障",
+          "why": "上线后监控的纪律"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "全量重嵌入(并行计算,100万文档 ≈ 数小时)",
+          "why": "重建成本量级的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "灰度:10% 流量 → v2 → 指标稳定 → 100%",
+          "why": "灰度切换的落地实例"
+        }
+      ]
+    },
+    "RG-068": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "结果层——『检索到了这些内容』(引用列表,RG-011)",
+          "why": "可解释性第一层的标准说法"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "边界层——『没检索到什么』:空检的原因/过滤条件的影响",
+          "why": "最容易漏的一层:空检也要可解释"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "全部透明=信息过载,按用户层级分层展示",
+          "why": "透明度的边界红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "高级用户看『匹配了你的关键词 X/Y/Z,相关度 0.87』(匹配层)",
+          "why": "分层展示的具体形态"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "但 RAG 的拒答需要解释",
+          "why": "RAG 与搜索引擎的差异红线"
+        },
+        {
+          "field": "interview",
+          "level": "term",
+          "text": "检索可解释性四层:结果(引用列表)、匹配(信号透明",
+          "why": "口述四层框架"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "按用户层级渐进披露",
+          "why": "分层的实现原则"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "时间衰减(新旧权重)",
+          "why": "匹配层透明的一路信号"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "空检的原因(无匹配/被过滤/低于阈值)",
+          "why": "边界层必须覆盖的三类空检原因"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "默认简洁(来源+匹配高亮),用户展开→匹配信号(分数与命中词)",
+          "why": "渐进披露的落地做法"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不可解释的检索=黑盒(用户只能盲信或盲疑)",
+          "why": "可解释性与信任的关系红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "路由:混合检索-向量路 top1 → rerank 后 rank 1",
+          "why": "策略层展示的实例"
+        }
+      ]
+    },
+    "RG-069": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "×高价值(业务影响大的主题)×高质量(可获取的权威源)——三维矩阵排序",
+          "why": "冷启动选题的三维判据"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "覆盖 TOP 10~20 主题的首批内容(每个主题 3~5 篇)",
+          "why": "MVK 的规模口径"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "内容不足就上线(大面积拒答→用户流失)",
+          "why": "冷启动最大的风险红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "先上 10~15 道招牌菜(高频+高价值+能做好)",
+          "why": "开业菜单比喻的核心动作"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "菜的品质要在开业前验证",
+          "why": "冷启动必须与评测同步"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "三维矩阵(高频×高价值×高质量)排序→MVK",
+          "why": "口述收束句"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "上线门禁=评测通过",
+          "why": "上线门禁红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "TOP 10~20 主题×3~5 篇/主题=30~100 篇",
+          "why": "MVK 规模的算式"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "外部导入(行业知识库/公开数据——许可检查,EN-022)",
+          "why": "外部来源的合规红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "MVK 的评测通过=可上线",
+          "why": "内容集与门禁的绑定"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "MVK = 42 篇 → 解析→切分→嵌入→评测(50 条)",
+          "why": "MVK 落地的完整链路实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "评测通过 → 上线 → 缺口驱动补充",
+          "why": "冷启动到演进的路径"
+        }
+      ]
+    },
+    "RG-070": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "证据 token 是大头(RG-018 的证据压缩)→前缀缓存(LP-002)→重排候选数(RG-005)→输出长度(LP-011)",
+          "why": "优化优先级的固定顺序"
+        },
+        {
+          "field": "answer",
+          "level": "key",
+          "text": "归因的实现:每次请求的 trace 记录各环节的 token 与费用",
+          "why": "归因必须按环节打点,否则归不出来"
+        },
+        {
+          "field": "answer",
+          "level": "term",
+          "text": "基建成本——索引的存储与计算",
+          "why": "容易被漏掉的第四类成本"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "食材(检索的证据 token)、厨师(生成)、服务员(辅助调用)、房租(基建)",
+          "why": "四类成本的比喻拆解"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "两类成本要分开算",
+          "why": "一次性与持续成本不能混算的红线"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "归因的实现:trace 按环节标注 token 与费用",
+          "why": "口述归因的落地做法"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "优化的验证:质量+成本的双指标",
+          "why": "降本必须同时看质量"
+        },
+        {
+          "field": "deep",
+          "level": "term",
+          "text": "各环节的单价不同(嵌入便宜/rerank 中等/生成贵)",
+          "why": "按环节加权算成本的依据"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "按知识库生命周期摊销,不与在线成本混算",
+          "why": "成本口径的红线"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "成本归因是优化循环的起点(测量→归因→优化→验证)",
+          "why": "归因在循环里的定位"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "其中证据 token 6400/8000 = 80% ← 证据压缩的优先",
+          "why": "证据占输入大头的实例"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "优化:证据压缩(RG-018)→ 输入 8000→4500",
+          "why": "证据压缩的收益实例"
+        }
+      ]
+    },
+    "RG-071": {
+      "spans": [
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "检索分数不是可信度，更新时间也不是无条件优先级",
+          "why": "冲突裁决最易错的两条误判"
+        },
+        {
+          "field": "answer",
+          "level": "warn",
+          "text": "不能拼成一份不存在的政策",
+          "why": "冲突场景的编造红线"
+        },
+        {
+          "field": "plain",
+          "level": "key",
+          "text": "两份说明可能并不矛盾，只是适用对象不同",
+          "why": "先核实条件再判冲突"
+        },
+        {
+          "field": "plain",
+          "level": "warn",
+          "text": "这个流程是业务设计方法，不是RAG协议自带真值裁判",
+          "why": "框架不保证:冲突裁决必须业务自己实现"
+        },
+        {
+          "field": "interview",
+          "level": "key",
+          "text": "元数据；权限先行；回答与评估",
+          "why": "追问展开的三块骨架"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "不把建议方案说成已经上线的项目",
+          "why": "诚实口径红线"
+        },
+        {
+          "field": "interview",
+          "level": "warn",
+          "text": "检索分数不是可信度",
+          "why": "口径红线,口述时要主动点出"
+        },
+        {
+          "field": "deep",
+          "level": "key",
+          "text": "分开评估来源选对、条件匹配、引用支持和错误拒答",
+          "why": "冲突场景要拆开评的四个维度"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "一份忠实复述旧资料的答案仍可能业务错误",
+          "why": "忠实不等于正确的红线"
+        },
+        {
+          "field": "deep",
+          "level": "warn",
+          "text": "不向无权用户暴露受限文档的存在或摘要",
+          "why": "权限先行的红线"
+        },
+        {
+          "field": "example",
+          "level": "key",
+          "text": "用户未说明购买类型时先澄清",
+          "why": "不可裁决时的正确动作"
+        },
+        {
+          "field": "example",
+          "level": "warn",
+          "text": "不要用“B更新”覆盖所有场景",
+          "why": "用新旧压过适用条件的典型错误"
+        }
+      ]
     }
   }
 }
