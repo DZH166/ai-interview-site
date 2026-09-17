@@ -1,121 +1,121 @@
 [
- {
-  "id": "python-backend",
-  "short": "PY",
-  "order": 1,
-  "name": "Python 与 AI 后端基础",
-  "desc": "常用数据结构、异常处理、生成器、异步、并发、FastAPI、参数校验、HTTP 与流式响应。"
- },
- {
-  "id": "llm-prompt",
-  "short": "LP",
-  "order": 2,
-  "name": "大模型调用与提示词",
-  "desc": "LLM API、上下文、结构化输出、提示词设计、输出校验、错误处理、流式输出。"
- },
- {
-  "id": "rag",
-  "short": "RG",
-  "order": 3,
-  "name": "RAG 与检索",
-  "desc": "文档解析、切分、Embedding、关键词与向量检索、混合检索、重排、引用、拒答、检索评估与常见故障。"
- },
- {
-  "id": "agent",
-  "short": "AG",
-  "order": 4,
-  "name": "Agent 与工具调用",
-  "desc": "Agent 和工作流、工具选择与执行、状态管理、记忆、任务拆解、失败恢复、人工介入、MCP、常见框架的作用与边界。"
- },
- {
-  "id": "engineering",
-  "short": "EN",
-  "order": 5,
-  "name": "工程实践与项目面试",
-  "desc": "日志、测试、缓存、数据库、部署、权限、可靠性、成本、延迟、架构权衡和问题排查。"
- },
- {
-  "id": "fundamentals",
-  "short": "FD",
-  "order": 6,
-  "name": "AI 基础原理",
-  "desc": "Token、向量、注意力、Transformer、训练与推理、上下文与模型参数的区别、模型幻觉、模型评估。"
- },
- {
-  "id": "advanced",
-  "short": "AD",
-  "order": 7,
-  "name": "进阶专题(选学)",
-  "desc": "算法、机器学习、微调、对齐、量化与复杂多智能体。实习应用开发岗选学,标注了前置知识。"
- },
- {
-  "id": "pi-agent",
-  "short": "PI",
-  "order": 8,
-  "name": "Pi Agent",
-  "desc": "30 道 Pi Agent 源码原理与业务场景题：执行机制、上下文会话、扩展与生产工程。含完整题干、追问、评分、建议练习与固定版本依据。"
- },
- {
-  "id": "langchain",
-  "short": "LC",
-  "order": 9,
-  "name": "LangChain 与 LangGraph",
-  "desc": "Runnable与LCEL、LangChain v1工具循环、中间件、LangGraph中断恢复，以及Java和研究型Agent选学。"
- },
- {
-  "id": "quiz-ml",
-  "short": "MLQ",
-  "order": 10,
-  "name": "机器学习与数据挖掘(题库)",
-  "desc": "牛客选择题:机器学习基础、数据挖掘与统计学习方法。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-dl",
-  "short": "DLQ",
-  "order": 11,
-  "name": "深度学习(题库)",
-  "desc": "牛客选择题:神经网络、CNN/RNN、Transformer、训练技巧。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-llm",
-  "short": "LBQ",
-  "order": 12,
-  "name": "大模型概念(题库)",
-  "desc": "牛客选择题:LLM 基础概念、架构、训练与能力边界。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-llm-dev",
-  "short": "LDQ",
-  "order": 13,
-  "name": "大模型开发(题库)",
-  "desc": "牛客选择题:LLM 应用开发、框架、工程实践。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-finetune",
-  "short": "FTQ",
-  "order": 14,
-  "name": "微调(题库)",
-  "desc": "牛客选择题:全参/LoRA/QLoRA 微调、数据工程、评估。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-inference",
-  "short": "INQ",
-  "order": 15,
-  "name": "推理优化(题库)",
-  "desc": "牛客选择题:量化、KV Cache、批处理、推理框架。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-math",
-  "short": "MAQ",
-  "order": 16,
-  "name": "数学基础(题库)",
-  "desc": "牛客选择题:线性代数、概率统计。公式以 LaTeX 渲染。含官方解析,选择格式。"
- },
- {
-  "id": "quiz-cv",
-  "short": "CVQ",
-  "order": 17,
-  "name": "计算机视觉(题库)",
-  "desc": "牛客选择题:图像分类、检测、分割、多模态。含官方解析,选择格式。"
- }
+  {
+    "id": "python-backend",
+    "short": "PY",
+    "order": 1,
+    "name": "Python 与 AI 后端基础",
+    "desc": "常用数据结构、异常处理、生成器、异步、并发、FastAPI、参数校验、HTTP 与流式响应。"
+  },
+  {
+    "id": "llm-prompt",
+    "short": "LP",
+    "order": 2,
+    "name": "大模型调用与提示词",
+    "desc": "LLM API、上下文、结构化输出、提示词设计、输出校验、错误处理、流式输出。"
+  },
+  {
+    "id": "rag",
+    "short": "RG",
+    "order": 3,
+    "name": "RAG 与检索",
+    "desc": "文档解析、切分、Embedding、关键词与向量检索、混合检索、重排、引用、拒答、检索评估与常见故障。"
+  },
+  {
+    "id": "agent",
+    "short": "AG",
+    "order": 4,
+    "name": "Agent 与工具调用",
+    "desc": "Agent 和工作流、工具选择与执行、状态管理、记忆、任务拆解、失败恢复、人工介入、MCP、常见框架的作用与边界。"
+  },
+  {
+    "id": "engineering",
+    "short": "EN",
+    "order": 5,
+    "name": "工程实践与项目面试",
+    "desc": "日志、测试、缓存、数据库、部署、权限、可靠性、成本、延迟、架构权衡和问题排查。"
+  },
+  {
+    "id": "fundamentals",
+    "short": "FD",
+    "order": 6,
+    "name": "AI 基础原理",
+    "desc": "Token、向量、注意力、Transformer、训练与推理、上下文与模型参数的区别、模型幻觉、模型评估。"
+  },
+  {
+    "id": "advanced",
+    "short": "AD",
+    "order": 7,
+    "name": "进阶专题(选学)",
+    "desc": "算法、机器学习、微调、对齐、量化与复杂多智能体。实习应用开发岗选学,标注了前置知识。"
+  },
+  {
+    "id": "pi-agent",
+    "short": "PI",
+    "order": 8,
+    "name": "Pi Agent",
+    "desc": "30 道 Pi Agent 源码原理与业务场景题：执行机制、上下文会话、扩展与生产工程。含完整题干、追问、评分、建议练习与固定版本依据。"
+  },
+  {
+    "id": "langchain",
+    "short": "LC",
+    "order": 9,
+    "name": "LangChain 与 LangGraph",
+    "desc": "Runnable与LCEL、LangChain v1工具循环、中间件、LangGraph中断恢复，以及Java和研究型Agent选学。"
+  },
+  {
+    "id": "quiz-ml",
+    "short": "MLQ",
+    "order": 10,
+    "name": "机器学习与数据挖掘(题库)",
+    "desc": "牛客选择题:机器学习基础、数据挖掘与统计学习方法。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-dl",
+    "short": "DLQ",
+    "order": 11,
+    "name": "深度学习(题库)",
+    "desc": "牛客选择题:神经网络、CNN/RNN、Transformer、训练技巧。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-llm",
+    "short": "LBQ",
+    "order": 12,
+    "name": "大模型概念(题库)",
+    "desc": "牛客选择题:LLM 基础概念、架构、训练与能力边界。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-llm-dev",
+    "short": "LDQ",
+    "order": 13,
+    "name": "大模型开发(题库)",
+    "desc": "牛客选择题:LLM 应用开发、框架、工程实践。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-finetune",
+    "short": "FTQ",
+    "order": 14,
+    "name": "微调(题库)",
+    "desc": "牛客选择题:全参/LoRA/QLoRA 微调、数据工程、评估。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-inference",
+    "short": "INQ",
+    "order": 15,
+    "name": "推理优化(题库)",
+    "desc": "牛客选择题:量化、KV Cache、批处理、推理框架。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-math",
+    "short": "MAQ",
+    "order": 16,
+    "name": "数学基础(题库)",
+    "desc": "牛客选择题:线性代数、概率统计。公式以 LaTeX 渲染。含官方解析,选择格式。"
+  },
+  {
+    "id": "quiz-cv",
+    "short": "CVQ",
+    "order": 17,
+    "name": "计算机视觉(题库)",
+    "desc": "牛客选择题:图像分类、检测、分割、多模态。含官方解析,选择格式。"
+  }
 ]
