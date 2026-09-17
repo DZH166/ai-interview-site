@@ -1,28 +1,36 @@
 {
-  "content_hash": "f6d49646aff3",
-  "questions_total": 349,
+  "content_hash": "22c7f51a1c32",
+  "questions_total": 3752,
   "by_topic": {
-    "agent": 61,
+    "agent": 252,
     "langchain": 6,
-    "rag": 71,
-    "llm-prompt": 46,
+    "rag": 260,
+    "llm-prompt": 146,
     "fundamentals": 24,
     "advanced": 22,
     "python-backend": 44,
     "engineering": 45,
+    "quiz-cv": 197,
+    "quiz-dl": 378,
+    "quiz-finetune": 187,
+    "quiz-inference": 190,
+    "quiz-llm-dev": 310,
+    "quiz-llm": 399,
+    "quiz-math": 520,
+    "quiz-ml": 742,
     "pi-agent": 30
   },
   "by_difficulty": {
-    "basic": 56,
+    "basic": 3459,
     "intermediate": 191,
     "advanced": 102
   },
   "by_verify_status": {
-    "partial": 305,
+    "partial": 3708,
     "verified": 44
   },
   "docs_total": 15,
   "sources_total": 27,
   "candidates_total": 150,
-  "data_js_kb": 2745.0
+  "data_js_kb": 10316.6
 }

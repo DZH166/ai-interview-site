@@ -17,6 +17,22 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
 
+    def do_GET(self):
+        # 测试种子页:空 HTML(浏览器测试用它做「非应用页」中转,
+        # 在这里写 localStorage 后再进应用页,绕开 pagehide 兜底的写回)
+        if self.path.split("?")[0] == "/__seed__":
+            body = ("<!DOCTYPE html><html><head><meta charset='UTF-8'>"
+                    "<title>seed</title></head><body>seed page (test only)</body></html>")
+            data = body.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        super().do_GET()
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Pragma", "no-cache")

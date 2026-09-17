@@ -274,6 +274,8 @@ def main():
     # ---- 逐题检查
     totals = {}
     for q in qs:
+        if q.get("format") == "quiz":
+            continue   # 选择题不走叙述题的十要素/最小长度口径(见下方 quiz 分支)
         total = sum(map(len, content_texts(q).values()))
         totals[q.get("id")] = total
         if total < MIN_TOTAL:
@@ -282,6 +284,26 @@ def main():
 
     for q in qs:
         qid = q.get("id", "?")
+        if q.get("format") == "quiz":
+            # 选择题分支:无十要素/最小长度(牛客选择题与叙述题形态不同),
+            # 仍检查:来源存在、verify 合法、占位符残留
+            srcs = q.get("sources") or []
+            if not srcs:
+                problems.append(("缺", qid, "sources", "选择题缺来源"))
+            v = q.get("verify") or {}
+            if v.get("status") not in ("verified", "partial", "todo"):
+                problems.append(("缺", qid, "verify.status", "状态非法:%r" % v.get("status")))
+            cd = str(v.get("checked_date") or "")
+            if not cd:
+                problems.append(("缺", qid, "verify.checked_date", "没有核查日期"))
+            for k in ("prompt", "answer", "plain"):
+                text = str(q.get(k) or "")
+                for m in PLACEHOLDER.finditer(text):
+                    ctx = text[max(0, m.start() - 30): m.end() + 30].replace("\n", " ")
+                    if any(rx.search(ctx) for rx, _why in BENIGN):
+                        continue
+                    warnings.append(("占", qid, k, "疑似占位符 %r:%s" % (m.group(0), ctx.strip())))
+            continue
         for k, need in MIN_LEN.items():
             v = str(q.get(k) or "").strip()
             if not v:

@@ -217,6 +217,7 @@ const BrowseView = (() => {
 
   function wireDetail(root) {
     QRender.wireFocusToggle(root);
+    QRender.wireQuizToggle(root);
     $$('#q-detail [data-go]', root).forEach(btn => {
       btn.addEventListener('click', () => { if (btn.dataset.go) select(root, filters(), btn.dataset.go); });
     });
@@ -512,6 +513,7 @@ const StudyView = (() => {
 
   function wire(root, qid) {
     QRender.wireFocusToggle(root);
+    QRender.wireQuizToggle(root);
     $$('.q-sec-head', root).forEach(h => {
       h.addEventListener('click', () => {
         const sec = h.parentElement;

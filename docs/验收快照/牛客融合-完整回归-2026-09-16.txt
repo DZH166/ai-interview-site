@@ -1,0 +1,36 @@
+== 牛客融合 完整回归(实跑 2026-09-17) ==
+--- Node ---
+behavior-tests: 结果: 124 通过, 0 失败
+regression-tests: 结果: 15 通过, 0 失败
+srs-test: 结果: 71 通过, 0 失败
+remote-merge-test: 结果: 43 通过, 0 失败
+save-protocol-test: 结果: 14 通过, 0 失败
+preview-restore-test: 结果: 16 通过, 0 失败
+search-cache-test: 结果: 26 通过, 0 失败
+express-card-test: 结果: 63 通过, 0 失败
+record-boundary-test: 结果: 8 通过, 0 失败
+stage4-pause-test: 结果: 10 通过, 0 失败
+learning-records-test: 结果: 8 通过, 0 失败
+project-card-test: 结果: 9 通过, 0 失败
+pi-agent-test: 结果: 7 通过, 0 失败
+ai-series-test: 结果: 4 通过, 1 失败
+--- Python ---
+proj_c_test: 结果: 23 通过, 0 失败
+proj_c_layers_test: 结果: 29 通过, 0 失败
+proj_c_claims_test: OK
+path_exercise_test: 结果: 19 通过, 0 失败
+ai-series-math-test: OK
+proj_a_test: 结果: 8 通过, 0 失败
+lp003_mock_test: 结果: 18 通过, 0 失败
+--- 浏览器 ---
+ui-repro: 结果: 17 通过, 0 失败
+a11y-360: 结果: 34 通过, 0 失败
+e2e-acceptance:   - 卡片带上了面试口述版与参考要点
+project-evidence: 结果: 28 通过, 0 失败
+pi-agent: 结果: 45 通过, 0 失败
+ai-series: }
+srs: 结果: 20 通过, 0 失败
+followup: }
+multitab: 结果: 8 通过, 0 失败
+search-cache: 结果: 8 通过, 0 失败
+hardening:   PASS CSV 含指令头(首字段更新映射)与两道题

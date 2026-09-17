@@ -245,9 +245,61 @@ const QRender = (() => {
       </details>`;
   }
 
+  /* ---- 选择题(quiz)分支:牛客题库选择题的渲染 ----
+     与 10 要素叙述题共用外壳(metaLine/promptHtml/记录栏/笔记),内容区按 format 分支:
+     题干+选项卡(正确项高亮可切换隐藏)+官方解析。不自造 followups/check 等字段。 */
+  function quizOptionsHtml(q) {
+    const hide = Store.rec(q.id).quizHide !== false;   /* 默认隐藏正确项,自测先选 */
+    const multi = q.qtype === 'multi';
+    return `
+      <div class="quiz-options" data-quiz-options="${esc(q.id)}">
+        ${(q.options || []).map(o => `
+          <div class="quiz-opt ${(!hide && o.right) ? 'quiz-right' : ''}">
+            <span class="quiz-lab">${esc(o.label)}</span>
+            <span class="quiz-txt">${mdHtml(o.text)}</span>
+            ${(!hide && o.right) ? '<span class="quiz-mark">✓</span>' : ''}
+          </div>`).join('')}
+      </div>
+      <div class="quiz-toolbar">
+        <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示正确答案' : '隐藏正确答案'}</button>
+        ${multi ? '<span class="badge b-tag">多选</span>' : '<span class="badge b-tag">单选</span>'}
+      </div>`;
+  }
+
+  function quizBody(q) {
+    const hide = Store.rec(q.id).quizHide !== false;
+    return `
+      <div class="qf-part" data-part="options">
+        <div class="qf-label">选项(先自己选,再对答案)</div>
+        <div class="qf-body">${quizOptionsHtml(q)}</div>
+      </div>
+      <div class="qf-part" data-part="answer">
+        <div class="qf-label">正确答案与官方解析</div>
+        <div class="qf-body">${hide
+          ? '<p class="muted small">显示正确答案后此区展开。</p>'
+          : mdField(q, 'answer')}</div>
+      </div>`;
+  }
+
+  function wireQuizToggle(root) {
+    $$('[data-quiz-reveal]', root).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const qid = btn.dataset.quizReveal;
+        const r = Store.rec(qid);
+        r.quizHide = r.quizHide === false ? undefined : false;   /* 切换显示/隐藏 */
+        Store.saveNow();
+        /* 就地重渲该题区块:保住滚动位置;走 App.route 会整页重置 */
+        const host = btn.closest('.study-wrap, #q-detail') || root;
+        if (typeof BrowseView !== 'undefined' && host.id === 'q-detail') BrowseView.select(host.closest('.browse-pane') ? host.closest('.browse-pane').parentElement : root, null, qid);
+        else if (typeof StudyView !== 'undefined') StudyView.render(host, qid);
+      });
+    });
+  }
+
   /* 答案与面试表达的融合卡:先给一版能直接用的说法。
      两段各留小标题,不把书面答案和口述表达揉成一段——否则读者分不清哪句能直接说出口。 */
   function answerFusionBody(q) {
+    if (q.format === 'quiz') return quizBody(q);
     return `
       <div class="qf-part" data-part="answer">
         <div class="qf-label">直接答案</div>
@@ -266,6 +318,12 @@ const QRender = (() => {
      默认全部展开:进来一次性看全,要自测时用「只看题干」整体收起。 */
   function standardSections(q, open) {
     const o = open !== false;
+    if (q.format === 'quiz') {
+      return `
+        ${section('answer', '选项与答案', answerFusionBody(q), o)}
+        ${section('plain', '官方解析', mdField(q, 'plain'), o)}
+        ${section('sources', '出处与核查状态', verifyBlock(q), o)}`;
+    }
     return `
       ${section('answer', '答案与面试表达', answerFusionBody(q), o)}
       ${section('plain', '大白话解释', mdField(q, 'plain'), o)}
@@ -345,6 +403,6 @@ const QRender = (() => {
       </div>`;
   }
 
-  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, mdField, promptHtml, deepHtml, section,
+  return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, mdField, promptHtml, deepHtml, section, wireQuizToggle,
            answerFusionBody, standardSections, focusToggle, wireFocusToggle };
 })();
