@@ -105,8 +105,10 @@ const NavCtx = {
 const QRender = (() => {
   function badge(text, cls) { return `<span class="badge ${cls || ''}">${esc(text)}</span>`; }
 
+  /* 元数据只留「判断这道题该怎么答」需要的四个维度:专题 / 难度 / 题型 / 当前状态。
+     核查状态原本也在这里,但它与「出处与核查状态」区块说的是同一件事;
+     标签同理 —— 两者都已挪到那个区块,首屏省下的空间留给题干与答案。 */
   function metaLine(q) {
-    const v = Data.VERIFY[(q.verify && q.verify.status) || 'todo'];
     const st = Data.statusInfo(q.id);
     const r = Store.rec(q.id);
     const revised = q.content_version && r.contentRev !== q.content_version.rev;
@@ -118,8 +120,6 @@ const QRender = (() => {
         ${badge(st.label, st.cls)}
         ${revised ? '<a class="badge vf-partial" href="#/study/' + esc(q.id) + '" title="内容有更新,建议重做">♻ 有更新</a>' : ''}
         ${r.fav ? badge('★ 已收藏', 'b-fav') : ''}
-        ${badge(v.label, v.cls)}
-        ${(q.tags || []).map(t => badge(t, 'b-tag')).join('')}
       </div>`;
   }
 
@@ -133,6 +133,7 @@ const QRender = (() => {
       </li>`).join('');
     return `
       <div class="verify-block">
+        ${(q.tags || []).length ? `<div class="verify-tags"><span class="rel-label">标签:</span>${(q.tags || []).map(t => badge(t, 'b-tag')).join('')}</div>` : ''}
         <div class="verify-line">核查状态:<b>${esc(Data.VERIFY[v.status || 'todo'].label)}</b> · 核查日期:${esc(v.checked_date || '—')}</div>
         ${v.note ? `<div class="verify-note">${esc(v.note)}</div>` : ''}
         <ul class="src-list">${src || '<li class="muted">无来源记录</li>'}</ul>
@@ -209,6 +210,11 @@ const QRender = (() => {
     return out;
   }
 
+  /* 关联信息默认收进一个折叠区。
+     六行链接(先懂概念 / 前置题 / 相关题 / 原理章节 / 本专题章节 / 涉及概念)
+     对「读这道题」本身都是旁支,全部铺在正文前面会把题面与答案挤出首屏 ——
+     移动端实测正文起点在 531px,占掉 844 视口的 84%。
+     收起来不等于藏起来:summary 里直接报出有什么、各多少,一眼就能判断值不值得展开。 */
   function relLinks(q) {
     const pre = (q.prerequisites || []).filter(id => Data.question(id));
     const rel = (q.related || []).filter(id => Data.question(id));
@@ -216,13 +222,27 @@ const QRender = (() => {
     const tdoc = Data.topicMainDoc(q.topic);
     const pc = prereqConcepts(q);
     const myConcepts = conceptsOf(q.id);
+    const rows = [
+      pc.length ? `<div class="rel-row"><span class="rel-label">先懂这些概念:</span>${pc.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : '',
+      pre.length ? `<div class="rel-row"><span class="rel-label">前置题目:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
+      rel.length ? `<div class="rel-row"><span class="rel-label">相关题目:</span>${rel.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
+      docs.length ? `<div class="rel-row"><span class="rel-label">原理章节:</span>${docs.map(id => `<a class="rel-link" href="#/docs/${id}">${esc(Data.doc(id) ? Data.doc(id).title : id)}</a>`).join(' ')}</div>` : '',
+      tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : '',
+      myConcepts.length ? `<div class="rel-row"><span class="rel-label">本题涉及概念:</span>${myConcepts.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''
+    ].filter(Boolean);
+    if (!rows.length) return '';
+    const nDocs = docs.length + (tdoc ? 1 : 0);
+    const bits = [];
+    if (pc.length) bits.push(pc.length + ' 个前置概念');
+    if (pre.length) bits.push(pre.length + ' 道前置题');
+    if (rel.length) bits.push(rel.length + ' 道相关题');
+    if (nDocs) bits.push(nDocs + ' 个原理章节');
+    if (myConcepts.length) bits.push(myConcepts.length + ' 个涉及概念');
     return `
-      ${pc.length ? `<div class="rel-row"><span class="rel-label">先懂这些概念:</span>${pc.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''}
-      ${pre.length ? `<div class="rel-row"><span class="rel-label">前置题目:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
-      ${rel.length ? `<div class="rel-row"><span class="rel-label">相关题目:</span>${rel.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : ''}
-      ${docs.length ? `<div class="rel-row"><span class="rel-label">原理章节:</span>${docs.map(id => `<a class="rel-link" href="#/docs/${id}">${esc(Data.doc(id) ? Data.doc(id).title : id)}</a>`).join(' ')}</div>` : ''}
-      ${tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : ''}
-      ${myConcepts.length ? `<div class="rel-row"><span class="rel-label">本题涉及概念:</span>${myConcepts.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''}`;
+      <details class="rel-box">
+        <summary><span class="rel-label">关联内容</span> <span class="muted">${esc(bits.join(' · '))}</span></summary>
+        <div class="rel-box-body">${rows.join('')}</div>
+      </details>`;
   }
 
   /* 答案与面试表达的融合卡:先给一版能直接用的说法。
@@ -240,17 +260,20 @@ const QRender = (() => {
   }
 
   /* 区块清单只有一份,学习页与浏览详情共用,避免两处漂移。
-     默认全部展开:进来一次性看全;要自测时用「只看题干」整体收起,不必逐个点开。 */
+     顺序按「面试时用得上的先后」排:先给能直接说出口的,再给支撑材料。
+     最长的「原理拆解」放到最后 —— 它独占全文 26% 的字符量,是选读而非必读,
+     原来排在第 3 位,导致进来先读到最不该先读的那一块。
+     默认全部展开:进来一次性看全,要自测时用「只看题干」整体收起。 */
   function standardSections(q, open) {
     const o = open !== false;
     return `
       ${section('answer', '答案与面试表达', answerFusionBody(q), o)}
       ${section('plain', '大白话解释', mdField(q, 'plain'), o)}
-      ${section('deep', '原理拆解', deepHtml(q), o)}
       ${section('example', '具体例子', mdField(q, 'example'), o)}
-      ${section('followups', '常见追问', followupsHtml(q), o)}
       ${section('pitfalls', '常见误区', pitfallsHtml(q), o)}
+      ${section('followups', '常见追问', followupsHtml(q), o)}
       ${section('check', '理解检查', checkHtml(q), o)}
+      ${section('deep', '原理拆解', deepHtml(q), o)}
       ${section('sources', '出处与核查状态', verifyBlock(q), o)}`;
   }
 
