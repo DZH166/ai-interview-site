@@ -450,20 +450,18 @@ const StudyView = (() => {
         ${needRevNotice ? `
         <div class="notice rev-notice" data-rev-notice>
           <b>♻ 本题内容有更新(${esc(cv.rev)})</b>:${esc(cv.summary)}
-          <ul class="rev-changes">${(cv.changes || []).map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+          ${(cv.changes || []).length ? `<details class="rev-changes-box"><summary>改了哪些(共 ${cv.changes.length} 条)</summary><ul class="rev-changes">${cv.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>` : ''}
           <div class="btn-row" style="margin-top:6px">
             <button class="btn btn-small btn-primary" data-rev-redo>标记待复习(重做)</button>
             <button class="btn btn-small" data-rev-ack>知道了(旧笔记与记录保留)</button>
           </div>
         </div>` : ''}
         <div class="detail-toolbar">
-          <a class="btn btn-small" href="#/browse">← 浏览</a>
           <button class="btn btn-small" data-nav="${nb.prev || ''}" ${nb.prev ? '' : 'disabled'}>← 上一题</button>
           <button class="btn btn-small" data-nav="${nb.next || ''}" ${nb.next ? '' : 'disabled'}>下一题 →</button>
           <span class="muted">${nb.pos} / ${nb.total}</span>
           <span class="flex1"></span>
           ${QRender.focusToggle()}
-          <button class="btn btn-small" id="expand-all">展开全部</button>
           <button class="btn btn-small" id="collapse-all">折叠全部</button>
         </div>
         ${QRender.recordBar(qid)}
@@ -521,9 +519,9 @@ const StudyView = (() => {
         $('.q-sec-arrow', sec).textContent = sec.classList.contains('open') ? '−' : '+';
       });
     });
-    $('#expand-all', root).addEventListener('click', () => {
-      $$('.q-sec', root).forEach(s => { s.classList.add('open'); $('.q-sec-arrow', s).textContent = '−'; });
-    });
+    /* 「展开全部」已删除:默认就是全展开,这个按钮按下去什么都不会发生。
+       「折叠全部」保留 —— 它和「只看题干」不同:前者保留区块标题(能看清这题
+       有哪些部分),后者整块隐藏(纯自测)。 */
     $('#collapse-all', root).addEventListener('click', () => {
       $$('.q-sec', root).forEach(s => { s.classList.remove('open'); $('.q-sec-arrow', s).textContent = '+'; });
     });

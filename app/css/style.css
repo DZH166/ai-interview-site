@@ -277,8 +277,13 @@ select.input { cursor: pointer; }
 /* 标签从首屏的徽章行挪到这里,和核查信息放在一起 */
 .verify-tags { margin-bottom: 6px; }
 
-/* 折叠区块 */
-.q-sec { border: 1px solid var(--line); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+/* 折叠区块。做成带左缘色条的卡片:展开时左缘变主色,滚动时一眼知道读到哪一块;
+   标题与正文之间加分隔线,让「一个内容块」的边界看得见 —— 全展开时尤其重要。 */
+.q-sec {
+  border: 1px solid var(--line); border-left: 3px solid var(--line);
+  border-radius: 8px; margin: 12px 0; overflow: hidden; background: #fff;
+}
+.q-sec.open { border-color: #d3ddf0; border-left-color: var(--primary); }
 .q-sec-head {
   width: 100%; display: flex; justify-content: space-between; align-items: center;
   background: #f8fafc; border: none; padding: 10px 14px; cursor: pointer;
@@ -287,9 +292,10 @@ select.input { cursor: pointer; }
 .q-sec-head:hover { background: #eef4ff; }
 .q-sec-badge { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
 .q-sec-arrow { color: var(--muted); font-size: 17px; }
-.q-sec-body { display: none; padding: 4px 16px 12px; }
-.q-sec.open .q-sec-body { display: block; }
-.q-sec.open { border-color: #c9d6f5; }
+.q-sec-body { display: none; padding: 10px 16px 14px; }
+.q-sec.open .q-sec-body { display: block; border-top: 1px solid var(--line); }
+/* 「答案与面试表达」是这页的主菜:标题底色偏蓝,与其它区块区分开 */
+.q-sec[data-sec="answer"] .q-sec-head { background: #eff6ff; }
 
 /* 答案与面试表达融合卡:进来先给一版能直接用的说法。
    两段各自带小标题,不把书面答案和口述表达混成一段。 */
@@ -533,7 +539,16 @@ mark.hl-warn { background: #ffe0da; font-weight: 500; }
 @media (max-width: 520px) {
   .home-cols, .maintain-grid, .stat-cards { grid-template-columns: 1fr; }
   .filter-bar .input { width: 100%; }
-  .detail-toolbar { font-size: 13px; }
+  /* 窄屏首屏要留给题干和答案:控制区(工具条 / 记录栏 / 徽章行)统一收窄,
+     让它们挤进更少的行数。原来这三处在 390px 下要占掉约 4 行。 */
+  .detail-toolbar { font-size: 13px; padding-bottom: 8px; margin-bottom: 8px; gap: 6px; }
+  .detail-toolbar .btn { height: 26px; padding: 0 8px; font-size: 12px; }
+  .record-bar { padding: 6px 10px; gap: 6px; margin-bottom: 8px; }
+  .rb-status { gap: 4px; }
+  .status-btn { padding: 2px 8px; font-size: 12px; }
+  .q-meta { margin: 6px 0; gap: 4px; }
+  .q-meta .badge { padding: 0 6px; font-size: 11px; }
+  .rev-notice { padding: 8px 12px; margin-bottom: 8px; font-size: 12px; }
 }
 
 /* ---- 暗色模式补充覆盖 ---- */
@@ -577,6 +592,10 @@ mark.hl-warn { background: #ffe0da; font-weight: 500; }
 [data-theme="dark"] .q-sec { border-color:var(--line); }
 [data-theme="dark"] .q-sec-head { background:var(--card); color:var(--text); }
 [data-theme="dark"] .q-sec-head:hover { background:var(--hover); }
+[data-theme="dark"] .q-sec { background:var(--card); }
+[data-theme="dark"] .q-sec.open { border-left-color:var(--primary); }
+[data-theme="dark"] .q-sec.open .q-sec-body { border-top-color:var(--line); }
+[data-theme="dark"] .q-sec[data-sec="answer"] .q-sec-head { background:var(--active); }
 [data-theme="dark"] .q-sec-body { background:var(--card); }
 [data-theme="dark"] .si-snippet { color:var(--muted); }
 [data-theme="dark"] mark { background:#3d3520; color:var(--text); }
@@ -773,6 +792,9 @@ textarea:focus-visible {
 /* ---- 内容修订提醒 ---- */
 .rev-notice { border: 1px solid var(--warn); background: #fffbeb; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }
 .rev-changes { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+/* 改动清单收进折叠:修订提示本身要占位置,但「改了哪几条」不是每次都要看 */
+.rev-changes-box { margin: 6px 0 0; }
+.rev-changes-box > summary { cursor: pointer; font-size: 13px; color: var(--warn); }
 [data-theme="dark"] .rev-notice { background: rgba(217,119,6,.12); }
 
 /* ---- 变式检查 ---- */
