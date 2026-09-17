@@ -281,6 +281,17 @@ const DocsView = (() => {
 
 /* ---------- 全局搜索 ---------- */
 const SearchView = (() => {
+  /* 字段名 → 用户看得懂的位置说明。搜索卡片上标出「命中在哪」,
+     同一目标命中多个字段时会并列多个(见 Search.groupHits)。 */
+  const FIELD_LABELS = {
+    title: '题名', prompt: '完整题干', tags: '标签', answer: '直接答案', plain: '大白话',
+    deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区',
+    check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明',
+    drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿',
+    speak_short: '30 秒口述', speak_long: '2 分钟口述'
+  };
+  const fieldLabelOf = f => FIELD_LABELS[f] || f || '';
+
   function render(root, parts, query) {
     const fromPath = parts && parts.length ? parts.join('/') : '';
     const fromQuery = (query && query.q) ? String(query.q) : '';
@@ -321,7 +332,10 @@ const SearchView = (() => {
     Store.data.ui.search = { q, scope, topic }; Store.save();
     if (!keepUrl) go('#/search/' + encodeURIComponent(q));
     const results = Search.query(q, { scope, topic: topic || '' });
-    $('#s-count').textContent = results.length ? `约 ${results.length} 条结果` : '';
+    /* 聚合后已是去重的目标数,不再说「约」;触到上限时说明只显示了前 60 条 */
+    $('#s-count').textContent = results.length
+      ? `${results.length} 条结果${results.length >= 60 ? '(仅显示前 60 条)' : ''}`
+      : '';
     const box = $('#s-results');
     if (!q.trim()) { box.innerHTML = ''; return; }
     if (!results.length) {
@@ -378,12 +392,18 @@ const SearchView = (() => {
         const d = Data.doc(u.docId);
         title = d ? d.title : u.docId;
       }
-      const fieldLabel = ({ title: '题名', prompt: '完整题干', tags: '标签', answer: '直接答案', plain: '大白话', deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区', check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明', drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿', speak_short: '30 秒口述', speak_long: '2 分钟口述' }[u.field]) || u.field;
+      /* 命中位置:同一个目标可能命中多个字段,列全才知道「命中在哪」。
+         最多并列 3 个,其余折成 +N —— 卡片头不该比正文还长。 */
+      const labels = (r.fields && r.fields.length ? r.fields : [u.field]).map(fieldLabelOf).filter(Boolean);
+      const shown = labels.slice(0, 3);
+      const more = labels.length - shown.length;
+      const fieldChips = shown.map(l => `<span class="badge b-tag">${esc(l)}</span>`).join('')
+        + (more > 0 ? `<span class="badge b-tag b-more">+${more}</span>` : '');
       return `
         <a class="search-item" href="${esc(href)}">
           <div class="si-head">
             <span class="badge b-topic">${kindName[u.kind] || u.kind}</span>
-            <span class="badge b-tag">${esc(fieldLabel)}</span>
+            ${fieldChips}
             ${sub}
             ${u.qid ? `<span class="qid">${esc(u.qid)}</span>` : ''}
             <span class="si-title">${esc(title)}</span>

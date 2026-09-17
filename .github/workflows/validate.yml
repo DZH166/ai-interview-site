@@ -215,6 +215,15 @@ jobs:
           PORT: '8941'
         run: node tests/browser/highlight.js
 
+      # 这三条是实测复现过的真缺陷(搜「向量检索」同题重复 8 次、高亮标签被打成
+      # <m<mark>a</mark>rk>、切筛选后详情停在已筛掉的题上)。修复前跑会失败。
+      - name: 搜索与浏览缺陷回归(同题不重复/高亮不破坏标签/切筛选后详情同步)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8945'
+        run: node tests/browser/search-browse-fix.js
+
       - name: SRS 到期建议(手动队列优先/还记得忘了/定向复盘重排/首页口径)
         env:
           PW: playwright

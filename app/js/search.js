@@ -236,7 +236,7 @@ const Search = (() => {
     return norm(q).split(/[\s,，、;；]+/).filter(Boolean);
   }
 
-  /* 返回 [{unit, score, snippetHtml}] */
+  /* 返回 [{unit, score, snippet, hits, fields}] —— 同一目标已聚合为一条 */
   function query(q, opt) {
     ensureFresh();   /* 数据已变则先重建,避免返回陈旧内容 */
     opt = opt || {};
@@ -262,7 +262,47 @@ const Search = (() => {
       results.push({ unit: u, score, snippet: makeSnippet(u.raw, terms) });
     });
     results.sort((a, b) => b.score - a.score);
-    return results.slice(0, 60);
+    /* 同一目标只留一条。一道题的 answer / deep / plain 各自命中一次,过去会刷出
+       5~8 张卡片,标题与摘要还完全相同(摘要取该字段原文,标题统一取题名)。
+       截断必须放在聚合之后,否则 60 条可能全是同一道题的各个字段。 */
+    return groupHits(results).slice(0, 60);
+  }
+
+  /* 聚合键:题目字段与个人笔记算作同一道题的正文;同一文档的多个章节算一份文档 */
+  function groupKey(u) {
+    switch (u.kind) {
+      case 'q':
+      case 'note':    return 'q:' + u.qid;
+      case 'doc':
+      case 'udoc':    return 'doc:' + u.docId;
+      case 'fu':      return 'fu:' + u.roundId + ':' + u.qid + ':' + u.fuId;
+      case 'try':     return 'try:' + u.drillId + ':' + (u.attemptId || '');
+      case 'run':     return 'run:' + u.pid + ':' + (u.runId || '');
+      case 'drill':   return 'drill:' + u.drillId;
+      case 'project': return 'project:' + u.pid;
+      case 'concept': return 'concept:' + u.cid;
+      default:        return String(u.kind) + ':' + (u.qid || u.docId || u.pid || u.cid || '');
+    }
+  }
+
+  /* 把同一目标的多次命中并成一条:代表项取分数最高的那条(决定链接与摘要),
+     另附 fields(全部命中字段)与 hits(命中次数),交给渲染层显示「命中位置」。 */
+  function groupHits(results) {
+    const map = new Map();
+    results.forEach(r => {
+      const k = groupKey(r.unit);
+      const g = map.get(k);
+      if (!g) {
+        map.set(k, { unit: r.unit, score: r.score, snippet: r.snippet, hits: 1, fields: r.unit.field ? [r.unit.field] : [] });
+        return;
+      }
+      g.hits++;
+      if (r.unit.field && g.fields.indexOf(r.unit.field) < 0) g.fields.push(r.unit.field);
+      if (r.score > g.score) { g.unit = r.unit; g.score = r.score; g.snippet = r.snippet; }
+    });
+    /* results 已按分数降序,插入顺序天然就是「各组最高分」的降序,无需再排一次
+       (重排会打乱同分项的相对次序,徒增不确定性) */
+    return [...map.values()];
   }
 
   /* 在原文中定位最早命中处,取前后窗口生成片段并高亮 */
@@ -285,11 +325,18 @@ const Search = (() => {
     while (from > 0 && /[\uD800-\uDFFF]/.test(text[from])) from--;
     const snippet = (from > 0 ? '…' : '') + text.slice(from, to) + (to < text.length ? '…' : '');
     let html = esc(snippet);
-    terms.forEach(t => {
-      if (!t) return;
-      const safe = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      html = html.replace(new RegExp(safe, 'gi'), m => `<mark>${m}</mark>`);
-    });
+    /* 合成单个 alternation 正则只扫一遍。逐词 replace 会让「rag」先变成
+       <mark>rag</mark>,再被「r」二次包裹成 <mark><mark>r</mark>ag</mark>,视觉发糊。
+       长词排前面:JS 正则的 alternation 是最左优先而非最长匹配,短的排前面会截断长词。 */
+    const pats = terms
+      .filter(Boolean)
+      .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .sort((a, b) => b.length - a.length);
+    if (pats.length) {
+      try {
+        html = html.replace(new RegExp('(' + pats.join('|') + ')', 'gi'), '<mark>$1</mark>');
+      } catch (e) { /* 极端输入导致正则合成失败时退化为不高亮,不影响搜索结果本身 */ }
+    }
     return html;
   }
 

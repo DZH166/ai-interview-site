@@ -133,10 +133,9 @@ const BrowseView = (() => {
       refreshList(root, f);
     });
 
+    /* 列表渲染与详情选中统一交给 refreshList(含选中项被筛掉时的回退),
+       这里不再单独 select 一次 —— 否则首次进入会把详情渲染两遍。 */
     refreshList(root, f);
-    /* 恢复上次选中 */
-    const lastQid = f.qid && Data.question(f.qid) ? f.qid : ids[0];
-    if (lastQid) select(root, f, lastQid);
   }
 
   function refreshList(root, f) {
@@ -177,6 +176,17 @@ const BrowseView = (() => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(root, filters(), item.dataset.qid); }
       });
     });
+
+    /* 详情面板必须与当前筛选集一致。选中项被筛掉时(切专题/难度/关键词),详情会停在
+       列表里已不存在的题上,分页分母还会因 NavCtx 回退全量而虚高
+       (实测:切到 RAG 后左栏 71 条,右栏却仍是 AG-001、指示器 1 / 349)。
+       首次渲染时 #q-detail 是空的,同样在这里补一次选中 —— 两个条件合成一处判断,
+       避免「列表已换、详情没换」这种半同步状态。 */
+    const detail = $('#q-detail', root);
+    if (!ids.includes(DetailQid) || !detail || !detail.firstElementChild) {
+      const next = (f.qid && ids.includes(f.qid)) ? f.qid : ids[0];
+      if (next) select(root, f, next);
+    }
   }
 
   function select(root, f, qid) {
