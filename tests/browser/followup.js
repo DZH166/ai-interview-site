@@ -29,12 +29,19 @@ async function open(page, hash) {
     await page.goto(BASE + '/__seed__');
     await page.evaluate(() => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions: {}, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} })));
 
-    /* 开始一轮自测 */
-    await open(page, '#/mock');
-    await page.locator('#m-start').click();
+    /* 开始一轮定向练习:固定用一道有追问的叙述题(牛客 quiz 题无 followups 字段) */
+    await open(page, '#/home');
+    await page.evaluate(() => {
+      const withFu = Data.allQuestions().find(q => q.format !== 'quiz' && (q.followups || []).length);
+      if (!withFu) throw new Error('no narrative question with followups');
+      window.__fuQid = withFu.id;
+      MockView.startDirected([withFu.id], '追问测试');
+    });
     await page.waitForFunction(() => document.querySelector('#m-self'));
-    const firstQid = await page.evaluate(() => Store.data.mock.draft.items[0].qid);
-    const fuCount = await page.evaluate(qid => Data.question(qid).followups.length, firstQid);
+    const firstQid = await page.evaluate(() => window.__fuQid);
+    const q0text = await page.evaluate(qid => Data.question(qid).followups[0].q, firstQid);
+    const fid = await page.evaluate(({ qid, q }) => fuId(qid, q), { qid: firstQid, q: q0text });
+    const fuCount = await page.evaluate(({ qid, q }) => Data.question(qid).followups.length, { qid: firstQid, q: q0text });
     check('题目有追问可用(题库校验保证非空)', fuCount >= 1, String(fuCount));
 
     /* 对照参考要点后,追问二跳出现;未对照前不出现 */
@@ -45,8 +52,6 @@ async function open(page, hash) {
 
     /* 先写后看:追问参考默认不显示;写回答 → 对照 → 参考出现 */
     check('追问参考默认不显示', await page.locator('#mock-fu-list .fu-a').count() === 0);
-    const q0text = await page.evaluate(qid => Data.question(qid).followups[0].q, firstQid);
-    const fid = await page.evaluate(({ qid, q }) => fuId(qid, q), { qid: firstQid, q: q0text });
     await page.locator(`[data-fu-id="${fid}"]`).fill('我的追问回答:先说结论');
     await page.locator(`[data-fu-reveal="${fid}"]`).click();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list .fu-a'));
