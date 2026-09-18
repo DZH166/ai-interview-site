@@ -274,8 +274,8 @@ def main():
     # ---- 逐题检查
     totals = {}
     for q in qs:
-        if q.get("format") == "quiz":
-            continue   # 选择题不走叙述题的十要素/最小长度口径(见下方 quiz 分支)
+        if q.get("format") in ("quiz", "qa"):
+            continue   # 选择题/问答题不走叙述题的十要素/最小长度口径(见下方分支)
         total = sum(map(len, content_texts(q).values()))
         totals[q.get("id")] = total
         if total < MIN_TOTAL:
@@ -284,8 +284,8 @@ def main():
 
     for q in qs:
         qid = q.get("id", "?")
-        if q.get("format") == "quiz":
-            # 选择题分支:无十要素/最小长度(牛客选择题与叙述题形态不同),
+        if q.get("format") in ("quiz", "qa"):
+            # 选择题/问答题分支:无十要素/最小长度(牛客选择题与叙述题形态不同),
             # 仍检查:来源存在、verify 合法、占位符残留
             srcs = q.get("sources") or []
             if not srcs:
