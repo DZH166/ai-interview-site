@@ -281,6 +281,22 @@ const QRender = (() => {
       </div>`;
   }
 
+  /* ---- 问答题(qa)分支:牛客面经开放题的渲染 ----
+     题干 + 参考答案卡(默认收起,自测先答)。无选项、无十要素区块。 */
+  function qaBody(q) {
+    const hide = Store.rec(q.id).quizHide !== false;
+    return `
+      <div class="qf-part" data-part="qa">
+        <div class="qf-label">参考答案(先自己口述一遍,再对照)</div>
+        <div class="qf-body">${hide
+          ? '<p class="muted small">显示参考答案后此区展开。</p>'
+          : mdField(q, 'answer')}</div>
+        <div class="quiz-toolbar" style="margin-top:8px">
+          <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示参考答案' : '隐藏参考答案'}</button>
+        </div>
+      </div>`;
+  }
+
   function wireQuizToggle(root) {
     $$('[data-quiz-reveal]', root).forEach(btn => {
       btn.addEventListener('click', () => {
@@ -318,6 +334,11 @@ const QRender = (() => {
      默认全部展开:进来一次性看全,要自测时用「只看题干」整体收起。 */
   function standardSections(q, open) {
     const o = open !== false;
+    if (q.format === 'qa') {
+      return `
+        ${section('answer', '参考答案', qaBody(q), o)}
+        ${section('sources', '出处与核查状态', verifyBlock(q), o)}`;
+    }
     if (q.format === 'quiz') {
       return `
         ${section('answer', '选项与答案', answerFusionBody(q), o)}

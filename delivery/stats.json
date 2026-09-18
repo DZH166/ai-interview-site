@@ -1,6 +1,6 @@
 {
-  "content_hash": "22c7f51a1c32",
-  "questions_total": 3752,
+  "content_hash": "902f68ff5749",
+  "questions_total": 3900,
   "by_topic": {
     "agent": 252,
     "langchain": 6,
@@ -10,6 +10,9 @@
     "advanced": 22,
     "python-backend": 44,
     "engineering": 45,
+    "iv-company": 14,
+    "iv-nowcoder-llm": 74,
+    "iv-nowcoder-ml": 60,
     "quiz-cv": 197,
     "quiz-dl": 378,
     "quiz-finetune": 187,
@@ -21,16 +24,16 @@
     "pi-agent": 30
   },
   "by_difficulty": {
-    "basic": 3459,
+    "basic": 3607,
     "intermediate": 191,
     "advanced": 102
   },
   "by_verify_status": {
-    "partial": 3708,
+    "partial": 3856,
     "verified": 44
   },
   "docs_total": 15,
   "sources_total": 27,
   "candidates_total": 150,
-  "data_js_kb": 10316.6
+  "data_js_kb": 10939.5
 }

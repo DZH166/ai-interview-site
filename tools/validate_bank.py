@@ -8,7 +8,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 QDIR = ROOT / "data" / "questions"
 TOPICS = {t["id"] for t in json.loads((ROOT / "data" / "topics.json").read_text(encoding="utf-8"))}
-TYPES = {"concept", "principle", "comparison", "code", "debug", "scenario", "quiz"}
+TYPES = {"concept", "principle", "comparison", "code", "debug", "scenario", "quiz", "qa"}
 DIFFS = {"basic", "intermediate", "advanced"}
 ID_RE = re.compile(r"^[A-Z]{2,4}-\d{3,4}$")
 
@@ -37,6 +37,36 @@ def main():
         for q in data:
             tag = f"[{f.name}] {q.get('id', '<无ID>')}"
             # 选择题分支(quiz):题干/选项/正确项/解析/来源/核查,与叙述题十要素分开校验
+            if q.get("format") == "qa":
+                for k in ("id", "topic", "type", "difficulty", "title", "prompt",
+                          "answer", "sources", "verify"):
+                    if k not in q or q[k] in (None, "", []):
+                        errors.append(f"{tag}: 缺少必要字段 {k}")
+                if not ID_RE.match(q.get("id", "")):
+                    errors.append(f"{tag}: 题号不符合 XX-NNN 规则")
+                if q.get("topic") not in TOPICS:
+                    errors.append(f"{tag}: 未知专题 {q.get('topic')}")
+                if q.get("type") not in TYPES:
+                    errors.append(f"{tag}: 未知题型 {q.get('type')}")
+                if q.get("difficulty") not in DIFFS:
+                    errors.append(f"{tag}: 未知难度 {q.get('difficulty')}")
+                if len(str(q.get("answer", "")).strip()) < 40:
+                    warns.append(f"{tag}: 参考答案过短(<40 字)")
+                v = q.get("verify", {})
+                if v.get("status") not in ("verified", "partial", "todo"):
+                    errors.append(f"{tag}: verify.status 非法")
+                if not v.get("checked_date"):
+                    errors.append(f"{tag}: verify.checked_date 缺失")
+                for field in ("prompt", "answer"):
+                    sv = q.get(field, "")
+                    if isinstance(sv, str) and sv.count("```") % 2 != 0:
+                        errors.append(f"{tag}: 字段 {field} 代码块 ``` 不闭合")
+                whole = json.dumps(q, ensure_ascii=False)
+                moji = find_mojibake(whole)
+                if moji:
+                    errors.append(f"{tag}: 疑似乱码 -> {moji[0]}")
+                questions.append(q)
+                continue
             if q.get("format") == "quiz":
                 for k in ("id", "topic", "type", "difficulty", "title", "prompt",
                           "options", "answer", "plain", "sources", "verify"):

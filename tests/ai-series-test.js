@@ -50,6 +50,6 @@ test('built data and fused search do not create answers or erase existing user s
   assert(c.Search.query('fencing token').some(r => r.unit.qid === 'AG-033'));
   const card = c.Card.buildFromRound([{ ts: 1, items: [{ qid: 'AG-033', self: 'my answer' }] }], 0, id => c.D.question(id));
   assert(card.markdown.includes('fencing token')); assert(card.html.includes('fencing token'));
-  assert.strictEqual(c.S.validateQuestions(qs.filter(q => q.format !== 'quiz'), new Set()).errors.length, 0);
+  assert.strictEqual(c.S.validateQuestions(qs.filter(q => q.format !== 'quiz' && q.format !== 'qa'), new Set()).errors.length, 0);
 });
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`); process.exitCode = failed ? 1 : 0;
