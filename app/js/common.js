@@ -247,17 +247,21 @@ const QRender = (() => {
 
   /* ---- 选择题(quiz)分支:牛客题库选择题的渲染 ----
      与 10 要素叙述题共用外壳(metaLine/promptHtml/记录栏/笔记),内容区按 format 分支:
-     题干+选项卡(正确项高亮可切换隐藏)+官方解析。不自造 followups/check 等字段。 */
+     题干+选项卡(正确项高亮可切换隐藏)+官方解析。不自造 followups/check 等字段。
+
+     显隐机制(Fix2):答案始终在 DOM 中,用 CSS class 控制显隐——
+     按钮点击只切换 class,不重渲页面,响应即时(旧实现重渲整页导致按钮"无响应")。 */
   function quizOptionsHtml(q) {
     const hide = Store.rec(q.id).quizHide !== false;   /* 默认隐藏正确项,自测先选 */
     const multi = q.qtype === 'multi';
+    const revealCls = hide ? '' : ' quiz-revealed';
     return `
-      <div class="quiz-options" data-quiz-options="${esc(q.id)}">
+      <div class="quiz-options${revealCls}" data-quiz-options="${esc(q.id)}">
         ${(q.options || []).map(o => `
-          <div class="quiz-opt ${(!hide && o.right) ? 'quiz-right' : ''}">
+          <div class="quiz-opt ${o.right ? 'quiz-is-right' : ''}">
             <span class="quiz-lab">${esc(o.label)}</span>
             <span class="quiz-txt">${mdHtml(o.text)}</span>
-            ${(!hide && o.right) ? '<span class="quiz-mark">✓</span>' : ''}
+            <span class="quiz-mark">✓</span>
           </div>`).join('')}
       </div>
       <div class="quiz-toolbar">
@@ -268,16 +272,15 @@ const QRender = (() => {
 
   function quizBody(q) {
     const hide = Store.rec(q.id).quizHide !== false;
+    const ansCls = hide ? ' quiz-answer-hidden' : '';
     return `
       <div class="qf-part" data-part="options">
         <div class="qf-label">选项(先自己选,再对答案)</div>
         <div class="qf-body">${quizOptionsHtml(q)}</div>
       </div>
-      <div class="qf-part" data-part="answer">
+      <div class="qf-part quiz-answer-block${ansCls}" data-part="answer">
         <div class="qf-label">正确答案与官方解析</div>
-        <div class="qf-body">${hide
-          ? '<p class="muted small">显示正确答案后此区展开。</p>'
-          : mdField(q, 'answer')}</div>
+        <div class="qf-body">${mdField(q, 'answer')}</div>
       </div>`;
   }
 
@@ -285,15 +288,14 @@ const QRender = (() => {
      题干 + 参考答案卡(默认收起,自测先答)。无选项、无十要素区块。 */
   function qaBody(q) {
     const hide = Store.rec(q.id).quizHide !== false;
+    const ansCls = hide ? ' quiz-answer-hidden' : '';
     return `
-      <div class="qf-part" data-part="qa">
+      <div class="qf-part quiz-answer-block${ansCls}" data-part="qa">
         <div class="qf-label">参考答案(先自己口述一遍,再对照)</div>
-        <div class="qf-body">${hide
-          ? '<p class="muted small">显示参考答案后此区展开。</p>'
-          : mdField(q, 'answer')}</div>
-        <div class="quiz-toolbar" style="margin-top:8px">
-          <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示参考答案' : '隐藏参考答案'}</button>
-        </div>
+        <div class="qf-body">${mdField(q, 'answer')}</div>
+      </div>
+      <div class="quiz-toolbar" style="margin-top:8px">
+        <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示参考答案' : '隐藏参考答案'}</button>
       </div>`;
   }
 
@@ -302,12 +304,19 @@ const QRender = (() => {
       btn.addEventListener('click', () => {
         const qid = btn.dataset.quizReveal;
         const r = Store.rec(qid);
-        r.quizHide = r.quizHide === false ? undefined : false;   /* 切换显示/隐藏 */
-        Store.saveNow();
-        /* 就地重渲该题区块:保住滚动位置;走 App.route 会整页重置 */
-        const host = btn.closest('.study-wrap, #q-detail') || root;
-        if (typeof BrowseView !== 'undefined' && host.id === 'q-detail') BrowseView.select(host.closest('.browse-pane') ? host.closest('.browse-pane').parentElement : root, null, qid);
-        else if (typeof StudyView !== 'undefined') StudyView.render(host, qid);
+        const nowHidden = r.quizHide !== false;
+        const newHidden = !nowHidden;
+        r.quizHide = newHidden ? undefined : false;
+        /* 就地 CSS 切换:不重渲页面,响应即时(Fix2) */
+        const host = btn.closest('.study-wrap, #q-detail, #view') || document;
+        const opts = host.querySelector(`[data-quiz-options="${qid}"]`);
+        if (opts) opts.classList.toggle('quiz-revealed', !newHidden);
+        $$(`.quiz-answer-block`, host).forEach(blk => {
+          blk.classList.toggle('quiz-answer-hidden', newHidden);
+        });
+        btn.textContent = newHidden
+          ? (btn.closest('.qf-part')?.querySelector('.qf-label')?.textContent.includes('参考') ? '显示参考答案' : '显示正确答案')
+          : (btn.closest('.qf-part')?.querySelector('.qf-label')?.textContent.includes('参考') ? '隐藏参考答案' : '隐藏正确答案');
       });
     });
   }

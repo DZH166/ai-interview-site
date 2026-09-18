@@ -825,3 +825,43 @@ textarea:focus-visible {
 button.rel-link { border: none; cursor: pointer; font: inherit; }
 button.toc-l { display: block; width: 100%; text-align: left; background: none;
   border: none; cursor: pointer; font: inherit; color: var(--primary); }
+
+/* ---- 选择题(quiz)排版 ---- */
+.quiz-options { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.quiz-opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); transition: background .15s, border-color .15s;
+  line-height: 1.6;
+}
+.quiz-opt:hover { background: #f0f4ff; }
+.quiz-lab {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+  background: #e8effd; color: var(--primary); font-weight: 700; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.quiz-txt { flex: 1; min-width: 0; font-size: 14px; }
+.quiz-txt p { margin: 0 0 4px; }
+.quiz-right {
+  border-color: #22c55e !important; background: #f0fdf4 !important;
+}
+[data-theme="dark"] .quiz-right { border-color: #22c55e !important; background: #0a2e14 !important; }
+.quiz-right .quiz-lab { background: #22c55e; color: #fff; }
+.quiz-mark { color: #22c55e; font-weight: 700; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+.quiz-toolbar { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+
+/* ---- 问答题(qa)排版 ---- */
+.qa-ref {
+  padding: 12px 16px; border-left: 3px solid var(--primary); border-radius: 0 6px 6px 0;
+  background: #f8faff; margin: 8px 0; line-height: 1.8; font-size: 14px;
+}
+[data-theme="dark"] .qa-ref { background: #1a2332; }
+
+/* ---- 选择题答案显隐切换(Fix2: 纯 CSS 切换,不重渲) ---- */
+.quiz-options:not(.quiz-revealed) .quiz-is-right { border-color: var(--line) !important; background: var(--bg) !important; }
+.quiz-options:not(.quiz-revealed) .quiz-is-right .quiz-lab { background: #e8effd; color: var(--primary); }
+.quiz-options:not(.quiz-revealed) .quiz-mark { display: none; }
+.quiz-options.quiz-revealed .quiz-is-right { border-color: #22c55e !important; background: #f0fdf4 !important; }
+[data-theme="dark"] .quiz-options.quiz-revealed .quiz-is-right { background: #0a2e14 !important; }
+.quiz-answer-block.quiz-answer-hidden .qf-body { display: none; }
+.quiz-answer-block.quiz-answer-hidden .qf-label::after { content: ' — 显示后可见'; color: var(--muted); font-weight: normal; }

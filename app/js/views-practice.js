@@ -138,6 +138,9 @@ const BrowseView = (() => {
     refreshList(root, f);
   }
 
+  /* Fix3: 分批渲染——首屏 100 条,点"加载更多"追加,避免 3900 题一次性渲染 DOM 卡顿 */
+  var QUIZ_PAGE_SIZE = 100;
+
   function refreshList(root, f) {
     const ids = apply(f);
     NavCtx.set(ids);
@@ -147,7 +150,8 @@ const BrowseView = (() => {
       list.innerHTML = '<div class="empty">没有符合条件的题目,试试放宽筛选。</div>';
       return;
     }
-    list.innerHTML = ids.map(qid => {
+    const shown = ids.slice(0, QUIZ_PAGE_SIZE);
+    list.innerHTML = shown.map(qid => {
       const q = Data.question(qid);
       const st = Data.statusInfo(qid);
       const r = Store.rec(qid);
@@ -165,17 +169,41 @@ const BrowseView = (() => {
           </div></div>
         </div>`;
     }).join('');
+    /* Fix3: 加载更多按钮(超过 100 条时显示) */
+    if (ids.length > QUIZ_PAGE_SIZE) {
+      const loadMore = document.createElement('button');
+      loadMore.className = 'btn btn-small';
+      loadMore.style.cssText = 'display:block;width:100%;margin:8px auto;padding:8px;';
+      loadMore.textContent = '加载更多(剩余 ' + (ids.length - QUIZ_PAGE_SIZE) + ' 题)';
+      loadMore.addEventListener('click', () => {
+        const rendered = list.querySelectorAll('.q-item').length;
+        const more = ids.slice(rendered, rendered + QUIZ_PAGE_SIZE);
+        const html = more.map(qid => {
+          const q = Data.question(qid);
+          const st = Data.statusInfo(qid);
+          const r = Store.rec(qid);
+          return `
+            <div class="q-item" data-qid="${qid}" role="button" tabindex="0" aria-label="打开题目 ${esc(q.title)}">
+              <div class="q-item-body">
+              <div class="q-item-title">${esc(q.title)}</div>
+              <div class="q-item-meta">
+                <span class="qid">${qid}</span>
+                ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
+                ${QRender.badge(Data.diffLabel(q.difficulty), 'b-diff-' + q.difficulty)}
+                ${QRender.badge(st.label, st.cls)}
+                ${r.fav ? '<span class="star">★</span>' : ''}
+              </div></div>
+            </div>`;
+        }).join('');
+        loadMore.insertAdjacentHTML('beforebegin', html);
+        wireQItems(list, root);
+        if (list.querySelectorAll('.q-item').length >= ids.length) loadMore.remove();
+        else loadMore.textContent = '加载更多(剩余 ' + (ids.length - list.querySelectorAll('.q-item').length) + ' 题)';
+      });
+      list.appendChild(loadMore);
+    }
     list.classList.toggle('batching', batchMode);
-    $$('.q-item', list).forEach(item => {
-      item.addEventListener('click', () => {
-        select(root, filters(), item.dataset.qid);
-      });
-      item.addEventListener('keydown', e => {
-        /* 复选框等交互子元素不拦截 */
-        if (e.target !== item) return;
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(root, filters(), item.dataset.qid); }
-      });
-    });
+    wireQItems(list, root);
 
     /* 详情面板必须与当前筛选集一致。选中项被筛掉时(切专题/难度/关键词),详情会停在
        列表里已不存在的题上,分页分母还会因 NavCtx 回退全量而虚高
@@ -213,6 +241,21 @@ const BrowseView = (() => {
       <div class="rel-links">${QRender.relLinks(q)}</div>
       <div class="q-secs">${QRender.standardSections(q)}</div>`;
     wireDetail(root);
+  }
+
+  /* Fix3: 列表项事件绑定(分批渲染后每次追加都要重新绑定) */
+  function wireQItems(list, root) {
+    $$('.q-item', list).forEach(item => {
+      if (item.dataset.wired) return;
+      item.dataset.wired = '1';
+      item.addEventListener('click', () => {
+        select(root, filters(), item.dataset.qid);
+      });
+      item.addEventListener('keydown', e => {
+        if (e.target !== item) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(root, filters(), item.dataset.qid); }
+      });
+    });
   }
 
   function wireDetail(root) {
