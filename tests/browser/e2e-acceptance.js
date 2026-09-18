@@ -343,9 +343,11 @@ async function closeAnyModal(page) {
   ok('卡片是给人看的成品(有标题/来源/题号)',
     cardMd.includes('# 面试表达卡') && cardMd.includes('来源:') && cardMd.includes(firstQid));
 
-  /* 走一遍真实模拟面试,再从完成页导出「我的回答」那一版 */
+  /* 走一遍真实模拟面试,再从完成页导出「我的回答」那一版。
+     定向到一道有「面试口述版/参考要点」的叙述题(AG-001),避免随机抽到牛客 quiz 题
+     (quiz 题无「面试口述版」小节,会使旧断言失败)。 */
   await open(page, '#/mock');
-  const started = await page.evaluate(() => { const b = document.querySelector('#m-start'); if (b) b.click(); return !!b; });
+  const started = await page.evaluate(() => { MockView.startDirected(['AG-001'], 'e2e 回归'); return true; });
   ok('能从工作台进入模拟面试并开始', started);
   await page.waitForFunction(() => !!document.querySelector('#m-self'), null, { timeout: 8000 });
   await page.evaluate(t => {
