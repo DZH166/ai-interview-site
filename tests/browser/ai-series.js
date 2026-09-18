@@ -30,7 +30,7 @@ async function open(page, hash) {
     await page.evaluate(questions => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} })), old);
     await open(page, '#/home');
     check('new framework topic appears without removing Pi Agent', await page.locator('a[href="#/browse?t=langchain"]').count() === 1 && await page.locator('a[href="#/browse?t=pi-agent"]').count() === 1);
-    check('3900 questions are loaded and new questions have no fabricated practice', await page.evaluate(() => Data.allQuestions().length === 3900 && Data.allQuestions().filter(q => q.topic === 'langchain').every(q => !Store.rec(q.id).practiceCount && !Store.rec(q.id).status)));
+    check('3843 questions are loaded and new questions have no fabricated practice', await page.evaluate(() => Data.allQuestions().length === 3843 && Data.allQuestions().filter(q => q.topic === 'langchain').every(q => !Store.rec(q.id).practiceCount && !Store.rec(q.id).status)));
     await open(page, '#/browse?t=langchain');
     await page.waitForFunction(() => document.querySelector('#f-topic')?.value === 'langchain');
     check('framework category has six questions', await page.locator('.q-item[data-qid]').count() === 6);

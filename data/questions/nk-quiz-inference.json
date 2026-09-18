@@ -7722,60 +7722,6 @@
   }
  },
  {
-  "id": "INQ-0144",
-  "topic": "quiz-inference",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "KV Cache的核心作用是什么？",
-  "prompt": "KV Cache的核心作用是什么？",
-  "options": [
-   {
-    "label": "A",
-    "text": "压缩模型权重，减少显存占用",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "缓存已计算的Key和Value矩阵，避免自回归推理时的重复计算",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "加速模型权重加载速度",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "减少注意力计算的精度损失",
-    "right": false
-   }
-  ],
-  "answer": "B\n\n自回归生成时，每生成一个新token都需要对所有历史token重新计算K、V，时间复杂度O(n²)。KV Cache将前缀的K、V计算结果缓存起来，新token只需计算自身的Q、K、V并与历史K、V拼接后计算attention，将每步复杂度降至O(n)。代价是显存占用随序列长度线性增加。",
-  "plain": "自回归生成时，每生成一个新token都需要对所有历史token重新计算K、V，时间复杂度O(n²)。KV Cache将前缀的K、V计算结果缓存起来，新token只需计算自身的Q、K、V并与历史K、V拼接后计算attention，将每步复杂度降至O(n)。代价是显存占用随序列长度线性增加。",
-  "tags": [
-   "推理",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639688,
-   "src_file": ""
-  }
- },
- {
   "id": "INQ-0145",
   "topic": "quiz-inference",
   "format": "quiz",

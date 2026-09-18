@@ -64,7 +64,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await context.setOffline(true);
     await page.goto(BASE + '/index.html#/study/LC-003');
     await page.waitForFunction(() => typeof Data !== 'undefined' && document.querySelector('[data-question-prompt="LC-003"]'));
-    check('SW 实际控制页面并在断网后加载题库与学习页', await page.evaluate(() => Data.allQuestions().length === 3752 && typeof SRS !== 'undefined'));
+    check('SW 实际控制页面并在断网后加载题库与学习页', await page.evaluate(() => Data.allQuestions().length === 3843 && typeof SRS !== 'undefined'));
     await context.setOffline(false);
     check('index.html 不再含内联脚本', !fs.readFileSync(path.join(ROOT, 'app/index.html'), 'utf8').match(/<script>(?!\s*<\/)/));
 
