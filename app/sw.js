@@ -7,9 +7,9 @@
  */
 'use strict';
 <<<<<<< Updated upstream
-const CACHE_VERSION = 'shell-3d80ce54b04f';
+const CACHE_VERSION = 'shell-7cf7bcb74627';
 =======
-const CACHE_VERSION = 'shell-3d80ce54b04f';
+const CACHE_VERSION = 'shell-7cf7bcb74627';
 >>>>>>> Stashed changes
 const APP_SHELL = [
   './',

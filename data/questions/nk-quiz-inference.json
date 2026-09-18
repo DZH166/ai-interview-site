@@ -2592,60 +2592,6 @@
   }
  },
  {
-  "id": "INQ-0049",
-  "topic": "quiz-inference",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "张量并行（Tensor Parallelism）推理时，Transformer的MLP层如何划分？",
-  "prompt": "张量并行（Tensor Parallelism）推理时，Transformer的MLP层如何划分？",
-  "options": [
-   {
-    "label": "A",
-    "text": "按batch维度切分，不同GPU处理不同请求",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "第一个线性层按列切分，第二个按行切分，每GPU持有部分权重",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "将整个MLP层复制到每个GPU",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "按序列长度维度切分，不同GPU处理不同位置",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nMegatron-LM的张量并行策略：MLP中第一个线性层（W1）按列切分（每GPU计算部分隐层），第二个线性层（W2）按行切分（每GPU负责对应行，最后all-reduce聚合）。Attention中Q、K、V矩阵按head切分（不同GPU处理不同head），输出线性层按行切分后all-reduce。每层只需一次all-reduce通信。",
-  "plain": "Megatron-LM的张量并行策略：MLP中第一个线性层（W1）按列切分（每GPU计算部分隐层），第二个线性层（W2）按行切分（每GPU负责对应行，最后all-reduce聚合）。Attention中Q、K、V矩阵按head切分（不同GPU处理不同head），输出线性层按行切分后all-reduce。每层只需一次all-reduce通信。",
-  "tags": [
-   "推理",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639700,
-   "src_file": ""
-  }
- },
- {
   "id": "INQ-0050",
   "topic": "quiz-inference",
   "format": "quiz",
@@ -3996,60 +3942,6 @@
   }
  },
  {
-  "id": "INQ-0075",
-  "topic": "quiz-inference",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "以下关于LLM推理中\"算术强度\"（Arithmetic Intensity）的计算，哪项正确？",
-  "prompt": "以下关于LLM推理中\"算术强度\"（Arithmetic Intensity）的计算，哪项正确？",
-  "options": [
-   {
-    "label": "A",
-    "text": "算术强度 = 模型参数量 / 批次大小",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "算术强度 = FLOPs / 内存读写字节数",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "算术强度 = GPU计算能力 / 内存带宽",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "算术强度 = 序列长度 / 隐层维度",
-    "right": false
-   }
-  ],
-  "answer": "B\n\n算术强度 = 计算量(FLOPs) / 内存访问量(Bytes)，单位是FLOPs/Byte。当算术强度高于GPU的\"屋脊点\"（计算能力/带宽），为计算瓶颈；低于屋脊点则为内存带宽瓶颈。推理decode阶段算术强度极低。",
-  "plain": "算术强度 = 计算量(FLOPs) / 内存访问量(Bytes)，单位是FLOPs/Byte。当算术强度高于GPU的\"屋脊点\"（计算能力/带宽），为计算瓶颈；低于屋脊点则为内存带宽瓶颈。推理decode阶段算术强度极低。",
-  "tags": [
-   "推理",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639806,
-   "src_file": ""
-  }
- },
- {
   "id": "INQ-0076",
   "topic": "quiz-inference",
   "format": "quiz",
@@ -4586,60 +4478,6 @@
   },
   "metadata": {
    "nowcoder_id": 11639783,
-   "src_file": ""
-  }
- },
- {
-  "id": "INQ-0086",
-  "topic": "quiz-inference",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "以下关于\"INT4 Weight-Only Quantization\"（W4A16，权重INT4激活FP16）的描述，哪项正确？",
-  "prompt": "以下关于\"INT4 Weight-Only Quantization\"（W4A16，权重INT4激活FP16）的描述，哪项正确？",
-  "options": [
-   {
-    "label": "A",
-    "text": "激活值和权重都量化为INT4",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "只有权重量化为INT4，推理时临时反量化后进行FP16计算",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "可以直接用INT4进行矩阵乘法，无需反量化",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "W4A16精度等同于FP16",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nW4A16（权重仅量化）：权重以INT4存储（节省显存和带宽），推理时在线反量化（dequantize）到FP16再与FP16激活值相乘。相比W4A4（权重和激活都量化），W4A16精度更高，是GPTQ/AWQ等方法的典型配置。",
-  "plain": "W4A16（权重仅量化）：权重以INT4存储（节省显存和带宽），推理时在线反量化（dequantize）到FP16再与FP16激活值相乘。相比W4A4（权重和激活都量化），W4A16精度更高，是GPTQ/AWQ等方法的典型配置。",
-  "tags": [
-   "推理",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639849,
    "src_file": ""
   }
  },
@@ -5936,60 +5774,6 @@
   },
   "metadata": {
    "nowcoder_id": 11639859,
-   "src_file": ""
-  }
- },
- {
-  "id": "INQ-0111",
-  "topic": "quiz-inference",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "在推理优化中，\"Operator Fusion\"（算子融合）的核心收益是什么？",
-  "prompt": "在推理优化中，\"Operator Fusion\"（算子融合）的核心收益是什么？",
-  "options": [
-   {
-    "label": "A",
-    "text": "减少模型参数量",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "将多个小kernel合并为一个，减少GPU内存读写次数（提高算术强度）",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "自动并行化计算",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "降低数值精度误差",
-    "right": false
-   }
-  ],
-  "answer": "B\n\n算子融合将LayerNorm+激活+矩阵乘法等连续小操作合并为单个kernel，数据在SRAM/寄存器中直接流转，避免多次写入和读取HBM，大幅减少内存带宽消耗，这是FlashAttention和各类推理框架的核心优化手段。",
-  "plain": "算子融合将LayerNorm+激活+矩阵乘法等连续小操作合并为单个kernel，数据在SRAM/寄存器中直接流转，避免多次写入和读取HBM，大幅减少内存带宽消耗，这是FlashAttention和各类推理框架的核心优化手段。",
-  "tags": [
-   "推理",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639820,
    "src_file": ""
   }
  },
@@ -9230,60 +9014,6 @@
   },
   "metadata": {
    "nowcoder_id": 11639722,
-   "src_file": ""
-  }
- },
- {
-  "id": "INQ-0173",
-  "topic": "quiz-inference",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "以下关于KV Cache量化的描述，正确的是？",
-  "prompt": "以下关于KV Cache量化的描述，正确的是？",
-  "options": [
-   {
-    "label": "A",
-    "text": "KV Cache量化会导致模型精度急剧下降，实际中不可用",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "将KV Cache从FP16量化为INT8/INT4可以减少显存占用，代价是轻微精度损失，允许更大的batch size或更长序列",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "KV Cache量化只对prefill有效，对decode无效",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "KV Cache量化需要重新训练模型",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nKV Cache通常占推理显存的40-70%（长序列场景），量化KV Cache可显著扩展推理容量。INT8 KV Cache（如vLLM支持）将显存减半，精度损失通常<0.5% MMLU。INT4 KV Cache进一步减半，损失约1-2%。实践中，INT8 KV Cache已被广泛应用于生产环境，是扩展并发能力的实用方案。",
-  "plain": "KV Cache通常占推理显存的40-70%（长序列场景），量化KV Cache可显著扩展推理容量。INT8 KV Cache（如vLLM支持）将显存减半，精度损失通常<0.5% MMLU。INT4 KV Cache进一步减半，损失约1-2%。实践中，INT8 KV Cache已被广泛应用于生产环境，是扩展并发能力的实用方案。",
-  "tags": [
-   "推理",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639734,
    "src_file": ""
   }
  },

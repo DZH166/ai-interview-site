@@ -8910,60 +8910,6 @@
   }
  },
  {
-  "id": "AGQ-0166",
-  "topic": "agent",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "在面向Agent的安全设计中，\"最小权限原则\"（Principle of Least Privilege）应如何应用？",
-  "prompt": "在面向Agent的安全设计中，\"最小权限原则\"（Principle of Least Privilege）应如何应用？",
-  "options": [
-   {
-    "label": "A",
-    "text": "Agent应该获取所有可能需要的权限",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "Agent只获取完成当前任务所需的最小权限，任务完成后立即撤销",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "只有Admin级Agent才能调用工具",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "所有Agent使用相同的权限级别",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nAgent安全的最小权限原则：每个Agent只授予完成特定任务的必要权限（如只读数据库权限、受限的文件访问范围），任务完成后撤销，防止Agent被劫持后造成大范围损害。这与传统软件安全原则相同。",
-  "plain": "Agent安全的最小权限原则：每个Agent只授予完成特定任务的必要权限（如只读数据库权限、受限的文件访问范围），任务完成后撤销，防止Agent被劫持后造成大范围损害。这与传统软件安全原则相同。",
-  "tags": [
-   "Agent",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11640186,
-   "src_file": ""
-  }
- },
- {
   "id": "AGQ-0167",
   "topic": "agent",
   "format": "quiz",
