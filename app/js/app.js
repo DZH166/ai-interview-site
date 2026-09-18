@@ -5,7 +5,8 @@ const App = (() => {
   const routes = {
     home: HomeView, browse: BrowseView, study: StudyView,
     mock: MockView, review: ReviewView, docs: DocsView,
-    search: SearchView, maintain: MaintainView, path: PathView
+    search: SearchView, maintain: MaintainView, path: PathView,
+    resume: ResumeView
   };
   let pendingAnchor = '';
 

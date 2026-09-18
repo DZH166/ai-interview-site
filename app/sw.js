@@ -6,11 +6,7 @@
  * CACHE_VERSION 由 tools/build.py 按内容哈希自动盖章,数据一变缓存名即变。
  */
 'use strict';
-<<<<<<< Updated upstream
-const CACHE_VERSION = 'shell-73f15f094257';
-=======
-const CACHE_VERSION = 'shell-73f15f094257';
->>>>>>> Stashed changes
+const CACHE_VERSION = 'shell-9cc01ee15ac0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -26,6 +22,7 @@ const APP_SHELL = [
   './js/common.js',
   './js/express.js',
   './js/views-practice.js',
+  './js/views-resume.js',
   './js/views-knowledge.js',
   './js/views-review.js',
   './js/app.js',
@@ -56,7 +53,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // 只管同源
+  if (url.origin !== self.location.origin) return;
 
   const isNavigate = req.mode === 'navigate';
   const isData = url.pathname.endsWith('/data.js');
@@ -91,7 +88,6 @@ async function cacheFirst(req) {
   const cache = await caches.open(CACHE_VERSION);
   const hit = await cache.match(req);
   if (hit) {
-    // 后台静默更新,不阻塞响应
     fetch(req).then((fresh) => { if (fresh && fresh.ok) cache.put(req, fresh.clone()); }).catch(() => {});
     return hit;
   }

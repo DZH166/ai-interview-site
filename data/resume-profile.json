@@ -1,0 +1,437 @@
+{
+ "version": 1,
+ "name": "董照红",
+ "role": "AI Agent / 大模型应用开发实习生",
+ "updated": "2026-09-19",
+ "sections": [
+  {
+   "id": "proj-codewright",
+   "name": "Codewright Agent",
+   "subtitle": "从零实现的终端 AI 编程助手",
+   "type": "project",
+   "techTags": [
+    "Python",
+    "ReAct",
+    "MCP",
+    "Multi-Agent",
+    "SWE-bench"
+   ],
+   "description": "从零实现的轻量级 Coding Agent,不依赖现成框架,由 ReAct 驱动 LLM 自主完成代码检索、文件编辑、命令执行与错误修复。五层架构:交互/引擎/工具/记忆/安全。",
+   "groups": [
+    {
+     "name": "Agent Loop 与 ReAct 范式",
+     "resumePoint": "实现流式多轮决策、工具结果回灌、JSON Schema 校验、停止条件与 max_steps 兜底",
+     "questionIds": [
+      "AG-002",
+      "AG-004",
+      "AG-059",
+      "AG-006",
+      "AG-053",
+      "AG-015",
+      "AG-017",
+      "AGQ-0005",
+      "AGQ-0024",
+      "AGQ-0039",
+      "AGQ-0085",
+      "AGQ-0092",
+      "AGQ-0097",
+      "AGQ-0103",
+      "AGQ-0129"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "上下文与记忆管理",
+     "resumePoint": "设计工具结果 Token 预算与两层渐进式压缩,支撑 8 小时以上连续会话;JSONL 持久化与跨会话记忆",
+     "questionIds": [
+      "AG-031",
+      "AG-036",
+      "AG-005",
+      "AG-044",
+      "AG-023",
+      "AGQ-0009",
+      "AGQ-0018",
+      "AGQ-0027",
+      "AGQ-0035",
+      "AGQ-0048"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "MCP 扩展与工具描述优化",
+     "resumePoint": "实现工具描述延迟加载,百级工具场景 Token 占用降低 85%;Slash Command、Skill、Hook 扩展",
+     "questionIds": [
+      "AG-004",
+      "AG-059",
+      "AG-060",
+      "AG-011",
+      "AG-018",
+      "AG-019",
+      "AG-020",
+      "AGQ-0030"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "安全与权限设计",
+     "resumePoint": "五层权限确认与审计机制,权限弹窗 30→5 次;Git Worktree 隔离多 Agent",
+     "questionIds": [
+      "AG-059",
+      "AG-061",
+      "AG-038",
+      "AG-006",
+      "AG-020",
+      "AG-026",
+      "AGQ-0044",
+      "AGQ-0058",
+      "AGQ-0097",
+      "AGQ-0104"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "Agent 评测体系",
+     "resumePoint": "构建 SWE-bench-Live 20 题子集与上下文保留用例;信息保留率 17%→100%",
+     "questionIds": [
+      "AG-034",
+      "AG-045",
+      "AGQ-0003",
+      "AGQ-0089",
+      "AGQ-0130"
+     ],
+     "mustKnow": false
+    },
+    {
+     "name": "多 Agent 协作",
+     "resumePoint": "Git Worktree 隔离多 Agent 并行修改",
+     "questionIds": [
+      "AG-040",
+      "AG-008",
+      "AG-021",
+      "AGQ-0006",
+      "AGQ-0021",
+      "AGQ-0028",
+      "AGQ-0040",
+      "AGQ-0050"
+     ],
+     "mustKnow": false
+    },
+    {
+     "name": "失败恢复与错误修复",
+     "resumePoint": "Agent 在多步执行中失败怎么办",
+     "questionIds": [
+      "AG-003",
+      "AGQ-0038",
+      "AGQ-0168"
+     ],
+     "mustKnow": true
+    }
+   ]
+  },
+  {
+   "id": "proj-suzhi",
+   "name": "溯知 RAG 知识库引擎",
+   "subtitle": "可追溯 RAG 知识库引擎",
+   "type": "project",
+   "techTags": [
+    "Python",
+    "FastAPI",
+    "BGE",
+    "FAISS",
+    "BM25",
+    "RRF"
+   ],
+   "description": "分层架构 FastAPI 服务,支持异构文档解析(含 OCR)、混合检索(BGE+FAISS / Jieba+BM25 / RRF)、置信度拒答与章节页码溯源、版本化索引热切换。",
+   "groups": [
+    {
+     "name": "文档切块与滑窗策略",
+     "resumePoint": "结构化层级分块与滑窗重叠(Overlap)策略",
+     "questionIds": [
+      "RG-023",
+      "RG-024",
+      "RGQ-0014",
+      "RGQ-0021",
+      "RGQ-0036",
+      "RGQ-0044",
+      "RGQ-0064",
+      "RGQ-0067",
+      "RGQ-0080",
+      "RGQ-0104",
+      "RGQ-0106",
+      "RGQ-0107",
+      "RGQ-0114",
+      "RGQ-0133",
+      "RGQ-0159"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "混合检索链路(BGE+FAISS / Jieba+BM25 / RRF)",
+     "resumePoint": "结合语义向量召回与关键词召回,经 RRF 倒数排名融合重排",
+     "questionIds": [
+      "RG-040",
+      "RG-006",
+      "RG-025",
+      "RGQ-0009",
+      "RGQ-0023",
+      "RGQ-0071",
+      "RGQ-0094",
+      "RGQ-0125",
+      "RGQ-0132",
+      "RGQ-0156",
+      "RG-038",
+      "RG-050",
+      "RG-051",
+      "RG-005",
+      "RG-016",
+      "RG-021",
+      "RG-022",
+      "RG-025",
+      "RG-026",
+      "RG-027",
+      "RGQ-0022",
+      "RGQ-0026",
+      "RGQ-0076",
+      "RGQ-0083",
+      "RGQ-0092"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "精准溯源与置信度拒答",
+     "resumePoint": "设置置信度阈值实现低相关主动拒答,响应带文档名、章节及页码溯源",
+     "questionIds": [
+      "RG-047",
+      "RG-057",
+      "RG-011",
+      "RG-012",
+      "RG-014",
+      "RGQ-0111",
+      "RGQ-0112",
+      "RGQ-0138"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "重排优化",
+     "resumePoint": "RRF 倒数排名融合重排,提升专业术语检索召回率",
+     "questionIds": [
+      "RG-039",
+      "RG-050",
+      "RG-005",
+      "RG-031",
+      "RGQ-0037",
+      "RGQ-0052",
+      "RGQ-0058",
+      "RGQ-0163"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "异构文档解析与 OCR",
+     "resumePoint": "支持 Markdown、TXT、PDF、DOCX 及扫描图本地 OCR 提取",
+     "questionIds": [
+      "RG-010",
+      "RGQ-0054",
+      "RG-002"
+     ],
+     "mustKnow": false
+    },
+    {
+     "name": "RAG 评测与质量监控",
+     "resumePoint": "评测集冷启动、检索质量漂移监控",
+     "questionIds": [
+      "RG-046",
+      "RG-051",
+      "RG-055",
+      "RG-009",
+      "RG-064",
+      "RG-065"
+     ],
+     "mustKnow": false
+    },
+    {
+     "name": "RAG 生产化与热切换",
+     "resumePoint": "版本化索引机制,支持后台无感重建与安全热切换,构建失败自动回滚",
+     "questionIds": [
+      "RG-041",
+      "RG-064",
+      "RG-033",
+      "RGQ-0015",
+      "RGQ-0041"
+     ],
+     "mustKnow": false
+    }
+   ]
+  },
+  {
+   "id": "proj-valotactics",
+   "name": "ValoTactics-Agent",
+   "subtitle": "面向 FPS 电竞的多模态战术推演系统",
+   "type": "project",
+   "techTags": [
+    "Python",
+    "LangGraph",
+    "Pydantic v2",
+    "Chroma",
+    "FastAPI",
+    "Redis",
+    "Streamlit"
+   ],
+   "description": "基于 LangGraph 编排多分支有向状态图,结合多模态 RAG 实现精准点位推荐,Redis 缓存预加载与流式输出将首字响应压至 1.5s。",
+   "groups": [
+    {
+     "name": "LangGraph 状态机编排",
+     "resumePoint": "编排多分支有向状态图,解耦三大状态流;Schema-First 设计,Pydantic v2 强类型契约",
+     "questionIds": [
+      "LC-003"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "多模态 RAG 与反制检索",
+     "resumePoint": "「地图-英雄-机制」多级元数据过滤方案,多模态向量库,零幻觉精准点位推荐",
+     "questionIds": [
+      "RG-038",
+      "RG-050",
+      "RG-051",
+      "RG-005",
+      "RG-016",
+      "RG-021",
+      "RG-022",
+      "RG-025",
+      "RG-026",
+      "RG-027"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "高并发与低时延优化",
+     "resumePoint": "FastAPI + asyncio 异步架构,Redis 热缓存预加载,流式输出首字响应 1.5s",
+     "questionIds": [
+      "PY-024",
+      "PY-029",
+      "PY-032",
+      "PY-006",
+      "PY-013",
+      "PY-022",
+      "PY-007",
+      "PY-037"
+     ],
+     "mustKnow": true
+    }
+   ]
+  },
+  {
+   "id": "internship",
+   "name": "实习经历",
+   "subtitle": "AI 应用开发实习",
+   "type": "internship",
+   "techTags": [
+    "Prompt Engineering",
+    "知识库",
+    "RPA"
+   ],
+   "description": "电商垂直知识库构建、Prompt 工程与会话调优、AI+RPA 账目自动化、业务辅助工具落地。",
+   "groups": [
+    {
+     "name": "Prompt 工程与会话调优",
+     "resumePoint": "重构 System Prompt 与动态上下文拼接策略,降低幻觉提升采纳率",
+     "questionIds": [
+      "LP-030",
+      "LP-032",
+      "LP-006",
+      "LP-018",
+      "LPQ-0007",
+      "LPQ-0010",
+      "LPQ-0028",
+      "LPQ-0033",
+      "LPQ-0037",
+      "LPQ-0041",
+      "LPQ-0042",
+      "LPQ-0093"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "电商垂直知识库构建",
+     "resumePoint": "数百篇异构文档清洗切块,配置向量库索引,端到端问答调优",
+     "questionIds": [
+      "RG-023",
+      "RG-024",
+      "RGQ-0014",
+      "RGQ-0021",
+      "RGQ-0036",
+      "RGQ-0044",
+      "RGQ-0064",
+      "RGQ-0067",
+      "RG-038",
+      "RG-050",
+      "RG-051",
+      "RG-005",
+      "RG-016",
+      "RG-021",
+      "RG-022",
+      "RG-025"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "上下文与多轮对话管理",
+     "resumePoint": "多轮对话中答非所问与上下文丢失问题的评测与修复",
+     "questionIds": [
+      "LP-022",
+      "LP-007",
+      "LP-002",
+      "LPQ-0092"
+     ],
+     "mustKnow": true
+    }
+   ]
+  },
+  {
+   "id": "skills-base",
+   "name": "专业技能",
+   "subtitle": "技术底座",
+   "type": "skill",
+   "techTags": [
+    "Python",
+    "FastAPI",
+    "Redis",
+    "LLM"
+   ],
+   "description": "Python 后端开发、LLM 上下文管理、幻觉治理。",
+   "groups": [
+    {
+     "name": "LLM 上下文窗口管理",
+     "resumePoint": "理解上下文窗口、Token 计费与截断策略",
+     "questionIds": [
+      "LBQ-0002",
+      "LBQ-0061",
+      "LBQ-0154",
+      "LBQ-0157",
+      "LBQ-0179",
+      "LBQ-0224",
+      "LBQ-0228",
+      "LBQ-0269",
+      "LBQ-0278",
+      "LBQ-0324"
+     ],
+     "mustKnow": true
+    },
+    {
+     "name": "幻觉治理",
+     "resumePoint": "理解幻觉成因与缓解手段(RAG / 提示词 / 事后校验)",
+     "questionIds": [
+      "LBQ-0058",
+      "LBQ-0150",
+      "LBQ-0172",
+      "LBQ-0237",
+      "LBQ-0255"
+     ],
+     "mustKnow": true
+    }
+   ]
+  }
+ ]
+}

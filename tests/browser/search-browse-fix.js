@@ -126,8 +126,11 @@ async function open(page, hash) {
     check('切筛选后:详情标题属于当前列表',
       !!after.detailTitle && after.listTitles.includes(after.detailTitle),
       JSON.stringify({ detailTitle: after.detailTitle, firstFew: after.listTitles.slice(0, 3) }));
-    check('切筛选后:分页分母等于当前列表长度', denom === after.listCount,
-      JSON.stringify({ indicator: after.indicator, listCount: after.listCount, count: after.count }));
+    /* 分批渲染(Fix3)后 DOM 只渲染首批 100 条,分页分母的正确语义是当前筛选集总数:
+       必须与 #f-count 显示的筛选数一致(切筛选后同步收敛,不再虚高回全量) */
+    const filteredTotal = Number((after.count.match(/\d+/) || [])[0] || 0);
+    check('切筛选后:分页分母等于当前筛选集总数', filteredTotal > 0 && denom === filteredTotal,
+      JSON.stringify({ indicator: after.indicator, filteredTotal, count: after.count }));
 
     check('全程无页面 JS 异常', errors.length === 0, JSON.stringify(errors.slice(0, 3)));
 

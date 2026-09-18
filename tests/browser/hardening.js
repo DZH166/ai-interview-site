@@ -64,7 +64,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await context.setOffline(true);
     await page.goto(BASE + '/index.html#/study/LC-003');
     await page.waitForFunction(() => typeof Data !== 'undefined' && document.querySelector('[data-question-prompt="LC-003"]'));
-    check('SW 实际控制页面并在断网后加载题库与学习页', await page.evaluate(() => Data.allQuestions().length === 3752 && typeof SRS !== 'undefined'));
+    /* 期望题量从 data/questions/*.json 现算,避免每次扩库都改断言 */
+    const expectedCount = fs.readdirSync(path.join(ROOT, 'data/questions'))
+      .filter(f => f.endsWith('.json'))
+      .reduce((n, f) => n + JSON.parse(fs.readFileSync(path.join(ROOT, 'data/questions', f), 'utf8')).length, 0);
+    check('SW 实际控制页面并在断网后加载题库与学习页', await page.evaluate(n => Data.allQuestions().length === n && typeof SRS !== 'undefined', expectedCount));
     await context.setOffline(false);
     check('index.html 不再含内联脚本', !fs.readFileSync(path.join(ROOT, 'app/index.html'), 'utf8').match(/<script>(?!\s*<\/)/));
 

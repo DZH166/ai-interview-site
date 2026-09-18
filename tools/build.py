@@ -76,6 +76,7 @@ def main():
         "concepts": concepts,
         "projects": projects,
         "highlights": highlights,
+        "resume": load_json(ROOT / "data" / "resume-profile.json") if (ROOT / "data" / "resume-profile.json").exists() else {},
     }
     js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。 */\n"
           "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,
@@ -92,7 +93,7 @@ def main():
                    "app/js/util.js", "app/js/srs.js", "app/js/store.js",
                    "app/js/markdown.js", "app/js/highlight.js",
                    "app/js/search.js", "app/js/common.js", "app/js/express.js",
-                   "app/js/views-practice.js",
+                   "app/js/views-practice.js", "app/js/views-resume.js",
                    "app/js/views-knowledge.js", "app/js/views-review.js", "app/js/app.js"]
     h = hashlib.md5()
     for rel in shell_files:
