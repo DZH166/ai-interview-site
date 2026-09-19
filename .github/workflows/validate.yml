@@ -56,6 +56,11 @@ jobs:
       - name: 备份可预览恢复(预览不改状态/四类归类/与实际导入一致)
         run: node tests/preview-restore-test.js
 
+      - name: 恢复预览旧问题与真实暂停回归
+        run: |
+          node tests/baseline2/issues-node-test.js
+          node tests/stage4-pause-test.js
+
       - name: 清空与终态边界、冲突副本与快照校验
         run: node tests/record-boundary-test.js
 
@@ -279,3 +284,20 @@ jobs:
           CHROME: default
           PORT: '8944'
         run: node tests/browser/learning-integrity.js
+
+      - name: 混合题型与简历练习(显隐/快照/分页/进度/布局)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8950'
+        run: |
+          node tests/browser/practice-contract.js
+          node tests/browser/resume-view.js
+          node tests/browser/nowcoder-quiz.js
+
+      - name: 可信并发矩阵(四态与原文副本)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8951'
+        run: node tests/browser/stage4-matrix.js

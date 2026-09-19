@@ -141,6 +141,25 @@ const BrowseView = (() => {
   /* Fix3: 分批渲染——首屏 100 条,点"加载更多"追加,避免 3900 题一次性渲染 DOM 卡顿 */
   var QUIZ_PAGE_SIZE = 100;
 
+  function listItem(qid, f) {
+    const q = Data.question(qid);
+    const st = Data.statusInfo(qid);
+    const r = Store.rec(qid);
+    const ck = batchMode ? `<input type="checkbox" class="q-ck" data-qid="${qid}">` : '';
+    return `
+      <div class="q-item ${f.qid === qid ? 'active' : ''}" data-qid="${qid}" role="button" tabindex="0" aria-label="打开题目 ${esc(q.title)}">
+        ${ck}<div class="q-item-body">
+        <div class="q-item-title">${esc(q.title)}</div>
+        <div class="q-item-meta">
+          <span class="qid">${qid}</span>
+          ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
+          ${QRender.badge(Data.diffLabel(q.difficulty), 'b-diff-' + q.difficulty)}
+          ${QRender.badge(st.label, st.cls)}
+          ${r.fav ? '<span class="star">★</span>' : ''}
+        </div></div>
+      </div>`;
+  }
+
   function refreshList(root, f) {
     const ids = apply(f);
     NavCtx.set(ids);
@@ -151,24 +170,7 @@ const BrowseView = (() => {
       return;
     }
     const shown = ids.slice(0, QUIZ_PAGE_SIZE);
-    list.innerHTML = shown.map(qid => {
-      const q = Data.question(qid);
-      const st = Data.statusInfo(qid);
-      const r = Store.rec(qid);
-      const ck = batchMode ? `<input type="checkbox" class="q-ck" data-qid="${qid}">` : '';
-      return `
-        <div class="q-item ${f.qid === qid ? 'active' : ''}" data-qid="${qid}" role="button" tabindex="0" aria-label="打开题目 ${esc(q.title)}">
-          ${ck}<div class="q-item-body">
-          <div class="q-item-title">${esc(q.title)}</div>
-          <div class="q-item-meta">
-            <span class="qid">${qid}</span>
-            ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
-            ${QRender.badge(Data.diffLabel(q.difficulty), 'b-diff-' + q.difficulty)}
-            ${QRender.badge(st.label, st.cls)}
-            ${r.fav ? '<span class="star">★</span>' : ''}
-          </div></div>
-        </div>`;
-    }).join('');
+    list.innerHTML = shown.map(qid => listItem(qid, f)).join('');
     /* Fix3: 加载更多按钮(超过 100 条时显示) */
     if (ids.length > QUIZ_PAGE_SIZE) {
       const loadMore = document.createElement('button');
@@ -178,23 +180,7 @@ const BrowseView = (() => {
       loadMore.addEventListener('click', () => {
         const rendered = list.querySelectorAll('.q-item').length;
         const more = ids.slice(rendered, rendered + QUIZ_PAGE_SIZE);
-        const html = more.map(qid => {
-          const q = Data.question(qid);
-          const st = Data.statusInfo(qid);
-          const r = Store.rec(qid);
-          return `
-            <div class="q-item" data-qid="${qid}" role="button" tabindex="0" aria-label="打开题目 ${esc(q.title)}">
-              <div class="q-item-body">
-              <div class="q-item-title">${esc(q.title)}</div>
-              <div class="q-item-meta">
-                <span class="qid">${qid}</span>
-                ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
-                ${QRender.badge(Data.diffLabel(q.difficulty), 'b-diff-' + q.difficulty)}
-                ${QRender.badge(st.label, st.cls)}
-                ${r.fav ? '<span class="star">★</span>' : ''}
-              </div></div>
-            </div>`;
-        }).join('');
+        const html = more.map(qid => listItem(qid, f)).join('');
         loadMore.insertAdjacentHTML('beforebegin', html);
         wireQItems(list, root);
         if (list.querySelectorAll('.q-item').length >= ids.length) loadMore.remove();
@@ -680,7 +666,7 @@ const MockView = (() => {
       if (!current) return null;
       ans.snapshotCapturedLate = !!(ans.self || ans.revealed || Object.keys(ans.fu || {}).length);
       ans.questionSnapshot = JSON.parse(JSON.stringify(Object.fromEntries(
-        ['id','title','topic','type','difficulty','tags','prompt','answer','plain','interview','pitfalls','fusion_notes','followups','content_version']
+        ['id','title','format','options','qtype','topic','type','difficulty','tags','prompt','answer','plain','interview','pitfalls','fusion_notes','followups','content_version']
           .filter(k => current[k] !== undefined).map(k => [k, current[k]]))));
       ans.qRev = ans.qRev || (current.content_version && current.content_version.rev) || '';
     }
@@ -951,6 +937,8 @@ const MockView = (() => {
         ${QRender.metaLine(q)}
         <h2 class="q-title-sm">${esc(q.title)}</h2>
         ${QRender.promptHtml(q)}
+        ${q.format === 'quiz' ? QRender.quizOptionsHtml(q, ans.revealed, false) : ''}
+        ${!q.options && Data.question(qid)?.format === 'quiz' ? '<p class="notice">旧练习未保存选项，原题面不完整；请打开当前题目重新练习。</p>' : ''}
         <label class="note-label">你的回答(先自己写,再对照)</label>
         <textarea id="m-self" class="mock-self" placeholder="像面试口述一样,写下你的答案要点……">${esc(ans.self || '')}</textarea>
         <div class="mock-actions">
@@ -959,8 +947,8 @@ const MockView = (() => {
             : `<div class="mock-ref">
                  <h4>参考要点(直接答案)</h4>
                  ${QRender.mdHtml(q.answer)}
-                 <details><summary>展开大白话解释</summary>${QRender.mdHtml(q.plain)}</details>
-                 <details><summary>展开面试表达</summary>${QRender.mdHtml(q.interview)}</details>
+                 ${q.plain ? `<details><summary>${q.format === 'quiz' ? '展开解析' : '展开大白话解释'}</summary>${QRender.mdHtml(q.plain)}</details>` : ''}
+                 ${q.interview ? `<details><summary>展开面试表达</summary>${QRender.mdHtml(q.interview)}</details>` : ''}
                  <a href="#/study/${qid}" target="_self">查看完整解析 →</a>
                </div>
                ${renderFollowups(q, ans)}

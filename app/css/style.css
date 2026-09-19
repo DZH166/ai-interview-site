@@ -860,3 +860,23 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 [data-theme="dark"] .quiz-options.quiz-revealed .quiz-is-right { background: #0a2e14 !important; }
 .quiz-answer-block.quiz-answer-hidden .qf-body { display: none; }
 .quiz-answer-block.quiz-answer-hidden .qf-label::after { content: ' — 显示后可见'; color: var(--muted); font-weight: normal; }
+
+/* 简历练习：保留分组关联，每道题独立一行。 */
+.resume-head, .resume-section { min-width: 0; }
+.resume-head p, .resume-section p { max-width: 44em; }
+.resume-progress { display: grid; gap: 8px; }
+.resume-group { margin-top: 16px; }
+.resume-q-list { display: grid; margin-top: 8px; }
+.resume-q-item {
+  display: grid; grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 12px; align-items: start; padding: 12px 8px;
+  border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none;
+}
+.resume-q-item:hover, .resume-q-item:focus-visible { background: var(--bg); }
+.resume-q-title { max-width: 44em; overflow-wrap: anywhere; }
+.resume-q-item .qid { padding-top: 2px; }
+.resume-q-item .badge { white-space: nowrap; }
+@media (max-width: 600px) {
+  .resume-q-item { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .resume-q-title { grid-column: 1 / -1; grid-row: 2; }
+}

@@ -54,9 +54,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       const items = [...document.querySelectorAll('.resume-q-item .qid')].map(e => e.textContent);
       return items.length > 0 && items.every(id => !!Data.question(id));
     }));
-    check('进度条总数与配置的题号总数一致', await page.evaluate(() => {
+    check('进度条总数与去重后的题号总数一致', await page.evaluate(() => {
       const r = window.APP_DATA.resume;
-      const total = (r.sections || []).reduce((n, s) => n + (s.groups || []).reduce((m, g) => m + (g.questionIds || []).length, 0), 0);
+      const total = new Set(r.sections.flatMap(s => s.groups.flatMap(g => g.questionIds))).size;
       const txt = (document.querySelector('.resume-progress')?.textContent || '').replace(/\s+/g, ' ');
       return txt.includes(`0 / ${total} 题`);
     }));

@@ -7,22 +7,21 @@ const ResumeView = (() => {
 
   function data() { return (window.APP_DATA && window.APP_DATA.resume) || {}; }
 
+  function questionIds(groups) {
+    return [...new Set(groups.flatMap(g => g.questionIds || []))].filter(id => Data.question(id));
+  }
+
   function progress() {
-    const d = data();
-    /* store.js 顶层 const 不会挂到 window 上,必须用全局绑定访问(typeof 守住脚本未加载) */
-    const rec = (typeof Store !== 'undefined' && Store.data) ? Store.data.questions : null;
-    if (!rec) return { total: 0, done: 0 };
-    let total = 0, done = 0;
-    for (const s of d.sections || []) {
-      for (const g of s.groups || []) {
-        for (const qid of g.questionIds || []) {
-          total++;
-          const r = rec[qid];
-          if (r && (r.status === 'ok' || r.status === 'review')) done++;
-        }
-      }
-    }
-    return { total, done };
+    const groups = (data().sections || []).flatMap(s => s.groups || []);
+    const ids = questionIds(groups);
+    const rec = Store.data.questions;
+    return {
+      total: ids.length,
+      links: groups.reduce((n, g) => n + (g.questionIds || []).length, 0),
+      done: ids.filter(id => rec[id]?.status === 'ok').length,
+      review: ids.filter(id => rec[id]?.status === 'review').length,
+      practiced: ids.filter(id => (rec[id]?.practiceCount || 0) > 0).length
+    };
   }
 
   function render(root) {
@@ -37,10 +36,10 @@ const ResumeView = (() => {
     root.innerHTML = `
       <div class="resume-head">
         <h1>简历针对性练习</h1>
-        <p class="muted">${esc(d.role)} · ${esc(d.name)} · 题库匹配 ${pg.total} 题</p>
+        <p class="muted">${esc(d.role)} · ${esc(d.name)} · 题库匹配 ${pg.total} 道独立题目 · ${pg.links} 条关联</p>
         <div class="resume-progress">
           <div class="progress" style="max-width:400px"><div class="progress-in" style="width:${pct}%"></div></div>
-          <span class="muted small">${pg.done} / ${pg.total} 题(${pct}%)</span>
+          <span class="muted small">已掌握 ${pg.done} / ${pg.total} 题(${pct}%) · 已练习 ${pg.practiced} · 待复习 ${pg.review}</span>
         </div>
         <div class="btn-row" style="margin-top:8px">
           <button class="btn btn-small ${!showAll ? 'btn-primary' : ''}" data-rv-filter="must">必知题</button>
@@ -55,7 +54,7 @@ const ResumeView = (() => {
   function renderSection(s) {
     const groups = (s.groups || []).filter(g => showAll || g.mustKnow);
     if (!groups.length) return '';
-    const totalQ = groups.reduce((n, g) => n + (g.questionIds || []).length, 0);
+    const totalQ = questionIds(groups).length;
     return `
       <div class="card resume-section" style="margin-top:14px">
         <h2 style="margin-top:0">${esc(s.name)}
@@ -70,16 +69,16 @@ const ResumeView = (() => {
 
   function renderGroup(g) {
     const mustTag = g.mustKnow ? '<span class="badge st-weak">必知</span>' : '<span class="badge b-tag">加分</span>';
-    const items = (g.questionIds || []).map(qid => {
+    const items = questionIds([g]).map(qid => {
       const q = Data.question(qid);
       if (!q) return '';
       const st = Data.statusInfo(qid);
-      const done = st.id === 'ok' || st.id === 'review';
+      const done = st.id === 'ok';
       return `
         <a class="resume-q-item ${done ? 'resume-q-done' : ''}" href="#/study/${esc(qid)}">
           <span class="qid">${esc(qid)}</span>
           <span class="resume-q-title">${esc(q.title)}</span>
-          ${done ? '<span class="quiz-mark">✓</span>' : ''}
+          <span class="badge ${esc(st.cls)}">${done ? '✓ ' : ''}${esc(st.label)}</span>
         </a>`;
     }).filter(Boolean).join('');
     if (!items) return '';
@@ -87,7 +86,7 @@ const ResumeView = (() => {
       <details class="resume-group" open>
         <summary style="cursor:pointer;font-weight:600;margin:10px 0 4px">
           ${mustTag} ${esc(g.name)}
-          <span class="muted small" style="margin-left:6px">${(g.questionIds || []).length} 题</span>
+          <span class="muted small" style="margin-left:6px">${questionIds([g]).length} 题</span>
         </summary>
         ${g.resumePoint ? `<p class="muted small" style="margin:4px 0 6px">简历对应: ${esc(g.resumePoint)}</p>` : ''}
         <div class="resume-q-list">${items}</div>

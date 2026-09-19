@@ -251,8 +251,8 @@ const QRender = (() => {
 
      显隐机制(Fix2):答案始终在 DOM 中,用 CSS class 控制显隐——
      按钮点击只切换 class,不重渲页面,响应即时(旧实现重渲整页导致按钮"无响应")。 */
-  function quizOptionsHtml(q) {
-    const hide = Store.rec(q.id).quizHide !== false;   /* 默认隐藏正确项,自测先选 */
+  function quizOptionsHtml(q, revealed, toolbar = true) {
+    const hide = revealed === undefined ? Store.rec(q.id).quizHide !== false : !revealed;
     const multi = q.qtype === 'multi';
     const revealCls = hide ? '' : ' quiz-revealed';
     return `
@@ -264,10 +264,10 @@ const QRender = (() => {
             <span class="quiz-mark">✓</span>
           </div>`).join('')}
       </div>
-      <div class="quiz-toolbar">
+      ${toolbar ? `<div class="quiz-toolbar">
         <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示正确答案' : '隐藏正确答案'}</button>
         ${multi ? '<span class="badge b-tag">多选</span>' : '<span class="badge b-tag">单选</span>'}
-      </div>`;
+      </div>` : `<span class="badge b-tag">${multi ? '多选' : '单选'}</span>`}`;
   }
 
   function quizBody(q) {
@@ -280,7 +280,7 @@ const QRender = (() => {
       </div>
       <div class="qf-part quiz-answer-block${ansCls}" data-part="answer">
         <div class="qf-label">正确答案与官方解析</div>
-        <div class="qf-body">${mdField(q, 'answer')}</div>
+        <div class="qf-body">${mdField(q, 'answer')}${q.plain && !(q.answer || '').includes(q.plain) ? mdField(q, 'plain') : ''}</div>
       </div>`;
   }
 
@@ -314,9 +314,8 @@ const QRender = (() => {
         $$(`.quiz-answer-block`, host).forEach(blk => {
           blk.classList.toggle('quiz-answer-hidden', newHidden);
         });
-        btn.textContent = newHidden
-          ? (btn.closest('.qf-part')?.querySelector('.qf-label')?.textContent.includes('参考') ? '显示参考答案' : '显示正确答案')
-          : (btn.closest('.qf-part')?.querySelector('.qf-label')?.textContent.includes('参考') ? '隐藏参考答案' : '隐藏正确答案');
+        const label = Data.question(qid)?.format === 'qa' ? '参考答案' : '正确答案';
+        btn.textContent = (newHidden ? '显示' : '隐藏') + label;
       });
     });
   }
@@ -351,7 +350,6 @@ const QRender = (() => {
     if (q.format === 'quiz') {
       return `
         ${section('answer', '选项与答案', answerFusionBody(q), o)}
-        ${section('plain', '官方解析', mdField(q, 'plain'), o)}
         ${section('sources', '出处与核查状态', verifyBlock(q), o)}`;
     }
     return `
@@ -434,5 +432,5 @@ const QRender = (() => {
   }
 
   return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, mdField, promptHtml, deepHtml, section, wireQuizToggle,
-           answerFusionBody, standardSections, focusToggle, wireFocusToggle };
+           answerFusionBody, quizOptionsHtml, standardSections, focusToggle, wireFocusToggle };
 })();
