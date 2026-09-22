@@ -473,9 +473,10 @@ const Store = (() => {
       if (snapshot === undefined) return;
       if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) { errs.push(where + ': questionSnapshot 必须是对象'); return; }
       if (snapshot.id !== qid || typeof snapshot.title !== 'string') errs.push(where + ': 快照题号或题目标题无效');
-      ['prompt','answer','plain','interview','fusion_notes','topic','type','difficulty'].forEach(k => {
+      ['prompt','answer','plain','interview','fusion_notes','topic','type','difficulty','format','qtype'].forEach(k => {
         if (snapshot[k] !== undefined && typeof snapshot[k] !== 'string') errs.push(where + ': 快照字段 ' + k + ' 必须是文本');
       });
+      if (snapshot.options !== undefined && (!Array.isArray(snapshot.options) || snapshot.options.some(o => !o || typeof o.label !== 'string' || typeof o.text !== 'string' || typeof o.right !== 'boolean'))) errs.push(where + ': 快照选项字段无效');
       for (const k of ['tags','pitfalls']) if (snapshot[k] !== undefined && (!Array.isArray(snapshot[k]) || snapshot[k].some(v => typeof v !== 'string'))) errs.push(where + ': 快照字段 ' + k + ' 必须是文本数组');
       if (snapshot.followups !== undefined && (!Array.isArray(snapshot.followups) || snapshot.followups.some(f => !f || typeof f.q !== 'string' || typeof f.a !== 'string'))) errs.push(where + ': 快照追问字段无效');
       if (snapshot.content_version !== undefined && (!snapshot.content_version || typeof snapshot.content_version !== 'object' || typeof snapshot.content_version.rev !== 'string')) errs.push(where + ': 快照版本无效');

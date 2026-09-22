@@ -236,31 +236,110 @@ const Search = (() => {
     return norm(q).split(/[\s,，、;；]+/).filter(Boolean);
   }
 
+  /* ---- 别名/同义词表(查询期展开,不进索引) ----
+     用户口中的词与题库/文档里的写法经常对不上:搜「rag」打不出「检索增强」,
+     搜「微调」找不到只写「fine-tune」的题。这里把常见对应关系收成一张小表,
+     查询时把每个词展开成一组「任一命中即算该词命中」的候选(键一律小写,
+     匹配发生在 norm 之后的 token 上)。只动查询层,索引/静态层签名不受影响。 */
+  const ALIASES = {
+    'rag': ['检索增强', '检索增强生成'],
+    '检索增强': ['rag'],
+    'agent': ['智能体'],
+    '智能体': ['agent'],
+    '微调': ['fine-tune', 'finetune', 'sft'],
+    'fine-tune': ['微调', 'finetune', 'sft'],
+    'finetune': ['微调', 'fine-tune', 'sft'],
+    'prompt': ['提示词'],
+    '提示词': ['prompt'],
+    'langgraph': ['lang graph'],
+    '向量': ['embedding', '嵌入'],
+    '嵌入': ['embedding', '向量'],
+    'embedding': ['嵌入', '向量'],
+    'mcp': ['模型上下文协议'],
+    '模型上下文协议': ['mcp'],
+    'a2a': ['agent-to-agent'],
+    'function calling': ['函数调用', '工具调用'],
+    '函数调用': ['function calling', '工具调用'],
+    '工具调用': ['function calling', '函数调用'],
+    'rlhf': ['人类反馈强化学习'],
+    '人类反馈强化学习': ['rlhf'],
+    'cot': ['思维链', 'chain of thought'],
+    '思维链': ['cot', 'chain of thought'],
+    'chain of thought': ['思维链', 'cot']
+  };
+  /* 每个用户词 → [原词 + 别名候选]。只展开一层,避免环上互相展开导致候选爆炸;
+     多词别名(function calling / chain of thought / lang graph)在分词后已经散掉、
+     查不到,这里按查询原文(小写)整串兜一次底。 */
+  function expandTerms(terms, raw) {
+    const whole = norm(raw);
+    return terms.map(t => {
+      const alt = [t];
+      (ALIASES[t] || []).forEach(a => { if (alt.indexOf(a) < 0) alt.push(a); });
+      Object.keys(ALIASES).forEach(key => {
+        if (key.indexOf(' ') >= 0 && whole.indexOf(key) >= 0 && alt.indexOf(key) < 0) alt.push(key);
+      });
+      return alt;
+    });
+  }
+
+  function matchUnit(u, opt, altGroups) {
+    if (opt.scope === 'q' && !(u.kind === 'q' || u.kind === 'note')) return -1;
+    if (opt.scope === 'doc' && !(u.kind === 'doc' || u.kind === 'udoc')) return -1;
+    if (opt.scope === 'note' && u.kind !== 'note') return -1;
+    if (opt.topic && u.topic && u.topic !== opt.topic) return -1;
+    let score = 0;
+    for (const alt of altGroups) {
+      /* 任一候选命中即算该词命中;分数只按实际命中的候选累计 */
+      let best = -1;
+      for (const t of alt) {
+        const idx = u.text.indexOf(t);
+        if (idx >= 0) {
+          const count = u.text.split(t).length - 1;
+          const s = Math.min(count, 6) * u.weight * (u.field === 'title' ? 2 : 1);
+          if (s > best) best = s;
+        }
+      }
+      if (best < 0) return -1;
+      score += best;
+    }
+    return score;
+  }
+
   /* 返回 [{unit, score, snippet, hits, fields}] —— 同一目标已聚合为一条 */
   function query(q, opt) {
     ensureFresh();   /* 数据已变则先重建,避免返回陈旧内容 */
     opt = opt || {};
     const terms = tokenize(q);
     if (!terms.length) return [];
+    const altGroups = expandTerms(terms, q);
+    const strict = /^([a-z]{2,4}-\d{3})$/i.test(q.trim());
     const results = [];
     units.forEach(u => {
-      if (opt.scope === 'q' && !(u.kind === 'q' || u.kind === 'note')) return;
-      if (opt.scope === 'doc' && !(u.kind === 'doc' || u.kind === 'udoc')) return;
-      if (opt.scope === 'note' && u.kind !== 'note') return;
-      if (opt.topic && u.topic && u.topic !== opt.topic) return;
-      if (opt.topic && !u.topic && opt.topic !== '__all__') { /* 无专题的文档:仅"全部"时保留 */ }
-      let score = 0, ok = true;
-      for (const t of terms) {
-        const idx = u.text.indexOf(t);
-        if (idx < 0) { ok = false; break; }
-        const count = u.text.split(t).length - 1;
-        score += Math.min(count, 6) * u.weight * (u.field === 'title' ? 2 : 1);
-      }
-      if (!ok) return;
+      const score = matchUnit(u, opt, altGroups);
+      if (score < 0) return;
       /* 题号直查加权 */
-      if (terms.length === 1 && /^([a-z]{2,4}-\d{3})$/i.test(q.trim()) && u.field === 'title') score += 50;
-      results.push({ unit: u, score, snippet: makeSnippet(u.raw, terms) });
+      if (terms.length === 1 && strict && u.field === 'title') score += 50;
+      results.push({ unit: u, score, snippet: makeSnippet(u.raw, altGroups.flat()), partial: false });
     });
+    /* 零结果降级:严格 AND(含别名)一无所获时,退一步按 OR(任一候选命中)
+       再扫一遍并打上 partial 标记——界面据此提示「部分匹配」。
+       注意不做词内切分:内容删改后旧关键词必须保持搜不到(分层缓存测试的
+       既有断言),切成子块会把残留字撞成假命中。
+       别名展开在查询期做,静态层缓存签名与这道降级完全无关。 */
+    if (!results.length) {
+      units.forEach(u => {
+        for (const alt of altGroups) {
+          for (const t of alt) {
+            const idx = u.text.indexOf(t);
+            if (idx >= 0) {
+              const s = Math.min(u.text.split(t).length - 1, 6) * u.weight * (u.field === 'title' ? 2 : 1);
+              results.push({ unit: u, score: s, snippet: makeSnippet(u.raw, [t]), partial: true });
+              return;   /* 同一条目只收一次:按用户词顺序取第一个命中的候选 */
+            }
+          }
+        }
+      });
+    }
     results.sort((a, b) => b.score - a.score);
     /* 同一目标只留一条。一道题的 answer / deep / plain 各自命中一次,过去会刷出
        5~8 张卡片,标题与摘要还完全相同(摘要取该字段原文,标题统一取题名)。
@@ -293,12 +372,15 @@ const Search = (() => {
       const k = groupKey(r.unit);
       const g = map.get(k);
       if (!g) {
-        map.set(k, { unit: r.unit, score: r.score, snippet: r.snippet, hits: 1, fields: r.unit.field ? [r.unit.field] : [] });
+        map.set(k, { unit: r.unit, score: r.score, snippet: r.snippet, hits: 1,
+                     fields: r.unit.field ? [r.unit.field] : [], partial: !!r.partial });
         return;
       }
       g.hits++;
       if (r.unit.field && g.fields.indexOf(r.unit.field) < 0) g.fields.push(r.unit.field);
       if (r.score > g.score) { g.unit = r.unit; g.score = r.score; g.snippet = r.snippet; }
+      /* 部分匹配是整组结果级别的属性:组内任一命中来自降级扫描,该组就要提示 */
+      if (r.partial) g.partial = true;
     });
     /* results 已按分数降序,插入顺序天然就是「各组最高分」的降序,无需再排一次
        (重排会打乱同分项的相对次序,徒增不确定性) */

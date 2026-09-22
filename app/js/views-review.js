@@ -91,27 +91,44 @@ const ReviewView = (() => {
   function render(root) {
     /* 深链 #/review?t=rounds&r=<roundId>(搜索我的追问回答落点):定位到那一轮 */
     const dq = parseHash().query || {};
-    if (dq.t && ['today', 'mistakes', 'fav', 'weak', 'review', 'note', 'recent', 'rounds'].includes(dq.t)) tab = dq.t;
+    if (dq.t && ['today', 'mistakes', 'fav', 'weak', 'review', 'note', 'recent', 'rounds', 'stats'].includes(dq.t)) tab = dq.t;
     const tq = getTodayQueue(), mk = getMistakes();
     const dueCt = getDueSuggestions().length;
     const drillCt = (() => { const s = getDrillState(); return s.unsolved.length + s.drafts.length; })();
     const todayCt = tq.length + dueCt + drillCt;
+    const TABS = [
+      ['today',   `📌 今日复习${todayCt ? ` (${todayCt})` : ''}`],
+      ['mistakes',`❌ 错题本${mk.length ? ` (${mk.length})` : ''}`],
+      ['fav',     '★ 收藏'],
+      ['weak',    '还不熟'],
+      ['review',  '待复习'],
+      ['note',    '有笔记'],
+      ['recent',  '最近练习'],
+      ['rounds',  '模拟面试历史'],
+      ['stats',   '📊 统计'],
+    ];
     root.innerHTML = `
-      <div class="review-tabs">
-        ${[
-          ['today',   `📌 今日复习${todayCt ? ` (${todayCt})` : ''}`],
-          ['mistakes',`❌ 错题本${mk.length ? ` (${mk.length})` : ''}`],
-          ['fav',     '★ 收藏'],
-          ['weak',    '还不熟'],
-          ['review',  '待复习'],
-          ['note',    '有笔记'],
-          ['recent',  '最近练习'],
-          ['rounds',  '模拟面试历史'],
-        ].map(([id, label]) => `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}">${label}</button>`).join('')}
+      <div class="review-tabs" role="tablist" aria-label="复习中心分区">
+        ${TABS.map(([id, label]) =>
+          `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}" role="tab"
+             aria-selected="${tab === id}" tabindex="${tab === id ? 0 : -1}"
+             id="rtab-${id}" aria-controls="review-body">${label}</button>`).join('')}
       </div>
       ${tab === 'today' ? renderTodayIntro(tq, dueCt, drillCt) : ''}
-      <div id="review-body"></div>`;
+      <div id="review-body" role="tabpanel" aria-labelledby="rtab-${tab}" tabindex="0"></div>`;
     $$('.rtab', root).forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(root); }));
+    /* 方向键在标签间移动(焦点随动并激活):读屏/键盘用户不必逐个 Tab 越过 8 个标签。
+       Left/Right 循环;激活走 click 复用既有重渲逻辑,焦点落到新激活的标签上。 */
+    const tablist = $('.review-tabs', root);
+    if (tablist) tablist.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const tabs = $$('.rtab', root);
+      const i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      if (next) { next.focus(); next.click(); }
+    });
     renderBody(root);
   }
 
@@ -134,6 +151,7 @@ const ReviewView = (() => {
     if (tab === 'today') { renderToday(root); return; }
     if (tab === 'mistakes') { renderMistakes(box); return; }
     if (tab === 'rounds') { renderRounds(box); return; }
+    if (tab === 'stats') { StatsView.render(box); return; }   /* Track C:纯 DOM 统计,委托给独立模块 */
     const qs = Data.allQuestions();
     let items = [];
     if (tab === 'fav') items = qs.filter(q => Store.rec(q.id).fav);
@@ -362,6 +380,30 @@ const ReviewView = (() => {
     $$('[data-redo]', box).forEach(b => b.addEventListener('click', () => go('#/study/' + b.dataset.redo)));
   }
 
+  /* ---- 轮次趋势条(Track A):最近 10 轮,一格一轮,红色深浅 = weak 率。
+     纯 DOM/CSS,无图表库;hover(title)给日期/题数/weak 数/平均每题秒数。
+     少于 2 轮不渲染——一格「趋势」没有意义。 ---- */
+  function renderRoundTrend(rounds) {
+    const recent = rounds.slice(0, 10);
+    if (recent.length < 2) return '';
+    const cells = recent.slice().reverse().map(rd => {          /* 反转:旧→新从左到右 */
+      const items = rd.items || [];
+      const weakRate = items.length ? items.filter(i => i.mark === 'weak').length / items.length : 0;
+      /* alpha 0.15~0.85 线性映射到 weak 率;red 主题中性,深色模式下同样可读 */
+      const alpha = 0.15 + Math.min(1, Math.max(0, weakRate)) * 0.7;
+      /* 平均每题秒数:任一题有 ms 数据才算有数据;旧轮次没有 ms 字段 → '—' */
+      const msList = items.map(i => i.ms).filter(v => typeof v === 'number' && v > 0);
+      const avg = msList.length ? (msList.reduce((a, b) => a + b, 0) / items.length / 1000).toFixed(1) + 's' : '—';
+      const title = `${fmtTime(rd.ts)} · ${items.length} 题 · weak ${items.filter(i => i.mark === 'weak').length} · 平均每题 ${avg}`;
+      return `<div class="round-trend-cell" style="background:rgba(239,68,68,${alpha.toFixed(2)})" title="${esc(title)}"></div>`;
+    }).join('');
+    return `
+      <div class="round-trend-wrap">
+        <div class="round-trend">${cells}</div>
+        <div class="muted small">最近 ${recent.length} 轮 weak 率趋势(左旧右新) · 颜色越红 weak 率越高,悬停查看详情</div>
+      </div>`;
+  }
+
   /* ---- 模拟面试历史:轮次列表 + 可展开详情(兼容旧格式) ---- */
   function renderRounds(box) {
     const dq = parseHash().query || {};   /* 深链定位(与 render 内的 tab 深链同源) */
@@ -370,7 +412,7 @@ const ReviewView = (() => {
       box.innerHTML = '<div class="empty">还没有模拟面试记录。完成一轮<a href="#/mock">自测</a>后,这里会显示题目、你的回答与复盘状态。</div>';
       return;
     }
-    box.innerHTML = rounds.map((rd, ri) => {
+    box.innerHTML = renderRoundTrend(rounds) + rounds.map((rd, ri) => {
       const items = rd.items || [];
       const revealed = items.filter(it => it.revealed).length;
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';

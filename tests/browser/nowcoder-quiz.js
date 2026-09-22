@@ -39,20 +39,32 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     };
 
     await open('#/study/LBQ-0001');
+    /* Track E:选项卡来自全量题字段,等分片合并完成、学习页重渲染后再断言 */
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true && document.querySelector('.quiz-options .quiz-opt'), null, { timeout: 20000 });
     check('选择题:选项卡渲染', await page.locator('.quiz-options .quiz-opt').count() >= 2);
-    check('默认隐藏正确项(自测先选)', await page.locator('.quiz-right').count() === 0);
+    check('默认隐藏正确项(自测先选)', await page.locator('.quiz-options.quiz-revealed').count() === 0);
     await page.locator('[data-quiz-reveal]').first().click();
-    await page.waitForFunction(() => document.querySelector('.quiz-right'));
+    await page.waitForFunction(() => document.querySelector('.quiz-options.quiz-revealed'));
     check('显示正确答案:高亮+解析展开', await page.evaluate(() => {
       const t = document.querySelector('#view').textContent;
-      return document.querySelector('.quiz-right') !== null && t.includes('官方解析');
+      return document.querySelector('.quiz-options.quiz-revealed .quiz-is-right') !== null
+        && !document.querySelector('.quiz-answer-block.quiz-answer-hidden')
+        && t.includes('官方解析');
     }));
     await page.locator('[data-quiz-reveal]').first().click();
-    check('隐藏切换:就地恢复隐藏', await page.evaluate(() => document.querySelectorAll('.quiz-right').length === 0));
+    check('隐藏切换:就地恢复隐藏', await page.evaluate(() => document.querySelectorAll('.quiz-options.quiz-revealed').length === 0
+      && document.querySelectorAll('.quiz-answer-block.quiz-answer-hidden').length > 0));
 
     await open('#/browse?t=quiz-ml');
     await page.waitForFunction(() => document.querySelector('#f-topic')?.value === 'quiz-ml');
-    check('新专题 quiz-ml 在浏览页可选且有题', await page.locator('.q-item[data-qid]').count() > 100);
+    check('新专题 quiz-ml 在浏览页可选且有题', await page.locator('.q-item[data-qid]').count() >= 100);
+    check('分批渲染:首屏恰好一批(100 条)', await page.evaluate(() => document.querySelectorAll('.q-item[data-qid]').length === 100));
+    const more = page.locator('#q-list > button.btn');
+    if (await more.count()) {
+      await more.click();
+      await page.waitForFunction(() => document.querySelectorAll('.q-item[data-qid]').length > 100, null, { timeout: 30000 });
+    }
+    check('加载更多:分批追加后超过一批', await page.evaluate(() => document.querySelectorAll('.q-item[data-qid]').length > 100));
 
     await open('#/home');
     check('首页专题进度列出 17 专题(含新 8 个)', await page.evaluate(() => document.querySelectorAll('.topic-row').length >= 17));

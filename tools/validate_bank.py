@@ -4,10 +4,10 @@ import json, re, sys, io
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
+# 校验入口做成函数(build.py 要在构建前以 fail-fast 方式程序化调用同一套规则);
+# 副作用(stdout 重包装、报告落盘)全部收进函数体,保持 import 无副作用。
 QDIR = ROOT / "data" / "questions"
-TOPICS = {t["id"] for t in json.loads((ROOT / "data" / "topics.json").read_text(encoding="utf-8"))}
 TYPES = {"concept", "principle", "comparison", "code", "debug", "scenario", "quiz", "qa"}
 DIFFS = {"basic", "intermediate", "advanced"}
 ID_RE = re.compile(r"^[A-Z]{2,4}-\d{3,4}$")
@@ -18,12 +18,18 @@ def find_mojibake(text):
         issues.append("U+FFFD 替换符")
     if "锟斤拷" in text or "烫烫" in text:
         issues.append("GBK 乱码特征")
-    for m in re.finditer(r"[\xc0-\xdf][\x80-\xbf]|Ã.|Â ", text):
+    for m in re.finditer(r"[\xc0-\xdf][\x80-\xbf]|Ã.|Â ", text):
         issues.append("疑似编码错转: " + m.group(0)[:8])
         break
     return issues
 
-def main():
+def validate():
+    """执行全部校验,返回 (errors, warns, questions)。CI 与 build.py 共用此入口。"""
+    try:
+        topics = json.loads((ROOT / "data" / "topics.json").read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        topics = []
+    TOPICS = {t["id"] for t in topics}
     errors, warns, questions = [], [], []
     for f in sorted(QDIR.glob("*.json")):
         try:
@@ -170,6 +176,12 @@ def main():
             if not d.startswith("doc-"):
                 warns.append(f"{q['id']}: doc_refs 命名不符合 doc-* 约定: {d}")
     # 汇总
+    return errors, warns, questions
+
+def main():
+    if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    errors, warns, questions = validate()
     lines = [f"校验时间: 2026-09-06",
              f"题目总数: {len(questions)}",
              f"错误: {len(errors)}", f"警告: {len(warns)}", ""]

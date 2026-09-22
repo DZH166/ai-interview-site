@@ -84,6 +84,8 @@ const ExpressCard = (() => {
         qid: qid,
         title: (q && q.title) || it.title || qid,
         prompt: q ? String(q.prompt || '') : '',
+        options: q && Array.isArray(q.options) ? q.options : [],
+        optionsMissing: !!(it.questionSnapshot && !q.options && current?.format === 'quiz'),
         fusion_notes: q ? String(q.fusion_notes || '') : '',
         topic: q ? q.topic : '',
         difficulty: q ? q.difficulty : '',
@@ -120,6 +122,7 @@ const ExpressCard = (() => {
         qid: m.qid,
         title: q.title || m.qid,
         prompt: String(q.prompt || ''),
+        options: Array.isArray(q.options) ? q.options : [],
         fusion_notes: String(q.fusion_notes || ''),
         topic: q.topic, difficulty: q.difficulty,
         status: m.status || 'weak',
@@ -175,6 +178,8 @@ const ExpressCard = (() => {
       L.push(meta.join(' · '));
       L.push('');
       if (it.prompt) L.push('### 完整题干', '', quote(it.prompt), '');
+      if (it.options?.length) L.push('### 选项', '', ...it.options.map(o => quote(o.label + '. ' + o.text)), '');
+      if (it.optionsMissing) L.push('_旧练习未保存选项，原题面不完整。_', '');
       const selfHead = it.selfKind === 'note' ? '我的笔记' : '我的回答';
       if (it.self.trim()) {
         L.push('### ' + selfHead);
@@ -238,6 +243,8 @@ const ExpressCard = (() => {
       <h2><span class="num">${i + 1}</span>${esc(oneLine(it.title, 200))}</h2>
       <p class="meta">${esc(it.qid)}${it.topic ? ' · ' + esc(it.topic) : ''}${it.difficulty ? ' · ' + esc(it.difficulty) : ''} · 状态:${esc(statusLabel(it.status))}</p>
       ${it.prompt ? '<h3>完整题干</h3><pre>' + esc(it.prompt) + '</pre>' : ''}
+      ${it.options?.length ? '<h3>选项</h3>' + it.options.map(o => '<pre>' + esc(o.label + '. ' + o.text) + '</pre>').join('') : ''}
+      ${it.optionsMissing ? '<p class="empty">旧练习未保存选项，原题面不完整。</p>' : ''}
       ${it.self.trim() ? '<h3>' + (it.selfKind === 'note' ? '我的笔记' : '我的回答') + '</h3><pre class="self">' + esc(clip(it.self, MAX_SELF)) + '</pre>' : ''}
       ${(!it.self.trim() && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
       ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}

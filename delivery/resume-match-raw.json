@@ -1,0 +1,1255 @@
+{
+ "agent_loop": [
+  {
+   "id": "AG-002",
+   "title": "工具调用(function calling)的完整流程是什么?模型真的在『执行』工具吗?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-004",
+   "title": "MCP(Model Context Protocol)是什么?它解决什么问题?和 function calling 什么",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-059",
+   "title": "Function Calling、MCP与Agent Skills如何组合？",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-006",
+   "title": "什么是提示注入攻击?给工具调用型 Agent 做安全设计时要考虑什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-053",
+   "title": "Agent 用的工具调用延迟怎么优化?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-015",
+   "title": "ReAct 和 Plan-and-Execute 两种 Agent 范式有什么区别?各适合什么任务?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-017",
+   "title": "Agent 需要并行调用多个工具时怎么编排?依赖分析和失败聚合怎么做?",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0005",
+   "title": "在以下工具调用错误中，哪种错误最难自动恢复？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0024",
+   "title": "以下哪种方法最适合Agent处理\"多语言工具调用\"（工具输入/输出可能是不同语言）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0039",
+   "title": "以下关于Function Calling与Tool Use的区别，哪项最准确？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0085",
+   "title": "ReAct框架中，Thought、Action、Observation三个步骤各自的作用是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0092",
+   "title": "以下哪种情况表明Agent处于\"幻觉工具调用\"状态？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0097",
+   "title": "提示注入攻击（Prompt Injection）如何通过工具调用影响Agent行为？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0103",
+   "title": "以下哪种技术使Agent能够在工具调用失败时自动切换备用方案？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0129",
+   "title": "Plan-and-Execute架构相比ReAct在复杂任务上的优势是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0134",
+   "title": "以下哪种技术使Agent能在\"工具调用失败\"时自动选择备选方案？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0135",
+   "title": "以下关于\"Reactive Agent vs Deliberative Agent\"（反应式Agent vs 审议式Ag",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0139",
+   "title": "在Agent的\"工具调用链\"（Tool Call Chain）中，以下哪种情况最容易导致错误累积？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0156",
+   "title": "在以下Agent系统中，\"工具调用频率限制\"（Rate Limiting）的最佳实现方式是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0160",
+   "title": "以下哪种方法可以有效减少Agent的\"幻觉工具调用\"（Hallucinated Tool Calls，调用不存在的工具）",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0165",
+   "title": "Function Calling（工具调用）中，\"parallel tool calls\"的适用场景是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0169",
+   "title": "在Agent的工具调用链中，以下哪种日志记录策略最有利于调试？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0177",
+   "title": "在ReAct框架中，以下哪种情况会导致Agent陷入\"死循环\"（Infinite Loop）？",
+   "format": "quiz"
+  }
+ ],
+ "agent_memory": [
+  {
+   "id": "AG-031",
+   "title": "长任务的 Agent 上下文怎么压缩?压缩的时机、策略与风险控制?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-036",
+   "title": "Agent 的『记忆』和 RAG 的知识检索,什么时候用哪个?边界怎么划?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-005",
+   "title": "Agent 的记忆怎么做?短期记忆、长期记忆、任务状态分别存在哪?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-044",
+   "title": "用户的记忆控制面板(查看/编辑/删除 AI 记住的内容)怎么设计?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-023",
+   "title": "Agent 的长期记忆:检索注入和写入策略怎么细化才不『记错、记乱、记多』?",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0009",
+   "title": "以下关于\"Agent Memory Consolidation\"（记忆整合）的描述，正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0018",
+   "title": "Agent的\"短期记忆\"和\"长期记忆\"分别指什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0027",
+   "title": "以下哪种内存类型最适合在多轮对话中保存\"工作记忆\"（当前任务进展）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0035",
+   "title": "在Agent系统中，\"语义记忆\"（Semantic Memory）存储什么类型的信息？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0048",
+   "title": "以下哪种Agent记忆策略可以解决\"上下文窗口溢出\"问题？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0068",
+   "title": "以下哪种Agent长期记忆更新策略最有效？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0074",
+   "title": "以下关于\"Agent Memory Summarization\"（记忆摘要）策略，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0106",
+   "title": "以下关于Agent的\"情节记忆\"（Episodic Memory）的描述，正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0141",
+   "title": "在以下代码中，`interrupt_before=[\"tools\"]`的作用是什么？```python graph = ",
+   "format": "quiz"
+  }
+ ],
+ "agent_mcp": [
+  {
+   "id": "AG-004",
+   "title": "MCP(Model Context Protocol)是什么?它解决什么问题?和 function calling 什么",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-059",
+   "title": "Function Calling、MCP与Agent Skills如何组合？",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-060",
+   "title": "A2A与MCP分别处理什么，Agent Card能保证自动协作吗？",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-011",
+   "title": "怎么把内部系统能力封装成一个 MCP 服务器?写一个最小实现需要什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-018",
+   "title": "自研 Agent 怎么作为 MCP 客户端接入外部工具?宿主侧要处理什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-019",
+   "title": "MCP 服务器的三类原语里,resources 和 prompts 什么场景用?和 tools 怎么配合?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-020",
+   "title": "企业要接入几十个 MCP 服务器,安全网关怎么设计?",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0030",
+   "title": "在以下MCP架构中，Claude Desktop连接MCP Server时，以下哪种传输协议最常用？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0086",
+   "title": "MCP（Model Context Protocol）中，Resources和Tools的区别是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0093",
+   "title": "在以下MCP工具定义中，`inputSchema`的作用是什么？```json { \"name\": \"search_we",
+   "format": "quiz"
+  }
+ ],
+ "agent_security": [
+  {
+   "id": "AG-059",
+   "title": "Function Calling、MCP与Agent Skills如何组合？",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-061",
+   "title": "工具很多时怎样做路由，同时保持权限边界？",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-038",
+   "title": "怎么对 Agent 做红队测试(red teaming)?攻击面与对抗用例怎么设计?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-006",
+   "title": "什么是提示注入攻击?给工具调用型 Agent 做安全设计时要考虑什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-020",
+   "title": "企业要接入几十个 MCP 服务器,安全网关怎么设计?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-026",
+   "title": "Agent 工具的白名单与权限模型怎么设计?『最小权限』具体指什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0044",
+   "title": "以下哪种方法最适合在Agent中实现\"条件工具访问\"（根据用户权限动态限制可用工具）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0058",
+   "title": "以下关于\"Agent Security Audit\"（Agent安全审计）的必要性，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0097",
+   "title": "提示注入攻击（Prompt Injection）如何通过工具调用影响Agent行为？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0104",
+   "title": "以下哪种技术使多个Agent能够安全地共享和更新同一份数据？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0152",
+   "title": "在以下Agent工具安全设计中，哪种做法可以防止\"工具滥用\"（Tool Abuse）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0166",
+   "title": "在面向Agent的安全设计中，\"最小权限原则\"（Principle of Least Privilege）应如何应用？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0184",
+   "title": "以下关于Agent安全中\"最小权限原则\"的应用，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0186",
+   "title": "以下哪种方法可以有效防止Agent的提示注入攻击？",
+   "format": "quiz"
+  }
+ ],
+ "agent_eval": [
+  {
+   "id": "AG-034",
+   "title": "Agent 的工具 mock 库怎么建?让轨迹评测可复现的 fixture 设计?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-045",
+   "title": "怎么从生产轨迹中构建评测集?轨迹转评测 case 的流程与筛选?",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0003",
+   "title": "以下哪种\"Agent Evaluation\"（Agent评估）维度最能区分优秀和普通的Agent？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0089",
+   "title": "以下关于\"Agent Benchmarking\"（Agent基准测试）的局限性，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0130",
+   "title": "以下关于Agent\"自我评估\"（Self-evaluation）能力的描述，正确的是？",
+   "format": "quiz"
+  }
+ ],
+ "agent_multi": [
+  {
+   "id": "AG-040",
+   "title": "多智能体系统的可观测怎么做?跨 agent 的调用链怎么拼起来?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-008",
+   "title": "多智能体系统(multi-agent)是什么?什么场景才值得用?主要风险是什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AG-021",
+   "title": "多智能体协作的『交接(handoff)』怎么设计?消息契约里必须有什么?",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0006",
+   "title": "在以下Multi-Agent协作中，哪种模式最适合\"创意写作\"任务（需要头脑风暴+精炼）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0021",
+   "title": "在Multi-Agent系统中，以下哪种架构最适合需要专家分工的复杂任务？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0028",
+   "title": "在Multi-Agent系统中，以下哪种技术可以防止\"信息茧房\"（Information Silo）导致不同Agent得",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0040",
+   "title": "以下哪种场景最适合使用Multi-Agent系统而非单一大Agent？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0050",
+   "title": "以下哪种Multi-Agent设计模式最适合\"代码审查\"场景？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0052",
+   "title": "在以下Multi-Agent通信模式中，哪种模式允许Agent向其他Agent广播消息？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0084",
+   "title": "以下哪种方法最适合在Multi-Agent系统中实现\"任务进度监控\"？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0096",
+   "title": "以下关于\"Multi-Agent Debate\"（多Agent辩论）提升答案质量的机制，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0112",
+   "title": "在设计Multi-Agent系统时，以下哪项是防止\"Agent集体失败\"（Cascading Failure）的关键设计",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0120",
+   "title": "以下哪种场景下，使用\"Single-Agent\"比\"Multi-Agent\"更合适？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0125",
+   "title": "在以下Multi-Agent场景中，哪种任务分解策略最适合\"研究报告生成\"？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0126",
+   "title": "以下哪种\"Multi-Agent通信模式\"最适合需要共识决策的场景（如投票决定最终答案）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0149",
+   "title": "在Multi-Agent系统中，如何防止任务死锁（两个Agent互相等待对方完成）？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0158",
+   "title": "在实现Multi-Agent的\"共识机制\"（Consensus Mechanism）时，以下哪种方法最适合高风险决策？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0159",
+   "title": "在Supervisor模式的Multi-Agent系统中，Supervisor的主要职责是什么？",
+   "format": "quiz"
+  }
+ ],
+ "agent_fail": [
+  {
+   "id": "AG-003",
+   "title": "Agent 在多步执行中失败怎么办?请设计一套失败恢复与人工介入(human-in-the-loop)机制。",
+   "format": "narrative"
+  },
+  {
+   "id": "AGQ-0038",
+   "title": "以下哪种技术可以让Agent在执行高风险操作前自动降级为保守策略？",
+   "format": "quiz"
+  },
+  {
+   "id": "AGQ-0168",
+   "title": "以下哪种设计可以使Agent系统在工具不可用时优雅降级？",
+   "format": "quiz"
+  }
+ ],
+ "rag_chunk": [
+  {
+   "id": "RG-023",
+   "title": "语义切分(semantic chunking)和固定长度切分比,好在哪、贵在哪?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-024",
+   "title": "块增强(chunk enrichment)有哪些手段?『上下文块头(contextual chunk headers)』",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0014",
+   "title": "以下哪种技术通过为每个文档chunk生成多个\"假设问题\"来改善检索效果？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0021",
+   "title": "文档分块（Chunking）中，chunk_size=512 tokens和chunk_size=128 tokens各",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0036",
+   "title": "以下关于RAG中Chunking Size（分块大小）选择的描述，哪项正确？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0044",
+   "title": "以下哪种分块策略最适合处理代码文件的RAG索引？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0064",
+   "title": "在计算RAG的上下文窗口时，如果每个chunk大小为512 tokens，检索top-k=5，还需要预留512 toke",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0067",
+   "title": "在RAG中，\"Late Chunking\"（延迟分块）技术的核心思想是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0080",
+   "title": "以下哪种分块策略对于法律合同文档的RAG效果最好？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0104",
+   "title": "以下哪种Chunking策略最适合处理科学论文（含摘要、方法、结果等标准章节）？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0106",
+   "title": "以下哪种分块策略在保留文档语义的同时，还支持高效的父文档快速访问？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0107",
+   "title": "以下关于\"Chunking Overlap\"（分块重叠）的作用，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0114",
+   "title": "以下关于\"Late Chunking\"（延迟分块）技术的描述，正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0133",
+   "title": "在RAG系统中，\"Semantic Chunking\"（语义分块）相比固定大小分块的核心优势是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0159",
+   "title": "以下哪种分块方法最适合处理HTML格式的网页内容？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0160",
+   "title": "以下关于\"Semantic Chunking\"（语义分块）的实现方法，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0162",
+   "title": "在Sentence Window Retrieval策略中，其与普通分块的区别是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0169",
+   "title": "在以下RAG配置中，哪种chunk_size和chunk_overlap的设置最不合理？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0174",
+   "title": "以下关于\"Chunk Deduplication\"（分块去重）在RAG中的必要性，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0179",
+   "title": "父子块检索（Parent-Child Chunking）的核心优势是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0183",
+   "title": "在RAG中，\"Document-Level vs Chunk-Level Embedding\"的选择对检索有什么影响？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0189",
+   "title": "以下哪种分块策略最适合处理含有大量表格和代码的技术文档？",
+   "format": "quiz"
+  },
+  {
+   "id": "RG-002",
+   "title": "RAG 里为什么要做文档切分(chunking)?切太大或太小各有什么问题?常见策略有哪些?",
+   "format": "narrative"
+  }
+ ],
+ "rag_hybrid": [
+  {
+   "id": "RG-040",
+   "title": "多路召回的结果怎么合并?除了 RRF 还有哪些策略与陷阱?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-006",
+   "title": "混合检索(hybrid search)为什么有效?BM25 和向量分数怎么融合?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-025",
+   "title": "稀疏嵌入(sparse)和稠密嵌入(dense)有什么本质区别?SPLADE/BM25 属于哪类?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0009",
+   "title": "在RAG中，Reciprocal Rank Fusion（RRF）的计算公式是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0023",
+   "title": "混合检索（Hybrid Retrieval）中，RRF（Reciprocal Rank Fusion）算法的作用是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0071",
+   "title": "以下关于BM25参数（k1和b）的描述，哪项正确？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0094",
+   "title": "以下关于\"Sparse Embedding\"（稀疏嵌入，如SPLADE）与BM25的区别，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0125",
+   "title": "BM25算法属于哪类检索方法？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0132",
+   "title": "在RAG系统中，BM25与稠密向量检索（Dense Retrieval）的混合搜索通常比单独使用任一方法更好，原因是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0156",
+   "title": "以下关于\"Reciprocal Rank Fusion\"（RRF）算法的参数k=60的含义，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0165",
+   "title": "在RAG系统中，以下哪种场景最适合使用稀疏检索（BM25）而非密集检索？",
+   "format": "quiz"
+  },
+  {
+   "id": "RG-003",
+   "title": "Embedding 和向量检索的原理是什么?为什么还要配合关键词检索做混合检索?",
+   "format": "narrative"
+  }
+ ],
+ "rag_vector": [
+  {
+   "id": "RG-038",
+   "title": "嵌入维度高低怎么权衡?一定要用 3072 维的旗舰嵌入吗?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-050",
+   "title": "重排模型的训练数据怎么构造?与嵌入微调的数据有什么不同?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-051",
+   "title": "怎么评估和选择嵌入模型?MTEB 榜单能信几分?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-005",
+   "title": "RAG 里的 Rerank(重排)是什么?为什么比向量检索准?什么时候值得加?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-016",
+   "title": "跨语言检索怎么做?用户用中文问,英文文档能被找到吗?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-021",
+   "title": "HyDE(Hypothetical Document Embeddings)是什么?为什么『先编一个假答案』反而能提升检",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-022",
+   "title": "HyPE(假设问题嵌入)和 HyDE 有什么区别?各自适合什么场景?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-025",
+   "title": "稀疏嵌入(sparse)和稠密嵌入(dense)有什么本质区别?SPLADE/BM25 属于哪类?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-026",
+   "title": "什么时候值得微调嵌入模型?数据怎么构造?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-027",
+   "title": "向量规模化的两条路:降维(PCA/Matryoshka)和量化(INT8/二值),各适合什么场景?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0022",
+   "title": "在RAG系统中，以下哪种嵌入模型特别适合检索任务（而非通用文本相似度）？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0026",
+   "title": "以下代码存在什么问题？```python embedding = model.encode(document) # 文档",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0076",
+   "title": "在向量数据库选型时，Qdrant相比FAISS的核心优势是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0083",
+   "title": "以下哪种embedding模型最适合短句子查询与长文档的非对称检索？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0092",
+   "title": "以下关于\"Embedding Model Fine-tuning\"（embedding模型微调）对RAG的影响，描述正确",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0094",
+   "title": "以下关于\"Sparse Embedding\"（稀疏嵌入，如SPLADE）与BM25的区别，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0110",
+   "title": "以下哪种技术用于解决RAG中\"向量空间偏移\"问题（不同来源文档的嵌入分布不对齐）？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0126",
+   "title": "以下哪种向量相似度计算方式最适合用于嵌入归一化后的检索？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0132",
+   "title": "在RAG系统中，BM25与稠密向量检索（Dense Retrieval）的混合搜索通常比单独使用任一方法更好，原因是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0142",
+   "title": "BGE（BAAI General Embedding）模型相比OpenAI text-embedding-ada-002",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0144",
+   "title": "在向量数据库中，HNSW（Hierarchical Navigable Small World）索引相比FAISS的Fl",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0151",
+   "title": "以下关于FAISS（Facebook AI Similarity Search）的IndexIVFFlat索引，哪项描述",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0155",
+   "title": "HyDE（Hypothetical Document Embeddings）为什么能提升检索质量？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0163",
+   "title": "Rerank模型（如BGE-Reranker）在RAG中的作用是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0171",
+   "title": "以下关于Embedding模型的\"最大输入长度\"限制对RAG的影响，哪项描述正确？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0183",
+   "title": "在RAG中，\"Document-Level vs Chunk-Level Embedding\"的选择对检索有什么影响？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0186",
+   "title": "在以下RAG场景中，哪种情况最应该使用Reranker而非只依赖向量检索？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0188",
+   "title": "向量数据库Milvus和FAISS的主要区别是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "RG-001",
+   "title": "RAG 是什么?它解决什么问题?完整流程分哪几步?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-003",
+   "title": "Embedding 和向量检索的原理是什么?为什么还要配合关键词检索做混合检索?",
+   "format": "narrative"
+  }
+ ],
+ "rag_rerank": [
+  {
+   "id": "RG-039",
+   "title": "重排模型怎么选型?开源交叉编码器、商用 rerank API、LLM 当 reranker 各自怎么取舍?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-050",
+   "title": "重排模型的训练数据怎么构造?与嵌入微调的数据有什么不同?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-005",
+   "title": "RAG 里的 Rerank(重排)是什么?为什么比向量检索准?什么时候值得加?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-031",
+   "title": "Reranker 自己也会失败:重排环节的失败模式有哪些?怎么诊断?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0037",
+   "title": "以下哪种场景最适合使用\"稠密检索+稀疏检索+Rerank\"的三阶段架构？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0052",
+   "title": "以下关于\"Cross-encoder Reranking\"的计算复杂度，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0058",
+   "title": "以下关于\"Reranking with Diversity\"（多样性重排）的作用，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0163",
+   "title": "Rerank模型（如BGE-Reranker）在RAG中的作用是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0186",
+   "title": "在以下RAG场景中，哪种情况最应该使用Reranker而非只依赖向量检索？",
+   "format": "quiz"
+  }
+ ],
+ "rag_source": [
+  {
+   "id": "RG-047",
+   "title": "拒答决策能不能别只用相似度阈值?多维信号融合怎么设计?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-057",
+   "title": "流式 RAG(边检索边生成边引用)的引用怎么处理?引用块后到怎么办?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-011",
+   "title": "答案的引用(citation)和溯源怎么实现?怎么做句级引用而不是『引用表演』?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-012",
+   "title": "RAG 的拒答(abstention)策略怎么设计?什么时候拒、怎么拒、拒错了怎么办?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-014",
+   "title": "知识库更新怎么管?文档改版后,向量索引、缓存、引用怎么保持一致?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0111",
+   "title": "以下哪种方法在RAG中实现了\"引用标注\"（Citation Generation）？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0112",
+   "title": "在以下情况下，RAG系统的\"幻觉溯源\"（Hallucination Tracing）最有价值？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0138",
+   "title": "以下哪种技术可以减少RAG系统中的\"幻觉引用\"（hallucinated citations）问题？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0149",
+   "title": "以下关于RAG中\"Citation Granularity\"（引用粒度）的选择，描述正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "RG-004",
+   "title": "RAG 系统明明接了知识库,为什么回答还是错?请给出一套分类定位与排查方法。",
+   "format": "narrative"
+  }
+ ],
+ "rag_doc": [
+  {
+   "id": "RG-010",
+   "title": "文档解析是 RAG 的第一公里:PDF、表格、扫描件这些难点怎么处理?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0054",
+   "title": "以下哪种数据格式对于RAG的PDF文档处理最重要？",
+   "format": "quiz"
+  },
+  {
+   "id": "RG-002",
+   "title": "RAG 里为什么要做文档切分(chunking)?切太大或太小各有什么问题?常见策略有哪些?",
+   "format": "narrative"
+  }
+ ],
+ "rag_eval": [
+  {
+   "id": "RG-046",
+   "title": "评测集的冷启动:项目第一天就要建评测集,怎么从零开始?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-051",
+   "title": "怎么评估和选择嵌入模型?MTEB 榜单能信几分?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-055",
+   "title": "RAG 管线的 CI 自动化:检索与生成的评测怎么进流水线?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-009",
+   "title": "RAG 系统的效果评估怎么做?线上和线下各要看什么指标?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-064",
+   "title": "上线后的检索质量漂移怎么发现?nightly 评测与监控怎么建?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-065",
+   "title": "多租户 RAG 的检索公平性怎么保证?大租户会不会挤占小租户的检索质量?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0072",
+   "title": "以下哪种技术可以提升RAG在多语言场景下的检索质量？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0155",
+   "title": "HyDE（Hypothetical Document Embeddings）为什么能提升检索质量？",
+   "format": "quiz"
+  }
+ ],
+ "rag_prod": [
+  {
+   "id": "RG-041",
+   "title": "RAG 的改动怎么做线上 A/B 与影子评估?直接全量上线赌一把不行吗?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-064",
+   "title": "上线后的检索质量漂移怎么发现?nightly 评测与监控怎么建?",
+   "format": "narrative"
+  },
+  {
+   "id": "RG-033",
+   "title": "多轮 RAG 的『会话上下文漂移』是什么?怎么检测和修复?",
+   "format": "narrative"
+  },
+  {
+   "id": "RGQ-0015",
+   "title": "在生产环境RAG系统中，以下哪种缓存策略最有效？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0041",
+   "title": "以下哪种方法可以在生产环境中实现RAG系统的\"A/B测试\"？",
+   "format": "quiz"
+  },
+  {
+   "id": "RGQ-0091",
+   "title": "以下哪个指标最能反映RAG系统在生产环境中的用户价值？",
+   "format": "quiz"
+  }
+ ],
+ "prompt_eng": [
+  {
+   "id": "LP-030",
+   "title": "few-shot 示例怎么工程化管理?示例太多塞不下怎么办?",
+   "format": "narrative"
+  },
+  {
+   "id": "LP-032",
+   "title": "系统提示里的角色设定(role persona)怎么写才有用?『你是资深专家』这种写法的问题?",
+   "format": "narrative"
+  },
+  {
+   "id": "LP-006",
+   "title": "系统提示词应该怎么组织?few-shot、思维链这些技巧什么时候用?",
+   "format": "narrative"
+  },
+  {
+   "id": "LP-018",
+   "title": "思维链(CoT)什么时候用、什么时候是反模式?",
+   "format": "narrative"
+  },
+  {
+   "id": "LPQ-0007",
+   "title": "在 System Prompt 中定义模型身份的主要目的是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0010",
+   "title": "以下哪种情况最适合使用 Zero-shot CoT？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0028",
+   "title": "以下哪种情况最适合使用 Few-shot prompting 而非 Zero-shot？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0033",
+   "title": "以下哪个因素对 Few-shot 示例的效果影响最大？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0037",
+   "title": "Chain-of-Thought（CoT）提示的主要优势是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0041",
+   "title": "在 Few-shot 示例的选择上，哪种做法最佳？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0065",
+   "title": "Few-shot prompting 的核心思想是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0075",
+   "title": "在设计 System Prompt 时，以下哪种做法最佳？",
+   "format": "quiz"
+  }
+ ],
+ "prompt_context": [
+  {
+   "id": "LP-022",
+   "title": "上下文组装器(context assembler)怎么设计?把 system/历史/检索/用户输入拼成最终提示词的组件要",
+   "format": "narrative"
+  },
+  {
+   "id": "LP-007",
+   "title": "多轮对话的会话状态要怎么存储和管理?对话历史放内存、数据库还是缓存?",
+   "format": "narrative"
+  },
+  {
+   "id": "LP-002",
+   "title": "什么是上下文窗口?模型会『记住』之前的对话吗?对话历史太长怎么管理?",
+   "format": "narrative"
+  },
+  {
+   "id": "LPQ-0092",
+   "title": "在使用多轮对话时，Prompt 工程师需要特别注意什么？",
+   "format": "quiz"
+  }
+ ],
+ "prompt_halluc": [
+  {
+   "id": "LPQ-0042",
+   "title": "\"Hallucination\"（幻觉）在 LLM 中是指什么现象？",
+   "format": "quiz"
+  },
+  {
+   "id": "LPQ-0093",
+   "title": "减少模型幻觉的常见 Prompt 策略是什么？",
+   "format": "quiz"
+  }
+ ],
+ "langgraph": [
+  {
+   "id": "LC-003",
+   "title": "LangGraph中断恢复为什么会重跑，如何保护副作用？",
+   "format": "narrative"
+  }
+ ],
+ "backend_fastapi": [
+  {
+   "id": "PY-024",
+   "title": "FastAPI 应用的后台任务与定时调度怎么设计?BackgroundTasks、arq/APScheduler 怎么选",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-029",
+   "title": "Python 的 dataclass 和 Pydantic 模型怎么选?什么场景用 TypedDict?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-032",
+   "title": "Python 的上下文管理变量(contextvars)是什么?为什么 FastAPI 的日志要靠它?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-006",
+   "title": "装饰器是什么?FastAPI 的依赖注入(Dependencies)和它是什么关系?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-013",
+   "title": "Pydantic 的校验器有哪些层次?field_validator 和 model_validator 什么时候用哪个",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-014",
+   "title": "FastAPI 的中间件(middleware)和依赖注入(Depends)都能做横切逻辑,怎么选?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-015",
+   "title": "FastAPI 的 lifespan 是什么?数据库连接池和 LLM 客户端为什么要在里面初始化?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-019",
+   "title": "uvicorn/gunicorn 怎么部署 FastAPI?worker 数怎么定?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-004",
+   "title": "FastAPI 里参数校验是怎么工作的?校验失败返回什么?如何实现 LLM 的流式响应?",
+   "format": "narrative"
+  }
+ ],
+ "backend_async": [
+  {
+   "id": "PY-022",
+   "title": "asyncio 的任务编排原语怎么选?gather、TaskGroup、as_completed、Queue 各自的场景",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-007",
+   "title": "线程、多进程、协程到底怎么选?给 AI 后端做一个选型决策表。",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-037",
+   "title": "Python 的异步生成器和 async iterator 在流式管道里怎么用?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-016",
+   "title": "异步 SQLAlchemy 会话怎么用?会话生命周期和连接池怎么配?",
+   "format": "narrative"
+  },
+  {
+   "id": "PY-003",
+   "title": "async/await 是怎么实现并发的?它和多线程有什么区别?调 LLM API 该用哪个?",
+   "format": "narrative"
+  }
+ ],
+ "backend_cache": [
+  {
+   "id": "EN-001",
+   "title": "LLM 应用的成本和延迟都很高,你会怎么设计缓存?各种缓存有什么坑?",
+   "format": "narrative"
+  }
+ ],
+ "llm_context": [
+  {
+   "id": "LBQ-0002",
+   "title": "关于大模型“上下文窗口”的理解，以下正确的是？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0061",
+   "title": "大语言模型的上下文窗口长度限制主要源于Transformer的哪个固有特性？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0154",
+   "title": "关于大模型中的Tokenizer设计，以下哪些选择会影响模型的实际能力？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0157",
+   "title": "Token-level的奖励模型(Process Reward Model, PRM)相比Output-level的结果",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0179",
+   "title": "大模型的上下文窗口（Context Window）的核心作用是？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0224",
+   "title": "一个使用BPE（Byte-Pair Encoding）分词器的大语言模型在处理纯数字运算任务时，有时会出现看似简单的错误",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0228",
+   "title": "当讨论大模型的\"上下文窗口\"时，主要涉及以下哪个技术概念？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0269",
+   "title": "在工程上扩大模型可处理的上下文窗口长度时，主要的计算与内存瓶颈通常来自哪一部分？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0278",
+   "title": "YaRN(Yet another RoPE extensioN)扩展上下文窗口的核心技术手段是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0324",
+   "title": "tokenization作为大型模型输入处理的关键步骤，在实际应用中可能遇到的工程挑战是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0336",
+   "title": "关于大模型中的Tokenizer对模型性能的影响，以下哪项描述最准确？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0398",
+   "title": "在大模型推理服务中，关于Time to First Token(TTFT)和Time Per Output Token(",
+   "format": "quiz"
+  }
+ ],
+ "llm_halluc": [
+  {
+   "id": "LBQ-0058",
+   "title": "以下哪些是大模型产生\"幻觉\"的根本原因？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0150",
+   "title": "在大型语言模型中，“幻觉”（Hallucination）现象指的是模型生成了看似合理但实际上不准确或无事实依据的内容。从",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0172",
+   "title": "大语言模型有时会输出'幻觉'信息（即内容看似合理但不准确）。以下哪项是导致这一问题的主要原因？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0237",
+   "title": "以下哪些技术方案可以有效缓解大模型的幻觉问题？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0255",
+   "title": "大模型常见的一种局限性被称为'幻觉'，它指的是什么？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0292",
+   "title": "在大型语言模型的实际应用中，“幻觉”（Hallucination）现象最准确的描述是？",
+   "format": "quiz"
+  },
+  {
+   "id": "LBQ-0351",
+   "title": "关于大模型幻觉(Hallucination)问题，以下哪种分类最准确？",
+   "format": "quiz"
+  }
+ ]
+}

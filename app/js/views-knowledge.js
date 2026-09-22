@@ -319,11 +319,22 @@ const SearchView = (() => {
         <div id="s-results"></div>
       </div>`;
     const input = $('#s-input');
+    /* 深链进入时索引必须等全量题库合并(Track E):未就绪先给「加载中」空态,
+       questionsReady 后再真正查询;用户手动点搜索时索引通常已建好,同步路径不变。 */
+    const goSearch = (val, keep) => {
+      if (Data.questionsLoaded()) { doSearch(val, keep); return; }
+      $('#s-results').innerHTML = '<div class="empty">题库加载中…</div>';
+      Data.questionsReady().then(() => {
+        /* 等待期间用户可能已离开搜索页:DOM 换人了就别往回写 */
+        if (!document.getElementById('s-results')) return;
+        doSearch(val, keep);
+      });
+    };
     $('#s-go').addEventListener('click', () => doSearch(input.value));
     input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
     $('#s-scope').addEventListener('change', e => { saved.scope = e.target.value; doSearch(input.value, true); });
     $('#s-topic').addEventListener('change', e => { saved.topic = e.target.value; doSearch(input.value, true); });
-    if (q) doSearch(q, true); else $('#s-results').innerHTML = '<div class="empty">输入关键词开始搜索;支持多个关键词(空格分隔,需同时命中)。</div>';
+    if (q) goSearch(q, true); else $('#s-results').innerHTML = '<div class="empty">输入关键词开始搜索;支持多个关键词(空格分隔,需同时命中)。</div>';
   }
 
   function doSearch(q, keepUrl) {
@@ -343,7 +354,12 @@ const SearchView = (() => {
       return;
     }
     const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿', fu: '我的追问回答' };
-    box.innerHTML = results.map(r => {
+    /* 零结果降级标记:严格 AND(含别名)没扫到、靠 OR 兜底的查询,顶部给一句
+       明示,避免用户误以为这就是全部精确匹配。 */
+    const partialNotice = results.length && results[0].partial
+      ? `<div class="search-partial muted" role="status">未找到全部匹配,以下为部分匹配结果</div>`
+      : '';
+    box.innerHTML = partialNotice + results.map(r => {
       const u = r.unit;
       let href, title, sub = '';
       if (u.kind === 'try') {

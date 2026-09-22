@@ -1,0 +1,280 @@
+{
+  "date": "2026-09-20",
+  "baseline": "48830f5",
+  "branch": "codex/dev",
+  "red_before_fix": {
+    "passed": 0,
+    "failed": 5
+  },
+  "suites": [
+    {
+      "file": "tests/behavior-tests.js",
+      "exit": 0,
+      "passed": 124,
+      "failed": 0
+    },
+    {
+      "file": "tests/regression-tests.js",
+      "exit": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "file": "tests/express-card-test.js",
+      "exit": 0,
+      "passed": 63,
+      "failed": 0
+    },
+    {
+      "file": "tests/shell-cache-stamp-test.js",
+      "exit": 0,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "file": "tests/learning-records-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/project-card-test.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/pi-agent-test.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "file": "tests/ai-series-test.js",
+      "exit": 0,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "file": "tests/srs-test.js",
+      "exit": 0,
+      "passed": 71,
+      "failed": 0
+    },
+    {
+      "file": "tests/remote-merge-test.js",
+      "exit": 0,
+      "passed": 43,
+      "failed": 0
+    },
+    {
+      "file": "tests/search-cache-test.js",
+      "exit": 0,
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "file": "tests/record-boundary-test.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/save-protocol-test.js",
+      "exit": 0,
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "file": "tests/preview-restore-test.js",
+      "exit": 0,
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "file": "tests/baseline2/issues-node-test.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/stage4-pause-test.js",
+      "exit": 0,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "file": "tests/lp003_mock_test.py",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/path_exercise_test.py",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_a_test.py",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_test.py",
+      "exit": 0,
+      "passed": 23,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_layers_test.py",
+      "exit": 0,
+      "passed": 29,
+      "failed": 0
+    },
+    {
+      "file": "tests/proj_c_claims_test.py",
+      "exit": 0,
+      "passed": 7,
+      "failed": null
+    },
+    {
+      "file": "tests/ai-series-math-test.py",
+      "exit": 0,
+      "passed": 5,
+      "failed": null
+    },
+    {
+      "file": "tests/browser/ui-repro.js",
+      "exit": 0,
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/a11y-360.js",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/e2e-acceptance.js",
+      "exit": 0,
+      "passed": 46,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/project-evidence.js",
+      "exit": 0,
+      "passed": 28,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/pi-agent.js",
+      "exit": 0,
+      "passed": 45,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/ai-series.js",
+      "exit": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/srs.js",
+      "exit": 0,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/followup.js",
+      "exit": 0,
+      "passed": 21,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/multitab.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/search-cache.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/hardening.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/remote-sync.js",
+      "exit": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/learning-integrity.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/concurrency-matrix.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/stage4-matrix.js",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/highlight.js",
+      "exit": 0,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/search-browse-fix.js",
+      "exit": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/nowcoder-quiz.js",
+      "exit": 0,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/resume-view.js",
+      "exit": 0,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "file": "tests/browser/practice-contract.js",
+      "exit": 0,
+      "passed": 7,
+      "failed": 0
+    }
+  ],
+  "counts": {
+    "node": 441,
+    "python": 109,
+    "browser": 346
+  },
+  "remaining": [
+    "Full 55-question semantic acceptance evidence",
+    "Resume-directed sessions and project evidence",
+    "Interactive quiz scoring",
+    "Cold-start and weak-network measurements"
+  ]
+}
