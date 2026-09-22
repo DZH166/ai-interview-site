@@ -362,6 +362,30 @@ const ReviewView = (() => {
     $$('[data-redo]', box).forEach(b => b.addEventListener('click', () => go('#/study/' + b.dataset.redo)));
   }
 
+  /* ---- 轮次趋势条(Track A):最近 10 轮,一格一轮,红色深浅 = weak 率。
+     纯 DOM/CSS,无图表库;hover(title)给日期/题数/weak 数/平均每题秒数。
+     少于 2 轮不渲染——一格「趋势」没有意义。 ---- */
+  function renderRoundTrend(rounds) {
+    const recent = rounds.slice(0, 10);
+    if (recent.length < 2) return '';
+    const cells = recent.slice().reverse().map(rd => {          /* 反转:旧→新从左到右 */
+      const items = rd.items || [];
+      const weakRate = items.length ? items.filter(i => i.mark === 'weak').length / items.length : 0;
+      /* alpha 0.15~0.85 线性映射到 weak 率;red 主题中性,深色模式下同样可读 */
+      const alpha = 0.15 + Math.min(1, Math.max(0, weakRate)) * 0.7;
+      /* 平均每题秒数:任一题有 ms 数据才算有数据;旧轮次没有 ms 字段 → '—' */
+      const msList = items.map(i => i.ms).filter(v => typeof v === 'number' && v > 0);
+      const avg = msList.length ? (msList.reduce((a, b) => a + b, 0) / items.length / 1000).toFixed(1) + 's' : '—';
+      const title = `${fmtTime(rd.ts)} · ${items.length} 题 · weak ${items.filter(i => i.mark === 'weak').length} · 平均每题 ${avg}`;
+      return `<div class="round-trend-cell" style="background:rgba(239,68,68,${alpha.toFixed(2)})" title="${esc(title)}"></div>`;
+    }).join('');
+    return `
+      <div class="round-trend-wrap">
+        <div class="round-trend">${cells}</div>
+        <div class="muted small">最近 ${recent.length} 轮 weak 率趋势(左旧右新) · 颜色越红 weak 率越高,悬停查看详情</div>
+      </div>`;
+  }
+
   /* ---- 模拟面试历史:轮次列表 + 可展开详情(兼容旧格式) ---- */
   function renderRounds(box) {
     const dq = parseHash().query || {};   /* 深链定位(与 render 内的 tab 深链同源) */
@@ -370,7 +394,7 @@ const ReviewView = (() => {
       box.innerHTML = '<div class="empty">还没有模拟面试记录。完成一轮<a href="#/mock">自测</a>后,这里会显示题目、你的回答与复盘状态。</div>';
       return;
     }
-    box.innerHTML = rounds.map((rd, ri) => {
+    box.innerHTML = renderRoundTrend(rounds) + rounds.map((rd, ri) => {
       const items = rd.items || [];
       const revealed = items.filter(it => it.revealed).length;
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';

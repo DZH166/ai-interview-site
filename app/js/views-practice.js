@@ -769,6 +769,23 @@ const MockView = (() => {
   /* pagehide 兜底:与 captureInput 相同(名称保留供 App.flush 调用) */
   function flushDraft() { captureInput(); }
 
+  /* 计时(Track A):结算当前题自上次进入以来的时长,累加进 qms[qid] 并重置起点。
+     供所有离开当前题的动作调用(自评/导航/结束);state 缺计时字段时静默初始化,
+     旧草稿/异常路径不因计时崩溃。 */
+  function settleQms() {
+    if (!state || state.ended) return;
+    const q = state.items[state.idx] || {};
+    const id = q.qid || q.id;
+    if (!id) return;
+    if (state.qStartAt == null) { state.qStartAt = Date.now(); return; }
+    const now = Date.now();
+    if (now > state.qStartAt) {
+      state.qms = state.qms || {};
+      state.qms[id] = (state.qms[id] || 0) + (now - state.qStartAt);
+    }
+    state.qStartAt = now;   /* 重置起点:同一题多次结算只计新增段 */
+  }
+
   /* 结束/放弃会话:作废所有挂起的防抖回调(按会话 ID 判定),清除草稿 */
   function endSession() {
     if (state) state.ended = true;
@@ -785,7 +802,10 @@ const MockView = (() => {
             items: d.items, idx: Math.min(d.idx || 0, d.items.length - 1),
             answers: d.answers || {}, directed: !!d.directed, label: d.label || '',
             sessionId: d.sessionId || ('ms-legacy-' + (d.savedAt || 0) + '-' + (d.items[0] && d.items[0].qid || '')),
-            sid: ++sessionSeq, ended: false
+            sid: ++sessionSeq, ended: false,
+            /* 计时(Track A):草稿不保存时间数据,恢复后从本次渲染重新起算——
+               单题时长按段累计,丢的只是刷新前未结算的段,总时长从恢复时刻起算,可接受 */
+            startedAt: Date.now(), qms: {}
           };
         }
       }
@@ -866,7 +886,8 @@ const MockView = (() => {
         items: sample(pool, Math.min(count, pool.length)).map(q => ({ qid: q.id })),
         idx: 0, answers: {}, directed: false, label: '',
         sessionId: newSessionId(),
-        sid: ++sessionSeq, ended: false
+        sid: ++sessionSeq, ended: false,
+        startedAt: Date.now(), qms: {}   /* 计时(Track A):整轮起点 + 单题累计时长 */
       };
       draftSave();
       go('#/mock/run');
@@ -882,7 +903,8 @@ const MockView = (() => {
       items: qids.map(id => ({ qid: id })),
       idx: 0, answers: {}, directed: true, label: label || '定向复习',
       sessionId: newSessionId(),
-      sid: ++sessionSeq, ended: false
+      sid: ++sessionSeq, ended: false,
+      startedAt: Date.now(), qms: {}   /* 计时(Track A):定向复习同样记时长 */
     };
     draftSave();
     go('#/mock/run');
@@ -940,6 +962,9 @@ const MockView = (() => {
     const q = questionForSession(state.items[state.idx].qid || state.items[state.idx].id);
     if (!q) { toast('题目不存在,跳过', 'err'); state.idx++; if (state.idx >= state.items.length) finish(root); else renderRun(root); return; }
     const qid = q.id;
+    /* 计时(Track A):每次进入本题重置起点;离开本题的各出口(自评/上一题/下一题/完成)
+       把「now - 起点」累加进 qms,而不是覆盖——用户回看旧题再花的时间也算练过 */
+    state.qStartAt = Date.now();
     const ans = state.answers[qid] || { self: '', revealed: false, mark: '' };
     root.innerHTML = `
       <div class="card mock-run">
@@ -984,6 +1009,9 @@ const MockView = (() => {
     selfBox.addEventListener('input', debounce(() => {
       if (!state || state.ended || state.sid !== sid) return;
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { self: selfBox.value });
+      /* 计时(Track A):自评落笔时结算一次,本题已花的时长先入账;
+         后续再停留则由导航/结束时继续累计 */
+      if (qid === (state.items[state.idx].qid || state.items[state.idx].id)) settleQms();
       draftSave();
     }, 200));
 
@@ -1044,9 +1072,9 @@ const MockView = (() => {
       renderRun(root);
     }));
     const prev = $('#m-prev');
-    if (prev) prev.addEventListener('click', () => { captureInput(); state.idx--; draftSave(); renderRun(root); });
+    if (prev) prev.addEventListener('click', () => { captureInput(); settleQms(); state.idx--; draftSave(); renderRun(root); });
     const next = $('#m-next');
-    if (next) next.addEventListener('click', () => { captureInput(); state.idx++; draftSave(); renderRun(root); });
+    if (next) next.addEventListener('click', () => { captureInput(); settleQms(); state.idx++; draftSave(); renderRun(root); });
     const finishBtn = $('#m-finish');
     if (finishBtn) finishBtn.addEventListener('click', () => finish(root));
     const quitBtn = $('#m-quit');
@@ -1055,6 +1083,7 @@ const MockView = (() => {
 
   function finish(root) {
     captureInput(); /* 同步捕获当前输入,快速结束时最后一个回答不丢 */
+    settleQms();    /* 计时(Track A):结束前结算最后一题的时长 */
     if (!activeSession()) return;
     const sid = state.sid;
     const previousMock = JSON.parse(JSON.stringify(Store.data.mock));
@@ -1069,6 +1098,9 @@ const MockView = (() => {
     const round = {
       ts: Date.now(),
       sessionId: state.sessionId,
+      /* 计时(Track A):整轮总时长;旧数据恢复路径 startedAt 缺失时记 0,
+         消费方一律 durationMs || 0 兜底 */
+      durationMs: state.startedAt ? Math.max(0, Date.now() - state.startedAt) : 0,
       config: state.config,
       items: state.items.map(q => {
         const id = q.qid || q.id;
@@ -1083,7 +1115,9 @@ const MockView = (() => {
           return { id: e.id || k, q: e.q || '', self: e.self || '', revealed: !!e.revealed, legacy: !!e.legacy || /^\d+$/.test(k) };
         }).filter(x => x.self.trim() || x.revealed);
         const qRev = a.qRev || '';
-        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev, questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
+        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev,
+                 ms: (state.qms || {})[id] || 0,   /* 计时(Track A):本题累计毫秒;无数据为 0,消费方 ms || 0 兜底 */
+                 questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
       })
     };
     Store.data.mock.rounds.unshift(round);

@@ -763,6 +763,22 @@ textarea:focus-visible {
 .round-details[open] > summary { border-bottom: 1px dashed var(--line); padding-bottom: 8px; margin-bottom: 8px; }
 .round-details .qid { font-weight: 600; }
 [data-theme="dark"] .round-details { background: var(--card); border-color: var(--line); }
+
+/* ---- 轮次趋势条(Track A):weak 率红深浅,一格一轮,等宽 ---- */
+.round-trend-wrap { margin-bottom: 12px; }
+.round-trend {
+  display: flex; gap: 3px; height: 18px;
+  padding: 4px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 6px; margin-bottom: 4px;
+}
+/* 红色深浅由内联 style 的 rgba alpha 控制(主题中性色,暗色下不需覆写);
+   容器配色全部走 token,自动跟随明暗主题 */
+.round-trend-cell {
+  flex: 1 1 0; min-width: 8px; border-radius: 3px;
+  cursor: default; transition: transform .12s ease;
+}
+.round-trend-cell:hover { transform: scaleY(1.25); }
+.round-trend-wrap .small { font-size: 12px; }
 [data-theme="dark"] .search-item { color: var(--text); }
 
 /* ---- 学习路径页 ---- */
