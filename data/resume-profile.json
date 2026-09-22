@@ -408,14 +408,14 @@
      "questionIds": [
       "LBQ-0002",
       "LBQ-0061",
-      "LBQ-0154",
       "LBQ-0157",
       "LBQ-0179",
       "LBQ-0224",
       "LBQ-0228",
       "LBQ-0269",
       "LBQ-0278",
-      "LBQ-0324"
+      "LBQ-0324",
+      "LBQ-0336"
      ],
      "mustKnow": true
     },
