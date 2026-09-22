@@ -91,7 +91,7 @@ const ReviewView = (() => {
   function render(root) {
     /* 深链 #/review?t=rounds&r=<roundId>(搜索我的追问回答落点):定位到那一轮 */
     const dq = parseHash().query || {};
-    if (dq.t && ['today', 'mistakes', 'fav', 'weak', 'review', 'note', 'recent', 'rounds'].includes(dq.t)) tab = dq.t;
+    if (dq.t && ['today', 'mistakes', 'fav', 'weak', 'review', 'note', 'recent', 'rounds', 'stats'].includes(dq.t)) tab = dq.t;
     const tq = getTodayQueue(), mk = getMistakes();
     const dueCt = getDueSuggestions().length;
     const drillCt = (() => { const s = getDrillState(); return s.unsolved.length + s.drafts.length; })();
@@ -107,6 +107,7 @@ const ReviewView = (() => {
           ['note',    '有笔记'],
           ['recent',  '最近练习'],
           ['rounds',  '模拟面试历史'],
+          ['stats',   '📊 统计'],
         ].map(([id, label]) => `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}">${label}</button>`).join('')}
       </div>
       ${tab === 'today' ? renderTodayIntro(tq, dueCt, drillCt) : ''}
@@ -134,6 +135,7 @@ const ReviewView = (() => {
     if (tab === 'today') { renderToday(root); return; }
     if (tab === 'mistakes') { renderMistakes(box); return; }
     if (tab === 'rounds') { renderRounds(box); return; }
+    if (tab === 'stats') { StatsView.render(box); return; }   /* Track C:纯 DOM 统计,委托给独立模块 */
     const qs = Data.allQuestions();
     let items = [];
     if (tab === 'fav') items = qs.filter(q => Store.rec(q.id).fav);

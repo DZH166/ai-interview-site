@@ -387,6 +387,31 @@ mark.hl-warn { background: #ffe0da; font-weight: 500; }
 .round-block { border: 1px solid var(--line); border-radius: 8px; padding: 10px 16px; margin: 10px 0; background: #fff; }
 .round-block summary { cursor: pointer; display: flex; gap: 14px; font-weight: 600; }
 
+/* 统计(Track C):热力表 / 到期预测 / 错题分布。
+   颜色一律走 var() 主题令牌,暗色自动成立;热力格的 rgba 色阶在 JS 内联生成。 */
+.stats-block { margin-bottom: 14px; }
+.stats-scroll { overflow-x: auto; margin-top: 8px; }   /* 360px 下热力表可横滚而不撑破页面 */
+.stats-heat { border-collapse: collapse; font-size: 13px; min-width: 340px; }
+.stats-heat th, .stats-heat td { border: 1px solid var(--line); padding: 5px 8px; text-align: center; }
+.stats-heat .sh-topic { text-align: left; white-space: nowrap; font-weight: 500; }
+.stats-heat .sh-topic a { color: var(--text); text-decoration: none; }
+.stats-heat .sh-topic a:hover { color: var(--primary); }
+.stats-heat thead th { color: var(--muted); font-weight: 500; background: var(--hover); }
+.stats-heat td.sh-cell { min-width: 52px; font-variant-numeric: tabular-nums; }
+.stats-heat td.sh-cell[data-status=""] { color: var(--muted); }
+.stats-forecast { display: flex; align-items: flex-end; gap: 3px; margin-top: 10px; height: 84px; }
+.sf-col { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-width: 0; }
+.sf-bar { width: 100%; max-width: 18px; background: var(--primary); opacity: .75; border-radius: 3px 3px 0 0; }
+.sf-col.sf-today .sf-bar { background: var(--danger); opacity: 1; }   /* 今天:红色突出 */
+.sf-tick { font-size: 10px; color: var(--muted); height: 14px; line-height: 14px; white-space: nowrap; }
+.stats-dist { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.sd-row { display: flex; align-items: center; gap: 8px; }
+.sd-label { flex: 0 0 9em; font-size: 13px; color: var(--text); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-label:hover { color: var(--primary); }
+.sd-track { flex: 1 1 auto; height: 14px; background: var(--hover); border-radius: 7px; overflow: hidden; }
+.sd-fill { height: 100%; background: var(--primary); border-radius: 7px; }
+.sd-count { flex: 0 0 2.5em; text-align: right; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 /* 复习 */
 .review-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
 .rtab {
