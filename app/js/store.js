@@ -499,6 +499,17 @@ const Store = (() => {
       });
       if (r.lastResult !== undefined && typeof r.lastResult !== 'string') errs.push(`题目记录 ${qid}: lastResult 必须是字符串`);
       if (r.contentRev !== undefined && typeof r.contentRev !== 'string') errs.push(`题目记录 ${qid}: contentRev 必须是字符串`);
+      /* 选择题点击作答记录(Stage1,可选字段):at 毫秒、correct 布尔、picked 字母数组 */
+      if (r.lastSelfTest !== undefined) {
+        const st = r.lastSelfTest;
+        if (!st || typeof st !== 'object' || Array.isArray(st)) {
+          errs.push(`题目记录 ${qid}: lastSelfTest 必须是对象`);
+        } else {
+          if (st.at !== undefined && !(typeof st.at === 'number' && isFinite(st.at) && st.at >= 0)) errs.push(`题目记录 ${qid}: lastSelfTest.at 必须是非负数字`);
+          if (st.correct !== undefined && typeof st.correct !== 'boolean') errs.push(`题目记录 ${qid}: lastSelfTest.correct 必须是布尔`);
+          if (st.picked !== undefined && (!Array.isArray(st.picked) || st.picked.some(x => typeof x !== 'string'))) errs.push(`题目记录 ${qid}: lastSelfTest.picked 必须是字符串数组`);
+        }
+      }
       /* 间隔重复排期字段(可选;由 SRS 模块写入) */
       if (r.srs !== undefined && r.srs !== null) {
         const s = r.srs;
@@ -562,6 +573,7 @@ const Store = (() => {
               validateSnapshot(it.questionSnapshot, it.qid, `轮次 #${i} 第 ${j + 1} 题`);
               if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
               if (it.qRev !== undefined && typeof it.qRev !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: qRev 必须是字符串`);
+              if (it.quizPicked !== undefined && (!Array.isArray(it.quizPicked) || it.quizPicked.some(x => typeof x !== 'string'))) errs.push(`轮次 #${i} 第 ${j + 1} 题: quizPicked 必须是字符串数组`);
               if (it.followups !== undefined) {
                 if (!Array.isArray(it.followups)) errs.push(`轮次 #${i} 第 ${j + 1} 题: followups 必须是数组`);
                 else it.followups.forEach((f, k) => {
@@ -902,6 +914,15 @@ const Store = (() => {
       else if (inc.fav === true && (cur.fav === undefined || (!curAt && !cur.fav))) { cur.fav = true; adopted = true; }
     }
     if (inc.lastResult && (inc.lastPracticedAt || 0) > (cur.lastPracticedAt || 0)) { cur.lastResult = inc.lastResult; adopted = true; }
+    /* 点击作答记录(Stage1):整体按 _updatedAt 新者胜(与 srs 同口径)——
+       它是「最近一次自测」的快照,不是可累加的计数,逐字段拼会拼出没发生过的组合 */
+    if (inc.lastSelfTest !== undefined) {
+      if (incAt > curAt) {
+        if (JSON.stringify(cur.lastSelfTest || null) !== JSON.stringify(inc.lastSelfTest)) { cur.lastSelfTest = inc.lastSelfTest; adopted = true; }
+      } else if (cur.lastSelfTest === undefined && !curAt && inc.lastSelfTest && typeof inc.lastSelfTest === 'object') {
+        cur.lastSelfTest = inc.lastSelfTest; adopted = true;
+      }
+    }
     /* 旧字段 drillTries 原样带入(由 migrateLegacyDrillTries 统一迁移到顶层) */
     if (Array.isArray(inc.drillTries)) cur.drillTries = JSON.parse(JSON.stringify(inc.drillTries));
     if (inc.contentRev !== undefined && incAt > curAt && cur.contentRev !== inc.contentRev) { cur.contentRev = inc.contentRev; adopted = true; }

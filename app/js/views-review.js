@@ -499,6 +499,10 @@ const MaintainView = (() => {
           <div class="kv"><span>来源 / 候选</span><b>${(window.APP_DATA.sources.sources||[]).length} / ${(window.APP_DATA.candidates.candidates||[]).length}</b></div>
           <div class="kv"><span>个人记录占用</span><b id="st-size">…</b></div>
           <div class="kv"><span>浏览器存储用量估计</span><b id="st-quota">…</b></div>
+          <label class="chk" style="margin-top:8px"><input type="checkbox" id="opt-shuffle" ${Store.data.ui.shuffleOptions ? 'checked' : ''}> 选项乱序(重练)</label>
+          <p class="muted small" id="opt-shuffle-hint">${Store.data.ui.shuffleOptions
+            ? '已开启:所有选择题的选项都乱序显示(顺序按题号确定性生成,刷新不变)。'
+            : '关闭时只对「重练场景」乱序:上次点答答错、或状态为「还不熟」的选择题。选项内容与正确性判定不受影响,解析里的「选项B」仍指向同一选项。'}</p>
           <p class="muted small">多标签页同时打开时,一页的修改会按备份合并规则同步到另一页(逐记录新者胜),不会整份覆盖。</p>
           <p class="muted small">数据与界面分离:编辑 <code>data/</code> 后运行 <code>python tools/build.py</code> 重建。</p>
         </div>
@@ -563,6 +567,16 @@ const MaintainView = (() => {
         </div>
       </div>`;
     $('#b-import').addEventListener('click', importBank);
+    /* 选项乱序开关(Stage1):偏好落 Store.data.ui.shuffleOptions(随记录备份走),
+       切换后刷新当前页让所有 quiz 渲染按新口径重算 —— 乱序是渲染期决定,不落题目数据 */
+    $('#opt-shuffle').addEventListener('change', e => {
+      Store.data.ui.shuffleOptions = !!e.target.checked;
+      Store.save();
+      const hint = $('#opt-shuffle-hint', root);
+      if (hint) hint.textContent = Store.data.ui.shuffleOptions
+        ? '已开启:所有选择题的选项都乱序显示(顺序按题号确定性生成,刷新不变)。'
+        : '关闭时只对「重练场景」乱序:上次点答答错、或状态为「还不熟」的选择题。选项内容与正确性判定不受影响,解析里的「选项B」仍指向同一选项。';
+    });
     /* 存储健康度:记录体积同步可算;浏览器整体用量估计是异步的,回来再填 */
     /* 两个口径分开说(阶段9):
        ① st-size = 个人记录序列化后的 UTF-16 字符数折算 KB(JSON.stringify().length/1024),

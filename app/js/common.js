@@ -359,18 +359,78 @@ const QRender = (() => {
 
      显隐机制(Fix2):答案始终在 DOM 中,用 CSS class 控制显隐——
      按钮点击只切换 class,不重渲页面,响应即时(旧实现重渲整页导致按钮"无响应")。 */
+  /* ---- 重练乱序(Stage1)----
+     以「题号+选项字母序列」哈希为种子的确定性 Fisher-Yates:同一题每次渲染得到
+     同一乱序(比「仅单次渲染内稳定」更强,重渲/翻页回来顺序不跳变),且保证结果
+     不是原顺序(恒等时旋转一位)——否则乱序开关形同虚设。
+     label 跟着选项对象一起走,官方解析里的「选项B」仍指向同一内容;
+     正确性判定只看 o.right,与展示顺序解耦。 */
+  function quizShuffledOptions(q) {
+    const orig = q.options || [];
+    const opts = orig.slice();
+    if (opts.length < 2) return opts;
+    const key = String(q.id || '') + '|' + opts.map(o => o.label).join(',');
+    const s = Store.contentHash ? Store.contentHash(key) : key;
+    let seed = 0;
+    for (let i = 0; i < s.length; i++) seed = (seed * 31 + s.charCodeAt(i)) >>> 0;
+    for (let i = opts.length - 1; i > 0; i--) {
+      seed = (seed * 1103515245 + 12345) >>> 0;
+      const j = seed % (i + 1);
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+    if (opts.every((o, i) => o.label === orig[i].label)) opts.push(opts.shift());
+    return opts;
+  }
+
+  /* ---- 选择题「点击作答」(Stage1)----
+     3403 道 quiz 题(占 87%)此前只有「看题→对答案」的揭示模式,没有真实作答。
+     现在在自测优先模式(quizHide !== false)且本题没有 lastSelfTest 时,
+     选项渲染成可点击(role=button + 键盘 Enter/Space):单选点一处立即判定,
+     多选点击切换选中、出现「确认答案」后统一判定。
+     判定全部就地改 class(与揭示同一套 CSS 契约:quiz-revealed / quiz-is-right /
+     quiz-answer-hidden),不重渲页面——这是 Fix2 定下的渲染纪律。
+     记录:答错 → setStatus('weak')(经 ratingFromStatus 进 SRS:weak→again);
+     答对不自动标 ok(掌握与否仍由用户自评),只记 rec.lastSelfTest =
+     {at, correct, picked}(刻意保持最小:判定依据 + 重练乱序的触发依据)。
+     有 lastSelfTest 的题渲染成「已作答」态(历史选择带对错着色 + 重做按钮),
+     重做清掉 lastSelfTest 就地恢复可点击,不重渲。 */
   function quizOptionsHtml(q, revealed, toolbar = true) {
-    const hide = revealed === undefined ? Store.rec(q.id).quizHide !== false : !revealed;
+    const r = Store.rec(q.id);
+    const last = r.lastSelfTest;
+    const judged = !!last;
+    const selfTest = r.quizHide !== false;   /* 自测优先模式(默认) */
     const multi = q.qtype === 'multi';
-    const revealCls = hide ? '' : ' quiz-revealed';
+    const optsAll = q.options || [];
+    const hide = revealed === undefined ? selfTest : !revealed;
+    /* 可点击 = 答案当前仍隐藏(自测模式)且未判定过。已揭示(手动或对照过参考)
+       的题不做点击作答 —— 答案都看见了,点了也不算自测。 */
+    const clickable = !judged && optsAll.length > 1 && hide;
+    /* 已判定/可点击的题都挂 data-quiz-pick:判定后按钮属性摘掉、重做时按它恢复,
+       不需要重绑监听(委托在容器上)。 */
+    const interactive = clickable || judged;
+    const revealCls = (!hide || judged) ? ' quiz-revealed' : '';
+    /* 重练乱序:上次点答答错、或状态「还不熟」(重练场景);维护页开关打开则全量生效 */
+    const needShuffle = !!(Store.data.ui && Store.data.ui.shuffleOptions)
+      || (last && last.correct === false) || r.status === 'weak';
+    const opts = needShuffle ? quizShuffledOptions(q) : optsAll;
+    const pickedPast = (last && last.picked) || [];
+    const resultText = judged ? (last.correct ? '答对了' : '答错了·已标记还不熟') : '';
+    const resultCls = judged && !last.correct ? ' quiz-result-bad' : (judged ? ' quiz-result-ok' : '');
     return `
-      <div class="quiz-options${revealCls}" data-quiz-options="${esc(q.id)}">
-        ${(q.options || []).map(o => `
-          <div class="quiz-opt ${o.right ? 'quiz-is-right' : ''}">
+      <div class="quiz-options${revealCls}${interactive ? ' quiz-clickable' : ''}${judged ? ' quiz-judged' : ''}" data-quiz-options="${esc(q.id)}" data-quiz-multi="${multi ? 1 : 0}">
+        ${opts.map(o => {
+          const wrongPick = judged && pickedPast.includes(o.label) && !o.right;
+          const attrs = interactive
+            ? ` data-quiz-pick="${esc(o.label)}"${clickable ? ' role="button" tabindex="0"' : ''}` : '';
+          return `
+          <div class="quiz-opt ${o.right ? 'quiz-is-right' : ''}${wrongPick ? ' quiz-is-wrong' : ''}"${attrs}>
             <span class="quiz-lab">${esc(o.label)}</span>
             <span class="quiz-txt">${mdHtml(o.text)}</span>
             <span class="quiz-mark">✓</span>
-          </div>`).join('')}
+          </div>`;}).join('')}
+        ${multi && clickable ? '<button class="btn btn-small" data-quiz-confirm hidden>确认答案</button>' : ''}
+        <div class="quiz-result${resultCls}" data-quiz-result${resultText ? '' : ' hidden'}>${esc(resultText)}</div>
+        <button class="btn btn-small" data-quiz-redo${judged ? '' : ' hidden'}>重做</button>
       </div>
       ${toolbar ? `<div class="quiz-toolbar">
         <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示正确答案' : '隐藏正确答案'}</button>
@@ -379,7 +439,10 @@ const QRender = (() => {
   }
 
   function quizBody(q) {
-    const hide = Store.rec(q.id).quizHide !== false;
+    const r = Store.rec(q.id);
+    /* 已点击作答过的题:答案区块随判定自动展开(与判定后的就地揭示一致),
+       不再叠加「显示后可见」的隐藏态 —— 否则答完还要再点一次才能看解析。 */
+    const hide = r.quizHide !== false && !r.lastSelfTest;
     const ansCls = hide ? ' quiz-answer-hidden' : '';
     return `
       <div class="qf-part" data-part="options">
@@ -407,6 +470,14 @@ const QRender = (() => {
       </div>`;
   }
 
+  /* quiz 题的两套就地交互共用一个挂载点:
+     ① 揭示切换(Fix2 既有契约);② 点击作答(Stage1)。
+     作答判定通过 QRender.judgeQuizPick 对外暴露(含回调钩子),
+     MockView 用钩子把同一判定写进会话草稿,不再各抄一份判定逻辑。 */
+  let quizJudgeHook = null;   /* (qid, correct, pickedLabels) => void,由 MockView 注册 */
+
+  /* 单题的「是否可交互」元数据缓存在 DOM 属性里(data-quiz-multi / quiz-judged),
+     判定/重做只改这些属性与 class,浏览器保持既有监听器,无需重绑。 */
   function wireQuizToggle(root) {
     $$('[data-quiz-reveal]', root).forEach(btn => {
       btn.addEventListener('click', () => {
@@ -426,7 +497,106 @@ const QRender = (() => {
         btn.textContent = (newHidden ? '显示' : '隐藏') + label;
       });
     });
+
+    /* ---- 点击作答(Stage1)----
+       事件委托到每个 quiz-options 容器:单选点一项即判定;多选只切换选中态,
+       出现「确认答案」后统一判定。已判定的题(quiz-judged)忽略点击,重做后才恢复。 */
+    $$('[data-quiz-options]', root).forEach(box => {
+      const qid = box.dataset.quizOptions;
+      const multi = box.dataset.quizMulti === '1';
+      const confirmBtn = $('[data-quiz-confirm]', box);
+      const redoBtn = $('[data-quiz-redo]', box);
+      const resultLine = $('[data-quiz-result]', box);
+      const picked = new Set();
+
+      const judge = () => {
+        if (box.classList.contains('quiz-judged')) return;
+        const q = Data.question(qid);
+        if (!q) return;
+        const labels = [...picked];
+        const rightSet = new Set((q.options || []).filter(o => o.right).map(o => o.label));
+        const correct = labels.length === rightSet.size && labels.every(l => rightSet.has(l));
+        /* 就地改态:答错项标红、正确项高亮(揭示契约同一个 quiz-is-right),
+           答案区块展开 —— 不重渲,焦点与滚动位置不动 */
+        box.classList.add('quiz-judged', 'quiz-revealed');
+        $$('.quiz-opt', box).forEach(el => {
+          const lab = el.dataset.quizPick;
+          if (!lab) return;
+          el.classList.toggle('quiz-is-wrong', picked.has(lab) && !rightSet.has(lab));
+          el.classList.toggle('quiz-picked', false);
+          el.classList.toggle('quiz-is-right', rightSet.has(lab));
+          el.removeAttribute('role');
+          el.removeAttribute('tabindex');
+        });
+        if (confirmBtn) confirmBtn.hidden = true;
+        if (redoBtn) redoBtn.hidden = false;
+        if (resultLine) {
+          resultLine.textContent = correct ? '答对了' : '答错了·已标记还不熟';
+          resultLine.classList.toggle('quiz-result-bad', !correct);
+          resultLine.classList.toggle('quiz-result-ok', correct);
+          resultLine.hidden = false;
+        }
+        /* 记录落 Store(先记录后触发钩子:钩子里读 Store 看到的是已判定状态)。
+           答对不自动标 ok——掌握与否仍留给用户自评。 */
+        const r = Store.rec(qid);
+        r.lastSelfTest = { at: Date.now(), correct, picked: labels };
+        touchSelfTest(r);
+        if (!correct) Store.setStatus(qid, 'weak');
+        else Store.save();
+        /* 答案区块就地展开(与揭示同一 class 契约):判定即揭示,不必再点一次 */
+        const host = box.closest('.study-wrap, #q-detail, #view') || document;
+        $$('.quiz-answer-block', host).forEach(blk => blk.classList.remove('quiz-answer-hidden'));
+        const revealBtns = $$('[data-quiz-reveal]', host).filter(b => b.dataset.quizReveal === qid);
+        revealBtns.forEach(b => { b.textContent = '隐藏正确答案'; });
+        if (quizJudgeHook) { try { quizJudgeHook(qid, correct, labels); } catch (e) { /* 钩子失败不影响判定 */ } }
+      };
+
+      box.addEventListener('click', e => {
+        if (box.classList.contains('quiz-judged')) return;
+        const opt = e.target.closest('[data-quiz-pick]');
+        if (!opt) return;
+        if (e.target.closest('button')) return;
+        const lab = opt.dataset.quizPick;
+        if (!multi) { picked.clear(); picked.add(lab); judge(); return; }
+        opt.classList.toggle('quiz-picked');
+        if (opt.classList.contains('quiz-picked')) picked.add(lab); else picked.delete(lab);
+        if (confirmBtn) confirmBtn.hidden = picked.size === 0;
+      });
+      box.addEventListener('keydown', e => {
+        if (e.target.closest('button')) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const opt = e.target.closest('[data-quiz-pick]');
+        if (!opt || box.classList.contains('quiz-judged')) return;
+        e.preventDefault();
+        opt.click();
+      });
+      if (confirmBtn) confirmBtn.addEventListener('click', judge);
+      if (redoBtn) redoBtn.addEventListener('click', () => {
+        /* 重做 = 清掉 lastSelfTest 恢复可点击(不撤销 weak 状态:那次作答真实发生过) */
+        const r = Store.rec(qid);
+        delete r.lastSelfTest;
+        touchSelfTest(r);
+        picked.clear();
+        box.classList.remove('quiz-judged');
+        /* 乱序顺序以 lastSelfTest/status 为渲染依据,已渲染的顺序保持不动;
+           重做后重新可点,揭示态保留(答案已看过,再点只为自检) */
+        $$('.quiz-opt', box).forEach(el => {
+          el.classList.remove('quiz-is-wrong', 'quiz-picked');
+          if (!el.dataset.quizPick) return;
+          el.setAttribute('role', 'button');
+          el.setAttribute('tabindex', '0');
+        });
+        if (resultLine) { resultLine.hidden = true; resultLine.textContent = ''; }
+        redoBtn.hidden = true;
+      });
+    });
   }
+
+  /* lastSelfTest 变更统一走 touch(合并规则依赖 _updatedAt 判新旧) */
+  function touchSelfTest(r) { r._updatedAt = Date.now(); }
+
+  /* MockView 注册作答钩子:判定完成后同步进会话草稿(轮次项记 mark/picked) */
+  function setQuizJudgeHook(fn) { quizJudgeHook = typeof fn === 'function' ? fn : null; }
 
   /* 答案与面试表达的融合卡:先给一版能直接用的说法。
      两段各留小标题,不把书面答案和口述表达揉成一段——否则读者分不清哪句能直接说出口。 */
@@ -540,5 +710,6 @@ const QRender = (() => {
   }
 
   return { badge, metaLine, studyBody, recordBar, syncRecordBar, verifyBlock, relLinks, mdHtml, mdField, promptHtml, deepHtml, section, wireQuizToggle,
-           answerFusionBody, quizOptionsHtml, standardSections, focusToggle, wireFocusToggle };
+           answerFusionBody, quizOptionsHtml, standardSections, focusToggle, wireFocusToggle,
+           setQuizJudgeHook, quizShuffledOptions };
 })();

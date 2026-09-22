@@ -1043,6 +1043,10 @@ const MockView = (() => {
 
     const selfBox = $('#m-self');
     const sid = state.sid; /* 回调绑定本题所属会话:会话结束/更换后不得写回 */
+    /* quiz 点击作答(Stage1):与学习页共用同一套委托(选项点击/确认/重做)。
+       模拟会话此前只走「对照」路径,没有挂 quiz 交互 —— 现在补挂,
+       判定结果经 QRender.setQuizJudgeHook 的钩子写回会话草稿(下方注册)。 */
+    QRender.wireQuizToggle(root);
     selfBox.addEventListener('input', debounce(() => {
       if (!state || state.ended || state.sid !== sid) return;
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { self: selfBox.value });
@@ -1059,6 +1063,19 @@ const MockView = (() => {
       draftSave();
       renderRun(root);
     });
+    /* quiz 点击作答(Stage1):共用 common.js 的判定,判定完成后把同一信号写进
+       会话草稿 —— 等价于一次「对照后自评」:答错记 mark=weak(完成轮次时经
+       setStatus reschedule 排期,与复盘标记同一条路径),picked 存进草稿供轮次
+       回看;答对只记 picked,不替用户自评。钩子绑定本题所属会话(sid),会话
+       结束/更换后不得写回。 */
+    QRender.setQuizJudgeHook((judgeQid, correct, labels) => {
+      if (!state || state.ended || state.sid !== sid || judgeQid !== qid) return;
+      const a = state.answers[qid] = Object.assign(state.answers[qid] || {}, { revealed: true });
+      a.quizPicked = labels;
+      if (!correct && a.mark !== 'weak') a.mark = 'weak';
+      draftSave();
+    });
+
     /* 追问二跳:回答框防抖落盘;揭示按钮只放开对应追问的参考要点 */
     $$('#mock-fu-list [data-fu-id]', root).forEach(el => {
       const id = el.dataset.fuId;
@@ -1152,7 +1169,9 @@ const MockView = (() => {
           return { id: e.id || k, q: e.q || '', self: e.self || '', revealed: !!e.revealed, legacy: !!e.legacy || /^\d+$/.test(k) };
         }).filter(x => x.self.trim() || x.revealed);
         const qRev = a.qRev || '';
+        /* quiz 点击作答(Stage1):picked 字母序列随轮次留档(历史真实发生过) */
         return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev,
+                 quizPicked: a.quizPicked,
                  ms: (state.qms || {})[id] || 0,   /* 计时(Track A):本题累计毫秒;无数据为 0,消费方 ms || 0 兜底 */
                  questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
       })
