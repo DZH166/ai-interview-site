@@ -545,6 +545,10 @@ mark.hl-warn { background: #ffe0da; font-weight: 500; }
 }
 .toast.err { background: var(--danger); }
 .toast.show { opacity: .96; }
+/* 带动作的提示条(SW 新版「点击刷新」):光标与焦点环提示可点,不自动消失 */
+.toast.toast-action { cursor: pointer; }
+.toast.toast-action:hover { background: #374151; }
+.toast.toast-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 /* 移动端 */
 @media (max-width: 860px) {
@@ -904,3 +908,14 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 [data-theme="dark"] .quiz-options.quiz-revealed .quiz-is-right { background: #0a2e14 !important; }
 .quiz-answer-block.quiz-answer-hidden .qf-body { display: none; }
 .quiz-answer-block.quiz-answer-hidden .qf-label::after { content: ' — 显示后可见'; color: var(--muted); font-weight: normal; }
+
+/* ---- 减少动态效果(系统级无障碍偏好):前庭障碍用户对大面积动画/过渡敏感,
+   系统开了「减少动态效果」就把所有动画与过渡压到近零、滚动行为退回瞬时 ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

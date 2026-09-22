@@ -135,9 +135,15 @@ const App = (() => {
     /* 提示条容器提前建好:live region 必须在内容插入前就在 DOM 里,读屏才会播报 */
     ensureToastBox();
 
-    /* 暗色模式 */
+    /* 暗色模式:用户显式选择优先;从未点过按钮(localStorage 无记录)时跟随系统。
+       注意「显式 light」也是一次选择,不能被系统 dark 覆盖。 */
     const saved = localStorage.getItem('aiiv:theme');
-    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (saved === null) {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) document.documentElement.setAttribute('data-theme', 'dark');
+    }
     const tBtn = $('#theme-toggle');
     if (tBtn) {
       updateThemeIcon();
@@ -191,6 +197,31 @@ if (document.readyState === 'loading') {
 if ('serviceWorker' in navigator &&
     (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      /* 新版 SW 提示:installing 里的 worker 完成 activate 且页面已有一个
+         controller(说明不是首次安装)时,后台已换上新版,但旧界面还在跑旧代码
+         —— 提示用户点一下刷新。首次安装时 controller 不存在,绝不弹。 */
+      if (!reg.onupdatefound) {
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'activated' && navigator.serviceWorker.controller) {
+              const box = ensureToastBox();
+              const t = document.createElement('div');
+              t.className = 'toast toast-action';
+              t.textContent = '发现新版本,点击刷新';
+              t.setAttribute('role', 'button');
+              t.tabIndex = 0;
+              t.addEventListener('click', () => location.reload());
+              t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') location.reload(); });
+              box.appendChild(t);
+              setTimeout(() => { t.classList.add('show'); }, 10);
+              /* 不自动消失:用户可能正学到一半,刷新由用户决定 */
+            }
+          });
+        });
+      }
+    }).catch(() => {});
   });
 }
