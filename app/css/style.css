@@ -145,6 +145,9 @@ select.input { cursor: pointer; }
 .icon-btn:hover { color: var(--danger); }
 .icon-btn.tiny { font-size: 11px; padding: 0 2px; }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* 简历分组 summary 行内按钮:按钮贴着「N 题」排,inline-flex 抵消 summary 行内容器的
+   baseline 差异;点击触发 details 开合的问题在 JS 里掐断(preventDefault) */
+.rv-summary-btns { display: inline-flex; gap: 6px; vertical-align: middle; margin-left: 8px; }
 .chk { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px; }
 .chk-group { display: flex; flex-wrap: wrap; gap: 10px; }
 .form-row { margin: 14px 0; }
