@@ -93,7 +93,7 @@ def main():
                    "app/js/util.js", "app/js/srs.js", "app/js/store.js",
                    "app/js/markdown.js", "app/js/highlight.js",
                    "app/js/search.js", "app/js/common.js", "app/js/express.js",
-                   "app/js/views-practice.js", "app/js/views-resume.js",
+                   "app/js/views-practice.js", "app/js/views-resume.js", "app/js/views-stats.js",
                    "app/js/views-knowledge.js", "app/js/views-review.js", "app/js/app.js"]
     h = hashlib.md5()
     for rel in shell_files:
