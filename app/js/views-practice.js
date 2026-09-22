@@ -613,14 +613,15 @@ const StudyView = (() => {
       });
       $('[data-rev-ack]', revBox).addEventListener('click', () => { captureNote(qid); ack(); render(root, qid); });
     }
-    /* 键盘快捷键:← 上一题 → 下一题,空格展开全部。
-       焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。 */
+    /* 键盘快捷键:← 上一题 → 下一题。
+       焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。
+       曾经还把空格绑到「展开全部」——该功能早已移除,$('#expand-all') 永远为 null,
+       但 e.preventDefault() 照吞不误,导致学习页任何非交互焦点下按空格打不出空格,已删。 */
     setKeyHandler((e) => {
       if (isInteractiveTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'ArrowLeft') { const b = $('[data-nav]', root); if (b && !b.disabled) b.click(); }
       if (e.key === 'ArrowRight') { const btns = $$('[data-nav]', root); if (btns.length > 1 && !btns[1].disabled) btns[1].click(); }
-      if (e.key === ' ') { e.preventDefault(); const b = $('#expand-all', root); if (b) b.click(); }
     });
   }
 

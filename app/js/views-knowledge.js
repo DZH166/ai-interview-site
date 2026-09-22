@@ -343,7 +343,12 @@ const SearchView = (() => {
       return;
     }
     const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿', fu: '我的追问回答' };
-    box.innerHTML = results.map(r => {
+    /* 零结果降级标记:严格 AND(含别名)没扫到、靠 OR 兜底的查询,顶部给一句
+       明示,避免用户误以为这就是全部精确匹配。 */
+    const partialNotice = results.length && results[0].partial
+      ? `<div class="search-partial muted" role="status">未找到全部匹配,以下为部分匹配结果</div>`
+      : '';
+    box.innerHTML = partialNotice + results.map(r => {
       const u = r.unit;
       let href, title, sub = '';
       if (u.kind === 'try') {

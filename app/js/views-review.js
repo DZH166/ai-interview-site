@@ -96,22 +96,38 @@ const ReviewView = (() => {
     const dueCt = getDueSuggestions().length;
     const drillCt = (() => { const s = getDrillState(); return s.unsolved.length + s.drafts.length; })();
     const todayCt = tq.length + dueCt + drillCt;
+    const TABS = [
+      ['today',   `📌 今日复习${todayCt ? ` (${todayCt})` : ''}`],
+      ['mistakes',`❌ 错题本${mk.length ? ` (${mk.length})` : ''}`],
+      ['fav',     '★ 收藏'],
+      ['weak',    '还不熟'],
+      ['review',  '待复习'],
+      ['note',    '有笔记'],
+      ['recent',  '最近练习'],
+      ['rounds',  '模拟面试历史'],
+    ];
     root.innerHTML = `
-      <div class="review-tabs">
-        ${[
-          ['today',   `📌 今日复习${todayCt ? ` (${todayCt})` : ''}`],
-          ['mistakes',`❌ 错题本${mk.length ? ` (${mk.length})` : ''}`],
-          ['fav',     '★ 收藏'],
-          ['weak',    '还不熟'],
-          ['review',  '待复习'],
-          ['note',    '有笔记'],
-          ['recent',  '最近练习'],
-          ['rounds',  '模拟面试历史'],
-        ].map(([id, label]) => `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}">${label}</button>`).join('')}
+      <div class="review-tabs" role="tablist" aria-label="复习中心分区">
+        ${TABS.map(([id, label]) =>
+          `<button class="rtab ${tab === id ? 'active' : ''}" data-tab="${id}" role="tab"
+             aria-selected="${tab === id}" tabindex="${tab === id ? 0 : -1}"
+             id="rtab-${id}" aria-controls="review-body">${label}</button>`).join('')}
       </div>
       ${tab === 'today' ? renderTodayIntro(tq, dueCt, drillCt) : ''}
-      <div id="review-body"></div>`;
+      <div id="review-body" role="tabpanel" aria-labelledby="rtab-${tab}" tabindex="0"></div>`;
     $$('.rtab', root).forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(root); }));
+    /* 方向键在标签间移动(焦点随动并激活):读屏/键盘用户不必逐个 Tab 越过 8 个标签。
+       Left/Right 循环;激活走 click 复用既有重渲逻辑,焦点落到新激活的标签上。 */
+    const tablist = $('.review-tabs', root);
+    if (tablist) tablist.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const tabs = $$('.rtab', root);
+      const i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      if (next) { next.focus(); next.click(); }
+    });
     renderBody(root);
   }
 

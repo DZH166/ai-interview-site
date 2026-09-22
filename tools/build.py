@@ -24,6 +24,19 @@ def md_sections(md_text):
     return secs
 
 def main():
+    # fail-fast 本地校验:与 CI(validate.yml 跑 validate_bank.py)同一套规则,
+    # 在打包前先跑一遍——坏数据不该等 CI 红了才发现,更不该被打进产物。
+    # validate() 只返回问题清单不落盘;有错就退出,列出前 10 条。
+    sys.path.insert(0, str(ROOT / "tools"))
+    import validate_bank as _vb
+    errors, _warns, _qs = _vb.validate()
+    if errors:
+        lines = ["题库校验未通过,已取消构建。前 %d 条错误:" % min(len(errors), 10)]
+        lines += ["  - " + e for e in errors[:10]]
+        if len(errors) > 10:
+            lines.append(f"  …共 {len(errors)} 条错误,完整清单请运行 python tools/validate_bank.py")
+        raise SystemExit("\n".join(lines))
+
     topics = load_json(ROOT / "data" / "topics.json")
     sources = load_json(ROOT / "data" / "sources.json")
     candidates = load_json(ROOT / "data" / "candidates.json")
@@ -109,6 +122,19 @@ def main():
         re.sub(r"const CACHE_VERSION = '[^']*';",
                f"const CACHE_VERSION = 'shell-{stamp}';",
                sw.read_text(encoding="utf-8")),
+        encoding="utf-8", newline="\n")
+    # manifest 描述里的题数与真实题库对齐(过去硬编码「349 题」,题库涨到 3900 也没人改)。
+    # 顺序很关键:必须在算 stamp 之前改 manifest —— manifest 在 shell_files 哈希清单里,
+    # 先章后改会导致「写 manifest → 戳与磁盘不符」,下次构建又追尾一次。
+    manifest_path = ROOT / "app" / "manifest.webmanifest"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    desc = manifest.get("description", "")
+    new_desc = re.sub(r"\d+ 题", f"{len(questions)} 题", desc)
+    if new_desc != desc:
+        manifest["description"] = new_desc
+        print(f"manifest 描述题数已更新: {desc.split(':')[0]} -> {len(questions)} 题")
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8", newline="\n")
     # 统计
     by_topic, by_diff, by_status = {}, {}, {}
