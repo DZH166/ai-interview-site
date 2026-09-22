@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
-"""打包:把 data/ 下的题库、文档、来源打包成 app/data.js(window.APP_DATA),
-并输出交付统计。数据与界面分离:编辑请改 data/ 下源文件,再运行本脚本。"""
+"""打包:把 data/ 下的题库、文档、来源打包成 app/data.js(window.APP_DATA)与
+app/data/topics/ 分片,并输出交付统计。数据与界面分离:编辑请改 data/ 下源文件,
+再运行本脚本。
+
+拆分结构(Track E,改善首开时间):
+  - app/data.js          薄壳:除 questions 全量字段外的一切 + questions_index
+                         (id/topic/title/difficulty/type/format/tags),同步加载,
+                         首屏列表/计数/简历页立即可用;
+  - app/data/manifest.json  {hash, topics: {tid: {file, count}}},SW 预缓存,网络优先;
+  - app/data/topics/<tid>.<hash>.json  该专题全量题目,文件名带内容哈希 → 不可变,
+                         SW 缓存优先,运行时按需拉取(不进预缓存)。"""
 import json, re, sys, io
 from pathlib import Path
 
@@ -81,8 +90,14 @@ def main():
     data = {
         "content_hash": content_hash,   # 数据内容哈希:可复现,替代曾硬编码的假日期
         "topics": topics,
-        "questions": questions,
-        "docs": docs,
+        # 全量 questions 不再进壳:3900 题占 11MB,同步加载拖死首开(Track E)。
+        # 壳里只有 questions_index(id/topic/title/difficulty/type/format/tags),
+        # 够浏览列表/计数/复习队列/统计热力表用;题干答案等全量字段走分片异步合并。
+        "questions_index": [
+            {k: q[k] for k in ("id", "topic", "title", "difficulty", "type", "format", "tags")
+             if k in q}
+            for q in questions
+        ],        "docs": docs,
         "sources": sources,
         "candidates": candidates,
         "paths": paths,
@@ -91,11 +106,45 @@ def main():
         "highlights": highlights,
         "resume": load_json(ROOT / "data" / "resume-profile.json") if (ROOT / "data" / "resume-profile.json").exists() else {},
     }
-    js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。 */\n"
+    js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。\n"
+          "   questions 全量字段在 app/data/topics/ 分片(按专题 + 内容哈希命名),\n"
+          "   由 Data.init 异步合并进来;壳里只有 questions_index 供首屏列表。 */\n"
           "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,
                                             separators=(",", ":")) + ";\n")
     out = ROOT / "app" / "data.js"
     out.write_text(js, encoding="utf-8", newline="\n")
+
+    # ---- 题库分片:每专题一个 JSON,文件名带内容哈希(不可变缓存的基础) ----
+    # 先清空再重生成:专题增删/更名后,上一轮的旧文件不能留着误导 SW 运行时缓存
+    # 与 Data 的 manifest 枚举 —— 陈旧分片 = 陈旧题目,清理是正确性要求不是整洁要求。
+    topics_dir = ROOT / "app" / "data" / "topics"
+    if topics_dir.exists():
+        import shutil
+        shutil.rmtree(topics_dir)
+    topics_dir.mkdir(parents=True)
+    by_topic_qs = {}
+    for q in questions:
+        by_topic_qs.setdefault(q["topic"], []).append(q)
+    # 专题分组也参与哈希:同组题目以追加(非重排)方式稳定排序 —— build 的 questions
+    # 本身来自 sorted(glob) 顺序拼接,天然确定,不需要额外排序(排序反而掩盖源顺序)。
+    topic_manifest = {}
+    for tid in sorted(by_topic_qs):
+        qs = by_topic_qs[tid]
+        # 文件内容哈希:与 content_hash 同源但独立 —— 只改某专题时,其余分片文件名
+        # 不变,SW 运行时缓存的旧分片依然命中(不可变资产按内容寻址)。
+        th = _hashlib.md5(json.dumps(
+            {"topic": tid, "questions": qs}, ensure_ascii=False, sort_keys=True
+        ).encode("utf-8")).hexdigest()[:12]
+        fname = f"{tid}.{th}.json"
+        payload = {"topic": tid, "hash": content_hash, "questions": qs}
+        (topics_dir / fname).write_text(
+            json.dumps(payload, ensure_ascii=False, indent=None, separators=(",", ":")),
+            encoding="utf-8", newline="\n")
+        topic_manifest[tid] = {"file": fname, "count": len(qs)}
+    data_manifest = {"hash": content_hash, "topics": topic_manifest}
+    (ROOT / "app" / "data" / "manifest.json").write_text(
+        json.dumps(data_manifest, ensure_ascii=False, indent=None, separators=(",", ":")),
+        encoding="utf-8", newline="\n")
     # Service Worker 缓存版本:对整个 app shell(数据+JS+CSS+图标)内容哈希盖章。
     # 任何被 SW 预缓存的文件变化都会生成新缓存名,用户下次访问即拿到新版,
     # 杜绝「改了 JS 但 SW 一直发旧缓存」。统一 LF 写入保证跨平台一致。
@@ -152,10 +201,19 @@ def main():
         "sources_total": len(sources["sources"]),
         "candidates_total": len(candidates["candidates"]),
         "data_js_kb": round(out.stat().st_size / 1024, 1),
+        # 拆分产物统计(Track E):壳 + 最大分片,监控首开加载量
+        "topic_files": len(topic_manifest),
+        "topics_total_kb": round(sum((topics_dir / m["file"]).stat().st_size for m in topic_manifest.values()) / 1024, 1),
+        "largest_topic_kb": round(max((topics_dir / m["file"]).stat().st_size for m in topic_manifest.values()) / 1024, 1),
     }
     (ROOT / "delivery" / "stats.json").write_text(
         json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(stats, ensure_ascii=False, indent=2))
+    # 分片明细:每专题一行(专题 / 题数 / KB),肉眼核对拆分是否均衡
+    for tid in sorted(topic_manifest):
+        m = topic_manifest[tid]
+        kb = (topics_dir / m["file"]).stat().st_size / 1024
+        print(f"  topics/{m['file']}  {m['count']:>5} 题  {kb:8.1f} KB")
 
 if __name__ == "__main__":
     main()

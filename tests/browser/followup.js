@@ -31,6 +31,8 @@ async function open(page, hash) {
 
     /* 开始一轮定向练习:固定用一道有追问的叙述题(牛客 quiz 题无 followups 字段) */
     await open(page, '#/home');
+    /* Track E:followups 属于全量字段,等分片合并完成后再挑题,否则永远找不到 */
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
     await page.evaluate(() => {
       const withFu = Data.allQuestions().find(q => q.format !== 'quiz' && (q.followups || []).length);
       if (!withFu) throw new Error('no narrative question with followups');
@@ -99,6 +101,8 @@ async function open(page, hash) {
     await page.waitForFunction(() => document.querySelector('#m-reveal'));
     await page.locator('#m-reveal').click();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
+    /* reload 后回到 run 视图:等全量分片重新合并完成(Track E),followups 才在 Data 里 */
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
     await page.evaluate(() => {
       const d = Store.data.mock.draft;
       const qid = d.items[d.idx].qid;
@@ -110,6 +114,7 @@ async function open(page, hash) {
     });
     await page.reload();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
     check('重排前:回答显示在原题面下',
       await page.evaluate(() => {
         const qid = Store.data.mock.draft.items[Store.data.mock.draft.idx].qid;
@@ -117,10 +122,20 @@ async function open(page, hash) {
         const el = document.querySelector(`[data-fu-id="${id0}"]`);
         return { ok: !!(el && el.value === '绑定在原题面的回答'), hasEl: !!el, val: el && el.value, qid, id0, fuKeys: Object.keys(Store.data.mock.draft.answers[qid].fu || {}) };
       }).then(r => { if (!r.ok) console.log('  DEBUG', JSON.stringify(r)); return r.ok; }));
-    /* Simulate a real publication: the replacement must survive reload. */
-    await page.route('**/data.js', route => route.fulfill({ status: 200, contentType: 'application/javascript',
-      body: require('fs').readFileSync(path.join(ROOT, 'app/data.js'), 'utf8') +
-        '\nwindow.APP_DATA.questions.find(q => q.id === ' + JSON.stringify(firstQid) + ').followups.reverse();' }));
+    /* Simulate a real publication: the replacement must survive reload.
+       Track E:壳里已无 questions 数组,「发布变更」改为改写 quiz-ml 分片内容 ——
+       用 manifest 里该题所属专题的真实文件名重写分片响应。 */
+    await page.route('**/data/topics/*.json', route => {
+      const url = new URL(route.request().url());
+      const fname = url.pathname.split('/').pop();
+      const mf = JSON.parse(require('fs').readFileSync(path.join(ROOT, 'app/data/manifest.json'), 'utf8'));
+      const shard = Object.values(mf.topics).find(t => t.file === fname);
+      if (!shard) return route.continue();
+      const payload = JSON.parse(require('fs').readFileSync(path.join(ROOT, 'app/data/topics', fname), 'utf8'));
+      const q = payload.questions.find(q => q.id === firstQid);
+      if (q) q.followups.reverse();
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    });
     await page.reload();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
     check('重排后:回答仍显示在原题面下(身份跟内容走,不跟位置走)',
@@ -148,7 +163,7 @@ async function open(page, hash) {
           && ![...document.querySelectorAll('#mock-fu-list [data-fu-id]')].some(el => el.value === '旧回答原文');
       }));
 
-    await page.unroute('**/data.js');
+    await page.unroute('**/data/topics/*.json');
 
     /* ---- 统一资格:只写追问也能完成并导出;完成页与首页同一口径(SP-03) ---- */
     await page.goto(BASE + '/__seed__');

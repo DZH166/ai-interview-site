@@ -2,17 +2,47 @@
 'use strict';
 
 const Data = (() => {
-  let questions = [];   /* 内置 + 导入合并 */
+  let questions = [];   /* 壳 questions_index + 分片全量 + 导入合并 */
   let docs = [];
   let userDocs = [];
   let byId = new Map();
 
+  /* ---- 分片加载状态(Track E) ----
+     壳(questions_index)同步可用 → 列表/计数立即可渲染;
+     全量字段(prompt/answer/followups…)来自 app/data/topics/ 分片,异步合并。
+     needs-full 的功能(搜索索引/学习页/自测抽题)必须 questionsReady() 之后再读。 */
+  let fullReady = false;        /* 分片全部合并完成(或判定无需加载) */
+  let fullPromise = null;       /* 进行中的合并 Promise(幂等) */
+  let mergedBank = null;        /* 分片合并出的全量内置题(id -> q),重入 init 时复用 */
+
+  /* 兼容探测:壳里若已带非空全量 questions(Node 测试桩 / 未来回退形态),
+     直接视为已就绪,跳过分片加载 —— detect-and-skip,不是特判某个调用方。 */
+  function shellHasFullQuestions() {
+    const d = window.APP_DATA;
+    return !!(d && Array.isArray(d.questions) && d.questions.length);
+  }
+  /* 该题是否已带全量字段(至少有答案类字段):index-only 的题不含 answer */
+  function isFullQuestion(q) {
+    return q && (q.answer !== undefined || q.followups !== undefined || q.sources !== undefined);
+  }
+
   function init() {
-    const base = (window.APP_DATA && window.APP_DATA.questions) || [];
+    const base = shellHasFullQuestions()
+      ? window.APP_DATA.questions
+      : ((window.APP_DATA && window.APP_DATA.questions_index) || []);
     /* 启动隔离:坏扩展数据移入隔离键(原始保留,维护页可导出),合法数据才进内存 */
     if (Store.resetLoadIssues) Store.resetLoadIssues();
     const extra = Store.loadExtraBankSafe();
-    questions = base.slice();
+    /* 重入防线(Track E):init 会被远端合并/导入等场景反复调用。
+       若直接从 questions_index 重建,已异步合并进来的全量字段会被冲掉 ——
+       全量题目只从 mergedBank(分片合并结果)取,shell 的 index 只在
+       mergedBank 尚未就绪时充当首屏占位。 */
+    let mergedFull = null;
+    if (!shellHasFullQuestions()) {
+      if (mergedBank) mergedFull = mergedBank.slice();
+      else if (fullReady) { mergedBank = []; mergedFull = mergedBank.slice(); }
+    }
+    questions = mergedFull !== null ? mergedFull : base.slice();
     /* 用本轮新建的 seen 判重:不能用上一轮的 byId,否则重复 init 会把
        已导入的扩展题误判为冲突而丢弃(init 必须可重入) */
     const seen = new Set(questions.map(q => q.id));
@@ -27,16 +57,94 @@ const Data = (() => {
     byId = new Map(questions.map(q => [q.id, q]));
     docs = ((window.APP_DATA && window.APP_DATA.docs) || []).slice();
     userDocs = Store.loadUserDocsSafe();
+    /* 分片合并只做一次;init 可重入(远端变更/导入后重建内存),
+       已就绪或已在加载就直接沿用,不重复发请求。 */
+    if (!fullPromise) fullPromise = loadTopicFiles();
     contentVersion = computeContentVersion();
   }
 
+  /* ---- 分片异步合并 ----
+     manifest(SW 预缓存,网络优先)→ 全部专题文件 Promise.allSettled。
+     单片失败不炸全局:该专题题目缺失时,依赖全量字段的功能按「题目不存在」空态降级;
+     失败的分片重试一次(老 SW 缓存未含分片时的自愈),再失败才认输并进 loadIssues。 */
+  function loadTopicFiles() {
+    /* Node 测试桩 / 已含全量的壳:无需加载,立即就绪 */
+    if (shellHasFullQuestions()) { fullReady = true; return Promise.resolve(); }
+    if (typeof fetch !== 'function') { fullReady = true; return Promise.resolve(); }
+    const issues = [];
+    return fetch('data/manifest.json')
+      .then(r => { if (!r.ok) throw new Error('manifest ' + r.status); return r.json(); })
+      .then(mf => {
+        const entries = Object.values((mf && mf.topics) || {});
+        return Promise.allSettled(entries.map(e =>
+          fetchJsonRetry('data/topics/' + e.file)));
+      })
+      .then(results => {
+        results.forEach((res, i) => {
+          if (res.status === 'fulfilled') mergeTopic(res.value);
+          else issues.push(String((res.reason && res.reason.message) || res.reason));
+        });
+        if (issues.length) {
+          console.warn('题库分片加载失败 ' + issues.length + ' 个(对应专题题目不可用):', issues);
+          if (Store.loadIssues) Store.loadIssues.topicFiles = issues;
+        }
+        fullReady = true;
+      })
+      .catch(err => {
+        /* manifest 都拿不到:全量字段整体缺失,列表仍可用(index),详情降级空态 */
+        console.warn('题库分片 manifest 加载失败,仅索引可用:', err);
+        issues.push('manifest: ' + ((err && err.message) || err));
+        if (Store.loadIssues) Store.loadIssues.topicFiles = issues;
+        fullReady = true;
+      });
+  }
+
+  function fetchJsonRetry(url) {
+    return fetchJson(url).catch(first => fetchJson(url).catch(second => {
+      throw new Error(url + ' :: ' + ((second && second.message) || second));
+    }));
+  }
+  function fetchJson(url) {
+    return fetch(url).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+  }
+
+  /* 单片合并:就地扩充 questions/byId,并同步进 mergedBank(重入 init 时复用)。
+     分片题目以题库校验的唯一 id 为准,与 index 里的同名条目按 id 对齐替换
+     (浅合并:index 提供的元数据字段保留)。 */
+  function mergeTopic(payload) {
+    const qs = (payload && payload.questions) || [];
+    if (!mergedBank) mergedBank = [];
+    const bankSeen = new Set(mergedBank.map(q => q.id));
+    qs.forEach(q => {
+      if (!q || !q.id || !isFullQuestion(q)) return;
+      if (!bankSeen.has(q.id)) { mergedBank.push(q); bankSeen.add(q.id); }
+      const existing = byId.get(q.id);
+      if (existing) Object.assign(existing, q);
+      else { questions.push(q); byId.set(q.id, q); }
+    });
+  }
+
+  /* 全量题目就绪门控:needs-full 的功能(搜索索引/学习页正文/自测抽题)等这个。
+     已就绪立即 resolve;同一 Promise 复用,多调用方并发等待不重复加载。 */
+  function questionsReady() {
+    if (!fullPromise) fullPromise = loadTopicFiles();
+    return fullPromise;
+  }
+  function questionsLoaded() { return fullReady; }
+
   /* 静态内容版本(搜索分层缓存的失效依据,阶段7):
      build.py 的内容哈希 + 题库规模。等长内容替换 → 哈希变 → 静态层重建;
-     个人笔记编辑 → 不影响 → 静态层不重建。 */
+     个人笔记编辑 → 不影响 → 静态层不重建。
+     Track E:追加就绪标记 —— 分片合并前后题库长度相同(3900|3900),仅凭长度
+     搜静态层签名不会失效,搜索会一直用 index-only 的半份索引;ready 标记翻转
+     强制合并后重建一次静态层。 */
   let contentVersion = '';
   function computeContentVersion() {
     const base = (window.APP_DATA && window.APP_DATA.content_hash) || '';
-    return base + '|' + questions.length + '|' + docs.map(d => d.id).join(',');
+    return base + '|' + questions.length + '|' + (fullReady ? 'full' : 'idx') + '|' + docs.map(d => d.id).join(',');
   }
   function contentVersionOf() { return contentVersion; }
 
@@ -73,7 +181,7 @@ const Data = (() => {
     return Store.STATUS.find(x => x.id === s) || Store.STATUS[0];
   }
 
-  return { init, allQuestions, question, allDocs, doc, allUserDocs, reloadUserDocs, contentVersionOf, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
+  return { init, allQuestions, question, questionsReady, questionsLoaded, allDocs, doc, allUserDocs, reloadUserDocs, contentVersionOf, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
 
 /* 追问稳定身份(SP-02):qid + 题面内容哈希——

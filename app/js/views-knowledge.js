@@ -319,11 +319,22 @@ const SearchView = (() => {
         <div id="s-results"></div>
       </div>`;
     const input = $('#s-input');
+    /* 深链进入时索引必须等全量题库合并(Track E):未就绪先给「加载中」空态,
+       questionsReady 后再真正查询;用户手动点搜索时索引通常已建好,同步路径不变。 */
+    const goSearch = (val, keep) => {
+      if (Data.questionsLoaded()) { doSearch(val, keep); return; }
+      $('#s-results').innerHTML = '<div class="empty">题库加载中…</div>';
+      Data.questionsReady().then(() => {
+        /* 等待期间用户可能已离开搜索页:DOM 换人了就别往回写 */
+        if (!document.getElementById('s-results')) return;
+        doSearch(val, keep);
+      });
+    };
     $('#s-go').addEventListener('click', () => doSearch(input.value));
     input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
     $('#s-scope').addEventListener('change', e => { saved.scope = e.target.value; doSearch(input.value, true); });
     $('#s-topic').addEventListener('change', e => { saved.topic = e.target.value; doSearch(input.value, true); });
-    if (q) doSearch(q, true); else $('#s-results').innerHTML = '<div class="empty">输入关键词开始搜索;支持多个关键词(空格分隔,需同时命中)。</div>';
+    if (q) goSearch(q, true); else $('#s-results').innerHTML = '<div class="empty">输入关键词开始搜索;支持多个关键词(空格分隔,需同时命中)。</div>';
   }
 
   function doSearch(q, keepUrl) {

@@ -61,6 +61,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.reload();
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+    /* Track E:分片是运行时缓存,断网前先把全部分片拉一遍(在线首访路径) */
+    await page.evaluate(async () => { const m = await (await fetch('data/manifest.json')).json(); await Promise.all(Object.values(m.topics).map(e => fetch('data/topics/' + e.file).then(r => r.text()))); });
     await context.setOffline(true);
     await page.goto(BASE + '/index.html#/study/LC-003');
     await page.waitForFunction(() => typeof Data !== 'undefined' && document.querySelector('[data-question-prompt="LC-003"]'));

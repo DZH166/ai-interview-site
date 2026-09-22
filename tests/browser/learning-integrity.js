@@ -10,7 +10,8 @@ async function test(name,fn){try{await fn();passed++;console.log('  PASS '+name)
   for(let i=0;i<50;i++){try{if((await fetch(BASE+'/index.html')).ok)break;}catch{}await sleep(100);}
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROME&&process.env.CHROME!=='default'?process.env.CHROME:undefined});
   async function fresh(seed){const ctx=await browser.newContext({serviceWorkers:'block'}),p=await ctx.newPage();await p.goto(BASE+'/__seed__');if(seed)await p.evaluate(d=>localStorage.setItem('aiiv:records',JSON.stringify(d)),seed);await open(p,'#/home');return p;}
-  async function open(p,hash){await p.goto(BASE+'/index.html'+hash);await p.waitForFunction(()=>typeof Store!=='undefined'&&Store.data.ui.lastHash===location.hash&&document.querySelector('#view > *'));}
+  /* Track E:全量题字段异步合并 —— open 后等 questionsReady(与生产门控一致)再交互 */
+  async function open(p,hash){await p.goto(BASE+'/index.html'+hash);await p.waitForFunction(()=>typeof Store!=='undefined'&&Store.data.ui.lastHash===location.hash&&document.querySelector('#view > *'));await p.waitForFunction(()=>typeof Data!=='undefined'&&Data.questionsLoaded()===true,null,{timeout:20000});}
   async function start(p){await p.evaluate(()=>MockView.startDirected(['AG-001'],'integrity test'));await p.waitForSelector('#m-self');}
   await test('failed completion preserves draft and can retry exactly once',async()=>{
    const p=await fresh();await start(p);await p.locator('#m-self').fill('durable answer');await p.evaluate(()=>MockView.flushDraft());

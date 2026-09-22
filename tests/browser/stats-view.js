@@ -75,8 +75,10 @@ const DAY = 24 * 60 * 60 * 1000;
        所以 agent 未练习 = 题库 agent 总数 − 种子的 3 题) */
     check('热力表渲染全部专题行(20 行)', await page.locator('.stats-heat tbody tr').count() === 20);
     const counts = await page.evaluate(() => {
-      const bankAgent = window.APP_DATA.questions.filter(q => q.topic === 'agent').length;
-      const bankRag = window.APP_DATA.questions.filter(q => q.topic === 'rag').length;
+      /* Track E:壳里是 questions_index;若分片未合并,topic 计数用 index 一样正确 */
+      const bank = window.APP_DATA.questions || window.APP_DATA.questions_index;
+      const bankAgent = bank.filter(q => q.topic === 'agent').length;
+      const bankRag = bank.filter(q => q.topic === 'rag').length;
       const cell = tr => [...tr.querySelectorAll('td.sh-cell')].map(td => Number(td.dataset.count));
       return {
         agent: cell(document.querySelector('.stats-heat tbody tr[data-topic="agent"]')),
