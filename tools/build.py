@@ -207,7 +207,8 @@ def main():
         "largest_topic_kb": round(max((topics_dir / m["file"]).stat().st_size for m in topic_manifest.values()) / 1024, 1),
     }
     (ROOT / "delivery" / "stats.json").write_text(
-        json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(stats, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8", newline="\n")
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     # 分片明细:每专题一行(专题 / 题数 / KB),肉眼核对拆分是否均衡
     for tid in sorted(topic_manifest):

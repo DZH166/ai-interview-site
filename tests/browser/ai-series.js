@@ -30,7 +30,12 @@ async function open(page, hash) {
     await page.evaluate(questions => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} })), old);
     await open(page, '#/home');
     check('new framework topic appears without removing Pi Agent', await page.locator('a[href="#/browse?t=langchain"]').count() === 1 && await page.locator('a[href="#/browse?t=pi-agent"]').count() === 1);
-    check('3646 questions are loaded and new questions have no fabricated practice', await page.evaluate(() => Data.allQuestions().length === 3646 && Data.allQuestions().filter(q => q.topic === 'langchain').every(q => !Store.rec(q.id).practiceCount && !Store.rec(q.id).status)));
+    /* 期望题量从 data/questions/*.json 现算,避免每次扩库都改断言
+       (与 hardening.js 同一套写法:题库涨了不该让断言变成维护负担) */
+    const expectedCount = fs.readdirSync(path.join(ROOT, 'data/questions'))
+      .filter(f => f.endsWith('.json'))
+      .reduce((n, f) => n + JSON.parse(fs.readFileSync(path.join(ROOT, 'data/questions', f), 'utf8')).length, 0);
+    check(expectedCount + ' questions are loaded and new questions have no fabricated practice', await page.evaluate(n => Data.allQuestions().length === n && Data.allQuestions().filter(q => q.topic === 'langchain').every(q => !Store.rec(q.id).practiceCount && !Store.rec(q.id).status), expectedCount));
     await open(page, '#/browse?t=langchain');
     await page.waitForFunction(() => document.querySelector('#f-topic')?.value === 'langchain');
     check('framework category has six questions', await page.locator('.q-item[data-qid]').count() === 6);
