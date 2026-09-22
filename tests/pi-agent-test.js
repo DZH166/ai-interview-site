@@ -1,5 +1,6 @@
 /* Read back every imported question, not only a title/count fixture. */
 'use strict';
+(async () => {
 const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert');
 const ROOT = path.resolve(__dirname, '..');
 const adapter = require('../tools/import-pi-agent');
@@ -9,6 +10,7 @@ const sourceTotal = fs.readdirSync(path.join(ROOT, 'data/questions')).filter(f =
   .reduce((n, f) => n + JSON.parse(fs.readFileSync(path.join(ROOT, 'data/questions', f), 'utf8')).length, 0);
 let passed = 0, failed = 0;
 function test(name, fn) { try { fn(); passed++; console.log('  PASS', name); } catch(e) { failed++; console.error('  FAIL', name, e.message); } }
+async function testAsync(name, fn) { try { await fn(); passed++; console.log('  PASS', name); } catch(e) { failed++; console.error('  FAIL', name, e.message); } }
 test('30 stable native IDs, three groups and 90 nested follow-ups', () => {
   assert.deepStrictEqual(questions.map(q => q.id), Array.from({ length: 30 }, (_, i) => 'PI-' + String(i + 1).padStart(3, '0')));
   assert.strictEqual(questions.reduce((n, q) => n + q.followups.length, 0), 90);
@@ -50,14 +52,23 @@ test('same content is skipped and managed content edits are detectable', () => {
   const changed = structuredClone(questions[0]); changed.title += ' user edit';
   assert.notStrictEqual(adapter.managedHash(changed), changed.metadata.pi_agent.adapter_hash);
 });
-test('built application retains the full bank and Pi Agent without touching personal records', () => {
+await testAsync('built application retains the full bank and Pi Agent without touching personal records', async () => {
   const records = { v: 3, questions: { 'PY-001': { note: 'my existing note', fav: true, status: 'weak', practiceCount: 4 } }, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} };
   const disk = new Map([['aiiv:records', JSON.stringify(records)]]);
   const c = { window: {}, console, toast() {}, debounce: f => f, esc: String,
     localStorage: { getItem: k => disk.get(k) || null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) } };
+  /* Track E:题库拆分后壳里只有 questions_index,vm 里用磁盘桩 fetch 模拟浏览器分片加载 */
+  c.fs = fs; c.path = path; c.ROOT = ROOT;
   vm.createContext(c);
   ['app/data.js', 'app/js/srs.js', 'app/js/store.js', 'app/js/common.js', 'app/js/markdown.js', 'app/js/search.js', 'app/js/express.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), c));
+  vm.runInContext(`
+    globalThis.fetch = (url) => {
+      const body = fs.readFileSync(path.join(ROOT, 'app', url), 'utf8');
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(body)) });
+    };
+  `, c);
   vm.runInContext('Store.load(); Data.init(); this.S=Store; this.D=Data; this.Search=Search; this.Card=ExpressCard;', c);
+  await c.D.questionsReady();   /* 等分片合并完成再断言全量行为 */
   assert.strictEqual(c.D.allQuestions().length, sourceTotal); assert.strictEqual(c.D.topic('pi-agent').name, 'Pi Agent');
   for(const q of questions) assert.strictEqual(c.D.question(q.id).metadata.pi_agent.source_hash, q.metadata.pi_agent.source_hash);
   assert.strictEqual(JSON.stringify(c.S.data.questions), JSON.stringify(records.questions));
@@ -91,3 +102,4 @@ test('a locally edited managed question blocks the entire import without changin
   }
 });
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`); process.exitCode = failed ? 1 : 0;
+})();

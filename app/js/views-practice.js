@@ -24,7 +24,10 @@ const BrowseView = (() => {
       const r = Store.rec(q.id);
       if (f.fav && !r.fav) return false;
       if (kw) {
-        const hay = (q.title + ' ' + (q.prompt || '') + ' ' + q.answer + ' ' + (q.tags || []).join(' ') + ' ' + q.id).toLowerCase();
+        /* 关键词匹配覆盖题干/答案/标签。全量字段未合并时 answer/prompt 为 undefined:
+           标题/标签(id)仍可匹配,等全量就绪后 Data.init 重建时 refreshList 会重算
+           (needs-full 门控已在详情层兜底),这里不因字段缺失而抛错。 */
+        const hay = (q.title + ' ' + (q.prompt || '') + ' ' + (q.answer || '') + ' ' + (q.tags || []).join(' ') + ' ' + q.id).toLowerCase();
         if (!kw.split(/\s+/).every(t => hay.includes(t))) return false;
       }
       return true;
@@ -209,6 +212,16 @@ const BrowseView = (() => {
     $$('.q-item', root).forEach(el => el.classList.toggle('active', el.dataset.qid === qid));
     const q = Data.question(qid);
     if (!q) return;
+    /* 详情面板渲染标准区块(答案/追问/理解检查)需要全量题字段(Track E):
+       全量未合并时先上占位,就绪后重进本函数;此时列表/选中态已同步,不重做。 */
+    if (q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+      $('#q-detail', root).innerHTML = '<div class="empty">题库加载中…</div>';
+      Data.questionsReady().then(() => {
+        if (!root.isConnected || DetailQid !== qid) return;   /* 已换题/换页:丢弃 */
+        select(root, filters(), qid);
+      });
+      return;
+    }
     Store.markViewed(qid);
     const nb = NavCtx.neighbors(qid);
     $('#q-detail', root).innerHTML = `
@@ -466,8 +479,19 @@ const StudyView = (() => {
   }
 
   function render(root, qid, anchor) {
-    const q = Data.question(qid);
-    if (!q) { root.innerHTML = '<div class="empty">未找到题目:' + esc(qid) + '</div>'; return; }
+    let q = Data.question(qid);
+    /* 全量题字段异步合并(Track E):壳里只有 index 元数据,正文渲染必须等 questionsReady。
+       判定「还没全量」:无 answer 字段且加载未完成(导入题/Node 桩天然带全量,立即渲染)。
+       等待期给轻量占位;等不到(分片缺失)→ 按空态降级,绝不炸页。 */
+    if (q && q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+      root.innerHTML = '<div class="empty">题库加载中…</div>';
+      Data.questionsReady().then(() => {
+        if (!root.isConnected) return;                  /* 等待期间已离开学习页 */
+        render(root, qid, anchor);                      /* 就绪后按同一 qid 重进;缺失走下方空态 */
+      });
+      return;
+    }
+    if (!q) { root.innerHTML = '<div class="empty">题目不存在:' + esc(qid) + '</div>'; return; }
     currentQid = qid;
     remoteNotePending = null;
     Store.markViewed(qid);
@@ -599,14 +623,15 @@ const StudyView = (() => {
       });
       $('[data-rev-ack]', revBox).addEventListener('click', () => { captureNote(qid); ack(); render(root, qid); });
     }
-    /* 键盘快捷键:← 上一题 → 下一题,空格展开全部。
-       焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。 */
+    /* 键盘快捷键:← 上一题 → 下一题。
+       焦点在按钮/链接/输入框等交互控件上时不拦截(保留 Space/Enter 原生激活)。
+       曾经还把空格绑到「展开全部」——该功能早已移除,$('#expand-all') 永远为 null,
+       但 e.preventDefault() 照吞不误,导致学习页任何非交互焦点下按空格打不出空格,已删。 */
     setKeyHandler((e) => {
       if (isInteractiveTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'ArrowLeft') { const b = $('[data-nav]', root); if (b && !b.disabled) b.click(); }
       if (e.key === 'ArrowRight') { const btns = $$('[data-nav]', root); if (btns.length > 1 && !btns[1].disabled) btns[1].click(); }
-      if (e.key === ' ') { e.preventDefault(); const b = $('#expand-all', root); if (b) b.click(); }
     });
   }
 
@@ -664,6 +689,10 @@ const MockView = (() => {
     if (!ans.questionSnapshot) {
       const current = Data.question(qid);
       if (!current) return null;
+      /* 半份题快照防线(Track E):index-only 的题目(全量未合并)不能进快照 ——
+         快照会随草稿/轮次永久落盘,存成残题比没有题更糟。调用方都在
+         questionsReady 门控之后,这里只拦「万一漏网的路径」,返回 null 走跳过逻辑。 */
+      if (current.answer === undefined && !current.followups && !current.sources && !Data.questionsLoaded()) return null;
       ans.snapshotCapturedLate = !!(ans.self || ans.revealed || Object.keys(ans.fu || {}).length);
       ans.questionSnapshot = JSON.parse(JSON.stringify(Object.fromEntries(
         ['id','title','format','options','qtype','topic','type','difficulty','tags','prompt','answer','plain','interview','pitfalls','fusion_notes','followups','content_version']
@@ -755,6 +784,23 @@ const MockView = (() => {
   /* pagehide 兜底:与 captureInput 相同(名称保留供 App.flush 调用) */
   function flushDraft() { captureInput(); }
 
+  /* 计时(Track A):结算当前题自上次进入以来的时长,累加进 qms[qid] 并重置起点。
+     供所有离开当前题的动作调用(自评/导航/结束);state 缺计时字段时静默初始化,
+     旧草稿/异常路径不因计时崩溃。 */
+  function settleQms() {
+    if (!state || state.ended) return;
+    const q = state.items[state.idx] || {};
+    const id = q.qid || q.id;
+    if (!id) return;
+    if (state.qStartAt == null) { state.qStartAt = Date.now(); return; }
+    const now = Date.now();
+    if (now > state.qStartAt) {
+      state.qms = state.qms || {};
+      state.qms[id] = (state.qms[id] || 0) + (now - state.qStartAt);
+    }
+    state.qStartAt = now;   /* 重置起点:同一题多次结算只计新增段 */
+  }
+
   /* 结束/放弃会话:作废所有挂起的防抖回调(按会话 ID 判定),清除草稿 */
   function endSession() {
     if (state) state.ended = true;
@@ -771,7 +817,10 @@ const MockView = (() => {
             items: d.items, idx: Math.min(d.idx || 0, d.items.length - 1),
             answers: d.answers || {}, directed: !!d.directed, label: d.label || '',
             sessionId: d.sessionId || ('ms-legacy-' + (d.savedAt || 0) + '-' + (d.items[0] && d.items[0].qid || '')),
-            sid: ++sessionSeq, ended: false
+            sid: ++sessionSeq, ended: false,
+            /* 计时(Track A):草稿不保存时间数据,恢复后从本次渲染重新起算——
+               单题时长按段累计,丢的只是刷新前未结算的段,总时长从恢复时刻起算,可接受 */
+            startedAt: Date.now(), qms: {}
           };
         }
       }
@@ -846,13 +895,16 @@ const MockView = (() => {
       const count = parseInt($('#m-count').value, 10);
       const pool = Data.allQuestions().filter(q => selTopics.includes(q.topic) && selDiffs.includes(q.difficulty));
       if (!pool.length) { toast('没有符合条件的题目,请放宽筛选', 'err'); return; }
+      /* 抽题只需 qid,但答题要全量字段(Track E):把「等就绪」串在进 run 页之前,
+         renderRun 的占位门控再兜一层,双保险。 */
       endSession(); /* 丢弃旧会话(作废其挂起回调) */
       state = {
         config: { topics: selTopics, diffs: selDiffs, count },
         items: sample(pool, Math.min(count, pool.length)).map(q => ({ qid: q.id })),
         idx: 0, answers: {}, directed: false, label: '',
         sessionId: newSessionId(),
-        sid: ++sessionSeq, ended: false
+        sid: ++sessionSeq, ended: false,
+        startedAt: Date.now(), qms: {}   /* 计时(Track A):整轮起点 + 单题累计时长 */
       };
       draftSave();
       go('#/mock/run');
@@ -862,16 +914,24 @@ const MockView = (() => {
   /* 定向复习入口(今日复习/错题本重做等):只包含给定队列的普通自测会话 */
   function startDirected(qids, label) {
     if (!qids || !qids.length) { toast('队列为空', 'err'); return; }
-    endSession();
-    state = {
-      config: { topics: [], diffs: [], count: qids.length, label: label || '定向复习' },
-      items: qids.map(id => ({ qid: id })),
-      idx: 0, answers: {}, directed: true, label: label || '定向复习',
-      sessionId: newSessionId(),
-      sid: ++sessionSeq, ended: false
+    /* 定向复习队列来自各入口的 qid;答题渲染需要全量字段(Track E)。
+       会话状态在这里就建好并落盘(语义不变),只是跳转延到就绪之后 ——
+       避免草稿里先记下「index 半份题」的快照。 */
+    const launch = () => {
+      endSession();
+      state = {
+        config: { topics: [], diffs: [], count: qids.length, label: label || '定向复习' },
+        items: qids.map(id => ({ qid: id })),
+        idx: 0, answers: {}, directed: true, label: label || '定向复习',
+        sessionId: newSessionId(),
+        sid: ++sessionSeq, ended: false,
+        startedAt: Date.now(), qms: {}   /* 计时(Track A):定向复习同样记时长 */
+      };
+      draftSave();
+      go('#/mock/run');
     };
-    draftSave();
-    go('#/mock/run');
+    if (Data.questionsLoaded()) { launch(); return; }
+    Data.questionsReady().then(launch);
   }
 
   function sample(pool, n) {
@@ -925,7 +985,21 @@ const MockView = (() => {
   function renderRun(root) {
     const q = questionForSession(state.items[state.idx].qid || state.items[state.idx].id);
     if (!q) { toast('题目不存在,跳过', 'err'); state.idx++; if (state.idx >= state.items.length) finish(root); else renderRun(root); return; }
+    /* 会话题目以 qid 进入,正文渲染需要全量字段(Track E):未就绪先占位,就绪后重进。
+       questionForSession 会把题目快照进会话答案 —— 必须等全量合并后再快照,
+       否则存下来的是只有 index 元数据的半份题。 */
+    if (q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+      root.innerHTML = '<div class="empty">题库加载中…</div>';
+      Data.questionsReady().then(() => {
+        if (!root.isConnected || !state || state.ended) return;   /* 已离开/已结束:丢弃 */
+        renderRun(root);
+      });
+      return;
+    }
     const qid = q.id;
+    /* 计时(Track A):每次进入本题重置起点;离开本题的各出口(自评/上一题/下一题/完成)
+       把「now - 起点」累加进 qms,而不是覆盖——用户回看旧题再花的时间也算练过 */
+    state.qStartAt = Date.now();
     const ans = state.answers[qid] || { self: '', revealed: false, mark: '' };
     root.innerHTML = `
       <div class="card mock-run">
@@ -972,6 +1046,9 @@ const MockView = (() => {
     selfBox.addEventListener('input', debounce(() => {
       if (!state || state.ended || state.sid !== sid) return;
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { self: selfBox.value });
+      /* 计时(Track A):自评落笔时结算一次,本题已花的时长先入账;
+         后续再停留则由导航/结束时继续累计 */
+      if (qid === (state.items[state.idx].qid || state.items[state.idx].id)) settleQms();
       draftSave();
     }, 200));
 
@@ -1032,9 +1109,9 @@ const MockView = (() => {
       renderRun(root);
     }));
     const prev = $('#m-prev');
-    if (prev) prev.addEventListener('click', () => { captureInput(); state.idx--; draftSave(); renderRun(root); });
+    if (prev) prev.addEventListener('click', () => { captureInput(); settleQms(); state.idx--; draftSave(); renderRun(root); });
     const next = $('#m-next');
-    if (next) next.addEventListener('click', () => { captureInput(); state.idx++; draftSave(); renderRun(root); });
+    if (next) next.addEventListener('click', () => { captureInput(); settleQms(); state.idx++; draftSave(); renderRun(root); });
     const finishBtn = $('#m-finish');
     if (finishBtn) finishBtn.addEventListener('click', () => finish(root));
     const quitBtn = $('#m-quit');
@@ -1043,6 +1120,7 @@ const MockView = (() => {
 
   function finish(root) {
     captureInput(); /* 同步捕获当前输入,快速结束时最后一个回答不丢 */
+    settleQms();    /* 计时(Track A):结束前结算最后一题的时长 */
     if (!activeSession()) return;
     const sid = state.sid;
     const previousMock = JSON.parse(JSON.stringify(Store.data.mock));
@@ -1057,6 +1135,9 @@ const MockView = (() => {
     const round = {
       ts: Date.now(),
       sessionId: state.sessionId,
+      /* 计时(Track A):整轮总时长;旧数据恢复路径 startedAt 缺失时记 0,
+         消费方一律 durationMs || 0 兜底 */
+      durationMs: state.startedAt ? Math.max(0, Date.now() - state.startedAt) : 0,
       config: state.config,
       items: state.items.map(q => {
         const id = q.qid || q.id;
@@ -1071,7 +1152,9 @@ const MockView = (() => {
           return { id: e.id || k, q: e.q || '', self: e.self || '', revealed: !!e.revealed, legacy: !!e.legacy || /^\d+$/.test(k) };
         }).filter(x => x.self.trim() || x.revealed);
         const qRev = a.qRev || '';
-        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev, questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
+        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev,
+                 ms: (state.qms || {})[id] || 0,   /* 计时(Track A):本题累计毫秒;无数据为 0,消费方 ms || 0 兜底 */
+                 questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
       })
     };
     Store.data.mock.rounds.unshift(round);

@@ -74,10 +74,21 @@ const App = (() => {
   /* 统一索引变更入口:任何数据变更(题库导入/资料增删/尝试保存/备份恢复/清空)都走这里。
      重建 Data 内存(扩展题库/资料)并全量重建索引;失败抛错由调用方反馈真实结果。
      另外把上下文提供者交给 Search:数据版本变化时索引会按需自动重建,
-     这样「某个调用点忘了重建索引」不再是一类可能的 bug。 */
+     这样「某个调用点忘了重建索引」不再是一类可能的 bug。
+     全量题字段异步合并(Track E)后的两次构建:
+       ① 立即构建一次 —— 加载窗口内索引虽只有 index 元数据,但笔记/尝试等
+          动态层必须即刻生效(个人写入后立刻可检索,与拆分前行为一致);
+       ② questionsReady 后再构建一次 —— 补齐题干/答案/追问等全量静态字段,
+          半份索引被完整版覆盖。 */
   function rebuildIndex() {
     Data.init();
     Search.build(StudyView.currentCtx());
+    Data.questionsReady().then(() => {
+      /* 重进 init:让 contentVersion 以「已就绪」状态重算(搜静态层签名必须翻转,
+         否则静态层缓存一直是 index-only 的半份题库)。mergedBank 保证重入不丢字段。 */
+      Data.init();
+      Search.build(StudyView.currentCtx());
+    });
   }
   window.rebuildIndex = rebuildIndex;
   Search.setContextProvider(() => {
@@ -135,9 +146,15 @@ const App = (() => {
     /* 提示条容器提前建好:live region 必须在内容插入前就在 DOM 里,读屏才会播报 */
     ensureToastBox();
 
-    /* 暗色模式 */
+    /* 暗色模式:用户显式选择优先;从未点过按钮(localStorage 无记录)时跟随系统。
+       注意「显式 light」也是一次选择,不能被系统 dark 覆盖。 */
     const saved = localStorage.getItem('aiiv:theme');
-    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (saved === null) {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) document.documentElement.setAttribute('data-theme', 'dark');
+    }
     const tBtn = $('#theme-toggle');
     if (tBtn) {
       updateThemeIcon();
@@ -191,6 +208,31 @@ if (document.readyState === 'loading') {
 if ('serviceWorker' in navigator &&
     (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      /* 新版 SW 提示:installing 里的 worker 完成 activate 且页面已有一个
+         controller(说明不是首次安装)时,后台已换上新版,但旧界面还在跑旧代码
+         —— 提示用户点一下刷新。首次安装时 controller 不存在,绝不弹。 */
+      if (!reg.onupdatefound) {
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'activated' && navigator.serviceWorker.controller) {
+              const box = ensureToastBox();
+              const t = document.createElement('div');
+              t.className = 'toast toast-action';
+              t.textContent = '发现新版本,点击刷新';
+              t.setAttribute('role', 'button');
+              t.tabIndex = 0;
+              t.addEventListener('click', () => location.reload());
+              t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') location.reload(); });
+              box.appendChild(t);
+              setTimeout(() => { t.classList.add('show'); }, 10);
+              /* 不自动消失:用户可能正学到一半,刷新由用户决定 */
+            }
+          });
+        });
+      }
+    }).catch(() => {});
   });
 }

@@ -25,6 +25,10 @@ let passed = 0, failed = 0;
     async function open(p, hash) {
       await p.goto(BASE + '/index.html' + hash);
       await p.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
+      /* data.js 拆分后题目正文走分片异步加载:依赖 Data.question 全量字段的用例
+         必须等就绪,否则拿到的是 index-only 条目(无 options/answer)。
+         (顶层 const 不挂 window,不能写 window.Data) */
+      await p.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded(), null, { timeout: 60000 });
     }
     await test('hidden quiz conceals ALL explanations, including after hide and reload', async p => {
       await open(p, '#/study/MLQ-0001');
@@ -49,8 +53,18 @@ let passed = 0, failed = 0;
       const snapshot = await p.evaluate(() => Store.data.mock.draft.answers['MLQ-0001'].questionSnapshot);
       assert.deepStrictEqual(snapshot.options, original.options);
       assert.strictEqual(snapshot.qtype, original.qtype);
-      await p.route('**/data.js', route => route.fulfill({ contentType: 'application/javascript', body:
-        fs.readFileSync(path.join(ROOT, 'app/data.js'), 'utf8') + '\n{const q=APP_DATA.questions.find(q=>q.id==="MLQ-0001");q.options[0].text="CHANGED_OPTION_FIXTURE";q.answer="CHANGED_ANSWER_FIXTURE";}'}));
+      /* data.js 拆分后是薄壳(questions 在 topic 分片里):fixture 注入改为
+         在分片 JSON 响应上就地改写题目对象(分片经 r.json() 解析,不能拼 JS 代码),
+         语义不变——验证活动页读的是快照而非实时题库 */
+      const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'app/data/manifest.json'), 'utf8'));
+      const shard = manifest.topics['quiz-ml'].file;
+      await p.route('**/data/topics/' + shard, route => {
+        const payload = JSON.parse(fs.readFileSync(path.join(ROOT, 'app/data/topics', shard), 'utf8'));
+        const q = payload.questions.find(q => q.id === 'MLQ-0001');
+        q.options[0].text = 'CHANGED_OPTION_FIXTURE';
+        q.answer = 'CHANGED_ANSWER_FIXTURE';
+        route.fulfill({ contentType: 'application/json', body: JSON.stringify(payload) });
+      });
       await p.reload(); await p.waitForSelector('#m-self');
       assert.strictEqual(await p.locator('.mock-run .quiz-opt').count(), original.options.length);
       assert(!(await p.locator('.mock-run').innerText()).includes('CHANGED_OPTION_FIXTURE'));

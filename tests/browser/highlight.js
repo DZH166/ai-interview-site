@@ -47,7 +47,9 @@ const expectedSpans = annotated.reduce((n, id) => n + highlights[id].spans.lengt
     const spanTotal = await page.evaluate(() => Object.values(window.APP_DATA.highlights || {}).reduce((n, r) => n + (r.spans || []).length, 0));
     check('build ships every highlight span', spanTotal === expectedSpans);
 
-    /* ---- 逐条:每条标注都必须真的落到 DOM 上 ---- */
+    /* ---- 逐条:每条标注都必须真的落到 DOM 上 ----
+       Track E:标注锚定在题干/答案等全量字段上,等分片合并完成后再审计 */
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
     const rows = await page.evaluate(ids => Highlight.auditAll(
       ids.map(id => Data.question(id)).filter(Boolean)), annotated);
     const bad = rows.filter(r => r.applied !== r.expected || r.missing.length);

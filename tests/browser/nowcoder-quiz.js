@@ -39,6 +39,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     };
 
     await open('#/study/LBQ-0001');
+    /* Track E:选项卡来自全量题字段,等分片合并完成、学习页重渲染后再断言 */
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true && document.querySelector('.quiz-options .quiz-opt'), null, { timeout: 20000 });
     check('选择题:选项卡渲染', await page.locator('.quiz-options .quiz-opt').count() >= 2);
     check('默认隐藏正确项(自测先选)', await page.locator('.quiz-options.quiz-revealed').count() === 0);
     await page.locator('[data-quiz-reveal]').first().click();
