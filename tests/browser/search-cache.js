@@ -25,16 +25,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await page.evaluate(() => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions: {}, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} })));
     await page.goto(BASE + '/index.html#/search');
     await page.waitForFunction(() => typeof Search !== 'undefined' && Search.count() > 0);
+    /* data.js 拆分后 rebuildIndex 双阶段构建:①index 元数据阶段(动态层即刻生效)
+       ②全量分片合并后再建一次(补齐题干/答案/追问)。机器慢时首渲染落在①阶段,
+       两次构建都会被观察到 —— 计数基线必须在「就绪后」重新校准,后面断言的才是
+       真正要保护的契约:「就绪之后,个人写入只重建动态层,静态层不再重建」。 */
+    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded(), null, { timeout: 60000 });
+    await page.evaluate(() => { Data.init(); Search.build(StudyView.currentCtx()); });
 
     const first = await page.evaluate(() => Search.stats());
-    check('真数据完成首次构建(349 题)', first.staticUnits > 300 && first.staticBuilds === 1, JSON.stringify(first));
+    check('就绪基线:静态层已建且题量达标', first.staticUnits > 300 && first.staticBuilds >= 1, JSON.stringify(first));
 
     /* 连续个人写入:静态层构建次数不变 */
     for (let i = 0; i < 3; i++) {
       await page.evaluate(i2 => { Store.setNote('PY-001', '第' + i2 + '次写的笔记'); window.rebuildIndex(); }, i);
     }
     const after = await page.evaluate(() => Search.stats());
-    check('三次个人写入后静态层仍只构建一次', after.staticBuilds === 1, JSON.stringify(after));
+    check('三次个人写入后静态层不再重建', after.staticBuilds === first.staticBuilds, JSON.stringify({ before: first.staticBuilds, after: after.staticBuilds }));
     check('新笔记可检索', await page.evaluate(() => Search.query('第2次写的笔记').length > 0));
 
     /* 搜索页面交互仍正常 */
