@@ -1,6 +1,6 @@
 {
  "date": "2026-09-15",
- "head": "48830f5c05cbf0ae42193a57ab9f8343c07c0ff0",
+ "head": "b65096cb4d3fab741a7261b3a4b83e00351e2e82",
  "cases": [
   {
    "case": "S1 同毫秒顺序写",
@@ -19,8 +19,8 @@
   {
    "case": "S4 反向验证",
    "divergence": true,
-   "aMem": "B保存的新版",
-   "diskV": "B保存的新版"
+   "aMem": "A同毫秒版本",
+   "diskV": "A同毫秒版本"
   }
  ]
 }
