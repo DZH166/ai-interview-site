@@ -28,5 +28,40 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日复习",
+      "short_name": "复习",
+      "url": "./index.html#/review",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "模拟面试自测",
+      "short_name": "自测",
+      "url": "./index.html#/mock",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "错题本",
+      "short_name": "错题",
+      "url": "./index.html#/review?t=mistakes",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
