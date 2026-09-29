@@ -247,6 +247,7 @@ const ReviewView = (() => {
       ${queue.length ? `<div class="review-list">${queue.map(q => {
         const r = Store.rec(q.id);
         const st = Data.statusInfo(q.id);
+        const leech = typeof SRS !== 'undefined' && SRS.isLeech && SRS.isLeech(r);
         return `
           <div class="review-item">
             <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
@@ -255,9 +256,11 @@ const ReviewView = (() => {
                 <span class="qid">${q.id}</span>
                 ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
                 ${QRender.badge(st.label, st.cls)}
+                ${leech ? `<span class="badge st-weak" title="反复遗忘 ${r.srs.lapses} 次:建议拆解重练">⚠ 顽固弱点(遗忘 ${r.srs.lapses} 次)</span>` : ''}
                 ${r.lastPracticedAt ? `<span class="muted" style="font-size:12px">上次 ${fmtTime(r.lastPracticedAt)}</span>` : ''}
               </div>
             </div>
+            ${leech ? `<div style="margin-top:6px"><button class="btn btn-small" data-leech-drill="${q.id}">🎯 拆解重练(把这道题开成定向自测)</button></div>` : ''}
           </div>`;
       }).join('')}</div>` : ''}
       ${renderDueSuggestions(due)}
@@ -266,18 +269,32 @@ const ReviewView = (() => {
     if (startBtn) startBtn.addEventListener('click', () => {
       MockView.startDirected(combined.map(q => q.id), '今日复习');
     });
-    /* 到期建议的快捷回应:「还记得」= 重排到下一轮间隔(状态仍是基本掌握);
-       「忘了」= 转还不熟,回到手动队列。两个出口都复用 Store.setStatus,
-       不在这里另写一套排期逻辑。 */
+    /* 到期建议的快捷回应(Stage3 四档):全部经 Store.rateQuestion 直达排期,
+       状态由 SRS.statusFromRating 反查(easy→ok,其余一一对应)。
+       「还记得/忘了」沿用旧属性名 —— 语义与 good/again 完全一致,既有测试不破。 */
     $$('[data-due-ok]', box).forEach(b => b.addEventListener('click', () => {
-      Store.setStatus(b.dataset.dueOk, 'ok', { reschedule: true });
+      Store.rateQuestion(b.dataset.dueOk, 'good');
       toast('已排到下一轮间隔;状态仍是「基本掌握」');
       render(root);
     }));
     $$('[data-due-again]', box).forEach(b => b.addEventListener('click', () => {
-      Store.setStatus(b.dataset.dueAgain, 'weak');
+      Store.rateQuestion(b.dataset.dueAgain, 'again');
       toast('已标记「还不熟」;留在今天的复习队列里');
       render(root);
+    }));
+    $$('[data-due-hard]', box).forEach(b => b.addEventListener('click', () => {
+      Store.rateQuestion(b.dataset.dueHard, 'hard');
+      toast('已标「需巩固」:间隔小幅延长,状态转「待复习」');
+      render(root);
+    }));
+    $$('[data-due-easy]', box).forEach(b => b.addEventListener('click', () => {
+      Store.rateQuestion(b.dataset.dueEasy, 'easy');
+      toast('很熟练!间隔拉得更长,状态保持「基本掌握」');
+      render(root);
+    }));
+    /* 顽固弱点拆解重练:单题定向会话(题目自带的追问二跳即「拆解」的骨架) */
+    $$('[data-leech-drill]', box).forEach(b => b.addEventListener('click', () => {
+      MockView.startDirected([b.dataset.leechDrill], '顽固弱点重练');
     }));
     wireItems(box);
   }
@@ -293,6 +310,7 @@ const ReviewView = (() => {
         const r = Store.rec(q.id);
         const srs = r.srs || {};
         const ratingLabel = SRS.RATING_LABEL[srs.lastRating] || '';
+        const leech = SRS.isLeech(r);
         return `
           <div class="review-item">
             <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
@@ -301,13 +319,17 @@ const ReviewView = (() => {
                 <span class="qid">${q.id}</span>
                 ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
                 <span class="badge b-tag">上次复盘:${esc(ratingLabel || '—')}</span>
+                ${leech ? `<span class="badge st-weak" title="反复遗忘 ${srs.lapses} 次:继续排期收效有限,建议拆解重练">⚠ 顽固弱点(遗忘 ${srs.lapses} 次)</span>` : ''}
                 <span class="muted" style="font-size:12px">间隔 ${srs.ivl || 1} 天 · 已到期</span>
               </div>
             </div>
             <span class="btn-row">
-              <button class="btn btn-small" data-due-ok="${q.id}" title="还记得:排到下一轮间隔,状态不变">还记得</button>
               <button class="btn btn-small st-weak" data-due-again="${q.id}" title="忘了:标为还不熟,回到手动队列">忘了</button>
+              <button class="btn btn-small" data-due-hard="${q.id}" title="有点模糊:小幅延长间隔,状态转「待复习」">需巩固</button>
+              <button class="btn btn-small" data-due-ok="${q.id}" title="还记得:排到下一轮间隔,状态不变">基本掌握</button>
+              <button class="btn btn-small" data-due-easy="${q.id}" title="很熟练:间隔拉得更长,状态保持「基本掌握」">很熟练</button>
             </span>
+            ${leech ? `<div style="margin-top:6px"><button class="btn btn-small" data-leech-drill="${q.id}">🎯 拆解重练(把这道题开成定向自测)</button></div>` : ''}
           </div>`;
       }).join('')}</div>
     </div>`;
@@ -372,6 +394,7 @@ const ReviewView = (() => {
     }
     box.innerHTML = `<div class="review-list">${mistakes.map(q => {
       const st = Data.statusInfo(q.id);
+      const leech = SRS.isLeech(Store.rec(q.id));
       return `
         <div class="review-item">
           <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
@@ -380,13 +403,18 @@ const ReviewView = (() => {
               <span class="qid">${q.id}</span>
               ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
               ${QRender.badge(st.label, st.cls)}
+              ${leech ? `<span class="badge st-weak" title="反复遗忘 ${Store.rec(q.id).srs.lapses} 次:靠重复刷收效有限,建议拆解重练">⚠ 顽固弱点(遗忘 ${Store.rec(q.id).srs.lapses} 次)</span>` : ''}
             </div>
           </div>
           <button class="btn btn-small" data-redo="${q.id}">🔄 重做</button>
+          ${leech ? `<button class="btn btn-small" data-leech-drill="${q.id}" title="把这道题(含追问)开成定向自测">🎯 拆解重练</button>` : ''}
         </div>`;
     }).join('')}</div>`;
     wireItems(box);
     $$('[data-redo]', box).forEach(b => b.addEventListener('click', () => go('#/study/' + b.dataset.redo)));
+    $$('[data-leech-drill]', box).forEach(b => b.addEventListener('click', () => {
+      MockView.startDirected([b.dataset.leechDrill], '顽固弱点重练');
+    }));
   }
 
   /* ---- 轮次趋势条(Track A):最近 10 轮,一格一轮,红色深浅 = weak 率。
@@ -426,6 +454,7 @@ const ReviewView = (() => {
       const revealed = items.filter(it => it.revealed).length;
       const answered = items.filter(ExpressCard.itemAnswered).length;
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';
+      const examMode = !!(rd.config && rd.config.examMode);
       const marked = items.filter(it => it.mark === 'weak').length;
       const fuCount = items.reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
       const revised = items.filter(it => (it.revision || '').trim()).length;
@@ -436,9 +465,10 @@ const ReviewView = (() => {
             <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 真实作答 ${answered} 题 · 对照参考 ${revealed} 题${fuCount ? ` · 追问回答 ${fuCount} 条` : ''}${revised ? ` · 修订/补充 ${revised} 题` : ''}
             ${marked ? `<span class="badge st-weak">还不熟 ${marked}</span>` : ''}
             ${label ? `<span class="badge b-tag">${label}</span>` : ''}
+            ${examMode ? '<span class="badge b-topic">考试模式</span>' : ''}
           </summary>
           <div class="round-actions">
-            <button class="btn btn-small" data-card-round="${ri}">导出这一轮的表达卡</button>
+            <button class="btn btn-small" data-card-round="${ri}" data-card-round-id="${esc(roundIdOf(rd))}">导出这一轮的表达卡</button>
             <span class="muted small">把我的回答 + 面试口述版 + 参考要点导成一份能念的材料</span>
           </div>
           <div class="round-list">
@@ -450,7 +480,8 @@ const ReviewView = (() => {
                   <div class="round-head">
                     <a class="qid" href="#/study/${esc(it.qid)}">${i + 1}. ${esc(it.qid)}</a>
                     ${st ? QRender.badge(st.label, 'st-' + it.mark) : '<span class="muted">未复盘</span>'}
-                    <span class="muted" style="font-size:12px">${it.revealed ? '已对照参考' : '未对照参考'}</span>
+                    ${it.timeout ? '<span class="badge vf-todo" title="单题限时到,自动进入下一题">⏰ 超时</span>' : ''}
+                    <span class="muted" style="font-size:12px">${it.revealed ? '已对照参考' : (it.quizJudged ? '选择题已判定(考试模式未对照)' : '未对照参考')}</span>
                   </div>
                   <div class="round-title">${esc(it.title || (q ? q.title : it.qid))}</div>
                   ${!it.questionSnapshot ? '<p class="muted small">未保存历史题面；下面如有参考来自当前题库。</p>' : ''}
@@ -464,7 +495,7 @@ const ReviewView = (() => {
     }).join('');
     /* 出口:每一轮都能单独导出表达卡(这一轮的「我的回答」是最值钱的部分) */
     $$('[data-card-round]', box).forEach(b => b.addEventListener('click', () => {
-      exportExpressCard('round', Number(b.dataset.cardRound));
+      exportExpressCard('round', { roundId: b.dataset.cardRoundId });
     }));
     /* 深链定位:展开并闪烁目标轮次 */
     if (dq && dq.r) {
@@ -514,6 +545,12 @@ const MaintainView = (() => {
           <div class="kv"><span>文档章节(内置/导入)</span><b>${Data.allDocs().length} / ${Data.allUserDocs().length}</b></div>
           <div class="kv"><span>来源 / 候选</span><b>${(window.APP_DATA.sources.sources||[]).length} / ${(window.APP_DATA.candidates.candidates||[]).length}</b></div>
           <div class="kv"><span>个人记录占用</span><b id="st-size">…</b></div>
+          <div class="st-budget">
+            <div class="st-budget-track" role="img" id="st-budget-bar" aria-label="个人记录占参考字符预算比例">
+              <div class="st-budget-fill" id="st-budget-fill" style="width:0%"></div>
+            </div>
+            <div class="muted small" id="st-budget-text">…</div>
+          </div>
           <div class="kv"><span>浏览器存储用量估计</span><b id="st-quota">…</b></div>
           <label class="chk" style="margin-top:8px"><input type="checkbox" id="opt-shuffle" ${Store.data.ui.shuffleOptions ? 'checked' : ''}> 选项乱序(重练)</label>
           <p class="muted small" id="opt-shuffle-hint">${Store.data.ui.shuffleOptions
@@ -600,7 +637,22 @@ const MaintainView = (() => {
        ② st-quota = navigator.storage.estimate() 的 origin 总用量与配额估计,
           是浏览器对整个源(含缓存等)的粗略估计,不是 localStorage 的专用配额。 */
     const stSize = $('#st-size', root);
-    if (stSize) stSize.textContent = Store.recordsSizeKB() + ' KB(序列化字符数口径;localStorage 总预算通常约 5MB,键名与编码开销未计)';
+    if (stSize) stSize.textContent = Store.recordsSizeKB() + ' Ki 字符单元（UTF-16 计数；不是字节数或实际容量）';
+    /* 存储预算条(Stage11):参考预算是 5×1024² 个 UTF-16 单元，不冒充字节配额。
+       ≥80% 转红并给「先导出备份再清理」的行动建议 —— 只预警不自动清理,
+       数据是用户的,删除永远该由人决定。 */
+    (() => {
+      const bar = $('#st-budget-fill', root), txt = $('#st-budget-text', root);
+      if (!bar || !txt) return;
+      const usedKB = Store.recordsSizeKB();
+      const budgetKB = 5 * 1024;
+      const pct = Math.min(100, Math.round(usedKB / budgetKB * 1000) / 10);
+      bar.style.width = Math.max(1.5, pct) + '%';
+      const warn = pct >= 80;
+      bar.classList.toggle('st-budget-danger', warn);
+      $('#st-budget-bar', root).setAttribute('aria-label', `参考字符预算已使用 ${pct}%`);
+      txt.textContent = `参考预算使用 ${pct}%（按 5 × 1024² 个 UTF-16 字符单元计算，不是浏览器配额）${warn ? ' —— 已达到参考预警阈值。建议先「导出个人记录」留底，再清理不用的轮次与笔记；实际能否保存以浏览器结果为准。' : '。记录增长主要来自模拟面试轮次(上限 100 轮)与笔记。'}`;
+    })();
     const stQuota = $('#st-quota', root);
     if (stQuota) {
       if (navigator.storage && navigator.storage.estimate) {

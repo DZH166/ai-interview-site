@@ -115,7 +115,7 @@ def main():
         "paths": paths,
         "concepts": concepts,
         "projects": projects,
-        "highlights": {},
+        # Highlights travel with their topic; loading a question also loads its marks.
         "resume": load_json(ROOT / "data" / "resume-profile.json") if (ROOT / "data" / "resume-profile.json").exists() else {},
     }
     # ---- 题库分片:每专题一个 JSON,文件名带内容哈希(不可变缓存的基础) ----

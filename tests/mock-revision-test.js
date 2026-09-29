@@ -7,7 +7,7 @@ function page(disk = new Map()) {
   const c = { console, localStorage: { getItem: k => disk.get(k) || null,
     setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) },
     setTimeout() { return 1; }, clearTimeout() {}, location: { hash: '', hostname: 'localhost', protocol: 'http:' },
-    document: { readyState: 'loading', addEventListener() {}, querySelector() { return null; }, querySelectorAll() { return []; } } };
+    document: { readyState: 'loading', addEventListener() {}, getElementById() { return null; }, querySelector() { return null; }, querySelectorAll() { return []; } } };
   c.window = c; c.addEventListener = () => {}; vm.createContext(c);
   for (const name of ['srs', 'util', 'store', 'express']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/js', name + '.js'), 'utf8'), c);
   vm.runInContext('toast=()=>{}; Store.load(); this.store=Store;', c);

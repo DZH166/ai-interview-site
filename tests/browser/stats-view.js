@@ -62,10 +62,17 @@ const DAY = 24 * 60 * 60 * 1000;
                     srs: { due: overdue, ivl: 1, ease: 2.5, streak: 0, lapses: 1, lastAt: now - 3 * DAY, lastRating: 'good' }, _updatedAt: now },
         'RG-004': { status: '', fav: false, note: '', viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 },
       },
-      mock: { rounds: [{ ts: now, sessionId: 'seed-s1', items: [
-        { qid: 'AG-001', mark: 'weak' }, { qid: 'AG-002', mark: 'weak' },
-        { qid: 'RG-001', mark: '' }, { qid: 'RG-002', mark: 'ok' },
-      ] }], draft: null, ended: { 'seed-s1': { status: 'completed', ts: now } } },
+      mock: { rounds: [
+        { ts: now, sessionId: 'seed-s1', items: [
+          { qid: 'AG-001', mark: 'weak' }, { qid: 'AG-002', mark: 'weak' },
+          { qid: 'RG-001', mark: '' }, { qid: 'RG-002', mark: 'ok' },
+        ] },
+        /* 时间投入(Stage8):第二轮带 ms 数据(2+1 分钟 = 3 分钟) */
+        { ts: now - 3600 * 1000, sessionId: 'seed-s2', items: [
+          { qid: 'AG-001', self: '口述回答', mark: 'ok', ms: 120000 }, { qid: 'AG-002', revision: '自己的修订', mark: '', ms: 60000 },
+        ] },
+      ],
+      draft: null, ended: { 'seed-s1': { status: 'completed', ts: now } } },
       drillAttempts: {}, ui: {}
     };
     await seed(records);
@@ -112,6 +119,12 @@ const DAY = 24 * 60 * 60 * 1000;
     check('错题分布只含 agent(2 次)且降序',
       weakRows.length === 1 && weakRows[0].topic === 'agent' && weakRows[0].n === 2, JSON.stringify(weakRows));
 
+    /* 时间投入(Stage8):streak / 合计时长 / 每日柱 */
+    check('时间投入:有真实作答的轮次计入连续天数', await page.locator('.st-streak b').innerText() === '1');
+    check('时间投入:近 30 天合计 3 分钟', await page.evaluate(() =>
+      document.body.innerText.includes('3 分钟')));
+    check('时间投入:每日柱已渲染', await page.evaluate(() =>
+      document.querySelectorAll('.st-bars .sd-bar').length === 30));
     check('有数据场景全程无 JS 异常', errors.length === 0, errors.join('|'));
 
     /* ---- 空态场景:全新记录。热力表仍渲染全专题(题库未练习计数),
@@ -132,10 +145,12 @@ const DAY = 24 * 60 * 60 * 1000;
     }));
     check('空数据:预测与错题分布两块都有空态文案', await page.evaluate(() => {
       const empties = [...document.querySelectorAll('.stats-block .empty')];
-      return empties.length === 2 && empties[0].textContent.includes('间隔重复排期')
-        && empties[1].textContent.includes('错题');
+      return empties.some(e => e.textContent.includes('间隔重复排期'))
+        && empties.some(e => e.textContent.includes('错题'));
     }));
     check('空数据:错题分布无柱状行', await page.locator('[data-test="stats-weak"]').count() === 0);
+    check('空数据:时间投入显示引导文案', await page.evaluate(() =>
+      document.body.innerText.includes('近 30 天还没有带计时的模拟面试')));
     check('空数据场景全程无 JS 异常', errors.length === 0, errors.join('|'));
 
     /* ---- 360px 无横向溢出 ---- */

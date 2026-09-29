@@ -230,6 +230,23 @@ const Store = (() => {
     save();
   }
   function toggleFav(qid) { const r = rec(qid); r.fav = !r.fav; touch(r); save(); return r.fav; }
+
+  /* 四档评分入口(Stage3):复习中心到期建议卡的「忘了/需巩固/基本掌握/很熟练」。
+     与 setStatus 的差异:'easy' 没有专属状态——评分直达排期,状态走
+     SRS.statusFromRating 反查(easy→ok),suggestable 放行 ok+easy 组合。
+     SRS 未加载(Node 桩)时返回 null,调用方自行降级。 */
+  function rateQuestion(qid, rating, opts) {
+    if (typeof SRS === 'undefined' || !SRS.RATINGS || !SRS.RATINGS.includes(rating)) return null;
+    const r = rec(qid);
+    r.status = SRS.statusFromRating(rating);
+    touch(r);
+    try {
+      r.srs = SRS.schedule(opts && Object.hasOwn(opts, 'base') ? opts.base : r.srs, rating, opts && opts.at !== undefined ? opts.at : Date.now());
+    } catch (e) { console.warn('SRS 排期失败(不影响状态保存)', e); }
+    save();
+    return r;
+  }
+
   function setNote(qid, text) { const r = rec(qid); r.note = text; touch(r); save(); }
   const noteWriterPrefix = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const noteWriters = new Map();
@@ -500,6 +517,17 @@ const Store = (() => {
     const isTs = v => typeof v === 'number' && isFinite(v) && v >= 0;
     const isRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
     const isTextList = v => Array.isArray(v) && v.every(x => typeof x === 'string');
+    const validateMockConfig = (config, where) => {
+      if (config === undefined) return;
+      if (!isRecord(config)) { errs.push(where + ': config 必须是对象'); return; }
+      if (config.examMode !== undefined && typeof config.examMode !== 'boolean') errs.push(where + ': examMode 必须是布尔');
+      if (config.timeLimitSec !== undefined && !isTs(config.timeLimitSec)) errs.push(where + ': timeLimitSec 必须是非负有限秒数');
+    };
+    const validateExamAnswer = (answer, where) => {
+      for (const key of ['quizJudged', 'timeout']) {
+        if (answer[key] !== undefined && typeof answer[key] !== 'boolean') errs.push(where + ': ' + key + ' 必须是布尔');
+      }
+    };
     const validateGuideSources = (sources, where) => {
       if (sources === undefined) return;
       if (!Array.isArray(sources) || sources.some(s => !isRecord(s)
@@ -636,6 +664,7 @@ const Store = (() => {
         }
         if (mock.draft && typeof mock.draft === 'object') {
           const d = mock.draft;
+          validateMockConfig(d.config, 'mock.draft');
           if (d.durationMs !== undefined && !isTs(d.durationMs)) errs.push('mock.draft.durationMs 必须是非负数字');
           if (d.qms !== undefined && (!d.qms || typeof d.qms !== 'object' || Array.isArray(d.qms) || Object.values(d.qms).some(v => !isTs(v)))) errs.push('mock.draft.qms 必须是非负时长映射');
           if (d.guideId !== undefined && typeof d.guideId !== 'string') errs.push('mock.draft.guideId 必须是字符串');
@@ -645,6 +674,8 @@ const Store = (() => {
         (mock.rounds || []).forEach((rd, i) => {
           if (!rd || typeof rd !== 'object' || Array.isArray(rd)) { errs.push(`轮次 #${i}: 不是对象`); return; }
           if (!isTs(rd.ts)) errs.push(`轮次 #${i}: ts 必须是非负数字`);
+          validateMockConfig(rd.config, `轮次 #${i}`);
+          if (rd.durationMs !== undefined && !isTs(rd.durationMs)) errs.push(`轮次 #${i}: durationMs 必须是非负数字`);
           if (rd.sessionId !== undefined && typeof rd.sessionId !== 'string') errs.push(`轮次 #${i}: sessionId 必须是字符串`);
           if (rd.guideId !== undefined && typeof rd.guideId !== 'string') errs.push(`轮次 #${i}: guideId 必须是字符串`);
           validateGuideSnapshot(rd.guideSnapshot, `轮次 #${i}`);
@@ -653,6 +684,7 @@ const Store = (() => {
             if (!it || typeof it !== 'object' || !it.qid) errs.push(`轮次 #${i} 第 ${j + 1} 题: 缺少 qid`);
             else {
               validateSnapshot(it.questionSnapshot, it.qid, `轮次 #${i} 第 ${j + 1} 题`);
+              validateExamAnswer(it, `轮次 #${i} 第 ${j + 1} 题`);
               if (it.revision !== undefined && typeof it.revision !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: revision 必须是字符串`);
               if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
               if (it.quizCorrect !== undefined && typeof it.quizCorrect !== 'boolean') errs.push(`轮次 #${i} 第 ${j + 1} 题: quizCorrect 必须是布尔`);
@@ -681,6 +713,7 @@ const Store = (() => {
             const a = mock.draft.answers[qid];
             if (!a || typeof a !== 'object' || Array.isArray(a)) return;
             validateSnapshot(a.questionSnapshot, qid, 'mock.draft.answers.' + qid);
+            validateExamAnswer(a, 'mock.draft.answers.' + qid);
             if (a.revision !== undefined && typeof a.revision !== 'string') errs.push(`mock.draft.answers.${qid}.revision 必须是字符串`);
             if (a.quizPicked !== undefined && (!Array.isArray(a.quizPicked) || a.quizPicked.some(x => typeof x !== 'string'))) errs.push('mock.draft.answers.' + qid + '.quizPicked 必须是字符串数组');
             if (a.quizCorrect !== undefined && typeof a.quizCorrect !== 'boolean') errs.push('mock.draft.answers.' + qid + '.quizCorrect 必须是布尔');
@@ -1693,7 +1726,7 @@ const Store = (() => {
 
   return {
     STATUS, STATE, STATE_IDS, STATE_LABEL, MAX_ROUNDS,
-    load, save, saveNow, rec, setStatus, toggleFav, setNote, saveNoteDraft, refreshFromDisk, markViewed, markPracticed,
+    load, save, saveNow, rec, setStatus, rateQuestion, toggleFav, setNote, saveNoteDraft, refreshFromDisk, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
     validateQuestions, validateQuestion, validateRecordsObj, normalizeSourceKind,
     adoptRemoteRecords, recordsSizeKB, previewRecordsMerge,

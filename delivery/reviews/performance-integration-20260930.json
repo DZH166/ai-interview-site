@@ -1,0 +1,518 @@
+{
+  "recordedAt": "2026-09-29T18:12:39.162Z",
+  "viewport": "1280x900",
+  "network": {
+    "downloadMbps": 3,
+    "uploadMbps": 1,
+    "latencyMs": 100,
+    "cpuSlowdown": 4
+  },
+  "serviceWorkers": "blocked to isolate document loading",
+  "cold": [
+    {
+      "readyMs": 9647,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        400,
+        79,
+        615,
+        660,
+        699
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 963.2000000001863,
+          "duration": 400,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4276.200000000186,
+          "duration": 79,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4378.5,
+          "duration": 615,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8132.9000000003725,
+          "duration": 660,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8793.200000000186,
+          "duration": 699,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 9845,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        798,
+        107,
+        463,
+        1544
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1068.7999999998137,
+          "duration": 798,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4279.399999999441,
+          "duration": 107,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7767.5,
+          "duration": 463,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8231.099999999627,
+          "duration": 1544,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 11250,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        1102,
+        82,
+        267,
+        1036,
+        2139
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1026.2999999998137,
+          "duration": 1102,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4193,
+          "duration": 82,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4313.299999999814,
+          "duration": 267,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7936.5999999996275,
+          "duration": 1036,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8972.899999999441,
+          "duration": 2139,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 9412,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        700,
+        65,
+        107,
+        1557,
+        658
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1049.2999999998137,
+          "duration": 700,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4181.9000000003725,
+          "duration": 65,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4262.4000000003725,
+          "duration": 107,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7110.299999999814,
+          "duration": 1557,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8667.799999999814,
+          "duration": 658,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 9828,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        774,
+        278,
+        655,
+        1341,
+        436
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 652.6000000005588,
+          "duration": 774,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4345.4000000003725,
+          "duration": 278,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4656.300000000745,
+          "duration": 655,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8001.700000000186,
+          "duration": 1341,
+          "phase": "cold"
+        },
+        {
+          "startTime": 9343.100000000559,
+          "duration": 436,
+          "phase": "cold"
+        }
+      ]
+    }
+  ],
+  "measurement": {
+    "cold": "Navigation start through the visible note control; observe another 1000 ms for deferred stalls.",
+    "search": "Synchronous Search.query cost, with a frame opportunity between queries.",
+    "routesAndTyping": "Operation start through two requestAnimationFrame callbacks: at least one rendering opportunity separates operations; this is not a display-presentation timestamp.",
+    "warmSetup": "Load question/document data and finish indexing, then wait two animation frames. Do not render or preheat PY-001.",
+    "longTasks": "Durations remain in longTasks for compatibility. longTaskEntries add document-relative startTime and phase; drain observer records before ending each window."
+  },
+  "browser": "148.0.7778.96",
+  "warm": {
+    "search": [
+      43.5,
+      39.200000000186265,
+      21.59999999962747,
+      22.300000000745058,
+      27.40000000037253,
+      33.90000000037253,
+      25.40000000037253,
+      33.10000000055879,
+      30.800000000745058,
+      32.89999999944121,
+      20.200000000186265,
+      28.09999999962747,
+      29.200000000186265,
+      33.700000000186265,
+      28.800000000745058,
+      32.299999999813735,
+      19.300000000745058,
+      28.700000000186265,
+      26.700000000186265,
+      26.5,
+      23.899999999441206,
+      22.59999999962747,
+      23.5,
+      28.59999999962747,
+      18.5,
+      17.700000000186265,
+      19.300000000745058,
+      26.600000000558794,
+      21.59999999962747,
+      26.59999999962747
+    ],
+    "routes": [
+      348.09999999962747,
+      58.799999999813735,
+      57,
+      54.700000000186265,
+      1008.0999999996275,
+      104.70000000018626,
+      89.5,
+      115.59999999962747,
+      133.70000000018626,
+      105.90000000037253,
+      106.29999999981374,
+      92.29999999981374,
+      84.59999999962747,
+      111.69999999925494,
+      94.8999999994412,
+      87.70000000018626,
+      81.40000000037253,
+      74.6000000005588,
+      76.5,
+      86.5,
+      87.1000000005588,
+      87.6000000005588,
+      93.20000000018626,
+      98.8999999994412,
+      87.09999999962747,
+      92.70000000018626,
+      98.90000000037253,
+      100.59999999962747,
+      81.70000000018626,
+      90.09999999962747
+    ],
+    "typing": [
+      15.099999999627471,
+      12.700000000186265,
+      11.400000000372529,
+      15.899999999441206,
+      8.299999999813735,
+      12.300000000745058,
+      12,
+      12.200000000186265,
+      11.799999999813735,
+      11.5,
+      12.299999999813735,
+      11.799999999813735,
+      12.299999999813735,
+      16.200000000186265,
+      14.899999999441206,
+      10.900000000372529,
+      12.299999999813735,
+      11.799999999813735,
+      12,
+      12.299999999813735,
+      11.900000000372529,
+      12.299999999813735,
+      18.200000000186265,
+      11.899999999441206,
+      11.900000000372529,
+      12.400000000372529,
+      11.5,
+      12.600000000558794,
+      11.599999999627471,
+      12.099999999627471
+    ],
+    "longTasks": [
+      342,
+      53,
+      841,
+      101,
+      83,
+      99,
+      113,
+      88,
+      91,
+      80,
+      67,
+      92,
+      82,
+      79,
+      67,
+      62,
+      67,
+      72,
+      72,
+      70,
+      81,
+      86,
+      73,
+      73,
+      80,
+      83,
+      71,
+      73,
+      463
+    ],
+    "longTaskEntries": [
+      {
+        "startTime": 37883.59999999963,
+        "duration": 342,
+        "phase": "search+routes"
+      },
+      {
+        "startTime": 38238.199999999255,
+        "duration": 53,
+        "phase": "routes"
+      },
+      {
+        "startTime": 38413.89999999944,
+        "duration": 841,
+        "phase": "routes"
+      },
+      {
+        "startTime": 39420.89999999944,
+        "duration": 101,
+        "phase": "routes"
+      },
+      {
+        "startTime": 39541.09999999963,
+        "duration": 83,
+        "phase": "routes"
+      },
+      {
+        "startTime": 39632.5,
+        "duration": 99,
+        "phase": "routes"
+      },
+      {
+        "startTime": 39750.09999999963,
+        "duration": 113,
+        "phase": "routes"
+      },
+      {
+        "startTime": 39886.299999999814,
+        "duration": 88,
+        "phase": "routes"
+      },
+      {
+        "startTime": 39995.59999999963,
+        "duration": 91,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40104.699999999255,
+        "duration": 80,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40199.199999999255,
+        "duration": 67,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40286.299999999814,
+        "duration": 92,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40400.09999999963,
+        "duration": 82,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40497.799999999814,
+        "duration": 79,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40588.59999999963,
+        "duration": 67,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40671.89999999944,
+        "duration": 62,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40748.39999999944,
+        "duration": 67,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40827.199999999255,
+        "duration": 72,
+        "phase": "routes"
+      },
+      {
+        "startTime": 40914.5,
+        "duration": 72,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41001.5,
+        "duration": 70,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41090.59999999963,
+        "duration": 81,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41186,
+        "duration": 86,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41285.89999999944,
+        "duration": 73,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41375.09999999963,
+        "duration": 73,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41468.699999999255,
+        "duration": 80,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41569.199999999255,
+        "duration": 83,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41671.39999999944,
+        "duration": 71,
+        "phase": "routes"
+      },
+      {
+        "startTime": 41755.299999999814,
+        "duration": 73,
+        "phase": "routes"
+      },
+      {
+        "startTime": 42739.799999999814,
+        "duration": 463,
+        "phase": "settling"
+      }
+    ],
+    "phaseTimings": [
+      {
+        "phase": "search",
+        "startTime": 37013.299999999814,
+        "endTime": 37884.199999999255
+      },
+      {
+        "phase": "routes",
+        "startTime": 37884.199999999255,
+        "endTime": 41847.59999999963
+      },
+      {
+        "phase": "typing",
+        "startTime": 41847.59999999963,
+        "endTime": 42226.39999999944
+      },
+      {
+        "phase": "settling",
+        "startTime": 42226.39999999944,
+        "endTime": 43229.799999999814
+      }
+    ]
+  },
+  "summary": {
+    "coldMedianMs": 9828,
+    "maxDataBytes": 1758565,
+    "maxTopicRequests": 1,
+    "searchP95Ms": 39.200000000186265,
+    "routeP95Ms": 348.09999999962747,
+    "typingP95Ms": 16.200000000186265,
+    "maxColdLongTaskMs": 2139,
+    "maxWarmLongTaskMs": 841
+  }
+}

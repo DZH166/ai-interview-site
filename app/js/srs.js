@@ -33,6 +33,19 @@ const SRS = (() => {
   const STATUS_RATING = { weak: 'again', review: 'hard', ok: 'good' };
   function ratingFromStatus(status) { return STATUS_RATING[status] || null; }
 
+  /* 评分 → 手动状态(Stage3 四档评分的反向映射)。
+     'easy' 没有专属状态:很熟练仍记「基本掌握」——状态是掌握度声明,
+     评分是排期信号,两者解耦后 suggestable 需放行 ok+easy 组合(见下)。 */
+  const RATING_STATUS = { again: 'weak', hard: 'review', good: 'ok', easy: 'ok' };
+  function statusFromRating(rating) { return RATING_STATUS[rating] || ''; }
+
+  /* 顽固弱点(leech)阈值:反复遗忘 ≥4 次。这类题靠继续排期已无效,
+     界面给标记并引导拆解重练(定向会话),而不是 mechanically 再排一轮。 */
+  const LEECH_LAPSES = 4;
+  function isLeech(rec) {
+    return !!(rec && rec.srs && Number(rec.srs.lapses) >= LEECH_LAPSES);
+  }
+
   /* 排期一次。prev 为该题当前 srs(可为 null);rating 见 RATINGS;now 为毫秒时间戳。
      规则( SM-2 简化):
        again → 连续成功清零,间隔清零(当天就该再看),ease 下降,遗忘次数 +1;
@@ -100,7 +113,9 @@ const SRS = (() => {
 
   /* 建议队列的有效性条件(SP-01 配套):未练习、还不熟/待复习(已在手动队列)、
      排期缺失/非法、排期与当前状态不一致的记录,一律不产生建议——
-     不再把「剩下的所有记录」都交给到期判定。 */
+     不再把「剩下的所有记录」都交给到期判定。
+     例外:status=ok + lastRating=easy(Stage3 四档评分)——很熟练仍记「基本掌握」,
+     是合法组合而非矛盾信号。 */
   function suggestable(rec, now) {
     const st = (rec && rec.status) || '';
     if (!st || st === 'weak' || st === 'review') return false;
@@ -108,11 +123,12 @@ const SRS = (() => {
     if (!s || typeof s !== 'object') return false;
     if (typeof s.due !== 'number' || !isFinite(s.due)) return false;
     if (!RATINGS.includes(s.lastRating)) return false;
-    if (ratingFromStatus(st) !== s.lastRating) return false;   /* 状态与排期信号矛盾:宁可不给建议 */
+    const mapped = ratingFromStatus(st);
+    if (mapped !== s.lastRating && !(st === 'ok' && s.lastRating === 'easy')) return false;
     return isDue(rec, now);
   }
 
-  return { schedule, ratingFromStatus, isDue, suggestable, dueLabel, RATINGS, RATING_LABEL, MIN_EASE, MAX_EASE, MAX_IVL, DAY };
+  return { schedule, ratingFromStatus, statusFromRating, isLeech, LEECH_LAPSES, isDue, suggestable, dueLabel, RATINGS, RATING_LABEL, MIN_EASE, MAX_EASE, MAX_IVL, DAY };
 })();
 
 if (typeof window !== 'undefined') window.SRS = SRS;

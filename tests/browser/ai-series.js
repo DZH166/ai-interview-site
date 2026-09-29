@@ -43,6 +43,8 @@ async function open(page, hash) {
     await open(page, '#/study/LC-003');
     check('scenario prompt and fused answer arrive together without clicking', await page.locator('[data-question-prompt="LC-003"]').isVisible() && await page.locator('[data-sec="answer"] .q-sec-body').isVisible());
     check('fusion keeps written answer and spoken version as separate labelled parts', await page.locator('[data-sec="answer"] [data-part="answer"]').isVisible() && await page.locator('[data-sec="answer"] [data-part="interview"]').isVisible());
+    // Long sections below the viewport use content-visibility; inspect them after a real scroll.
+    await page.locator('[data-sec="deep"]').scrollIntoViewIfNeeded();
     check('new question explains replay and displays fusion notes', (await page.locator('[data-sec="deep"]').innerText()).includes('融合补充'));
     check('every analysis block is expanded on arrival', await page.evaluate(() => Array.from(document.querySelectorAll('.q-secs .q-sec')).every(s => s.classList.contains('open'))));
     await open(page, '#/study/AG-004?a=answer');

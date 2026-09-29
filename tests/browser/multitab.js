@@ -68,7 +68,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await pageA.goto(BASE + '/index.html#/maintain');
     await pageA.waitForFunction(() => document.querySelector('#st-size'));
     const sizeText = await pageA.evaluate(() => document.querySelector('#st-size').textContent);
-    check('维护页显示个人记录占用', /KB/.test(sizeText), sizeText);
+    check('维护页显示字符占用且不冒充字节容量', /^\d+(?:\.\d+)? Ki 字符单元/.test(sizeText)
+      && sizeText.includes('UTF-16') && sizeText.includes('不是字节数'), sizeText);
 
     check('全程无页面 JS 异常', errors.length === 0, errors.join(' | '));
     console.log(`\n结果: ${passed} 通过, 0 失败`);

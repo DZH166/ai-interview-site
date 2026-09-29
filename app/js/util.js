@@ -200,7 +200,16 @@ function pendingMarks() {
 
 function buildExpressCard(kind, index) {
   const rounds = (Store.data.mock && Store.data.mock.rounds) || [];
-  if (kind === 'round') return ExpressCard.buildFromRound(rounds, index || 0, id => Data.question(id));
+  if (kind === 'round') {
+    let position = typeof index === 'number' ? index : 0;
+    // 页面上的“这一轮”绑定稳定身份；其它标签页新增轮次会改变数组下标。
+    if (index && typeof index === 'object') {
+      const id = typeof index.roundId === 'string' ? index.roundId : '';
+      position = id ? rounds.findIndex(round => (round.id || Store.roundId(round)) === id) : -1;
+      if (position < 0) return { ok: false, error: '这一轮记录已被清理或不存在，无法导出。请到历史轮次确认现有记录。' };
+    }
+    return ExpressCard.buildFromRound(rounds, position, id => Data.question(id));
+  }
   if (kind === 'project') {
     const selection = index || {};
     const project = ((window.APP_DATA.projects || {}).projects || []).find(p => p.id === selection.projectId);

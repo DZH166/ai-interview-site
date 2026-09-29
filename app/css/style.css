@@ -974,3 +974,34 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 
 /* Long reference sections below the viewport are laid out when approached. */
 .q-sec { content-visibility: auto; contain-intrinsic-size: auto 220px; }
+/* ---- 模拟面试:单题倒计时 + 考试模式 + 口述按钮(Stage2) ---- */
+.mock-countdown {
+  font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px;
+  color: var(--muted); flex-shrink: 0;
+}
+.mock-countdown.mock-cd-warn { color: var(--danger); }
+.mic-btn.recording {
+  background: var(--bg); border-color: var(--danger); color: var(--danger);
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+@keyframes mic-pulse { 50% { opacity: .55; } }
+.exam-ref { margin: 8px 0 0; }
+.exam-ref summary { cursor: pointer; color: var(--primary); font-size: 13px; }
+.exam-ref .fu-a { margin-top: 6px; }
+
+/* ---- 学习路径切换(Stage6) ---- */
+.path-switcher { margin-bottom: 12px; flex-wrap: wrap; }
+
+/* ---- 统计页:时间投入(Stage8) ---- */
+.st-streak { margin: 8px 0 12px; font-size: 14px; }
+.st-bars { display: flex; align-items: flex-end; gap: 4px; height: 90px; padding: 4px 0; }
+.sd-col { flex: 1; display: flex; align-items: flex-end; height: 100%; min-width: 4px; }
+.sd-bar { width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; opacity: .85; min-height: 0; }
+.sd-col.sd-today .sd-bar { background: var(--danger); opacity: 1; }
+.sd-col:hover .sd-bar { opacity: 1; }
+
+/* ---- 维护页:存储预算条(Stage11) ---- */
+.st-budget { margin: 8px 0; }
+.st-budget-track { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.st-budget-fill { height: 100%; background: var(--primary); transition: width .3s; }
+.st-budget-fill.st-budget-danger { background: var(--danger); }

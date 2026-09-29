@@ -179,12 +179,82 @@ const StatsView = (() => {
     </div>`;
   }
 
+  /* ---- 时间投入(Stage8):近 30 天每日练习时长 + 连续学习天数 ----
+     数据口径(如实、可解释):
+       时长 = 含真实作答的完成轮次里每题的累计题面停留毫秒(item.ms),按轮次日期归日;
+       活跃日 = 有真实作答的完成轮次或任一题 lastPracticedAt 的本地日历日。
+     浏览/学习页的操作不计时长 —— 那里没有计时数据,不编造。 */
+  function localDayIndex(ts) {
+    if (typeof ts !== 'number' || !Number.isFinite(ts) || ts < 0) return null;
+    const date = new Date(ts);
+    if (!Number.isFinite(date.getTime())) return null;
+    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY;
+  }
+
+  function timeData() {
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const todayIdx = localDayIndex(t0.getTime());
+    const first = new Date(t0); first.setDate(first.getDate() - 29);
+    const start = first.getTime(), firstIdx = todayIdx - 29;
+    const perDay = new Array(30).fill(0);
+    const activeDays = new Set();
+    let totalMs = 0;
+    (Store.data.mock.rounds || []).forEach(rd => {
+      if (!rd || !(rd.items || []).some(ExpressCard.itemAnswered)) return;
+      const index = localDayIndex(rd.ts);
+      if (index === null || index > todayIdx) return;
+      activeDays.add(index);
+      const day = index - firstIdx;
+      if (day < 0 || day > 29) return;
+      (rd.items || []).forEach(it => {
+        const ms = (it && typeof it.ms === 'number' && Number.isFinite(it.ms) && it.ms > 0) ? it.ms : 0;
+        perDay[day] += ms;
+        totalMs += ms;
+      });
+    });
+    /* 近 30 天窗口外的有效练习也能延续 streak；未来日期不提前计入。 */
+    Object.values(Store.data.questions || {}).forEach(r => {
+      const index = r && r.lastPracticedAt > 0 ? localDayIndex(r.lastPracticedAt) : null;
+      if (index !== null && index <= todayIdx) activeDays.add(index);
+    });
+    /* streak:从今天往回数;今天还没练不打断(从昨天起算),连到断档为止 */
+    let streak = 0, cursor = activeDays.has(todayIdx) ? todayIdx : todayIdx - 1;
+    while (activeDays.has(cursor)) { streak++; cursor--; }
+    return { perDay, totalMs, start, todayIdx, streak, activeDays: activeDays.size };
+  }
+
+  function renderTime() {
+    const d = timeData();
+    const maxMs = Math.max(...d.perDay, 1);
+    const mins = ms => Math.round(ms / 60000 * 10) / 10;
+    const totalMin = mins(d.totalMs);
+    const bars = d.perDay.map((ms, i) => {
+      const date = new Date(d.start); date.setDate(date.getDate() + i);
+      const ts = date.getTime();
+      const isToday = i === 29;
+      const h = ms > 0 ? Math.max(6, Math.round(ms / maxMs * 100)) : 0;
+      const label = `${new Date(ts).getMonth() + 1}/${new Date(ts).getDate()}${ms > 0 ? ' · ' + mins(ms) + ' 分钟' : ' · 无记录'}`;
+      return `<div class="sd-col${isToday ? ' sd-today' : ''}" title="${esc(label)}"><div class="sd-bar" style="height:${h}%"></div></div>`;
+    }).join('');
+    return `
+      ${d.streak ? `<div class="st-streak">🔥 连续学习 <b>${d.streak}</b> 天</div>` : '<div class="st-streak muted">今天练一轮,连续天数从这里开始算</div>'}
+      <div class="stats-dist st-time" data-test="stats-time">
+        ${d.perDay.some(ms => ms > 0) ? `<div class="st-bars">${bars}</div>` : '<div class="empty">近 30 天还没有带计时的模拟面试。做一轮自测(每题作答会计时),这里就会长出每日时长柱。</div>'}
+      </div>
+      <div class="muted small" style="margin-top:4px">近 30 天模拟面试合计约 <b>${totalMin >= 1 ? totalMin + ' 分钟' : Math.round(d.totalMs / 1000) + ' 秒'}</b>;悬停柱子看本地日期明细。时长为含真实作答的完成轮次中记录的题面停留时间；仅看参考的空轮次不计入。浏览/学习页没有计时，不估算。</div>`;
+  }
+
   function render(root) {
     root.innerHTML = `
       <div class="card stats-block">
         <b>📊 专题 × 状态热力表</b>
         <span class="muted small" style="margin-left:8px">每个专题四档状态的题目数;颜色越深越多,点专题名去刷题。</span>
         ${renderHeat()}
+      </div>
+      <div class="card stats-block">
+        <b>⏱ 时间投入(近 30 天)</b>
+        <span class="muted small" style="margin-left:8px">每日练习计时与连续学习天数。</span>
+        ${renderTime()}
       </div>
       <div class="card stats-block">
         <b>📅 SRS 到期预测(未来 30 天)</b>

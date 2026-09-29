@@ -218,6 +218,36 @@ console.log('== 4b. 建议有效性(SP-01 配套):suggestable ==');
   ok('非法排期不产生建议', SRS.suggestable({ status: 'ok', srs: { due: '明天', lastRating: 'good' } }, T0) === false);
   ok('一致且到期 → 建议', SRS.suggestable({ status: 'ok', srs: { due: T0, lastRating: 'good' } }, T0) === true);
   ok('一致但未到期 → 不建议', SRS.suggestable({ status: 'ok', srs: { due: T0 + DAY, lastRating: 'good' } }, T0) === false);
+  /* Stage3 四档评分:easy 无专属状态,ok+easy 是合法组合而非矛盾信号 */
+  ok('ok+easy 组合放行(Stage3 很熟练)', SRS.suggestable({ status: 'ok', srs: { due: T0, lastRating: 'easy' } }, T0) === true);
+  ok('weak+easy 仍拒绝(easy 只配 ok)', SRS.suggestable({ status: 'weak', srs: { due: T0, lastRating: 'easy' } }, T0) === false);
+}
+
+console.log('== 4c. 四档评分与顽固弱点(Stage3) ==');
+{
+  /* statusFromRating:评分 → 状态的反查 */
+  eq('again → weak', SRS.statusFromRating('again'), 'weak');
+  eq('hard → review', SRS.statusFromRating('hard'), 'review');
+  eq('good → ok', SRS.statusFromRating('good'), 'ok');
+  eq('easy → ok(很熟练仍记基本掌握)', SRS.statusFromRating('easy'), 'ok');
+  eq('未知评分 → 空状态', SRS.statusFromRating('bogus'), '');
+  /* isLeech:反复遗忘 ≥4 次判顽固弱点 */
+  eq('LEECH_LAPSES = 4', SRS.LEECH_LAPSES, 4);
+  ok('无 srs 不算 leech', SRS.isLeech({ status: 'ok' }) === false);
+  ok('lapses 3 不算 leech', SRS.isLeech({ srs: { lapses: 3 } }) === false);
+  ok('lapses 4 算 leech', SRS.isLeech({ srs: { lapses: 4 } }) === true);
+  ok('lapses 7 算 leech', SRS.isLeech({ srs: { lapses: 7 } }) === true);
+  ok('lapses 非数值按 0 处理', SRS.isLeech({ srs: { lapses: '很多' } }) === false);
+  /* Store.rateQuestion:直达排期 + 状态反查;easy 不产生非法状态 */
+  const r1 = Store.rateQuestion('RG-001', 'easy');
+  ok('rateQuestion(easy):状态保持 ok', r1 && r1.status === 'ok');
+  ok('rateQuestion(easy):排期记 easy 且 due 在未来', r1.srs.lastRating === 'easy' && r1.srs.due > Date.now());
+  ok('rateQuestion(easy):记录可过校验(validateRecordsObj)', Store.validateRecordsObj(JSON.parse(JSON.stringify(Store.data))).length === 0);
+  const r2 = Store.rateQuestion('RG-001', 'again');
+  ok('rateQuestion(again):状态转 weak + lapses +1', r2.status === 'weak' && r2.srs.lapses === 1);
+  const r3 = Store.rateQuestion('RG-001', 'hard');
+  ok('rateQuestion(hard):状态转 review', r3.status === 'review');
+  ok('rateQuestion(未知评分)返回 null', Store.rateQuestion('RG-001', 'bogus') === null);
 }
 }
 

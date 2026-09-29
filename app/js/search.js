@@ -251,14 +251,16 @@ const Search = (() => {
     return out;
   }
 
-  function build(ctx) {
+  function build(ctx, opts) {
     /* ctx: {contentVersion?, questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
     /* 静态层签名:优先内容版本(Data.contentVersionOf:build.py 哈希+题库规模+文档集);
        旧调用方未提供时回退规模签名(仅追加场景仍正确) */
     const sig = typeof ctx.contentVersion === 'string' && ctx.contentVersion
       ? ctx.contentVersion
       : (ctx.questions || []).length + '|' + (ctx.docs || []).length;
-    if (staticCache.sig !== sig) {
+    /* 保留显式只刷新个人记录的入口。正常启动要建立可立即检索的题名层；
+       正文只为新到达的对象分批建一次，已缓存的正文不会随分片完成而白建。 */
+    if (!(opts && opts.skipStatic) && staticCache.sig !== sig) {
       const token = ++generation;
       if (finishIdle) finishIdle();
       finishIdle = null;

@@ -210,6 +210,12 @@ const Data = (() => {
     return result;
   }
   const questionsReady = () => ensureTopics([...new Set(questions.map(q => q.topic))]);
+  /* 兼容旧的题库/标注入口。标注与所属专题同一不可变资产，绝不另取全量
+     highlights.json；传题号只加载该题，无参是调用方显式请求完整活动题库。 */
+  const highlightsReady = id => id ? ensureQuestion(id) : questionsReady();
+  const highlightsLoaded = id => id ? isFullQuestion(question(id)) : questionsLoaded();
+  const bankReady = highlightsReady;
+  const bankLoaded = highlightsLoaded;
   const docsLoaded = () => docs.every(d => typeof d.md === 'string');
   const ensureDocs = () => docsLoaded() ? Promise.resolve(docs) : ensureAsset('docs').then(() => docs);
   async function ensureDoc(id) { if (!doc(id) || typeof doc(id).md !== 'string') await ensureDocs(); return doc(id); }
@@ -267,7 +273,8 @@ const Data = (() => {
   const typeLabel = t => TYPES[t] || t, diffLabel = d => DIFFS[d] || d;
   function statusInfo(id) { return Store.STATUS.find(x => x.id === (Store.rec(id).status || '')) || Store.STATUS[0]; }
   return { init, allQuestions, legacyQuestions, question, isFullQuestion, ensureQuestion, ensureTopics, topicState,
-    questionsReady, questionsLoaded, onContentChange, loadProgress, allDocs, doc, ensureDocs, ensureDoc, docsLoaded,
+    questionsReady, questionsLoaded, highlightsReady, highlightsLoaded, bankReady, bankLoaded,
+    onContentChange, loadProgress, allDocs, doc, ensureDocs, ensureDoc, docsLoaded,
     ensureGuides, coreTopics, offlineStatus, downloadOffline, allUserDocs, reloadUserDocs, contentVersionOf,
     topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
@@ -412,6 +419,25 @@ const QRender = (() => {
      对「读这道题」本身都是旁支,全部铺在正文前面会把题面与答案挤出首屏 ——
      移动端实测正文起点在 531px,占掉 844 视口的 84%。
      收起来不等于藏起来:summary 里直接报出有什么、各多少,一眼就能判断值不值得展开。 */
+  /* 同标签相似题(Stage7):relLinks 的手工字段覆盖率有限(prerequisites/related
+     靠人工维护),而 tags 数据现成(index 同步可用,无需等分片)。规则:
+     同专题 + 标签交集非空,按交集大小降序取 3 道(同分按题号稳定排序),
+     排除自己与手工关联已列出的题 —— 补一行「同标签题」,把学习从「单题」连成「簇」。 */
+  function similarByTags(q) {
+    const myTags = new Set((q.tags || []).map(t => String(t).toLowerCase()));
+    if (!myTags.size) return [];
+    const exclude = new Set([q.id, ...(q.prerequisites || []), ...(q.related || [])]);
+    const scored = [];
+    Data.allQuestions().forEach(c => {
+      if (!c || exclude.has(c.id) || c.topic !== q.topic) return;
+      let hit = 0;
+      for (const t of (c.tags || [])) if (myTags.has(String(t).toLowerCase())) hit++;
+      if (hit) scored.push({ id: c.id, hit });
+    });
+    scored.sort((a, b) => b.hit - a.hit || (a.id < b.id ? -1 : 1));
+    return scored.slice(0, 3).map(s => s.id);
+  }
+
   function relLinks(q) {
     const pre = (q.prerequisites || []).filter(id => Data.question(id));
     const rel = (q.related || []).filter(id => Data.question(id));
@@ -419,10 +445,12 @@ const QRender = (() => {
     const tdoc = Data.topicMainDoc(q.topic);
     const pc = prereqConcepts(q);
     const myConcepts = conceptsOf(q.id);
+    const similar = similarByTags(q);
     const rows = [
       pc.length ? `<div class="rel-row"><span class="rel-label">先懂这些概念:</span>${pc.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : '',
       pre.length ? `<div class="rel-row"><span class="rel-label">前置题目:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
       rel.length ? `<div class="rel-row"><span class="rel-label">相关题目:</span>${rel.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
+      similar.length ? `<div class="rel-row"><span class="rel-label">同标签题:</span>${similar.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
       docs.length ? `<div class="rel-row"><span class="rel-label">原理章节:</span>${docs.map(id => `<a class="rel-link" href="#/docs/${id}">${esc(Data.doc(id) ? Data.doc(id).title : id)}</a>`).join(' ')}</div>` : '',
       tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : '',
       myConcepts.length ? `<div class="rel-row"><span class="rel-label">本题涉及概念:</span>${myConcepts.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''
@@ -433,6 +461,7 @@ const QRender = (() => {
     if (pc.length) bits.push(pc.length + ' 个前置概念');
     if (pre.length) bits.push(pre.length + ' 道前置题');
     if (rel.length) bits.push(rel.length + ' 道相关题');
+    if (similar.length) bits.push(similar.length + ' 道同标签题');
     if (nDocs) bits.push(nDocs + ' 个原理章节');
     if (myConcepts.length) bits.push(myConcepts.length + ' 个涉及概念');
     return `
@@ -483,7 +512,8 @@ const QRender = (() => {
      {at, correct, picked}(刻意保持最小:判定依据 + 重练乱序的触发依据)。
      有 lastSelfTest 的题渲染成「已作答」态(历史选择带对错着色 + 重做按钮),
      重做清掉 lastSelfTest 就地恢复可点击,不重渲。 */
-  function quizOptionsHtml(q, revealed, toolbar = true, attempt) {
+  function quizOptionsHtml(q, revealed, toolbar = true, attempt, options = {}) {
+    const examMode = !!options.examMode;
     const r = Store.rec(q.id);
     const last = attempt === undefined ? r.lastSelfTest
       : (attempt.quizPicked?.length ? { picked: attempt.quizPicked, correct: attempt.quizCorrect } : null);
@@ -491,29 +521,29 @@ const QRender = (() => {
     const selfTest = r.quizHide !== false;   /* 自测优先模式(默认) */
     const multi = q.qtype === 'multi';
     const optsAll = q.options || [];
-    const hide = revealed === undefined ? selfTest : !revealed;
+    const hide = examMode || (revealed === undefined ? selfTest : !revealed);
     /* 可点击 = 答案当前仍隐藏(自测模式)且未判定过。已揭示(手动或对照过参考)
        的题不做点击作答 —— 答案都看见了,点了也不算自测。 */
     const clickable = !judged && optsAll.length > 1 && hide;
     /* 已判定/可点击的题都挂 data-quiz-pick:判定后按钮属性摘掉、重做时按它恢复,
        不需要重绑监听(委托在容器上)。 */
     const interactive = clickable || judged;
-    const revealCls = (!hide || judged) ? ' quiz-revealed' : '';
+    const revealCls = !examMode && (!hide || judged) ? ' quiz-revealed' : '';
     /* 重练乱序:上次点答答错、或状态「还不熟」(重练场景);维护页开关打开则全量生效 */
     const needShuffle = !!(Store.data.ui && Store.data.ui.shuffleOptions)
-      || (last && last.correct === false) || r.status === 'weak';
+      || (!examMode && last && last.correct === false) || r.status === 'weak';
     const opts = needShuffle ? quizShuffledOptions(q) : optsAll;
     const pickedPast = (last && last.picked) || [];
-    const resultText = judged ? (last.correct ? '答对了' : '答错了·已标记还不熟') : '';
-    const resultCls = judged && !last.correct ? ' quiz-result-bad' : (judged ? ' quiz-result-ok' : '');
+    const resultText = judged ? (examMode ? '已提交，完成本轮后查看结果' : (last.correct ? '答对了' : '答错了·已标记还不熟')) : '';
+    const resultCls = examMode ? '' : (judged && !last.correct ? ' quiz-result-bad' : (judged ? ' quiz-result-ok' : ''));
     return `
       <div class="quiz-options${revealCls}${interactive ? ' quiz-clickable' : ''}${judged ? ' quiz-judged' : ''}" data-quiz-options="${esc(q.id)}" data-quiz-multi="${multi ? 1 : 0}">
         ${opts.map(o => {
-          const wrongPick = judged && pickedPast.includes(o.label) && !o.right;
+          const wrongPick = !examMode && judged && pickedPast.includes(o.label) && !o.right;
           const attrs = interactive
             ? ` data-quiz-pick="${esc(o.label)}"${clickable ? ' role="button" tabindex="0"' : ''}` : '';
           return `
-          <div class="quiz-opt ${o.right ? 'quiz-is-right' : ''}${wrongPick ? ' quiz-is-wrong' : ''}"${attrs}>
+          <div class="quiz-opt ${!examMode && o.right ? 'quiz-is-right' : ''}${wrongPick ? ' quiz-is-wrong' : ''}${examMode && pickedPast.includes(o.label) ? ' quiz-picked' : ''}"${attrs}>
             <span class="quiz-lab">${esc(o.label)}</span>
             <span class="quiz-txt">${mdHtml(o.text)}</span>
             <span class="quiz-mark">✓</span>
@@ -522,7 +552,7 @@ const QRender = (() => {
         <div class="quiz-result${resultCls}" data-quiz-result${resultText ? '' : ' hidden'}>${esc(resultText)}</div>
         <button class="btn btn-small" data-quiz-redo${judged ? '' : ' hidden'}>重做</button>
       </div>
-      ${toolbar ? `<div class="quiz-toolbar">
+      ${toolbar && !examMode ? `<div class="quiz-toolbar">
         <button class="btn btn-small" data-quiz-reveal="${esc(q.id)}">${hide ? '显示正确答案' : '隐藏正确答案'}</button>
         ${multi ? '<span class="badge b-tag">多选</span>' : '<span class="badge b-tag">单选</span>'}
       </div>` : `<span class="badge b-tag">${multi ? '多选' : '单选'}</span>`}`;
@@ -571,6 +601,7 @@ const QRender = (() => {
   function wireQuizToggle(root, options = {}) {
     $$('[data-quiz-reveal]', root).forEach(btn => {
       btn.addEventListener('click', () => {
+        if (options.examMode) return;
         const qid = btn.dataset.quizReveal;
         const r = Store.rec(qid);
         const nowHidden = r.quizHide !== false;
@@ -609,37 +640,40 @@ const QRender = (() => {
         const correct = labels.length === rightSet.size && labels.every(l => rightSet.has(l));
         /* 就地改态:答错项标红、正确项高亮(揭示契约同一个 quiz-is-right),
            答案区块展开 —— 不重渲,焦点与滚动位置不动 */
-        box.classList.add('quiz-judged', 'quiz-revealed');
+        box.classList.add('quiz-judged');
+        box.classList.toggle('quiz-revealed', !options.examMode);
         $$('.quiz-opt', box).forEach(el => {
           const lab = el.dataset.quizPick;
           if (!lab) return;
-          el.classList.toggle('quiz-is-wrong', picked.has(lab) && !rightSet.has(lab));
-          el.classList.toggle('quiz-picked', false);
-          el.classList.toggle('quiz-is-right', rightSet.has(lab));
+          el.classList.toggle('quiz-is-wrong', !options.examMode && picked.has(lab) && !rightSet.has(lab));
+          el.classList.toggle('quiz-picked', !!options.examMode && picked.has(lab));
+          el.classList.toggle('quiz-is-right', !options.examMode && rightSet.has(lab));
           el.removeAttribute('role');
           el.removeAttribute('tabindex');
         });
         if (confirmBtn) confirmBtn.hidden = true;
         if (redoBtn) redoBtn.hidden = false;
         if (resultLine) {
-          resultLine.textContent = correct ? '答对了' : '答错了·已标记还不熟';
-          resultLine.classList.toggle('quiz-result-bad', !correct);
-          resultLine.classList.toggle('quiz-result-ok', correct);
+          resultLine.textContent = options.examMode ? '已提交，完成本轮后查看结果' : (correct ? '答对了' : '答错了·已标记还不熟');
+          resultLine.classList.toggle('quiz-result-bad', !options.examMode && !correct);
+          resultLine.classList.toggle('quiz-result-ok', !options.examMode && correct);
           resultLine.hidden = false;
         }
         /* 记录落 Store(先记录后触发钩子:钩子里读 Store 看到的是已判定状态)。
            答对不自动标 ok——掌握与否仍留给用户自评。 */
-        const r = Store.rec(qid);
-        r.lastSelfTest = { at: Date.now(), correct, picked: labels };
-        touchSelfTest(r);
-        if (!options.onJudge) Store.markPracticed(qid, correct ? 'correct' : 'wrong');
-        if (!correct) Store.setStatus(qid, 'weak');
-        else Store.save();
+        if (!options.examMode) {
+          const r = Store.rec(qid);
+          r.lastSelfTest = { at: Date.now(), correct, picked: labels };
+          touchSelfTest(r);
+          if (!options.onJudge) Store.markPracticed(qid, correct ? 'correct' : 'wrong');
+          if (!correct) Store.setStatus(qid, 'weak');
+          else Store.save();
+        }
         /* 答案区块就地展开(与揭示同一 class 契约):判定即揭示,不必再点一次 */
         const host = box.closest('.study-wrap, #q-detail, #view') || document;
-        $$('.quiz-answer-block', host).forEach(blk => blk.classList.remove('quiz-answer-hidden'));
+        if (!options.examMode) $$('.quiz-answer-block', host).forEach(blk => blk.classList.remove('quiz-answer-hidden'));
         const revealBtns = $$('[data-quiz-reveal]', host).filter(b => b.dataset.quizReveal === qid);
-        revealBtns.forEach(b => { b.textContent = '隐藏正确答案'; });
+        if (!options.examMode) revealBtns.forEach(b => { b.textContent = '隐藏正确答案'; });
         if (options.onJudge) options.onJudge({ qid, correct, picked: labels });
         else if (quizJudgeHook) quizJudgeHook(qid, correct, labels);
       };
@@ -667,9 +701,11 @@ const QRender = (() => {
       if (redoBtn) redoBtn.addEventListener('click', () => {
         if (options.canJudge && options.canJudge() === false) return;
         /* 重做 = 清掉 lastSelfTest 恢复可点击(不撤销 weak 状态:那次作答真实发生过) */
-        const r = Store.rec(qid);
-        delete r.lastSelfTest;
-        touchSelfTest(r);
+        if (!options.examMode) {
+          const r = Store.rec(qid);
+          delete r.lastSelfTest;
+          touchSelfTest(r);
+        }
         picked.clear();
         box.classList.remove('quiz-judged', 'quiz-revealed');
         const host = box.closest('.study-wrap, #q-detail, #view') || root;
@@ -686,7 +722,7 @@ const QRender = (() => {
         if (resultLine) { resultLine.hidden = true; resultLine.textContent = ''; }
         redoBtn.hidden = true;
         if (options.onRedo) options.onRedo({ qid });
-        else Store.save();
+        else if (!options.examMode) Store.save();
       });
     });
   }

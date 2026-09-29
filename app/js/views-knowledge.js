@@ -346,24 +346,33 @@ const SearchView = (() => {
           <span class="muted" id="s-count"></span>
         </div>
         <div id="s-progress" class="muted small" role="status"></div>
-        <div id="s-results"></div>
+        <div id="s-results" tabindex="-1"></div>
       </div>`;
     const input = $('#s-input', root), resultBox = $('#s-results', root);
     let activeQuery = q;
     let loadFailed = false;
+    let announcedReady = false;
     const current = () => token === renderToken && resultBox.isConnected && $('#s-results', root) === resultBox;
     const progress = () => {
       if (!current()) return;
       const p = Data.loadProgress ? Data.loadProgress() : null;
       const indexing = Search.stats().pending;
       const failed = loadFailed || !!(p && p.errors && p.errors.length);
+      const loading = (p && p.ready < p.total) || indexing;
       $('#s-progress', root).innerHTML = failed
         ? '部分正文暂未加载，已有题名和个人笔记仍可检索。<button class="btn btn-small" data-search-retry>重试正文加载</button>'
-        : ((p && p.ready < p.total) || indexing
+        : (loading
           ? `题名和个人笔记已可检索，正文正在补充${p ? '（专题 ' + p.ready + '/' + p.total + '）' : ''}…`
           : '已加载正文检索就绪');
       const retry = $('[data-search-retry]', root);
       if (retry) retry.addEventListener('click', loadBodies);
+      // 深链加载完成只交接一次焦点。用户正在输入或操作控件时不抢焦点。
+      if (!failed && !loading && !announcedReady) {
+        announcedReady = true;
+        if (activeQuery && (document.activeElement === document.body || document.activeElement === root)) {
+          resultBox.focus({ preventScroll: true });
+        }
+      }
     };
     const refresh = () => {
       if (!current()) return;
@@ -614,10 +623,19 @@ const PathView = (() => {
     const paths = (window.APP_DATA.paths && window.APP_DATA.paths.paths) || [];
     cleanup();
     if (!paths.length) { root.innerHTML = '<div class="empty">暂无路径定义</div>'; return; }
-    const path = paths[0];
+    /* 多路径(Stage6):?path=<id> 深链选择,缺省第一条(旧行为完全兼容)。
+       进度按 stage id 存在 pathProgress,天然多路径兼容 —— 前提是各路径的
+       stage id 不冲突(数据约定:新路径统一带自身前缀)。 */
+    const hashQuery = (parseHash().query || {});
+    const path = paths.find(p => p.id === hashQuery.path) || paths[0];
     const prog = progress();
     const doneCount = path.stages.filter(s => stageStatus(prog[s.id]).state === 'done').length;
+    const switcher = paths.length > 1 ? `
+      <div class="path-switcher btn-row" role="navigation" aria-label="选择学习路径">
+        ${paths.map(p => `<a class="btn btn-small ${p.id === path.id ? 'btn-primary' : ''}" href="#/path?path=${esc(p.id)}" ${p.id === path.id ? 'aria-current="page"' : ''}>${esc(p.name)}</a>`).join('')}
+      </div>` : '';
     root.innerHTML = `
+      ${switcher}
       <div class="path-head">
         <h1>${esc(path.name)}</h1>
         <p class="muted">${esc(path.audience || '')} 完成与否由你自己确认——能讲给别人听才算懂,点过不算。</p>
