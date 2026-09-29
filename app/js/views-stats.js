@@ -159,12 +159,74 @@ const StatsView = (() => {
       <div class="muted small" style="margin-top:4px">按标记次数降序,最多 10 个专题;点击专题名可去刷对应的题。</div>`;
   }
 
+  /* ---- 时间投入(Stage8):近 30 天每日练习时长 + 连续学习天数 ----
+     数据口径(如实、可解释):
+       时长 = 模拟面试轮次里每题的累计作答毫秒(Track A 的 item.ms),按轮次日期归日;
+       活跃日 = 有轮次或任一题 lastPracticedAt(markPracticed 的真实练习信号)的日子。
+     浏览/学习页的操作不计时长 —— 那里没有计时数据,不编造。 */
+  function timeData() {
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const start = t0.getTime() - 29 * DAY;
+    const perDay = new Array(30).fill(0);
+    let totalMs = 0;
+    (Store.data.mock.rounds || []).forEach(rd => {
+      if (!rd || typeof rd.ts !== 'number') return;
+      const day = Math.floor((rd.ts - start) / DAY);
+      if (day < 0 || day > 29) return;
+      (rd.items || []).forEach(it => {
+        const ms = (it && typeof it.ms === 'number' && it.ms > 0) ? it.ms : 0;
+        perDay[day] += ms;
+        totalMs += ms;
+      });
+    });
+    /* 活跃日集合:轮次日期 ∪ 题目 lastPracticedAt(近 30 天窗口外的也算 streak,单独收集) */
+    const activeDays = new Set();
+    (Store.data.mock.rounds || []).forEach(rd => {
+      if (rd && typeof rd.ts === 'number') activeDays.add(Math.floor(rd.ts / DAY));
+    });
+    Object.values(Store.data.questions || {}).forEach(r => {
+      if (r && typeof r.lastPracticedAt === 'number' && r.lastPracticedAt > 0) {
+        activeDays.add(Math.floor(r.lastPracticedAt / DAY));
+      }
+    });
+    /* streak:从今天往回数;今天还没练不打断(从昨天起算),连到断档为止 */
+    const todayIdx = Math.floor(t0.getTime() / DAY);
+    let streak = 0, cursor = activeDays.has(todayIdx) ? todayIdx : todayIdx - 1;
+    while (activeDays.has(cursor)) { streak++; cursor--; }
+    return { perDay, totalMs, start, todayIdx, streak, activeDays: activeDays.size };
+  }
+
+  function renderTime() {
+    const d = timeData();
+    const maxMs = Math.max(...d.perDay, 1);
+    const mins = ms => Math.round(ms / 60000 * 10) / 10;
+    const totalMin = mins(d.totalMs);
+    const bars = d.perDay.map((ms, i) => {
+      const ts = d.start + i * DAY;
+      const isToday = i === 29;
+      const h = ms > 0 ? Math.max(6, Math.round(ms / maxMs * 100)) : 0;
+      const label = `${new Date(ts).getMonth() + 1}/${new Date(ts).getDate()}${ms > 0 ? ' · ' + mins(ms) + ' 分钟' : ' · 无记录'}`;
+      return `<div class="sd-col${isToday ? ' sd-today' : ''}" title="${esc(label)}"><div class="sd-bar" style="height:${h}%"></div></div>`;
+    }).join('');
+    return `
+      ${d.streak ? `<div class="st-streak">🔥 连续学习 <b>${d.streak}</b> 天</div>` : '<div class="st-streak muted">今天练一轮,连续天数从这里开始算</div>'}
+      <div class="stats-dist st-time" data-test="stats-time">
+        ${d.perDay.some(ms => ms > 0) ? `<div class="st-bars">${bars}</div>` : '<div class="empty">近 30 天还没有带计时的模拟面试。做一轮自测(每题作答会计时),这里就会长出每日时长柱。</div>'}
+      </div>
+      <div class="muted small" style="margin-top:4px">近 30 天模拟面试口述合计约 <b>${totalMin >= 1 ? totalMin + ' 分钟' : Math.round(d.totalMs / 1000) + ' 秒'}</b>;悬停柱子看每天明细。时长只统计模拟面试的作答时间(浏览/学习页无计时,不估算)。</div>`;
+  }
+
   function render(root) {
     root.innerHTML = `
       <div class="card stats-block">
         <b>📊 专题 × 状态热力表</b>
         <span class="muted small" style="margin-left:8px">每个专题四档状态的题目数;颜色越深越多,点专题名去刷题。</span>
         ${renderHeat()}
+      </div>
+      <div class="card stats-block">
+        <b>⏱ 时间投入(近 30 天)</b>
+        <span class="muted small" style="margin-left:8px">每日口述练习时长与连续学习天数。</span>
+        ${renderTime()}
       </div>
       <div class="card stats-block">
         <b>📅 SRS 到期预测(未来 30 天)</b>

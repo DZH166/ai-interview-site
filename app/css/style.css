@@ -975,3 +975,11 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 
 /* ---- 学习路径切换(Stage6) ---- */
 .path-switcher { margin-bottom: 12px; flex-wrap: wrap; }
+
+/* ---- 统计页:时间投入(Stage8) ---- */
+.st-streak { margin: 6px 0 10px; font-size: 14px; }
+.st-bars { display: flex; align-items: flex-end; gap: 3px; height: 90px; padding: 4px 0; }
+.sd-col { flex: 1; display: flex; align-items: flex-end; height: 100%; min-width: 4px; }
+.sd-bar { width: 100%; background: var(--primary); border-radius: 2px 2px 0 0; opacity: .85; min-height: 0; }
+.sd-col.sd-today .sd-bar { background: var(--danger); opacity: 1; }
+.sd-col:hover .sd-bar { opacity: 1; }
