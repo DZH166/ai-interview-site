@@ -983,3 +983,9 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 .sd-bar { width: 100%; background: var(--primary); border-radius: 2px 2px 0 0; opacity: .85; min-height: 0; }
 .sd-col.sd-today .sd-bar { background: var(--danger); opacity: 1; }
 .sd-col:hover .sd-bar { opacity: 1; }
+
+/* ---- 维护页:存储预算条(Stage11) ---- */
+.st-budget { margin: 8px 0; }
+.st-budget-track { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.st-budget-fill { height: 100%; background: var(--primary); transition: width .3s; }
+.st-budget-fill.st-budget-danger { background: var(--danger); }

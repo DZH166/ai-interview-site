@@ -529,6 +529,12 @@ const MaintainView = (() => {
           <div class="kv"><span>文档章节(内置/导入)</span><b>${Data.allDocs().length} / ${Data.allUserDocs().length}</b></div>
           <div class="kv"><span>来源 / 候选</span><b>${(window.APP_DATA.sources.sources||[]).length} / ${(window.APP_DATA.candidates.candidates||[]).length}</b></div>
           <div class="kv"><span>个人记录占用</span><b id="st-size">…</b></div>
+          <div class="st-budget">
+            <div class="st-budget-track" role="img" id="st-budget-bar" aria-label="个人记录占本地存储预算比例">
+              <div class="st-budget-fill" id="st-budget-fill" style="width:0%"></div>
+            </div>
+            <div class="muted small" id="st-budget-text">…</div>
+          </div>
           <div class="kv"><span>浏览器存储用量估计</span><b id="st-quota">…</b></div>
           <label class="chk" style="margin-top:8px"><input type="checkbox" id="opt-shuffle" ${Store.data.ui.shuffleOptions ? 'checked' : ''}> 选项乱序(重练)</label>
           <p class="muted small" id="opt-shuffle-hint">${Store.data.ui.shuffleOptions
@@ -616,6 +622,20 @@ const MaintainView = (() => {
           是浏览器对整个源(含缓存等)的粗略估计,不是 localStorage 的专用配额。 */
     const stSize = $('#st-size', root);
     if (stSize) stSize.textContent = Store.recordsSizeKB() + ' KB(序列化字符数口径;localStorage 总预算通常约 5MB,键名与编码开销未计)';
+    /* 存储预算条(Stage11):5MB 预算口径与上一行一致(序列化字符数)。
+       ≥80% 转红并给「先导出备份再清理」的行动建议 —— 只预警不自动清理,
+       数据是用户的,删除永远该由人决定。 */
+    (() => {
+      const bar = $('#st-budget-fill', root), txt = $('#st-budget-text', root);
+      if (!bar || !txt) return;
+      const usedKB = Store.recordsSizeKB();
+      const budgetKB = 5 * 1024;
+      const pct = Math.min(100, Math.round(usedKB / budgetKB * 1000) / 10);
+      bar.style.width = Math.max(1.5, pct) + '%';
+      const warn = pct >= 80;
+      bar.classList.toggle('st-budget-danger', warn);
+      txt.textContent = `约占用 5MB 预算的 ${pct}%${warn ? ' —— 接近上限:保存可能开始失败。建议先「导出个人记录」留底,再清理不用的轮次与笔记(维护页的清空入口会二次确认)。' : '。记录增长主要来自模拟面试轮次(上限 100 轮)与笔记。'}`;
+    })();
     const stQuota = $('#st-quota', root);
     if (stQuota) {
       if (navigator.storage && navigator.storage.estimate) {
