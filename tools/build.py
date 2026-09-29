@@ -103,7 +103,10 @@ def main():
         "paths": paths,
         "concepts": concepts,
         "projects": projects,
-        "highlights": highlights,
+        # highlights 也不进壳(Stage4):565KB 占壳 33%,却只在学习页正文渲染时才被
+        # 消费 —— 而学习页正文本身就在 questionsReady 门控之后。拆成独立
+        # data/highlights.json(网络优先,与 data.js 同一策略),Data.highlightsReady
+        # 异步装载,首屏同步下载直降约三分之一。
         "resume": load_json(ROOT / "data" / "resume-profile.json") if (ROOT / "data" / "resume-profile.json").exists() else {},
     }
     js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。\n"
@@ -144,6 +147,12 @@ def main():
     data_manifest = {"hash": content_hash, "topics": topic_manifest}
     (ROOT / "app" / "data" / "manifest.json").write_text(
         json.dumps(data_manifest, ensure_ascii=False, indent=None, separators=(",", ":")),
+        encoding="utf-8", newline="\n")
+    # 重点标注独立文件(Stage4):内容哈希进文件头做一致性自检,文件名不带哈希 ——
+    # 它走网络优先(与 data.js 同策略),预缓存进 SW 保证离线学习页仍有着色。
+    (ROOT / "app" / "data" / "highlights.json").write_text(
+        json.dumps({"hash": content_hash, "highlights": highlights},
+                   ensure_ascii=False, indent=None, separators=(",", ":")),
         encoding="utf-8", newline="\n")
     # manifest 描述里的题数与真实题库对齐(过去硬编码「349 题」,题库涨到 3900 也没人改)。
     # 位置很关键:必须在算 stamp **之前**改 manifest —— manifest 在 shell_files 哈希清单里,

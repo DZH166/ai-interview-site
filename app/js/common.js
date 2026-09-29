@@ -60,8 +60,47 @@ const Data = (() => {
     /* 分片合并只做一次;init 可重入(远端变更/导入后重建内存),
        已就绪或已在加载就直接沿用,不重复发请求。 */
     if (!fullPromise) fullPromise = loadTopicFiles();
+    if (!hlPromise) hlPromise = loadHighlights();
     contentVersion = computeContentVersion();
   }
+
+  /* ---- 重点标注异步装载(Stage4)----
+     highlights(565KB,349 题 3917 个 span)不进同步壳:它只在学习页正文渲染时
+     被消费,而学习页正文本身就在 questionsReady 门控之后。拆成独立
+     data/highlights.json,与分片并行拉取;装载完挂到 window.APP_DATA.highlights,
+     Highlight.all() 是惰性读取,挂上即对所有后续渲染生效。
+     壳里已带 highlights(Node 测试桩 / 旧形态)则跳过:detect-and-skip 同分片。 */
+  let hlPromise = null, hlReady = false;
+  function shellHasHighlights() {
+    const d = window.APP_DATA;
+    return !!(d && d.highlights && Object.keys(d.highlights).length);
+  }
+  function loadHighlights() {
+    if (shellHasHighlights()) { hlReady = true; return Promise.resolve(); }
+    if (typeof fetch !== 'function') { hlReady = true; return Promise.resolve(); }
+    return fetch('data/highlights.json')
+      .then(r => { if (!r.ok) throw new Error('highlights ' + r.status); return r.json(); })
+      .then(payload => {
+        window.APP_DATA.highlights = (payload && payload.highlights) || {};
+        hlReady = true;
+      })
+      .catch(err => {
+        /* 拿不到标注 = 学习页不着色,正文照常可读:降级不炸页,如实上报 */
+        console.warn('重点标注加载失败(学习页将不着色):', err);
+        if (Store.loadIssues) Store.loadIssues.highlights = String((err && err.message) || err);
+        hlReady = true;   /* 失败也算「就绪」:门控不能永远卡住 */
+      });
+  }
+  function highlightsReady() {
+    if (!hlPromise) hlPromise = loadHighlights();
+    return hlPromise;
+  }
+  function highlightsLoaded() { return hlReady; }
+  /* 正文渲染门控(Stage4):题干/答案经 mdField 渲染时同步应用重点标注 ——
+     标注未装载就渲染会得到「永远不着色」的正文(渲染不会重放)。所以凡渲染
+     题目的正文区块,要等题库与标注都就绪;标注加载失败也按就绪处理(不着色降级)。 */
+  function bankReady() { return Promise.all([questionsReady(), highlightsReady()]); }
+  function bankLoaded() { return questionsLoaded() && highlightsLoaded(); }
 
   /* ---- 分片异步合并 ----
      manifest(SW 预缓存,网络优先)→ 全部专题文件 Promise.allSettled。
@@ -181,7 +220,7 @@ const Data = (() => {
     return Store.STATUS.find(x => x.id === s) || Store.STATUS[0];
   }
 
-  return { init, allQuestions, question, questionsReady, questionsLoaded, allDocs, doc, allUserDocs, reloadUserDocs, contentVersionOf, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
+  return { init, allQuestions, question, questionsReady, questionsLoaded, highlightsReady, highlightsLoaded, bankReady, bankLoaded, allDocs, doc, allUserDocs, reloadUserDocs, contentVersionOf, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
 
 /* 追问稳定身份(SP-02):qid + 题面内容哈希——

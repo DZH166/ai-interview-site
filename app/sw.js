@@ -17,7 +17,7 @@
  * CACHE_VERSION 由 tools/build.py 按内容哈希自动盖章,数据一变缓存名即变。
  */
 'use strict';
-const CACHE_VERSION = 'shell-a7975db5c6e3';
+const CACHE_VERSION = 'shell-56b1d5a17f98';
 /* 分片专用缓存:不参与 shell 版本盖章,清理只按 manifest 名单增量做。
    命名带 -v1 是留给「分片路径/命名规则大改」时的兜底 —— 那种时候一次性换名重下。 */
 const TOPIC_CACHE = 'topics-v1';
@@ -28,6 +28,7 @@ const APP_SHELL = [
   './css/style.css',
   './data.js',
   './data/manifest.json',
+  './data/highlights.json',
   './js/util.js',
   './js/srs.js',
   './js/store.js',
@@ -75,7 +76,9 @@ self.addEventListener('fetch', (e) => {
 
   const isNavigate = req.mode === 'navigate';
   const isManifest = url.pathname.endsWith('/data/manifest.json');
-  const isData = url.pathname.endsWith('/data.js') || isManifest;
+  /* highlights.json(Stage4 拆出壳):与 data.js 同为网络优先 —— 内容随题库变,
+     且学习页着色依赖它;预缓存保证离线首启也拿得到 */
+  const isData = url.pathname.endsWith('/data.js') || url.pathname.endsWith('/data/highlights.json') || isManifest;
   const isTopicFile = url.pathname.includes('/data/topics/');
 
   if (isNavigate) {

@@ -214,9 +214,9 @@ const BrowseView = (() => {
     if (!q) return;
     /* 详情面板渲染标准区块(答案/追问/理解检查)需要全量题字段(Track E):
        全量未合并时先上占位,就绪后重进本函数;此时列表/选中态已同步,不重做。 */
-    if (q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+    if ((q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) || !Data.bankLoaded()) {
       $('#q-detail', root).innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
+      Data.bankReady().then(() => {
         if (!root.isConnected || DetailQid !== qid) return;   /* 已换题/换页:丢弃 */
         select(root, filters(), qid);
       });
@@ -483,9 +483,9 @@ const StudyView = (() => {
     /* 全量题字段异步合并(Track E):壳里只有 index 元数据,正文渲染必须等 questionsReady。
        判定「还没全量」:无 answer 字段且加载未完成(导入题/Node 桩天然带全量,立即渲染)。
        等待期给轻量占位;等不到(分片缺失)→ 按空态降级,绝不炸页。 */
-    if (q && q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+    if ((q && q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) || (q && !Data.bankLoaded())) {
       root.innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
+      Data.bankReady().then(() => {
         if (!root.isConnected) return;                  /* 等待期间已离开学习页 */
         render(root, qid, anchor);                      /* 就绪后按同一 qid 重进;缺失走下方空态 */
       });
@@ -1089,9 +1089,9 @@ const MockView = (() => {
        index 半份题拒之门外返回 null —— 若不先拦,就走「题目不存在,跳过」
        把整轮烧完(实测:带草稿刷新直达 #/mock/run,两题被静默跳过直接出完成页) */
     const rawQ = Data.question(rawId);
-    if (rawQ && rawQ.answer === undefined && !rawQ.followups && !rawQ.sources && !Data.questionsLoaded()) {
+    if ((rawQ && rawQ.answer === undefined && !rawQ.followups && !rawQ.sources && !Data.questionsLoaded()) || !Data.bankLoaded()) {
       root.innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
+      Data.bankReady().then(() => {
         if (!root.isConnected || !state || state.ended) return;   /* 已离开/已结束:丢弃 */
         renderRun(root);
       });
