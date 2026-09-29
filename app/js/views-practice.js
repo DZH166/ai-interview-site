@@ -450,7 +450,9 @@ const StudyView = (() => {
      通过搜索明确打开命中内容属于有意揭示,与默认折叠不冲突。 */
   function revealAnchor(root, anchor) {
     if (!anchor) return;
+    const request = renderRequest, route = location.hash;
     setTimeout(() => {
+      if (!root.isConnected || request !== renderRequest || location.hash !== route) return;
       if (anchor === 'note') {
         const nb = $('.q-note-box', root);
         if (nb) { scrollFlash(root, nb); }
@@ -474,6 +476,10 @@ const StudyView = (() => {
   }
 
   function scrollFlash(root, el) {
+    /* 显式打开的命中区块必须参与排版。content-visibility:auto 在滚动后的
+       可见性重算期间可能再次跳过正文,导致已高亮的锚点短暂空白。仅固定目标区块,
+       其余长区块仍按需排版;先排版再测量,不拿占位高度计算定位。 */
+    el.style.contentVisibility = 'visible';
     /* instant:绕过 CSS scroll-behavior:smooth,保证定位后位置读取与高亮即时生效 */
     const y = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 80);
     window.scrollTo({ top: y, behavior: 'instant' });

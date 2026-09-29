@@ -1,8 +1,9 @@
 /* AI 面试学习站 Service Worker
  * 策略:
  *  - 导航请求(index.html):网络优先,失败回退缓存 —— 保证入口最新;
- *  - 静态资源(css/js/图标):缓存优先,后台更新 —— 秒开;
- *  - data.js 与 data/manifest.json:网络优先,失败回退缓存 —— 题库入口更新及时生效,断网也能学;
+ *  - 带内容版本的 css/js(含 data.js):缓存优先、不后台替换,与 HTML 版本保持一致;
+ *  - 旧的无版本静态资源/图标:缓存优先,后台更新;
+ *  - 无版本 data.js 与 data/manifest.json:网络优先,失败回退缓存;
  *  - data/topics/*.json(题库分片):缓存优先、不回源刷新 —— 文件名带内容哈希,
  *    内容一变文件名就变,旧文件不可能被错误复用(不可变资产按内容寻址)。
  *    分片不进预缓存(20 片 10MB 会让 SW 安装变慢、流量翻倍):首次在线访问时由
@@ -17,7 +18,7 @@
  * CACHE_VERSION 由 tools/build.py 按内容哈希自动盖章,数据一变缓存名即变。
  */
 'use strict';
-const CACHE_VERSION = 'shell-d4f088b6a90c';
+const CACHE_VERSION = 'shell-6fe1654d9545';
 /* 分片专用缓存:不参与 shell 版本盖章,清理只按 manifest 名单增量做。
    命名带 -v1 是留给「分片路径/命名规则大改」时的兜底 —— 那种时候一次性换名重下。 */
 const TOPIC_CACHE = 'topics-v1';
@@ -25,24 +26,24 @@ const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './css/style.css',
-  './data.js',
   './data/manifest.json',
-  './js/util.js',
-  './js/srs.js',
-  './js/store.js',
-  './js/markdown.js',
-  './js/highlight.js',
-  './js/search.js',
-  './js/common.js',
-  './js/express.js',
-  './js/views-practice.js',
-  './js/views-resume.js',
-  './js/views-stats.js',
-  './js/views-guides.js',
-  './js/views-knowledge.js',
-  './js/views-review.js',
-  './js/app.js',
+  './css/style.css?v=e4fa97a46a50',
+  './data.js?v=28608ed3a749',
+  './js/util.js?v=7e2401382653',
+  './js/srs.js?v=e53733a9209a',
+  './js/store.js?v=55f3929b4466',
+  './js/markdown.js?v=3d63a2f8723c',
+  './js/highlight.js?v=2423120f5915',
+  './js/search.js?v=637d63925134',
+  './js/common.js?v=6f4e61bec521',
+  './js/express.js?v=b1edafef6133',
+  './js/views-practice.js?v=c1460c8218a2',
+  './js/views-resume.js?v=6fa716cb4719',
+  './js/views-stats.js?v=9dee46f66ae5',
+  './js/views-guides.js?v=6049bce6acfa',
+  './js/views-knowledge.js?v=e6f86698973b',
+  './js/views-review.js?v=1c250a0740f5',
+  './js/app.js?v=b117b71201ea',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
@@ -77,12 +78,16 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;
 
   const isNavigate = req.mode === 'navigate';
+  const isVersionedShell = /^[0-9a-f]{12}$/.test(url.searchParams.get('v') || '') && /\.(js|css)$/.test(url.pathname);
   const isManifest = url.pathname.endsWith('/data/manifest.json');
   const isData = url.pathname.endsWith('/data.js') || isManifest;
   const isTopicFile = url.pathname.includes('/data/topics/') || url.pathname.includes('/data/assets/');
 
   if (isNavigate) {
     e.respondWith(networkFirst(req, './index.html'));
+  } else if (isVersionedShell) {
+    // In particular, never replace a cached versioned data.js with another release.
+    e.respondWith(cacheFirst(req, true));
   } else if (isTopicFile) {
     /* 分片不可变:命中即返回,不发起后台刷新 —— 省流量,也避免老 SW 缓存
        缺分片时每片都打出一次注定失败的回源请求。 */
@@ -158,11 +163,11 @@ async function networkFirst(req, fallbackUrl) {
   }
 }
 
-async function cacheFirst(req) {
+async function cacheFirst(req, immutable = false) {
   const cache = await caches.open(CACHE_VERSION);
   const hit = await cache.match(req);
   if (hit) {
-    fetch(req).then((fresh) => { if (fresh && fresh.ok) cache.put(req, fresh.clone()); }).catch(() => {});
+    if (!immutable) fetch(req).then((fresh) => { if (fresh && fresh.ok) cache.put(req, fresh.clone()); }).catch(() => {});
     return hit;
   }
   const fresh = await fetch(req);

@@ -192,6 +192,22 @@ def main():
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8", newline="\n")
+    # The previous worker serves JS cache-first but HTML/data.js network-first.
+    # Stamp each referenced resource BEFORE hashing the shell, so even that old
+    # worker must fetch compatible scripts on the very first navigation upgrade.
+    # Hash bytes, not a date or the shell stamp: index.html must not hash itself.
+    index_path = ROOT / "app" / "index.html"
+    resource_urls = {}
+    def version_resource(match):
+        rel = match.group(2)
+        raw = (ROOT / "app" / rel).read_bytes().replace(b"\r\n", b"\n")
+        version = _hashlib.md5(raw).hexdigest()[:12]
+        resource_urls[rel] = f"{rel}?v={version}"
+        return f'{match.group(1)}"{resource_urls[rel]}"'
+    index_text = re.sub(
+        r'((?:src|href)=)"(data\.js|js/[^"?]+\.js|css/[^"?]+\.css)(?:\?[^"\n]*)?"',
+        version_resource, index_path.read_text(encoding="utf-8"))
+    index_path.write_text(index_text, encoding="utf-8", newline="\n")
     # Service Worker 缓存版本:对整个 app shell(数据+JS+CSS+图标)内容哈希盖章。
     # 任何被 SW 预缓存的文件变化都会生成新缓存名,用户下次访问即拿到新版,
     # 杜绝「改了 JS 但 SW 一直发旧缓存」。统一 LF 写入保证跨平台一致。
@@ -215,11 +231,16 @@ def main():
             h.update(p.read_bytes().replace(b"\r\n", b"\n"))
     stamp = h.hexdigest()[:12]
     sw = ROOT / "app" / "sw.js"
-    sw.write_text(
-        re.sub(r"const CACHE_VERSION = '[^']*';",
-               f"const CACHE_VERSION = 'shell-{stamp}';",
-               sw.read_text(encoding="utf-8")),
-        encoding="utf-8", newline="\n")
+    # Cache the exact versioned URLs requested by HTML, including data.js.
+    # Caching bare paths instead would make a first offline reload miss them all.
+    precache = ["./", "./index.html", "./manifest.webmanifest", "./data/manifest.json"]
+    precache += ["./" + url for url in resource_urls.values()]
+    precache += ["./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png"]
+    sw_text = re.sub(r"const CACHE_VERSION = '[^']*';",
+                     f"const CACHE_VERSION = 'shell-{stamp}';", sw.read_text(encoding="utf-8"))
+    sw_text = re.sub(r"const APP_SHELL = \[[\s\S]*?\];",
+                     "const APP_SHELL = [\n" + "".join(f"  '{url}',\n" for url in precache) + "];", sw_text)
+    sw.write_text(sw_text, encoding="utf-8", newline="\n")
     # 统计
     by_topic, by_diff, by_status = {}, {}, {}
     for q in questions:

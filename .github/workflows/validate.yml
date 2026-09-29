@@ -83,7 +83,7 @@ jobs:
       - name: 构建可复现（入口、清单、全部分片与缓存戳）
         run: |
           python tools/build.py
-          changes=$(git status --porcelain --untracked-files=all -- app/data.js app/data/ app/sw.js)
+          changes=$(git status --porcelain --untracked-files=all -- app/index.html app/manifest.webmanifest app/data.js app/data/ app/sw.js)
           if [ -n "$changes" ]; then
             echo "$changes"
             echo '::error::构建产物与提交内容不同步。请本地运行 python tools/build.py 并提交入口、manifest、分片及 sw.js。'
@@ -102,6 +102,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # sw-upgrade 从固定已发布版本提供真实旧站，覆盖旧 SW 到新版的首次刷新。
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'

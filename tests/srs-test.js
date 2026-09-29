@@ -269,7 +269,7 @@ console.log('== 6. 常驻防线:srs.js 在预缓存与盖章清单里 ==');
   ok('build.py 盖章清单含 app/js/srs.js', shellFiles.includes('app/js/srs.js'));
   const swSrc = fs.readFileSync(path.join(ROOT, 'app', 'sw.js'), 'utf8');
   const shellArr = (swSrc.match(/const APP_SHELL = \[([\s\S]*?)\]/) || [, ''])[1];
-  const cacheSet = new Set((shellArr.match(/'([^']+)'/g) || []).map(s => s.slice(1, -1)).map(e => 'app/' + e.replace(/^\.\//, '')));
+  const cacheSet = new Set((shellArr.match(/'([^']+)'/g) || []).map(s => s.slice(1, -1)).map(e => 'app/' + e.replace(/^\.\//, '').split('?')[0]));
   ok('sw.js APP_SHELL 含 ./js/srs.js', cacheSet.has('app/js/srs.js'));
   const indexSrc = fs.readFileSync(path.join(ROOT, 'app', 'index.html'), 'utf8');
   ok('index.html 在 store.js 之前加载 srs.js',

@@ -13,6 +13,8 @@ python tools/serve.py 8765
 
 `build.py` 将 `data/` 的活动题、旧题存档、训练单元和文档构建为 `app/data.js` 索引、`app/data/manifest.json`、内容哈希分片，并更新 `app/sw.js` 的缓存戳。请修改源数据后构建并一并提交生成物，不手改哈希分片。CI 会检查入口、清单、全部分片及缓存戳，新增但未提交的分片也会被发现。
 
+构建还会按各文件内容更新 `app/index.html` 中 JS、CSS、`data.js` 的版本查询，并将相同的精确 URL 写入 Service Worker 预缓存。这样旧 Worker 控制下的第一次刷新也能加载匹配的新脚本；不能手动删除查询参数或只缓存无版本路径。修改这些脚本后同样需要构建并提交 `index.html` 与 `sw.js`。先生成逐文件版本、再计算整个页面缓存戳，连续构建应一致。
+
 页面启动时仅加载索引；进入题目才读取其所属专题，进入文档才读取文档资源。全文搜索会主动加载题库与文档，先显示标题命中，再逐步补齐正文命中。开发调用可使用 `Data.ensureQuestion(id)`、`Data.ensureTopics(ids)`、`Data.ensureDoc(id)`；`Data.questionsReady()` 是显式全库加载，`ensureTopics` 的部分失败需检查返回的 `errors`，不能把 Promise 完成当作所有正文成功。
 
 需要全文索引结果的测试，应先等待目标内容，再调用 `Search.build(...)` 并等待 `Search.whenIdle()`。题目索引元数据不能当成完整题目快照保存。
@@ -20,6 +22,8 @@ python tools/serve.py 8765
 离线使用前在页面的“离线学习资料”下载简历核心或全部资料，并核对完成状态。已访问内容会缓存，但首次打开不自动下载全库；清除网站数据会删除缓存和个人记录。
 
 `restore_legacy_questions.py` 从固定历史基线提取已删除 ID，并原样写入 `data/legacy-questions.json`。它会改写存档，仅在核对基线和删除范围后显式使用；日常构建与验证无需运行。`legacy-archive-test.js` 需要该历史提交可用，CI 因此使用完整 Git 历史。
+
+`tests/browser/sw-upgrade.js` 在同一站点路径切换真实已发布基线 `8c2db0c` 与当前版本，覆盖旧 Worker 首次刷新、更新激活、离线、新安装及个人记录保留。浏览器 CI 也需完整 Git 历史；等待 `controllerchange` 后还要确认控制 Worker 已到 `activated` 状态，才检查清理结果。
 
 ## 统一功能验证
 

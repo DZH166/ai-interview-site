@@ -99,13 +99,27 @@ ok('app/js 下每个 js 文件都在 build.py 的盖章清单里(新模块不能
 const shellArr = (swSrc.match(/const APP_SHELL = \[([\s\S]*?)\]/) || [, ''])[1];
 const cacheEntries = (shellArr.match(/'([^']+)'/g) || []).map(s => s.slice(1, -1)).filter(s => s !== './');
 /* APP_SHELL 里的路径是相对 app/ 的('./js/app.js'),build.py 清单是相对仓库根的 */
-const cacheSet = new Set(cacheEntries.map(e => 'app/' + e.replace(/^\.\//, '')));
+const diskPath = e => e.replace(/^\.\//, '').split('?')[0];
+const cacheSet = new Set(cacheEntries.map(e => 'app/' + diskPath(e)));
 const missing = shellFiles.filter(f => !cacheSet.has(f));
 ok('build.py 盖章的每个文件都在 sw.js 的 APP_SHELL 预缓存里', missing.length === 0,
    '缺失:' + missing.join(', '));
-const notOnDisk = cacheEntries.filter(e => !fs.existsSync(path.join(ROOT, 'app', e.replace(/^\.\//, ''))));
+const notOnDisk = cacheEntries.filter(e => !fs.existsSync(path.join(ROOT, 'app', diskPath(e))));
 ok('APP_SHELL 里每个条目在磁盘上都存在(否则 SW 安装时 c.addAll 会整体失败)',
    notOnDisk.length === 0, '不存在:' + notOnDisk.join(', '));
+
+console.log('\n== 5. HTML 与预缓存使用同一份内容版本 ==');
+const indexSrc = fs.readFileSync(path.join(ROOT, 'app/index.html'), 'utf8');
+const urls = [...indexSrc.matchAll(/(?:src|href)="((?:data\.js|js\/[^"?]+\.js|css\/[^"?]+\.css)(?:\?[^"\n]*)?)"/g)].map(m => m[1]);
+ok('入口包含完整的脚本和样式引用', urls.length >= 15);
+for (const url of urls) {
+  const rel = diskPath(url), query = new URL(url, 'https://fixture.invalid/').searchParams;
+  const hash = crypto.createHash('md5').update(normalizeLf(fs.readFileSync(path.join(ROOT, 'app', rel)))).digest('hex').slice(0, 12);
+  ok(rel + ' 内容版本匹配当前文件', query.get('v') === hash, url + ' 应为 ?v=' + hash);
+  ok(rel + ' 精确版本URL已预缓存', cacheEntries.includes('./' + url), url);
+}
+ok('带版本的脚本与样式没有同时预缓存无版本副本',
+   !cacheEntries.some(e => /\.(js|css)$/.test(e)), cacheEntries.filter(e => /\.(js|css)$/.test(e)).join(', '));
 
 console.log(`\n结果: ${passed} 通过, ${failed} 失败`);
 if (failed) console.log('失败项:\n  - ' + failures.join('\n  - '));

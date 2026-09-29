@@ -49,7 +49,7 @@ const quantile = (values, q) => values.slice().sort((a,b) => a-b)[Math.max(0, Ma
       const sample=await page.evaluate(() => {
         window.collectLongTasks(window.longTaskObserver.takeRecords());
         window.longTaskObserver.disconnect();
-        const data=performance.getEntriesByType('resource').filter(r=>/\/data\.js$|\/data\/(topics|assets)\/|\/data\/manifest\.json$/.test(r.name));
+        const data=performance.getEntriesByType('resource').filter(r=>/\/data\.js$|\/data\/(topics|assets)\/|\/data\/manifest\.json$/.test(new URL(r.name).pathname));
         return {dataBytes:data.reduce((n,r)=>n+r.encodedBodySize,0),topicRequests:data.filter(r=>r.name.includes('/data/topics/')).length,longTasks:window.longTasks,longTaskEntries:window.longTaskEntries};
       });
       assert.deepStrictEqual(errors,[]);
