@@ -972,3 +972,6 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 .exam-ref { margin: 8px 0 0; }
 .exam-ref summary { cursor: pointer; color: var(--primary); font-size: 13px; }
 .exam-ref .fu-a { margin-top: 6px; }
+
+/* ---- 学习路径切换(Stage6) ---- */
+.path-switcher { margin-bottom: 12px; flex-wrap: wrap; }
