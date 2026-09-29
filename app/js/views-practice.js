@@ -519,6 +519,7 @@ const StudyView = (() => {
           <button class="btn btn-small" id="collapse-all">折叠全部</button>
         </div>
         ${QRender.recordBar(qid)}
+        ${leechNotice(qid)}
         ${QRender.metaLine(q)}
         <h1 class="q-title">${esc(q.title)}</h1>
         ${QRender.promptHtml(q)}
@@ -564,9 +565,24 @@ const StudyView = (() => {
     revealAnchor(root, anchor);
   }
 
+  /* 顽固弱点(Stage3):lapses ≥ SRS.LEECH_LAPSES 的题在学习页给提示与出口。
+     继续排期对这类题收效有限,拆解重练(题目自带的追问二跳)才是正解。 */
+  function leechNotice(qid) {
+    if (typeof SRS === 'undefined' || !SRS.isLeech || !SRS.isLeech(Store.rec(qid))) return '';
+    const lapses = (Store.rec(qid).srs || {}).lapses || 0;
+    return `
+      <div class="notice" style="border-color:var(--warn,#d97706);background:#fffbeb;margin:8px 0">
+        <b>⚠ 顽固弱点</b>
+        <span class="small muted" style="margin-left:6px">这道题已经反复遗忘了 ${lapses} 次——靠「再看一遍」收效有限。建议把它开成定向自测:先自己完整讲一遍,再对照参考,顺着追问二跳把漏洞逐层挖出来。</span>
+        <div style="margin-top:6px"><button class="btn btn-small" id="leech-drill">🎯 拆解重练</button></div>
+      </div>`;
+  }
+
   function wire(root, qid) {
     QRender.wireFocusToggle(root);
     QRender.wireQuizToggle(root);
+    const leechBtn = $('#leech-drill', root);
+    if (leechBtn) leechBtn.addEventListener('click', () => MockView.startDirected([qid], '顽固弱点重练'));
     $$('.q-sec-head', root).forEach(h => {
       h.addEventListener('click', () => {
         const sec = h.parentElement;

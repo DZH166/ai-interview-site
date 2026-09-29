@@ -17,7 +17,7 @@
  * CACHE_VERSION 由 tools/build.py 按内容哈希自动盖章,数据一变缓存名即变。
  */
 'use strict';
-const CACHE_VERSION = 'shell-2cfa6b6f3803';
+const CACHE_VERSION = 'shell-a7975db5c6e3';
 /* 分片专用缓存:不参与 shell 版本盖章,清理只按 manifest 名单增量做。
    命名带 -v1 是留给「分片路径/命名规则大改」时的兜底 —— 那种时候一次性换名重下。 */
 const TOPIC_CACHE = 'topics-v1';

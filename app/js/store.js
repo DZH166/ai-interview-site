@@ -201,6 +201,23 @@ const Store = (() => {
     save();
   }
   function toggleFav(qid) { const r = rec(qid); r.fav = !r.fav; touch(r); save(); return r.fav; }
+
+  /* 四档评分入口(Stage3):复习中心到期建议卡的「忘了/需巩固/基本掌握/很熟练」。
+     与 setStatus 的差异:'easy' 没有专属状态——评分直达排期,状态走
+     SRS.statusFromRating 反查(easy→ok),suggestable 放行 ok+easy 组合。
+     SRS 未加载(Node 桩)时返回 null,调用方自行降级。 */
+  function rateQuestion(qid, rating, opts) {
+    if (typeof SRS === 'undefined' || !SRS.RATINGS || !SRS.RATINGS.includes(rating)) return null;
+    const r = rec(qid);
+    r.status = SRS.statusFromRating(rating);
+    touch(r);
+    try {
+      r.srs = SRS.schedule(opts && Object.hasOwn(opts, 'base') ? opts.base : r.srs, rating, opts && opts.at !== undefined ? opts.at : Date.now());
+    } catch (e) { console.warn('SRS 排期失败(不影响状态保存)', e); }
+    save();
+    return r;
+  }
+
   function setNote(qid, text) { const r = rec(qid); r.note = text; touch(r); save(); }
   const noteWriterPrefix = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const noteWriters = new Map();
@@ -1594,7 +1611,7 @@ const Store = (() => {
 
   return {
     STATUS, STATE, STATE_IDS, STATE_LABEL, MAX_ROUNDS,
-    load, save, saveNow, rec, setStatus, toggleFav, setNote, saveNoteDraft, refreshFromDisk, markViewed, markPracticed,
+    load, save, saveNow, rec, setStatus, rateQuestion, toggleFav, setNote, saveNoteDraft, refreshFromDisk, markViewed, markPracticed,
     exportRecords, exportLibrary, exportFull, importRecords, importLibrary, importFull, clearAll,
     validateQuestions, validateQuestion, validateRecordsObj, normalizeSourceKind,
     adoptRemoteRecords, recordsSizeKB, previewRecordsMerge,

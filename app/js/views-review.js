@@ -238,6 +238,7 @@ const ReviewView = (() => {
       ${queue.length ? `<div class="review-list">${queue.map(q => {
         const r = Store.rec(q.id);
         const st = Data.statusInfo(q.id);
+        const leech = typeof SRS !== 'undefined' && SRS.isLeech && SRS.isLeech(r);
         return `
           <div class="review-item">
             <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
@@ -246,9 +247,11 @@ const ReviewView = (() => {
                 <span class="qid">${q.id}</span>
                 ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
                 ${QRender.badge(st.label, st.cls)}
+                ${leech ? `<span class="badge st-weak" title="反复遗忘 ${r.srs.lapses} 次:建议拆解重练">⚠ 顽固弱点(遗忘 ${r.srs.lapses} 次)</span>` : ''}
                 ${r.lastPracticedAt ? `<span class="muted" style="font-size:12px">上次 ${fmtTime(r.lastPracticedAt)}</span>` : ''}
               </div>
             </div>
+            ${leech ? `<div style="margin-top:6px"><button class="btn btn-small" data-leech-drill="${q.id}">🎯 拆解重练(把这道题开成定向自测)</button></div>` : ''}
           </div>`;
       }).join('')}</div>` : ''}
       ${renderDueSuggestions(due)}
@@ -257,18 +260,32 @@ const ReviewView = (() => {
     if (startBtn) startBtn.addEventListener('click', () => {
       MockView.startDirected(combined.map(q => q.id), '今日复习');
     });
-    /* 到期建议的快捷回应:「还记得」= 重排到下一轮间隔(状态仍是基本掌握);
-       「忘了」= 转还不熟,回到手动队列。两个出口都复用 Store.setStatus,
-       不在这里另写一套排期逻辑。 */
+    /* 到期建议的快捷回应(Stage3 四档):全部经 Store.rateQuestion 直达排期,
+       状态由 SRS.statusFromRating 反查(easy→ok,其余一一对应)。
+       「还记得/忘了」沿用旧属性名 —— 语义与 good/again 完全一致,既有测试不破。 */
     $$('[data-due-ok]', box).forEach(b => b.addEventListener('click', () => {
-      Store.setStatus(b.dataset.dueOk, 'ok', { reschedule: true });
+      Store.rateQuestion(b.dataset.dueOk, 'good');
       toast('已排到下一轮间隔;状态仍是「基本掌握」');
       render(root);
     }));
     $$('[data-due-again]', box).forEach(b => b.addEventListener('click', () => {
-      Store.setStatus(b.dataset.dueAgain, 'weak');
+      Store.rateQuestion(b.dataset.dueAgain, 'again');
       toast('已标记「还不熟」;留在今天的复习队列里');
       render(root);
+    }));
+    $$('[data-due-hard]', box).forEach(b => b.addEventListener('click', () => {
+      Store.rateQuestion(b.dataset.dueHard, 'hard');
+      toast('已标「需巩固」:间隔小幅延长,状态转「待复习」');
+      render(root);
+    }));
+    $$('[data-due-easy]', box).forEach(b => b.addEventListener('click', () => {
+      Store.rateQuestion(b.dataset.dueEasy, 'easy');
+      toast('很熟练!间隔拉得更长,状态保持「基本掌握」');
+      render(root);
+    }));
+    /* 顽固弱点拆解重练:单题定向会话(题目自带的追问二跳即「拆解」的骨架) */
+    $$('[data-leech-drill]', box).forEach(b => b.addEventListener('click', () => {
+      MockView.startDirected([b.dataset.leechDrill], '顽固弱点重练');
     }));
     wireItems(box);
   }
@@ -284,6 +301,7 @@ const ReviewView = (() => {
         const r = Store.rec(q.id);
         const srs = r.srs || {};
         const ratingLabel = SRS.RATING_LABEL[srs.lastRating] || '';
+        const leech = SRS.isLeech(r);
         return `
           <div class="review-item">
             <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
@@ -292,13 +310,17 @@ const ReviewView = (() => {
                 <span class="qid">${q.id}</span>
                 ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
                 <span class="badge b-tag">上次复盘:${esc(ratingLabel || '—')}</span>
+                ${leech ? `<span class="badge st-weak" title="反复遗忘 ${srs.lapses} 次:继续排期收效有限,建议拆解重练">⚠ 顽固弱点(遗忘 ${srs.lapses} 次)</span>` : ''}
                 <span class="muted" style="font-size:12px">间隔 ${srs.ivl || 1} 天 · 已到期</span>
               </div>
             </div>
             <span class="btn-row">
-              <button class="btn btn-small" data-due-ok="${q.id}" title="还记得:排到下一轮间隔,状态不变">还记得</button>
               <button class="btn btn-small st-weak" data-due-again="${q.id}" title="忘了:标为还不熟,回到手动队列">忘了</button>
+              <button class="btn btn-small" data-due-hard="${q.id}" title="有点模糊:小幅延长间隔,状态转「待复习」">需巩固</button>
+              <button class="btn btn-small" data-due-ok="${q.id}" title="还记得:排到下一轮间隔,状态不变">基本掌握</button>
+              <button class="btn btn-small" data-due-easy="${q.id}" title="很熟练:间隔拉得更长,状态保持「基本掌握」">很熟练</button>
             </span>
+            ${leech ? `<div style="margin-top:6px"><button class="btn btn-small" data-leech-drill="${q.id}">🎯 拆解重练(把这道题开成定向自测)</button></div>` : ''}
           </div>`;
       }).join('')}</div>
     </div>`;
@@ -363,6 +385,7 @@ const ReviewView = (() => {
     }
     box.innerHTML = `<div class="review-list">${mistakes.map(q => {
       const st = Data.statusInfo(q.id);
+      const leech = SRS.isLeech(Store.rec(q.id));
       return `
         <div class="review-item">
           <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
@@ -371,13 +394,18 @@ const ReviewView = (() => {
               <span class="qid">${q.id}</span>
               ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
               ${QRender.badge(st.label, st.cls)}
+              ${leech ? `<span class="badge st-weak" title="反复遗忘 ${Store.rec(q.id).srs.lapses} 次:靠重复刷收效有限,建议拆解重练">⚠ 顽固弱点(遗忘 ${Store.rec(q.id).srs.lapses} 次)</span>` : ''}
             </div>
           </div>
           <button class="btn btn-small" data-redo="${q.id}">🔄 重做</button>
+          ${leech ? `<button class="btn btn-small" data-leech-drill="${q.id}" title="把这道题(含追问)开成定向自测">🎯 拆解重练</button>` : ''}
         </div>`;
     }).join('')}</div>`;
     wireItems(box);
     $$('[data-redo]', box).forEach(b => b.addEventListener('click', () => go('#/study/' + b.dataset.redo)));
+    $$('[data-leech-drill]', box).forEach(b => b.addEventListener('click', () => {
+      MockView.startDirected([b.dataset.leechDrill], '顽固弱点重练');
+    }));
   }
 
   /* ---- 轮次趋势条(Track A):最近 10 轮,一格一轮,红色深浅 = weak 率。
