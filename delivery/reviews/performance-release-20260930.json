@@ -1,0 +1,488 @@
+{
+  "recordedAt": "2026-09-29T19:09:26.287Z",
+  "viewport": "1280x900",
+  "network": {
+    "downloadMbps": 3,
+    "uploadMbps": 1,
+    "latencyMs": 100,
+    "cpuSlowdown": 4
+  },
+  "serviceWorkers": "blocked to isolate document loading",
+  "cold": [
+    {
+      "readyMs": 9483,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        334,
+        55,
+        93,
+        1415,
+        423
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1452.7999999988824,
+          "duration": 334,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4717.699999999255,
+          "duration": 55,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4791.299999998882,
+          "duration": 93,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7564.5999999996275,
+          "duration": 1415,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8979.599999999627,
+          "duration": 423,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 9294,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        1005,
+        101,
+        154,
+        519,
+        1431
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1113.0999999996275,
+          "duration": 1005,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4220.5,
+          "duration": 101,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4345.199999999255,
+          "duration": 154,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7292.199999999255,
+          "duration": 519,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7811.299999998882,
+          "duration": 1431,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 8915,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        399,
+        348,
+        68,
+        238,
+        506,
+        523
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1031.8999999985099,
+          "duration": 399,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4359.199999999255,
+          "duration": 348,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4707.39999999851,
+          "duration": 68,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4828,
+          "duration": 238,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7803.5,
+          "duration": 506,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8310.39999999851,
+          "duration": 523,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 9446,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        320,
+        371,
+        208,
+        1269,
+        405
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 995,
+          "duration": 320,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4285.5,
+          "duration": 371,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4755.299999998882,
+          "duration": 208,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7704,
+          "duration": 1269,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8973.39999999851,
+          "duration": 405,
+          "phase": "cold"
+        }
+      ]
+    },
+    {
+      "readyMs": 10225,
+      "dataBytes": 1758565,
+      "topicRequests": 1,
+      "longTasks": [
+        996,
+        271,
+        59,
+        325,
+        591,
+        1599
+      ],
+      "longTaskEntries": [
+        {
+          "startTime": 1078.1000000014901,
+          "duration": 996,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4264.5,
+          "duration": 271,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4536.10000000149,
+          "duration": 59,
+          "phase": "cold"
+        },
+        {
+          "startTime": 4696.700000001118,
+          "duration": 325,
+          "phase": "cold"
+        },
+        {
+          "startTime": 7955.200000001118,
+          "duration": 591,
+          "phase": "cold"
+        },
+        {
+          "startTime": 8547.10000000149,
+          "duration": 1599,
+          "phase": "cold"
+        }
+      ]
+    }
+  ],
+  "measurement": {
+    "cold": "Navigation start through the visible note control; observe another 1000 ms for deferred stalls.",
+    "search": "Synchronous Search.query cost, with a frame opportunity between queries.",
+    "routesAndTyping": "Operation start through two requestAnimationFrame callbacks: at least one rendering opportunity separates operations; this is not a display-presentation timestamp.",
+    "warmSetup": "Load question/document data and finish indexing, then wait two animation frames. Do not render or preheat PY-001.",
+    "longTasks": "Durations remain in longTasks for compatibility. longTaskEntries add document-relative startTime and phase; drain observer records before ending each window."
+  },
+  "browser": "148.0.7778.96",
+  "warm": {
+    "search": [
+      40.600000001490116,
+      52.69999999925494,
+      28,
+      23.40000000037253,
+      19.800000000745058,
+      19.90000000037253,
+      17.59999999962747,
+      28.799999998882413,
+      15.600000001490116,
+      29.5,
+      20.299999998882413,
+      28.09999999962747,
+      19.800000000745058,
+      20.40000000037253,
+      17.40000000037253,
+      19,
+      20.299999998882413,
+      15.900000000372529,
+      18.5,
+      17,
+      14.699999999254942,
+      17.199999999254942,
+      14.800000000745058,
+      16.800000000745058,
+      18.899999998509884,
+      18.5,
+      14,
+      17.5,
+      15.400000000372529,
+      16
+    ],
+    "routes": [
+      351,
+      954,
+      47.40000000037253,
+      51.90000000037253,
+      49.40000000037253,
+      45.5,
+      47,
+      41.5,
+      51,
+      55.100000001490116,
+      51,
+      59.19999999925494,
+      77.69999999925494,
+      86.80000000074506,
+      100.40000000037253,
+      65.5,
+      59.5,
+      335.59999999962747,
+      795.3000000007451,
+      50.40000000037253,
+      79.90000000037253,
+      91.80000000074506,
+      87.30000000074506,
+      103,
+      93.19999999925494,
+      112.90000000037253,
+      102.20000000111759,
+      97.29999999888241,
+      80.70000000111759,
+      80.80000000074506
+    ],
+    "typing": [
+      14.5,
+      12.199999999254942,
+      13.800000000745058,
+      17,
+      11.199999999254942,
+      12.5,
+      12.099999999627471,
+      12.099999999627471,
+      11.599999999627471,
+      12,
+      14,
+      10.199999999254942,
+      11.800000000745058,
+      12.300000000745058,
+      12,
+      12.199999999254942,
+      12.700000001117587,
+      10.699999999254942,
+      12.5,
+      11.599999999627471,
+      12.199999999254942,
+      12.200000001117587,
+      12.099999999627471,
+      11.900000000372529,
+      11.900000000372529,
+      12.400000000372529,
+      11.900000000372529,
+      12,
+      11.900000000372529,
+      12.5
+    ],
+    "longTasks": [
+      54,
+      271,
+      974,
+      50,
+      61,
+      78,
+      84,
+      56,
+      51,
+      126,
+      760,
+      60,
+      79,
+      73,
+      85,
+      75,
+      92,
+      85,
+      85,
+      72,
+      66
+    ],
+    "longTaskEntries": [
+      {
+        "startTime": 40575.199999999255,
+        "duration": 54,
+        "phase": "search"
+      },
+      {
+        "startTime": 41204.699999999255,
+        "duration": 271,
+        "phase": "search+routes"
+      },
+      {
+        "startTime": 41549.59999999963,
+        "duration": 974,
+        "phase": "routes"
+      },
+      {
+        "startTime": 42995.09999999963,
+        "duration": 50,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43055.29999999888,
+        "duration": 61,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43134.699999999255,
+        "duration": 78,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43223.5,
+        "duration": 84,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43325.59999999963,
+        "duration": 56,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43393.79999999888,
+        "duration": 51,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43454.40000000037,
+        "duration": 126,
+        "phase": "routes"
+      },
+      {
+        "startTime": 43788.90000000037,
+        "duration": 760,
+        "phase": "routes"
+      },
+      {
+        "startTime": 44651.40000000037,
+        "duration": 60,
+        "phase": "routes"
+      },
+      {
+        "startTime": 44733.199999999255,
+        "duration": 79,
+        "phase": "routes"
+      },
+      {
+        "startTime": 44826.29999999888,
+        "duration": 73,
+        "phase": "routes"
+      },
+      {
+        "startTime": 44915.59999999963,
+        "duration": 85,
+        "phase": "routes"
+      },
+      {
+        "startTime": 45021,
+        "duration": 75,
+        "phase": "routes"
+      },
+      {
+        "startTime": 45116.59999999963,
+        "duration": 92,
+        "phase": "routes"
+      },
+      {
+        "startTime": 45231.5,
+        "duration": 85,
+        "phase": "routes"
+      },
+      {
+        "startTime": 45335.699999999255,
+        "duration": 85,
+        "phase": "routes"
+      },
+      {
+        "startTime": 45434,
+        "duration": 72,
+        "phase": "routes"
+      },
+      {
+        "startTime": 45517.29999999888,
+        "duration": 66,
+        "phase": "routes"
+      }
+    ],
+    "phaseTimings": [
+      {
+        "phase": "search",
+        "startTime": 40534.199999999255,
+        "endTime": 41205.29999999888
+      },
+      {
+        "phase": "routes",
+        "startTime": 41205.29999999888,
+        "endTime": 45600.90000000037
+      },
+      {
+        "phase": "typing",
+        "startTime": 45600.90000000037,
+        "endTime": 45973
+      },
+      {
+        "phase": "settling",
+        "startTime": 45973,
+        "endTime": 46546.199999999255
+      }
+    ]
+  },
+  "summary": {
+    "coldMedianMs": 9446,
+    "maxDataBytes": 1758565,
+    "maxTopicRequests": 1,
+    "searchP95Ms": 40.600000001490116,
+    "routeP95Ms": 795.3000000007451,
+    "typingP95Ms": 14.5,
+    "maxColdLongTaskMs": 1599,
+    "maxWarmLongTaskMs": 974
+  }
+}
