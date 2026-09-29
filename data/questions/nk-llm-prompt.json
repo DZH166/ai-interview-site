@@ -1998,60 +1998,6 @@
   }
  },
  {
-  "id": "LPQ-0038",
-  "topic": "llm-prompt",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "以下哪项正确描述了\"Prompt 压缩\"（Prompt Compression）技术？",
-  "prompt": "以下哪项正确描述了\"Prompt 压缩\"（Prompt Compression）技术？",
-  "options": [
-   {
-    "label": "A",
-    "text": "将长 Prompt 缩短为一句话",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "使用算法或模型自动精简 Prompt 内容，在保持语义的前提下减少 token 消耗",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "将多个 Prompt 合并为一个",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "降低模型输出的精度",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nPrompt 压缩技术（如 LLMLingua）使用小型模型对原始 Prompt 进行重要性评分，丢弃对任务影响小的 token，在尽量保持效果的前提下大幅压缩输入长度（可达2-10倍压缩率）。这在需要将大量检索文档放入上下文的 RAG 场景中尤其有价值，可以显著降低推理成本。",
-  "plain": "Prompt 压缩技术（如 LLMLingua）使用小型模型对原始 Prompt 进行重要性评分，丢弃对任务影响小的 token，在尽量保持效果的前提下大幅压缩输入长度（可达2-10倍压缩率）。这在需要将大量检索文档放入上下文的 RAG 场景中尤其有价值，可以显著降低推理成本。",
-  "tags": [
-   "提示词工程",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11642516,
-   "src_file": ""
-  }
- },
- {
   "id": "LPQ-0039",
   "topic": "llm-prompt",
   "format": "quiz",

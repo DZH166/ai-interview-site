@@ -7344,60 +7344,6 @@
   }
  },
  {
-  "id": "RGQ-0137",
-  "topic": "rag",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "在RAG评估中，\"Context Recall\"（上下文召回）指标衡量的是？",
-  "prompt": "在RAG评估中，\"Context Recall\"（上下文召回）指标衡量的是？",
-  "options": [
-   {
-    "label": "A",
-    "text": "检索到的文档中有多少与查询相关（精确率视角）",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "参考答案所需的关键信息有多少被检索到的文档覆盖（召回率视角）",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "检索响应的速度",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "答案与上下文的一致性",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nContext Recall = 被检索文档覆盖的ground truth中的信息量 / ground truth总信息量，反映检索系统不遗漏关键信息的能力。与Context Precision（精确率）共同衡量检索质量，高召回低精确说明检索到很多无关内容。",
-  "plain": "Context Recall = 被检索文档覆盖的ground truth中的信息量 / ground truth总信息量，反映检索系统不遗漏关键信息的能力。与Context Precision（精确率）共同衡量检索质量，高召回低精确说明检索到很多无关内容。",
-  "tags": [
-   "RAG",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11640374,
-   "src_file": ""
-  }
- },
- {
   "id": "RGQ-0138",
   "topic": "rag",
   "format": "quiz",

@@ -161,6 +161,13 @@ jobs:
         with:
           node-version: '20'
 
+      # 浏览器二进制缓存:每条流水线都重下 Chromium 纯属等待。
+      # key 里带 playwright 版本 —— 版本一换就得重新拉,别复用旧二进制。
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-1.61.1
+
       - name: 安装 Playwright 与 Chromium
         run: |
           npm install --no-save playwright@1.61.1
@@ -301,3 +308,26 @@ jobs:
           CHROME: default
           PORT: '8951'
         run: node tests/browser/stage4-matrix.js
+
+      # 这 5 条此前只在本地跑,没进流水线 —— 其中 data-split 是分片架构
+      # (Track E:薄壳 + 20 个内容哈希分片)本身的守卫,架构改动没有它就是无护栏。
+      # 各套件自己起隔离端口的静态服务并串行执行,复用同一 PORT 即可。
+      - name: 分片架构与新增能力(分片完整性/复习统计/模拟计时/简历闭环/体验修复)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8953'
+        run: |
+          node tests/browser/data-split.js
+          node tests/browser/stats-view.js
+          node tests/browser/mock-timer.js
+          node tests/browser/resume-loop.js
+          node tests/browser/ux-fixes.js
+
+      # 分片缓存必须独立于 shell 版本,否则库一变就整包重下(Track E 的收益被吃掉)
+      - name: 分片缓存生命周期(独立缓存/增量清理/版本变更后幸存)
+        env:
+          PW: playwright
+          CHROME: default
+          PORT: '8954'
+        run: node tests/browser/sw-topic-cache.js

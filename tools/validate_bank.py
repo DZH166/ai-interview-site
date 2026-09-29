@@ -175,6 +175,24 @@ def validate():
         for d in q.get("doc_refs", []):
             if not d.startswith("doc-"):
                 warns.append(f"{q['id']}: doc_refs 命名不符合 doc-* 约定: {d}")
+    # 简历配置引用完整性:data/resume-profile.json 的 questionIds 必须都存在于题库。
+    # 缺一个就会让简历页进度条少算,并把 tests/browser/resume-view.js 与
+    # practice-contract.js 直接跑红(2026-09-23 踩过:题库去重删了 LBQ-0154,
+    # 而简历配置仍引用它 —— 悬空引用在界面上只是少一道题,在 CI 上却是红的)。
+    prof = ROOT / "data" / "resume-profile.json"
+    if prof.exists():
+        try:
+            rp = json.loads(prof.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            errors.append(f"resume-profile.json: JSON 语法错误 -> {e}")
+            rp = {}
+        for sec in rp.get("sections", []):
+            for grp in sec.get("groups", []):
+                for qid in grp.get("questionIds", []):
+                    if qid not in idset:
+                        errors.append(
+                            f"resume-profile.json: 「{sec.get('name')} / {grp.get('name')}」"
+                            f"引用不存在的题 {qid}(题库已删或改号)")
     # 汇总
     return errors, warns, questions
 

@@ -4752,60 +4752,6 @@
   }
  },
  {
-  "id": "FTQ-0089",
-  "topic": "quiz-finetune",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "在以下关于\"数据飞轮\"（Data Flywheel）在LLM迭代改进中的描述，哪项最准确？",
-  "prompt": "在以下关于\"数据飞轮\"（Data Flywheel）在LLM迭代改进中的描述，哪项最准确？",
-  "options": [
-   {
-    "label": "A",
-    "text": "只需收集一次数据，后续无需更新",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "用模型服务用户→收集用户反馈→过滤高质量数据→微调改进模型→循环迭代",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "数据飞轮只适用于推荐系统",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "数据量达到一定规模后飞轮效应停止",
-    "right": false
-   }
-  ],
-  "answer": "B\n\n数据飞轮是LLM持续改进的核心机制：部署模型积累真实用户交互数据→通过人工审核或自动过滤提取高质量样本→用于下一轮微调→更好的模型吸引更多用户→循环加速改进。ChatGPT的成功很大程度上依赖此机制。",
-  "plain": "数据飞轮是LLM持续改进的核心机制：部署模型积累真实用户交互数据→通过人工审核或自动过滤提取高质量样本→用于下一轮微调→更好的模型吸引更多用户→循环加速改进。ChatGPT的成功很大程度上依赖此机制。",
-  "tags": [
-   "微调",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11640066,
-   "src_file": ""
-  }
- },
- {
   "id": "FTQ-0090",
   "topic": "quiz-finetune",
   "format": "quiz",
@@ -6206,60 +6152,6 @@
   },
   "metadata": {
    "nowcoder_id": 11640032,
-   "src_file": ""
-  }
- },
- {
-  "id": "FTQ-0116",
-  "topic": "quiz-finetune",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "P-Tuning v2相比P-Tuning v1的主要改进是？",
-  "prompt": "P-Tuning v2相比P-Tuning v1的主要改进是？",
-  "options": [
-   {
-    "label": "A",
-    "text": "使用更多的软提示token",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "在所有Transformer层而非只在输入层添加软提示",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "引入硬提示模板",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "支持多语言",
-    "right": false
-   }
-  ],
-  "answer": "B\n\nP-Tuning v1只在输入层添加可学习的软提示，对深层任务（如序列标注）效果有限。P-Tuning v2在每个Transformer层都添加软提示，类似于Deep Prompt Tuning，大幅提升了对各类NLU任务的效果。",
-  "plain": "P-Tuning v1只在输入层添加可学习的软提示，对深层任务（如序列标注）效果有限。P-Tuning v2在每个Transformer层都添加软提示，类似于Deep Prompt Tuning，大幅提升了对各类NLU任务的效果。",
-  "tags": [
-   "微调",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639984,
    "src_file": ""
   }
  },
@@ -9878,60 +9770,6 @@
   },
   "metadata": {
    "nowcoder_id": 11639954,
-   "src_file": ""
-  }
- },
- {
-  "id": "FTQ-0184",
-  "topic": "quiz-finetune",
-  "format": "quiz",
-  "type": "quiz",
-  "qtype": "single",
-  "difficulty": "basic",
-  "title": "以下关于梯度检查点（Gradient Checkpointing）的描述，正确的是？",
-  "prompt": "以下关于梯度检查点（Gradient Checkpointing）的描述，正确的是？",
-  "options": [
-   {
-    "label": "A",
-    "text": "梯度检查点通过缓存所有中间激活值来节省计算",
-    "right": false
-   },
-   {
-    "label": "B",
-    "text": "梯度检查点用时间换空间：前向传播不保存中间激活，反向传播时重新计算",
-    "right": true
-   },
-   {
-    "label": "C",
-    "text": "梯度检查点只适用于CNN，不适用于Transformer",
-    "right": false
-   },
-   {
-    "label": "D",
-    "text": "启用梯度检查点会使训练loss更低",
-    "right": false
-   }
-  ],
-  "answer": "B\n\n标准反向传播需要缓存所有前向激活（显存∝层数），梯度检查点只保存关键检查点处的激活，反向传播时从最近的检查点重新前向计算到当前位置，以约33%的额外计算换取大量显存节省（通常可减少60-70%激活显存）。这是大模型微调的标准技术。",
-  "plain": "标准反向传播需要缓存所有前向激活（显存∝层数），梯度检查点只保存关键检查点处的激活，反向传播时从最近的检查点重新前向计算到当前位置，以约33%的额外计算换取大量显存节省（通常可减少60-70%激活显存）。这是大模型微调的标准技术。",
-  "tags": [
-   "微调",
-   "牛客题库"
-  ],
-  "sources": [
-   {
-    "name": "牛客人工智能题库(官方解析随题)",
-    "kind": "web",
-    "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
-   }
-  ],
-  "verify": {
-   "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
-  },
-  "metadata": {
-   "nowcoder_id": 11639914,
    "src_file": ""
   }
  },
