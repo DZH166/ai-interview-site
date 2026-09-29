@@ -1,6 +1,7 @@
 {
- "date": "2026-09-15",
- "head": "d852492827f6631b5342b71efdf2e5054a330a18",
+ "date": "2026-09-29",
+ "workingTree": true,
+ "head": "336c0f9f5fd840e6b6057264c23a7f1f18f0f8c4",
  "cases": [
   {
    "case": "同字段顺序写入",
@@ -54,11 +55,12 @@
   {
    "case": "关闭前保存与对页写入竞争",
    "states": {
+    "a": "B在A关闭时保存的",
     "disk": "B在A关闭时保存的",
     "reopen": "B在A关闭时保存的",
     "b": "B在A关闭时保存的"
    },
-   "conflictDrafts": "[]",
+   "conflictDrafts": true,
    "ok": true
   },
   {

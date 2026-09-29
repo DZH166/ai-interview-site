@@ -12,13 +12,13 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 </head>
 <body>
   <a class="skip-link" href="#view" id="skip-to-main">跳到主内容</a>
   <header class="site-head">
     <div class="head-inner">
-      <a class="brand" href="#/home">🤖 面试加油工作台</a>
+      <a class="brand" href="#/home">面试加油工作台</a>
       <nav class="site-nav" aria-label="主导航">
         <a class="nav-link" data-view="home" href="#/home">工作台</a>
         <a class="nav-link" data-view="path" href="#/path">路径</a>
@@ -32,7 +32,7 @@
       <form id="global-search" class="global-search" role="search">
         <input id="global-search-input" class="input" placeholder="全文搜索:题目 / 解析 / 笔记…" autocomplete="off" aria-label="全文搜索:题目、解析、笔记">
       </form>
-      <button class="theme-toggle" id="theme-toggle" title="切换暗色模式" aria-label="切换暗色模式" aria-pressed="false">🌙</button>
+      <button class="theme-toggle" id="theme-toggle" title="切换暗色模式" aria-label="切换暗色模式" aria-pressed="false">暗</button>
     </div>
   </header>
 
@@ -42,20 +42,21 @@
     <div>内容为结合公开资料的独立整理,题目均标注核查状态与出处;来源与许可见<a href="#/maintain">维护页</a>。个人记录仅保存在本机浏览器,可导出为备份或表达卡。</div>
   </footer>
 
-<script src="data.js"></script>
-<script src="js/util.js"></script>
-<script src="js/srs.js"></script>
-<script src="js/store.js"></script>
-<script src="js/markdown.js"></script>
-<script src="js/highlight.js"></script>
-<script src="js/search.js"></script>
-<script src="js/common.js"></script>
-<script src="js/express.js"></script>
-<script src="js/views-practice.js"></script>
-<script src="js/views-resume.js"></script>
-<script src="js/views-stats.js"></script>
-  <script src="js/views-knowledge.js"></script>
-  <script src="js/views-review.js"></script>
-  <script src="js/app.js"></script>
+  <script defer src="data.js"></script>
+  <script defer src="js/util.js"></script>
+  <script defer src="js/srs.js"></script>
+  <script defer src="js/store.js"></script>
+  <script defer src="js/markdown.js"></script>
+  <script defer src="js/highlight.js"></script>
+  <script defer src="js/search.js"></script>
+  <script defer src="js/common.js"></script>
+  <script defer src="js/express.js"></script>
+  <script defer src="js/views-practice.js"></script>
+  <script defer src="js/views-resume.js"></script>
+  <script defer src="js/views-stats.js"></script>
+  <script defer src="js/views-guides.js"></script>
+  <script defer src="js/views-knowledge.js"></script>
+  <script defer src="js/views-review.js"></script>
+  <script defer src="js/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,1503 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-29",
+  "guides": [
+    {
+      "id": "ig-cw-loop",
+      "resumeGroupIds": [
+        "cw-loop"
+      ],
+      "mainQuestionId": "AG-002",
+      "sourceQuestionIds": [
+        "AG-002",
+        "AG-004",
+        "AG-059",
+        "AG-006",
+        "AG-053",
+        "AG-015",
+        "AG-017",
+        "AGQ-0005",
+        "AGQ-0024",
+        "AGQ-0039",
+        "AGQ-0085",
+        "AGQ-0092",
+        "AGQ-0097",
+        "AGQ-0103",
+        "AGQ-0129"
+      ],
+      "title": "从模型建议到可验收结果：讲清 Agent Loop",
+      "answer60": "我把 Agent Loop 看成一个受控的反馈循环：应用把目标、状态和工具契约交给模型，模型提出调用，宿主完成参数、权限和业务校验后执行，再把真实结果按调用 ID 回传。下一步由结果决定，不能把一段成功文本当作任务完成。对于步骤清楚的任务，我先用固定工作流；需要边探索边决策的部分才交给 Agent，并用步数、时间和费用预算约束它。",
+      "answer180": "我会沿一次失败调用把整条链讲清。比如编程助手提出修改文件：首先确认工具名已注册、参数结构合法，再检查路径是否属于允许目录。执行后记录退出状态与产物，把实际差异或报错交回模型。这里有四个不同问题：模型选对工具了吗，调用被授权了吗，工具执行成功了吗，改动满足需求了吗。\n\nReAct 的价值在于每轮根据观察调整行动，计划式执行则把目标拆解与步骤执行分开；两者可以组合，计划失败时也需要重新规划。没有依赖的只读调用可以并发，但写操作要先分析资源冲突，不能仅因为模型一次给出多个调用就同时执行。\n\n我会给每次运行分配 runId，为调用记录 callId、输入、结果和耗时；遇到格式错误、权限拒绝、超时未知与产物不合格时走不同分支。验收看任务产物和可复现检查，循环自然结束只说明运行停了。以上是设计表达；是否已经在我的项目实现，需要拿代码和轨迹证明。",
+      "followups": [
+        {
+          "id": "cw-loop-principle",
+          "kind": "principle",
+          "q": "模型输出了 tool call，为什么还不算工具执行成功？",
+          "a": "它只是结构化请求。宿主可能拒绝、超时或执行失败；即使退出码为零，产物也可能不符合业务目标。应分别提供调用、执行和验收证据。"
+        },
+        {
+          "id": "cw-loop-implementation",
+          "kind": "implementation",
+          "q": "一轮出现两个工具调用，你如何调度？",
+          "a": "先判断依赖和共享资源。独立只读任务可在并发上限内运行；后者依赖前者输出或同时修改同一文件时按依赖串行，保留各自 callId 和结果。"
+        },
+        {
+          "id": "cw-loop-debug",
+          "kind": "debug",
+          "q": "工具连续三次返回空结果，下一步做什么？",
+          "a": "先辨认是检索本来无命中、参数错误还是上游故障。结合预算尝试有依据的改参或替代路径；无新信息则停止并说明阻塞，避免无条件重复。"
+        },
+        {
+          "id": "cw-loop-tradeoff",
+          "kind": "tradeoff",
+          "q": "什么时候不用自主 Agent？",
+          "a": "输入输出和规则明确、可枚举的步骤优先确定性工作流。只有下一步依赖运行中信息且可以验证产物时，才考虑增加模型决策；用失败率、人工介入和成本比较。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "说清请求、执行、回喂三个角色"
+        ],
+        "competent": [
+          "能区分四类失败并给出停止条件",
+          "能按依赖解释并发选择"
+        ],
+        "deep": [
+          "能用一次真实轨迹定位失败层",
+          "能解释为何某一步采用确定性代码"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提交一段带 callId 的脱敏运行轨迹，指出模型请求与工具返回的边界。",
+          "展示工具执行后用于判断产物正确的检查；尚未实现就明确说明。"
+        ],
+        "note": "待核实：以下提示要求本人提供项目证据，不代表已完成或已测得收益。"
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/engineering/building-effective-agents",
+          "title": "Anthropic：Building effective agents",
+          "version": "文章2024-12-19；仅采用工作流/Agent设计原则",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+          "title": "MCP：Tools",
+          "version": "2025-11-25",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "请从一次用户任务出发，讲清 Agent Loop、工具调用和停止条件，并解释你怎样证明任务真正完成。"
+    },
+    {
+      "id": "ig-cw-memory",
+      "resumeGroupIds": [
+        "cw-memory"
+      ],
+      "mainQuestionId": "AG-005",
+      "sourceQuestionIds": [
+        "AG-031",
+        "AG-036",
+        "AG-005",
+        "AG-044",
+        "AG-023",
+        "AGQ-0009",
+        "AGQ-0018",
+        "AGQ-0027",
+        "AGQ-0035",
+        "AGQ-0048"
+      ],
+      "title": "记忆不是聊天全文：管理状态、压缩与遗忘",
+      "answer60": "我会把四种东西分开：运行时权威任务状态、当前请求上下文、线程内历史，以及跨会话记忆。保存历史不等于本轮全部发送给模型；使用数据库也不等于会自动提炼正确记忆。长任务先限制工具输出和保留必要原文，再按预算检索或摘要旧内容。记忆写入需要来源、作用域、时效与更新规则，用户修改偏好时必须能覆盖或撤回旧结论。",
+      "answer180": "以多轮排障为例，任务状态记录哪些步骤已完成和哪些动作待确认，不能用模型生成的一句“已处理”替代。线程历史保存过程，组装器从中选择本轮真正需要的内容。跨会话记忆只保存有后续价值且获准保留的信息，例如明确的输出偏好，而不是把每轮闲聊全部向量化。\n\n在 LangGraph 的术语里，checkpointer 保存线程状态，Store 保存应用定义的跨线程数据；它们提供存取基础，不自动决定真实性、隐私与遗忘策略。RAG 是检索增强的方法，也可以检索个人记忆，不能把 RAG 与记忆机械划成公有和私有两类。\n\n压缩必须按同一日志快照生成，提交时处理期间新增内容。硬约束优先保留，但固定区也有预算，不能无限追加所谓永不压缩的事实。冲突信息标记来源和时效，必要时向用户确认。验证时比较压缩前后继续任务是否遗漏约束，并测试删除是否阻止未来读取；保存成功、检索命中和回答正确要分别验收。",
+      "followups": [
+        {
+          "id": "cw-memory-principle",
+          "kind": "principle",
+          "q": "数据库里的所有历史都会被模型记住吗？",
+          "a": "不会。存储层保存的是可取回的数据，本轮输入取决于检索和组装策略；模型只能依据实际可用上下文作答。"
+        },
+        {
+          "id": "cw-memory-implementation",
+          "kind": "implementation",
+          "q": "怎样避免摘要覆盖正在增加的消息？",
+          "a": "对历史取带版本的快照，摘要只覆盖该快照的指定范围；提交前校验版本并保留之后的增量，发生冲突时重新合并或重算。"
+        },
+        {
+          "id": "cw-memory-debug",
+          "kind": "debug",
+          "q": "用户删了偏好，回答仍沿用它，查什么？",
+          "a": "沿来源检查原记录、向量派生、缓存和已组装的上下文；用新请求验证清除范围。历史回答是否保留应另按产品数据策略说明。"
+        },
+        {
+          "id": "cw-memory-tradeoff",
+          "kind": "tradeoff",
+          "q": "为什么不让所有事实永远常驻上下文？",
+          "a": "窗口有限且事实会过期或冲突。应为固定区设预算和更新规则，低相关内容按需检索，保留原始来源供核查。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "区分存储和当前模型输入"
+        ],
+        "competent": [
+          "能说明写入、读取、更新、删除四个路径",
+          "能解释摘要的有损性"
+        ],
+        "deep": [
+          "能用冲突与删除用例验证生命周期",
+          "能说明压缩一致性与预算不足时的退化策略"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示一次压缩前后同任务续做的输入与结果，不用“信息保留率100%”代替样本定义。",
+          "说明一条记忆的来源、更新和删除路径；没有代码时标为设计方案。"
+        ],
+        "note": "待核实：以下提示要求本人提供项目证据，不代表已完成或已测得收益。"
+      },
+      "sources": [
+        {
+          "url": "https://docs.langchain.com/oss/python/concepts/memory",
+          "title": "LangChain：Memory overview",
+          "version": "在线文档，核查日快照语义",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+          "title": "LangGraph：Persistence",
+          "version": "在线文档，核查日快照语义",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "长会话如何保存状态、选择上下文与更新长期记忆？压缩后怎样证明关键约束没有丢失或过期？"
+    },
+    {
+      "id": "ig-cw-mcp",
+      "resumeGroupIds": [
+        "cw-mcp"
+      ],
+      "mainQuestionId": "AG-004",
+      "sourceQuestionIds": [
+        "AG-004",
+        "AG-059",
+        "AG-060",
+        "AG-011",
+        "AG-018",
+        "AG-019",
+        "AG-020",
+        "AGQ-0030"
+      ],
+      "title": "MCP 接入：协议兼容、工具发现与授权分开讲",
+      "answer60": "MCP 规范宿主与能力服务如何交换工具、资源和提示等信息，Function Calling 描述模型提出调用的方式，两者由宿主适配，并不是必须逐级依赖的技术链。接入时我先固定协议版本和传输，再核对能力发现、参数与结果结构、认证授权和错误处理。以2025-11-25规范为例，标准传输是 stdio 和 Streamable HTTP；后者可使用 SSE 响应，但不能直接等同旧版 HTTP+SSE。",
+      "answer180": "如果要把内部查询服务接入 Agent，我会先定义只读能力与明确参数，在服务端根据可信身份校验资源访问，再通过 MCP 暴露工具描述和结果。宿主负责建立连接、匹配能力、将描述提供给模型，并把工具结果转为模型可读反馈。工具被发现只说明可见，不等于用户有权执行。\n\n版本需要写进说明和测试。这里采用2025-11-25规范讲 stdio 与 Streamable HTTP，不把其他版本的生命周期、会话和发现机制混入同一示例。Resources 适合按资源语义提供上下文，Prompts 提供模板，Tools 表达可调用动作；只读注解仍要由实际权限实现支持。\n\n工具很多时，可以先按权限约束候选，再按任务检索必要描述。延迟加载节约多少 token 必须用同一任务、同一 tokenizer 和同一工具集合比较，并同时测正确工具漏召回。Skills 封装任务知识或步骤，A2A 侧重远端 Agent 协作；无论采用什么协议，执行前的授权、预算和审计仍由应用承担。",
+      "followups": [
+        {
+          "id": "cw-mcp-principle",
+          "kind": "principle",
+          "q": "MCP 与 Function Calling 哪个负责实际业务权限？",
+          "a": "二者都不能代替业务授权。MCP承载能力交互，模型调用是请求表达；执行服务必须用可信身份检查资源、动作和当前状态。"
+        },
+        {
+          "id": "cw-mcp-implementation",
+          "kind": "implementation",
+          "q": "怎样验收一个最小 MCP 工具？",
+          "a": "固定协议与SDK版本，覆盖能力列举、合法调用、非法参数、无权限、业务错误和断连；确认错误按契约返回且日志能关联请求。"
+        },
+        {
+          "id": "cw-mcp-debug",
+          "kind": "debug",
+          "q": "工具目录缓存后用户被撤权，怎么办？",
+          "a": "目录缓存按身份和权限版本隔离并失效；执行端仍逐次重新授权。即使模型看见旧描述，也必须拒绝已失效的调用。"
+        },
+        {
+          "id": "cw-mcp-tradeoff",
+          "kind": "tradeoff",
+          "q": "延迟加载工具描述的代价是什么？",
+          "a": "减少首轮上下文，却增加发现步骤和漏选风险；比较描述token、额外请求、正确工具召回与端到端成功率，不能只报token下降。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "区分协议、模型请求与服务执行"
+        ],
+        "competent": [
+          "明确所用规范版本和传输",
+          "能解释可见性与执行权限不同"
+        ],
+        "deep": [
+          "能处理缓存撤权及兼容性失败",
+          "能用受控对比证明工具描述优化收益"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提供实际接入所用协议/SDK版本和一条失败响应。",
+          "对“工具百级、token降低85%”补相同条件的前后请求记录；缺失则待核实。"
+        ],
+        "note": "待核实：以下提示要求本人提供项目证据，不代表已完成或已测得收益。"
+      },
+      "sources": [
+        {
+          "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/transports",
+          "title": "MCP：Transports",
+          "version": "2025-11-25",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+          "title": "MCP：Tools",
+          "version": "2025-11-25",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "你的 Agent 如何接入 MCP 工具？请分开讲协议版本、宿主适配、能力发现与执行授权。"
+    },
+    {
+      "id": "ig-cw-security",
+      "resumeGroupIds": [
+        "cw-security"
+      ],
+      "mainQuestionId": "AG-006",
+      "sourceQuestionIds": [
+        "AG-059",
+        "AG-061",
+        "AG-038",
+        "AG-006",
+        "AG-020",
+        "AG-026",
+        "AGQ-0044",
+        "AGQ-0058",
+        "AGQ-0097",
+        "AGQ-0104"
+      ],
+      "title": "权限边界：从提示注入到执行前授权",
+      "answer60": "提示注入可能来自用户输入，也可能藏在网页、文档或工具结果里。防护要保护执行边界：可信身份、最小权限、参数和资源校验、必要的审批以及可追踪结果。提示词提醒和工具列表过滤能降低风险，但不能作为最终授权。多个 Agent 共享数据时，还要处理并发写入和过期执行者，不能把一个分布式锁或 checkpointer 当成全部一致性保证。",
+      "answer180": "我会把模型能读什么、能请求什么和服务真正允许执行什么分开。检索结果属于任务数据，即使写着“管理员要求导出”，也不因此获得更高权限。私有工具先按角色过滤可见候选，执行时再校验身份、租户、资源范围和具体动作，防止参数中的 userId 冒充可信身份。\n\n对高影响操作，审批要绑定具体参数与有效期，批准后参数或业务状态改变就重新检查。隔离措施按能力选择：文件范围、网络出口、专用凭据和进程资源限制，不能只凭“容器”二字宣称安全。日志也要控制敏感内容，不为审计再次泄露凭据。\n\n并发方面，数据库条件更新、事务或会话单写者往往比模糊的“加锁”更可解释。若使用租约，必须考虑旧工作者在租约过期后仍执行；业务应拒绝陈旧写入或设计幂等。测试从越权参数、恶意工具返回、撤权缓存和重复提交入手，验收实际副作用，而不只看模型是否口头拒绝。",
+      "followups": [
+        {
+          "id": "cw-security-principle",
+          "kind": "principle",
+          "q": "隐藏一个工具定义就能防止越权吗？",
+          "a": "不能。模型可能产生未知工具名，调用者也可能绕开模型直接请求执行端；服务端授权才是最终边界。"
+        },
+        {
+          "id": "cw-security-implementation",
+          "kind": "implementation",
+          "q": "审批记录至少绑定什么？",
+          "a": "主体、资源、动作、参数摘要、有效期和请求标识。执行前重新验证这些条件，避免把一次审批当作永久通行证。"
+        },
+        {
+          "id": "cw-security-debug",
+          "kind": "debug",
+          "q": "两个 Agent 都说持有锁却覆盖了数据，怎么查？",
+          "a": "检查锁租期、时钟/暂停、续租与业务写入之间的间隙；使用版本条件更新或fencing拒绝旧执行者，并检查是否存在绕过锁的写入口。"
+        },
+        {
+          "id": "cw-security-tradeoff",
+          "kind": "tradeoff",
+          "q": "为什么不要求每个动作都人工批准？",
+          "a": "频繁确认会造成疲劳并阻塞低风险操作。按资源与影响制定明确策略，对高影响且难撤销的行为加强检查，同时保留可解释的拒绝和审计。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "认识间接注入和最小权限"
+        ],
+        "competent": [
+          "能给出服务端授权点与审批绑定字段",
+          "不把工具过滤或锁当万能保证"
+        ],
+        "deep": [
+          "能用撤权、过期锁、重试用例验证副作用",
+          "能解释隔离强度与交互成本的取舍"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示一条模型请求合法但服务端拒绝越权的轨迹。",
+          "若声称审批弹窗减少，提交任务集合与安全结果；仅次数减少不能证明防线有效。"
+        ],
+        "note": "待核实：以下提示要求本人提供项目证据，不代表已完成或已测得收益。"
+      },
+      "sources": [
+        {
+          "url": "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+          "title": "MCP：Tools",
+          "version": "2025-11-25",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://www.anthropic.com/engineering/building-effective-agents",
+          "title": "Anthropic：Building effective agents",
+          "version": "文章2024-12-19；仅采用工作流/Agent设计原则",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "工具型 Agent 面对不可信资料和高影响操作时，如何设计权限、审批与验证边界？"
+    },
+    {
+      "id": "ig-cw-recovery",
+      "resumeGroupIds": [
+        "cw-recovery"
+      ],
+      "mainQuestionId": "AG-003",
+      "sourceQuestionIds": [
+        "AG-003",
+        "AGQ-0038",
+        "AGQ-0168"
+      ],
+      "title": "失败恢复：超时未知、幂等与人工接管",
+      "answer60": "我会先分类失败：格式错误可反馈修正，暂时性故障按预算重试，权限拒绝不能靠换工具绕过，超时的写操作则先查结果。恢复要从持久化的任务状态重建，并明确哪些步骤可以重放。幂等键只在服务端真的按同一业务动作去重时有效；模型或工具说完成仍要检查产物。超过预算或结果无法确认时，我会说明已做与未做部分，再转人工处理。",
+      "answer180": "例如退款请求超时，不能直接认定退款失败并再发一次。应保留业务请求号，查询权威结果，确认未受理才按服务契约重试；结果暂时未知就记录 unknown 状态并等待核对。格式错误、网络故障、权限拒绝和业务冲突需要不同处理，统一把异常变成“重试一下”会放大风险。\n\n任务状态至少区分执行中、待审批、已完成、失败、取消与结果待确认，并记录检查点对应的输入和版本。恢复时复用已验收结果，对可能重复执行的步骤保护副作用。以 LangGraph interrupt 为例，恢复会从所在节点开头重跑，并不是从暂停行之后无缝继续，因此中断前的操作尤其要幂等或拆分。\n\n备用路径也有边界：只读搜索可换同权限的来源，但写操作不能在原服务结果未知时改走另一个付款渠道。预算包括重试和恢复成本；人工接管应拿到目标、已完成步骤、未知结果和证据，而不是只有一段报错。最后验收故障场景的业务状态，不能把脚本正常退出当成恢复正确。",
+      "followups": [
+        {
+          "id": "cw-recovery-principle",
+          "kind": "principle",
+          "q": "网络超时为什么不等于操作没发生？",
+          "a": "响应可能丢失而服务端已提交。客户端观察不到结果时应记为未知，查询业务状态或用服务支持的幂等请求恢复。"
+        },
+        {
+          "id": "cw-recovery-implementation",
+          "kind": "implementation",
+          "q": "幂等键按每次重试重新生成可以吗？",
+          "a": "不可以。同一业务动作的重试应沿用同一键，并绑定一致参数；新动作才使用新键。服务端还需有去重与结果保存契约。"
+        },
+        {
+          "id": "cw-recovery-debug",
+          "kind": "debug",
+          "q": "恢复后同一文件被写了两遍，怎样定位？",
+          "a": "对照检查点与工具调用记录，查恢复是否重跑含副作用的节点、结果是否持久化、执行端是否按业务键去重。"
+        },
+        {
+          "id": "cw-recovery-tradeoff",
+          "kind": "tradeoff",
+          "q": "什么时候重试，什么时候接管？",
+          "a": "仅对可恢复且预算允许的故障重试。权限、不可确认的外部副作用和重复失败应停止自动推进并说明状态，必要时人工核对。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "区分失败和结果未知"
+        ],
+        "competent": [
+          "给出同业务键重试与检查点恢复方案",
+          "解释备用路径权限等价要求"
+        ],
+        "deep": [
+          "能复现提交后响应丢失的恢复",
+          "能证明重放没有重复业务副作用"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提供一条故障注入轨迹：操作已提交但响应丢失，恢复后业务只发生一次。",
+          "展示人工接管信息，说明目前哪些失败分支还未实现。"
+        ],
+        "note": "待核实：以下提示要求本人提供项目证据，不代表已完成或已测得收益。"
+      },
+      "sources": [
+        {
+          "url": "https://docs.langchain.com/oss/python/langgraph/interrupts",
+          "title": "LangGraph：Interrupts",
+          "version": "在线文档；interrupt/Command契约",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+          "title": "LangGraph：Persistence",
+          "version": "在线文档，核查日快照语义",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "Agent 的写操作超时、任务中断或需要审批时，你如何恢复，并避免重复副作用？"
+    },
+    {
+      "id": "ig-sz-chunking",
+      "resumeGroupIds": [
+        "sz-chunking"
+      ],
+      "mainQuestionId": "RG-023",
+      "sourceQuestionIds": [
+        "RG-023",
+        "RG-024",
+        "RGQ-0014",
+        "RGQ-0021",
+        "RGQ-0036",
+        "RGQ-0044",
+        "RGQ-0064",
+        "RGQ-0067",
+        "RGQ-0080",
+        "RGQ-0104",
+        "RGQ-0106",
+        "RGQ-0107",
+        "RGQ-0114",
+        "RGQ-0133",
+        "RGQ-0159"
+      ],
+      "title": "分块的目标：让可检索单元保留回答所需证据",
+      "answer60": "我会把分块视为信息组织问题。先保留标题、条款、表格和来源位置，再选择块长与重叠；块太短可能丢条件，太长则稀释检索信号并增加上下文开销。父子分块用小块定位、扩展父块提供背景，Late Chunking 则先上下文化再池化切块，两者不是同一个办法。选择策略要用跨边界问题、长表格和多条件题验证证据覆盖，不能只看切出了多少块。",
+      "answer180": "我会先确定用户会怎样提问，再看文档结构。例如制度问答里，“满足什么条件可以报销”往往跨越标题、正文和例外条款。若按固定字符数直接切，检索可能只命中额度，漏掉适用范围。我会保留文档 ID、版本、标题路径和原文位置，以结构边界为起点，并给过长段落设置后备切分规则。\n\n然后分别比较三种设计：普通分块直接编码每块；父子分块索引较小子块，命中后在预算内取父块；Late Chunking 先让长文本经过支持的编码器，再对 token 表示按块聚合。最后一种仍受模型窗口限制，不能把任意长文档整体塞进去。增加重叠能缓解部分跨界问题，也会增加重复候选和存储。\n\n验收时我会固定检索器和测试题，比较答案证据是否被召回、扩展后是否超预算、相同原文是否反复出现，以及表格单位是否保留。没有实测之前，我只陈述这是待验证设计，不把某个块长或“语义切分更准”作为结论。",
+      "followups": [
+        {
+          "id": "sz-chunking-principle",
+          "kind": "principle",
+          "q": "为什么不是块越短越精准？",
+          "a": "短块可能缺指代对象、单位或例外条件；局部匹配精确不等于足够回答。要同时看定位准确与证据完整。"
+        },
+        {
+          "id": "sz-chunking-implementation",
+          "kind": "implementation",
+          "q": "父子分块怎样保持可追溯？",
+          "a": "子块保存 parent_id 与自身位置，父块绑定文档版本；扩展时去重并保留命中的子块标记，引用最终使用的原文位置。"
+        },
+        {
+          "id": "sz-chunking-debug",
+          "kind": "debug",
+          "q": "答案漏了例外条款，先查什么？",
+          "a": "沿原文→切块→候选→扩展→最终上下文逐层检查。先判断条款是否被切断或漏召回，再决定改块或改检索，避免直接换模型。"
+        },
+        {
+          "id": "sz-chunking-tradeoff",
+          "kind": "tradeoff",
+          "q": "何时不用 Late Chunking？",
+          "a": "模型窗口不足、编码接口不给 token 表示、更新成本不合适或普通结构分块已满足目标时，不必引入。可先比较父子扩展这一简单基线。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "能解释块长、重叠与上下文缺失。"
+        ],
+        "competent": [
+          "区分父子分块与 Late Chunking；能追溯来源位置。"
+        ],
+        "deep": [
+          "用跨边界反例定位失败层，并报告证据覆盖与预算的共同变化。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提供一篇脱敏原文、实际切块输出和一个跨条款问题。",
+          "展示不同块策略的同一测试集结果；若没有对照实验，不口述提升百分比。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://arxiv.org/abs/2409.04701",
+          "title": "Late Chunking原论文",
+          "version": "arXiv:2409.04701",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+          "title": "Anthropic Contextual Retrieval",
+          "version": "2024-09-19；本文实验范围",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "知识库怎样选择分块与上下文扩展策略？请用一个跨条款问题解释你的验证办法。"
+    },
+    {
+      "id": "ig-sz-hybrid",
+      "resumeGroupIds": [
+        "sz-hybrid"
+      ],
+      "mainQuestionId": "RG-006",
+      "sourceQuestionIds": [
+        "RG-040",
+        "RG-006",
+        "RG-025",
+        "RGQ-0009",
+        "RGQ-0023",
+        "RGQ-0071",
+        "RGQ-0094",
+        "RGQ-0125",
+        "RGQ-0132",
+        "RGQ-0156",
+        "RG-038",
+        "RG-050",
+        "RG-051",
+        "RG-005",
+        "RG-016",
+        "RG-021",
+        "RG-022",
+        "RG-026",
+        "RG-027",
+        "RGQ-0022",
+        "RGQ-0026",
+        "RGQ-0076",
+        "RGQ-0083",
+        "RGQ-0092"
+      ],
+      "title": "混合检索：解释两路互补，也能发现融合退化",
+      "answer60": "稀疏检索擅长可匹配的词项、编号和专有名词，密集检索利用训练得到的语义表示。混合检索是让两路各召回候选，再去重融合，而不是保证所有问题都更准。我会先检查分词、嵌入模型输入约定、权限过滤和候选覆盖，再用 RRF 或经校准的分数融合。RRF 汇总排名贡献，不要求两路原始分数可比；候选里没有正确证据，后面的重排也救不回来。",
+      "answer180": "以“差旅费第十二条”和“出差住宿能报多少”为例，前者可能依赖精确编号，后者可能需要语义匹配。因此我会保留稀疏和密集两个基线，先分类型检查各自漏掉什么。密集侧要严格记录模型与输入模板，例如 E5 的 query:/passage: 前缀，还要统一索引与查询使用的模型版本；更换编码空间后通常需要重建文档向量。\n\n融合时，我会把候选映射到同一文档版本与块 ID，再去重。RRF 按各列表排名计算贡献，某路没召回的文档不凭空获得该路分数；平滑常数与候选窗口应在验证集上比较，而不是把默认值背成定理。若直接加 BM25 与余弦原始分数，量纲和分布可能让一路支配结果。\n\n上线前的关键对照是同一批问题下的稀疏、密集、融合三组结果：看证据召回、排序、延迟和权限正确性。融合退化时先查去重键、路间覆盖和参数，再考虑重排或领域训练。只说“用了混合检索”并不能证明解决了问题。",
+      "followups": [
+        {
+          "id": "sz-hybrid-principle",
+          "kind": "principle",
+          "q": "RRF 为什么能避免直接比较分数？",
+          "a": "它使用列表中的名次而非原始相关性分数。代价是丢掉分数间距信息，所以也不是永远优于校准后的加权融合。"
+        },
+        {
+          "id": "sz-hybrid-implementation",
+          "kind": "implementation",
+          "q": "换嵌入模型要改哪些东西？",
+          "a": "记录模型、维度、输入前缀、归一化和距离度量，重算受影响文档向量并切换完整索引版本；同维度也不代表空间兼容。"
+        },
+        {
+          "id": "sz-hybrid-debug",
+          "kind": "debug",
+          "q": "融合后精确编号问题变差如何排查？",
+          "a": "检查词法候选是否进入融合窗口、是否被错误去重、RRF 参数是否压低单路强命中，再按该类问题做对照，不只看总平均。"
+        },
+        {
+          "id": "sz-hybrid-tradeoff",
+          "kind": "tradeoff",
+          "q": "什么时候先不上领域微调？",
+          "a": "若主要错误来自解析、分块、权限、模型接线或候选配置，先修这些。微调需要可靠相关性样本、难负例与独立测试集，并非必需步骤。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "能说清稀疏与密集的不同信号。"
+        ],
+        "competent": [
+          "解释 RRF、版本一致与候选去重。"
+        ],
+        "deep": [
+          "能以分类型对照识别融合退化，不以排行榜代替本地评测。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提交同一查询的两路候选、融合排名及相关性标注。",
+          "提供索引模型版本和输入模板；简历上的召回提升数字需附样本量、基线与评测口径。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion",
+          "title": "Elasticsearch RRF",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://www.elastic.co/docs/reference/elasticsearch/index-settings/similarity",
+          "title": "Elasticsearch Similarity/BM25",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://huggingface.co/intfloat/e5-large-v2",
+          "title": "E5-large-v2官方模型卡",
+          "version": "e5-large-v2",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://github.com/facebookresearch/faiss/wiki/Index-IO,-cloning-and-hyper-parameter-tuning",
+          "title": "FAISS Index IO",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "为什么组合稀疏与密集检索？请讲清候选、融合、嵌入契约与融合退化的排查。"
+    },
+    {
+      "id": "ig-sz-citation",
+      "resumeGroupIds": [
+        "sz-citation"
+      ],
+      "mainQuestionId": "RG-011",
+      "sourceQuestionIds": [
+        "RG-047",
+        "RG-057",
+        "RG-011",
+        "RG-012",
+        "RG-014",
+        "RGQ-0111",
+        "RGQ-0112",
+        "RGQ-0138"
+      ],
+      "title": "可溯源回答：引用存在、证据支持与事实正确分开验收",
+      "answer60": "引用是把回答连接到可检查的证据，不是正确性证明。我会给文档版本和原文位置稳定标识，让回答逐条声明关联证据，并检查引用是否真实存在、证据是否支持该声明以及适用范围是否吻合。检索没找到不等于知识库里不存在，证据冲突或不足时应说明缺口、继续检索或拒答。更新和删除还要同步索引、缓存与引用解析，避免链接能点开却已换成另一版内容。",
+      "answer180": "我会从一条可验证的声明出发设计引用。例如“员工可以报销住宿费”只有链接还不够，要核对适用人群、时间、额度和例外。数据侧保留 doc_id、version、chunk_id 与原文定位；同一文档更新时，文档身份可以稳定，但证据版本必须可区分。回答侧要求关键声明绑定已提供的证据 ID，未知 ID 直接报错。\n\n校验分三层。第一层是结构与存在性：引用格式对不对、ID 在不在候选中。第二层是支持关系：原文究竟支持整句还是只支持其中一部分。第三层是知识适用性：来源是否过期、是否互相冲突、是否覆盖当前对象。逐句摘录校验可以做成明确的有限合同；对自由改写，规则或 NLI 模型只能辅助，不能宣称通用事实证明。\n\n对于证据不足，我会区分检索失败、资料缺失与资料冲突，并记录采取了什么补查。流式输出也不能先把未经校验的结论标成“已验证”，再期望结束时悄悄纠正。验收要包括不存在引用、数字被改写、适用条件遗漏和旧版文档这几类反例。",
+      "followups": [
+        {
+          "id": "sz-citation-principle",
+          "kind": "principle",
+          "q": "为什么引用 ID 合法仍可能答错？",
+          "a": "合法 ID 只证明引用对象存在；同一段可能没有支持答案中的数字、因果或条件，需要核对具体声明。"
+        },
+        {
+          "id": "sz-citation-implementation",
+          "kind": "implementation",
+          "q": "更新文档怎样保留旧回答可追溯？",
+          "a": "区分稳定 doc_id 与不可混淆的证据版本；旧回答保留当时版本或明确标过期，不能静默把旧引用指向新内容。"
+        },
+        {
+          "id": "sz-citation-debug",
+          "kind": "debug",
+          "q": "有引用但数字从 10 变成 100 怎么测？",
+          "a": "构造只改数字的负例。存在性校验应通过，支持性检查应拒绝或送人工；若仍放行，说明检查只验证了引用格式。"
+        },
+        {
+          "id": "sz-citation-tradeoff",
+          "kind": "tradeoff",
+          "q": "逐句摘录与自由改写如何取舍？",
+          "a": "摘录合同容易做确定性校验，但表达受限；自由改写更自然，却需要更强的评测与复核。公开宣称的能力应与实际检查一致。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "知道引用不能保证正确。"
+        ],
+        "competent": [
+          "区分结构、支持关系和版本适用性。"
+        ],
+        "deep": [
+          "能用篡改、冲突、缺证据负例证明校验边界，并说明未知状态。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示一条声明→引用 ID→文档版本→原文位置的实际链路。",
+          "提交被系统拒绝的数字篡改与未知引用样例；没有这些测试就标待核实。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations",
+          "title": "Claude Reduce hallucinations",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://qdrant.tech/documentation/search/filtering/",
+          "title": "Qdrant Filtering",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "怎样让 RAG 回答可以逐项核查？有引用仍可能错在哪里，证据不足时如何处理？"
+    },
+    {
+      "id": "ig-sz-rerank",
+      "resumeGroupIds": [
+        "sz-rerank"
+      ],
+      "mainQuestionId": "RG-005",
+      "sourceQuestionIds": [
+        "RG-039",
+        "RG-050",
+        "RG-005",
+        "RG-031",
+        "RGQ-0037",
+        "RGQ-0052",
+        "RGQ-0058",
+        "RGQ-0163"
+      ],
+      "title": "重排的价值和边界：只在已召回证据中改善排序",
+      "answer60": "重排位于召回之后，常见 Cross-Encoder 联合读取查询和候选，比独立编码后算相似度有更多交互信息，但不能保证每条问题都更准。它只能重排已进入候选集的内容；候选没有正确证据时，首先要修召回。选型要同时看排序质量、输入截断、候选数量与延迟预算，最后验证改善是否传递到答案，而不是只看某个重排分数。",
+      "answer180": "我会先固定召回候选，再比较不重排与重排，否则无法判断提升来自哪一层。Cross-Encoder 对每个 query-document 对做联合编码，通常需要随候选数增加更多工作；双塔可以预先保存文档向量，两者计算形态不同。候选数量、长度、批处理和硬件都会改变延迟，因此我不会把“固定增加几百毫秒”或“取前一百条最好”作为通用结论。\n\n失败排查先问正确证据是否在候选中。若不在，优化重排没有意义；若在却排低，检查截断是否删掉关键句、模型是否适合语言和领域、查询表达是否包含核心约束。再用排序指标与最终答案证据覆盖共同评价，防止模型把词面相近但条件错误的段落排到最前。\n\n选择通用模型、领域微调或 LLM 重排时，要记录同一测试集上的质量、尾延迟和费用，并保留失败例。训练样本需要正例与容易混淆的负例，按文档或来源划分避免泄漏。项目中若只有接线演示，我会明确说尚未证明业务收益。",
+      "followups": [
+        {
+          "id": "sz-rerank-principle",
+          "kind": "principle",
+          "q": "Cross-Encoder 为什么可能改善排序？",
+          "a": "它联合处理查询与候选，可建模更细交互；训练领域不匹配或文本截断时也可能更差。"
+        },
+        {
+          "id": "sz-rerank-implementation",
+          "kind": "implementation",
+          "q": "怎样设计最小对照实验？",
+          "a": "固定查询、召回候选和生成器，只替换重排策略，记录正确证据名次、最终输入、回答质量与耗时。"
+        },
+        {
+          "id": "sz-rerank-debug",
+          "kind": "debug",
+          "q": "正确证据被排到最后怎么定位？",
+          "a": "检查编码后的实际文本与长度、条件词是否保留、正负样本标签是否正确，再看模型的领域适配；不能仅调 top-k 掩盖错误。"
+        },
+        {
+          "id": "sz-rerank-tradeoff",
+          "kind": "tradeoff",
+          "q": "什么时候不用 LLM 重排？",
+          "a": "预算严格、候选多或普通重排已满足目标时，不必增加大模型调用。若使用，需处理输出格式、顺序偏差和可重复性。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "说清召回与重排分工。"
+        ],
+        "competent": [
+          "能解释联合编码、截断与候选数的成本。"
+        ],
+        "deep": [
+          "设计隔离变量实验，区分召回失败与排序失败。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "保留同一查询的召回列表、重排列表和最终上下文。",
+          "提供质量与延迟的对照记录；“更快/更准”的数字均需原始测量。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html",
+          "title": "Sentence Transformers Retrieve and Re-Rank",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://huggingface.co/blog/mteb",
+          "title": "MTEB authors introduction",
+          "version": "2022-10-19，框架概念而非当前榜单",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "重排解决召回链路中的哪类问题？怎样判断值得引入，并定位没有改善的原因？"
+    },
+    {
+      "id": "ig-vt-graph",
+      "resumeGroupIds": [
+        "vt-graph"
+      ],
+      "mainQuestionId": "LC-003",
+      "sourceQuestionIds": [
+        "LC-003"
+      ],
+      "title": "LangGraph：用状态与恢复语义解释图编排",
+      "answer60": "LangGraph 把流程表达成状态、节点和边，便于控制分支、循环、并行与暂停恢复。Checkpoint 保存执行状态，interrupt 可等待外部输入，但恢复不是从任意一行接着跑：包含 interrupt 的节点会重新执行，之前的副作用必须可重放或幂等。框架不替我判断结果正确，也不让数据库写入与状态快照自动形成同一事务。我会先说明图的状态合同和失败终态，再展示代码。",
+      "answer180": "我会先画状态流：输入经过哪些节点，每个节点读取什么、写回什么，哪些边是确定规则、哪些需要模型决定。并行节点写同一字段时，要定义合并规则或避免冲突，不能靠最后写入碰运气。循环必须有预算、退出条件与可说明的终态。\n\n持久化解决的是“恢复时知道执行到哪里和当时状态是什么”。使用 checkpointer 时，thread_id 用于定位执行线程；恢复时还要满足所用版本的调用约定。interrupt 暂停后，通过 Command(resume=...) 提供输入，包含该 interrupt 的节点从开头重跑。因此发消息、写文件或扣费不能随意放在 interrupt 之前，最好拆出节点，并给外部动作独立业务 ID 与幂等策略。\n\n我会用本地 fake 先测三条轨迹：正常完成、审批拒绝、暂停后恢复。再检查同一恢复输入重复提交会不会重复产生副作用，记录状态快照和产物校验。只有这些轨迹和代码都能展示时，才说实现了可恢复编排；框架名字与图画得复杂都不能替代证据。",
+      "followups": [
+        {
+          "id": "vt-graph-principle",
+          "kind": "principle",
+          "q": "状态与对话消息有什么区别？",
+          "a": "消息只是状态的一部分；状态还可包括计划、业务 ID、预算、产物和错误。传给模型的上下文是从状态选择出的视图。"
+        },
+        {
+          "id": "vt-graph-implementation",
+          "kind": "implementation",
+          "q": "interrupt 前的代码应怎样安排？",
+          "a": "假定节点可能重跑，纯计算可重复；副作用拆出或实现幂等，并保存可对账的业务身份。避免恢复重复写入。"
+        },
+        {
+          "id": "vt-graph-debug",
+          "kind": "debug",
+          "q": "恢复后重复发出消息如何定位？",
+          "a": "检查发消息是否在 interrupt 之前、是否用相同 thread_id、是否有稳定业务幂等键；checkpoint 成功并不证明外部动作只执行一次。"
+        },
+        {
+          "id": "vt-graph-tradeoff",
+          "kind": "tradeoff",
+          "q": "什么时候普通 Python 流程足够？",
+          "a": "简单、固定且无需持久恢复的流程可以直接编码。图框架的收益应来自可观察状态和控制需求，而不是为了增加层数。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "能描述状态、节点、边。"
+        ],
+        "competent": [
+          "准确解释 interrupt 节点重跑与 thread_id。"
+        ],
+        "deep": [
+          "展示暂停/拒绝/重复恢复测试，区分快照与外部副作用事务。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提交实际图、状态 schema 和暂停恢复轨迹。",
+          "指出一个恢复重跑风险及测试；未跑过断点恢复就不要说“已保证可恢复”。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://docs.langchain.com/oss/python/langgraph/interrupts",
+          "title": "LangGraph Interrupts",
+          "version": "文档快照 2026-09-29",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+          "title": "LangGraph Persistence",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "如何用 LangGraph 表达状态、分支与暂停恢复？interrupt 重跑会给副作用带来什么问题？"
+    },
+    {
+      "id": "ig-vt-multimodal",
+      "resumeGroupIds": [
+        "vt-multimodal"
+      ],
+      "mainQuestionId": "RG-038",
+      "sourceQuestionIds": [
+        "RG-038",
+        "RG-050",
+        "RG-051",
+        "RG-005",
+        "RG-016",
+        "RG-021",
+        "RG-022",
+        "RG-025",
+        "RG-026",
+        "RG-027"
+      ],
+      "title": "多模态检索：先证明表征空间与证据定位契约",
+      "answer60": "多模态检索不是把任意图片向量和文本向量直接相加。若要跨模态相似度检索，需要兼容且对齐的表征空间，例如匹配的图像与文本编码器；OCR 转文字检索又是另一条路径。选择时要按任务区分找相似画面、读取表格文字和理解空间关系，并保留图片区域、时间或原文位置。公共榜单只能帮助选候选模型，项目效果必须在实际数据上验证。",
+      "answer180": "我会先定义要找什么。例如战术截图查询可能依赖图标位置，文档截图则可能主要依赖文字。前者可以评估图文对齐编码器，后者可用 OCR 文本索引并保留坐标；也可以多路召回后融合，但不能假设它们的原始分数可比。CLIP 类方法通过图文对学习对齐表示，不意味着能可靠读出所有数字、细粒度布局或业务术语。\n\n工程上记录模型、预处理、图像尺寸、文本模板和向量度量。查询与索引要遵守同一空间契约，换模型后通常需重算索引；更高维度也不是更好效果的保证。直接截取前若干维应使用支持该方式的模型（如 MRL）并评估。PCA 与量化则是另行拟合或校准的后处理，不要求 embedding 预先专门训练，也要比较召回与存储。\n\n验收题要包括近似图片但含义不同、同义文字、错误实体和跨模态难负例。分别观察召回、证据定位和最终回答，不把“能搜出一张图”描述成“理解了战术”。若实际项目只做过文本向量检索，应把多模态方案说成待实现设计，避免扩写经历。",
+      "followups": [
+        {
+          "id": "vt-multimodal-principle",
+          "kind": "principle",
+          "q": "任意两个 768 维向量能比较吗？",
+          "a": "维度相同仅保证运算形状匹配；不同模型、模态或预处理产生的空间不一定对齐，相似度可能没有任务意义。"
+        },
+        {
+          "id": "vt-multimodal-implementation",
+          "kind": "implementation",
+          "q": "OCR 路线怎样保留证据？",
+          "a": "存识别文本、图片 ID、页码或区域坐标及版本，回答引用能定位回原图；对关键数字和低置信识别保留复核入口。"
+        },
+        {
+          "id": "vt-multimodal-debug",
+          "kind": "debug",
+          "q": "相似图片检索正确但答案数字错在哪里查？",
+          "a": "先查原图是否含正确数字，再查 OCR/视觉提取、截断和答案生成。召回正确不能证明识别或生成正确。"
+        },
+        {
+          "id": "vt-multimodal-tradeoff",
+          "kind": "tradeoff",
+          "q": "为什么不能按榜单总分直接选模型？",
+          "a": "任务、语言、预处理和评测集合可能不同。应以本地查询与难负例做候选比较，再权衡模型大小、延迟和存储。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "区分 OCR 与对齐表征检索。"
+        ],
+        "competent": [
+          "说明空间契约、预处理和证据坐标。"
+        ],
+        "deep": [
+          "能设计跨模态难负例，并如实区分已实现与方案。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示实际输入模态、模型配置与一条可回到原图的证据链。",
+          "若没有运行多模态模型，请保留未核实状态；不要把文本检索指标挪作多模态成绩。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://arxiv.org/abs/2103.00020",
+          "title": "Learning Transferable Visual Models From Natural Language Supervision",
+          "version": "2021 paper",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2205.13147v4",
+          "title": "Matryoshka Representation Learning",
+          "version": "v4 / 2024-02-08",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://huggingface.co/blog/mteb",
+          "title": "MTEB authors introduction",
+          "version": "2022-10-19，框架概念而非当前榜单",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html",
+          "title": "scikit-learn PCA",
+          "version": "文档快照 2026-09-29",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://github.com/facebookresearch/faiss/wiki/Faiss-indexes",
+          "title": "FAISS indexes and quantizers",
+          "version": "Wiki 快照 2026-09-29",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "图像和文字如何进入可比较的检索链路？请区分 OCR、对齐表征、证据定位与模型选型。"
+    },
+    {
+      "id": "ig-vt-concurrency",
+      "resumeGroupIds": [
+        "vt-concurrency"
+      ],
+      "mainQuestionId": "PY-022",
+      "sourceQuestionIds": [
+        "PY-024",
+        "PY-029",
+        "PY-032",
+        "PY-006",
+        "PY-013",
+        "PY-022",
+        "PY-007",
+        "PY-037"
+      ],
+      "title": "Python 并发：从任务生命周期讲到取消与清理",
+      "answer60": "asyncio 适合让等待 I/O 的任务交替运行，async def 本身不会让阻塞调用自动异步。我会先区分依赖与独立任务，再选择收齐结果还是尽早失败：gather 默认传播首个异常但不自动取消其他任务，TaskGroup 在普通子任务异常时取消同组其余任务并等待退出。取消是协作的，所以还要考虑超时、资源清理和下游副作用。数据校验与请求上下文也必须有明确边界。",
+      "answer180": "我会先从请求生命周期解释：创建哪些任务，谁负责等待它们，取消由谁传播，最后由谁关闭连接。无依赖 I/O 可并发，但要限制并发量和等待时间；同步阻塞 SDK 可以在适合时移入线程，纯 Python CPU 密集计算在常规启用 GIL 的 CPython 中通常不能靠线程并行加速。3.13 的 free-threaded 构建和释放 GIL 的扩展另当别论，不能把一种运行模式说成所有 Python。\n\n失败策略要明确。gather(return_exceptions=True) 适合收集分支结果；TaskGroup 更适合一起成功或取消的任务组，但不是数据库事务回滚，已经发生的外部写入仍需对账。async for 提前 break 时，也不能只盼垃圾回收及时释放资源，可用 aclosing 给异步生成器明确关闭范围。\n\n数据方面，TypedDict 只提供静态结构约束，dataclass 默认不校验字段类型，Pydantic 用于运行时解析与校验但也不证明业务真实性。ContextVar 适合传递请求标识，不能把模型或用户传入的租户 ID 直接变成授权。验收应注入超时、取消和异常，检查任务与资源最终状态。",
+      "followups": [
+        {
+          "id": "vt-concurrency-principle",
+          "kind": "principle",
+          "q": "gather 抛异常后其余任务停止了吗？",
+          "a": "默认情况下没有自动取消；调用者要选择继续收集、显式取消并等待，或用 TaskGroup 的结构化生命周期。"
+        },
+        {
+          "id": "vt-concurrency-implementation",
+          "kind": "implementation",
+          "q": "如何确保异步生成器提前退出时清理？",
+          "a": "将有 aclose 的生成器放入 async with aclosing(...)，在其 finally 中关闭所拥有资源；框架适配另按版本测试。"
+        },
+        {
+          "id": "vt-concurrency-debug",
+          "kind": "debug",
+          "q": "服务用了 async 却被慢请求卡住如何查？",
+          "a": "找事件循环里的同步阻塞、CPU 热点和无限并发；分别测等待、执行和排队，不盲目增加任务数。"
+        },
+        {
+          "id": "vt-concurrency-tradeoff",
+          "kind": "tradeoff",
+          "q": "TypedDict、dataclass 与 Pydantic 如何选择？",
+          "a": "按静态约束、对象方法、运行时校验和序列化需要选择。TypedDict 构造得到普通 dict；frozen dataclass 也不保证嵌套值不可变或线程安全。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "知道异步不是自动并行与自动非阻塞。"
+        ],
+        "competent": [
+          "区分 gather/TaskGroup，并说明取消与清理。"
+        ],
+        "deep": [
+          "能用异常/早退测试证明资源生命周期，解释数据校验与权限分工。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提供仅本地可运行的取消、超时和生成器早退测试。",
+          "记录 Python 构建/版本及性能测试环境；未测过的吞吐或加速倍数不写进口述。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://docs.python.org/3.13/library/asyncio-task.html",
+          "title": "Python asyncio tasks",
+          "version": "Python 3.13",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.python.org/3.13/library/contextlib.html#contextlib.aclosing",
+          "title": "Python contextlib.aclosing",
+          "version": "Python 3.13",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.python.org/3.13/library/threading.html#gil-and-performance-considerations",
+          "title": "Python threading / GIL",
+          "version": "Python 3.13",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.python.org/3.13/library/typing.html",
+          "title": "Python typing",
+          "version": "Python 3.13",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.python.org/3.13/library/dataclasses.html",
+          "title": "Python dataclasses",
+          "version": "Python 3.13",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "Python AI 后端怎样选择并发原语？请解释异常、超时、取消与资源清理的完整生命周期。"
+    },
+    {
+      "id": "ig-in-prompt",
+      "resumeGroupIds": [
+        "in-prompt"
+      ],
+      "mainQuestionId": "LP-030",
+      "sourceQuestionIds": [
+        "LP-030",
+        "LP-032",
+        "LP-006",
+        "LP-018",
+        "LPQ-0007",
+        "LPQ-0010",
+        "LPQ-0028",
+        "LPQ-0033",
+        "LPQ-0037",
+        "LPQ-0041",
+        "LPQ-0042",
+        "LPQ-0093"
+      ],
+      "title": "提示设计：把输入、规则、示例和验收变成可测试合同",
+      "answer60": "我会先明确任务、允许输入、输出结构和失败处理，再用覆盖边界的示例减少歧义。Few-shot 不只是放几个相似答案，还要展示易混情况与拒答条件；示例顺序和措辞可能影响结果，所以改提示必须在固定模型与测试集上对照。角色设定或“逐步思考”不是正确性保证，也不能替代检索证据、程序校验与权限控制。",
+      "answer180": "我会先把模糊要求拆成可观察的输出。例如分类任务不只写“准确分类”，而是给标签定义、冲突时的判定顺序、缺信息时怎样处理，以及可解析的返回结构。随后选几条有代表性的正例、边界例和明确标注的纠错例；不能把错误答案不加标记混入示例。动态选例可以按输入相似度召回，也要保留规则覆盖和防止标签泄漏。\n\n验证时固定模型版本、采样配置和评测数据，比较基础提示、加规则、加示例的效果，分别记录格式错误与实质错误。某种示例顺序有效，不代表最后一条总是影响最大。多轮调用还要核查应用究竟传了哪些历史与系统规则，不能假定所有 API 自动记住。\n\n复杂推理可要求简洁依据、关键中间结果或独立校验，而不是强迫模型输出完整内部思维链。最终验收看答案、证据与约束是否满足；生成了一长段推理文本并不证明执行或事实正确。项目表达应展示一次提示变更和其失败例，而不是笼统说“优化了 Prompt”。",
+      "followups": [
+        {
+          "id": "in-prompt-principle",
+          "kind": "principle",
+          "q": "Few-shot 与微调改变的对象一样吗？",
+          "a": "Few-shot 把示例放在当前上下文，不直接更新模型权重；微调通过训练更新参数或适配参数，成本与管理方式不同。"
+        },
+        {
+          "id": "in-prompt-implementation",
+          "kind": "implementation",
+          "q": "怎样选边界示例？",
+          "a": "从标签冲突、缺字段、噪声输入和拒答条件出发，让每条例子说明一个判定边界，并与评测集隔离。"
+        },
+        {
+          "id": "in-prompt-debug",
+          "kind": "debug",
+          "q": "格式正确但内容错该改什么？",
+          "a": "先区分标签定义含糊、事实证据缺失、示例误导或模型能力不足；结构化输出只解决部分格式合同，不能代替内容校验。"
+        },
+        {
+          "id": "in-prompt-tradeoff",
+          "kind": "tradeoff",
+          "q": "是否应该每题都要求长篇 CoT？",
+          "a": "不应。模型与任务响应不同，长输出增加成本且可能误导。优先让结果可检查；必要时用受控分解、工具计算与独立验证。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "能写明确任务与输出要求。"
+        ],
+        "competent": [
+          "能设计边界示例与隔离变量对照。"
+        ],
+        "deep": [
+          "区分格式、事实与权限错误，并有提示回归和版本记录。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示一组脱敏输入、提示变更前后输出和失败样例。",
+          "提供评测口径与样本；没有独立测试集就不声称泛化提升。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://arxiv.org/abs/2104.08786",
+          "title": "Few-Shot Prompt Order Sensitivity",
+          "version": "arXiv:2104.08786",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2201.11903",
+          "title": "Chain-of-Thought Prompting",
+          "version": "arXiv:2201.11903",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2205.11916",
+          "title": "Large Language Models are Zero-Shot Reasoners",
+          "version": "arXiv:2205.11916",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2203.11171",
+          "title": "Self-Consistency",
+          "version": "arXiv:2203.11171",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "你如何把提示词改进做成可复现实验？请讲规则、few-shot、边界样例与结果验收。"
+    },
+    {
+      "id": "ig-in-knowledge",
+      "resumeGroupIds": [
+        "in-knowledge"
+      ],
+      "mainQuestionId": "RG-024",
+      "sourceQuestionIds": [
+        "RG-023",
+        "RG-024",
+        "RGQ-0014",
+        "RGQ-0021",
+        "RGQ-0036",
+        "RGQ-0044",
+        "RGQ-0064",
+        "RGQ-0067",
+        "RG-038",
+        "RG-050",
+        "RG-051",
+        "RG-005",
+        "RG-016",
+        "RG-021",
+        "RG-022",
+        "RG-025"
+      ],
+      "title": "知识库维护：从文档更新到可追溯检索的完整链路",
+      "answer60": "知识库不是导入一次文件就完成。我会把解析、结构保留、分块、编码、索引和版本发布连起来，每个检索结果都能回到原文。更新时判断内容、模型或处理配置哪些改变，重算受影响部分，并处理删除、缓存和旧引用。质量检查要同时覆盖乱码、表格单位丢失、重复块与权限过滤；召回差不一定是向量模型差。",
+      "answer180": "我会先保存原文件身份与版本，解析后抽查标题层级、段落顺序、表格和单位是否保留。切块规则要与文档类型匹配：制度条款重视适用范围，表格重视表头与单位，长报告重视章节上下文。块保存原文定位与处理配置，这样结果错误时能复盘出错层。\n\n更新链路采用可重试的任务与明确发布边界。内容没变不必重复计算；内容或分块改变要更新受影响块；更换不兼容编码器则需要重算向量。新旧索引可以通过版本切换、双写或短暂停写等方式管理，具体取舍看规模与可用性要求，不能把某一种方案写成唯一答案。删除还要覆盖派生索引和缓存，旧回答的引用须明确是否仍可追溯。\n\n验收时除了“成功导入”，还要有坏文档、重复更新、处理中断、删除后检索和越权检索的测试。把导入数量与可用证据数量分开统计。若实际工作只调整了分块参数，就讲清该职责与结果，不把整条平台建设归到自己名下。",
+      "followups": [
+        {
+          "id": "in-knowledge-principle",
+          "kind": "principle",
+          "q": "为什么要保留处理配置版本？",
+          "a": "相同原文经不同解析、分块和编码可能得到不同索引；配置版本使重建、对照和故障定位可复现。"
+        },
+        {
+          "id": "in-knowledge-implementation",
+          "kind": "implementation",
+          "q": "怎样避免更新后重复块？",
+          "a": "使用可解释的文档身份与版本、幂等写入和旧块回收规则，发布前核对本版本的完整块集合。"
+        },
+        {
+          "id": "in-knowledge-debug",
+          "kind": "debug",
+          "q": "新文档能搜到但表格答案总错怎么查？",
+          "a": "检查解析是否丢了表头、合并单元格与单位，再看切块是否把行与条件分开；先修证据形态而非加长生成提示。"
+        },
+        {
+          "id": "in-knowledge-tradeoff",
+          "kind": "tradeoff",
+          "q": "每次都全量重建是否可以？",
+          "a": "小型本地库可能简单可靠；大库则需评估成本、更新时间与回滚。增量更新复杂度要由需求证明，不是必选架构。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "理解解析到索引的步骤。"
+        ],
+        "competent": [
+          "能解释版本、删除和原文追溯。"
+        ],
+        "deep": [
+          "能用中断/重复更新/表格失败例验证链路，并说明自己负责范围。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示本人实际处理的文档类型、块样例与更新记录。",
+          "把参与、负责和独立实现区分；数量、准确率及节省时间必须有记录。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+          "title": "Anthropic Contextual Retrieval",
+          "version": "2024-09-19；本文实验范围",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://qdrant.tech/documentation/search/filtering/",
+          "title": "Qdrant Filtering",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://github.com/facebookresearch/faiss/wiki/Index-IO,-cloning-and-hyper-parameter-tuning",
+          "title": "FAISS Index IO",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "一份文档从导入、分块到更新删除，怎样成为可追溯且可恢复的知识库资料？"
+    },
+    {
+      "id": "ig-in-context",
+      "resumeGroupIds": [
+        "in-context"
+      ],
+      "mainQuestionId": "LP-022",
+      "sourceQuestionIds": [
+        "LP-022",
+        "LP-007",
+        "LP-002",
+        "LPQ-0092"
+      ],
+      "title": "上下文工程：状态保存、模型输入和预算分别管理",
+      "answer60": "我会区分应用保存的状态和本次真正发给模型的上下文。持久化全部历史不代表每轮都要重发；组装时保留当前目标、约束、必要证据与输出预算，按任务选择历史或摘要。摘要会丢信息，token 估算也受模型与工具定义影响，所以要检查实际请求与服务端用量。会话隔离、过期与敏感信息处理应在应用层落实。",
+      "answer180": "我会先列上下文来源：系统规则、当前用户请求、历史消息、工具结果、检索材料与记忆。它们的优先级和可信度不同，不能混成一个无边界字符串。应用可以保存完整状态，但模型只接收本次组装的输入；有些 API 管理会话状态，另一些由客户端重传，必须按所用接口确认。\n\n预算上先留输出空间和必要安全余量，再决定历史与证据如何裁剪。工具定义、消息包装和多模态输入也可能占预算，因此字符数或简单拼接后的 tokenizer 结果只是估计。删历史时保留当前任务约束，摘要记录来源和版本，并用跨轮问题检查事实是否丢失。固定 70% 触发点或固定记忆比例只能是待测配置。\n\n排查“模型忘了”时，我会查看脱敏后的真实请求快照：信息究竟没保存、没检索到、被预算裁掉，还是进入上下文后未被使用。ContextVar 可传递请求标识，但真实租户权限仍来自可信认证。讲项目时要拿出一次实际丢上下文的复现与修复，不能只说支持长会话。",
+      "followups": [
+        {
+          "id": "in-context-principle",
+          "kind": "principle",
+          "q": "状态持久化是否等于模型记住？",
+          "a": "不是。保存到数据库的内容必须经检索、选择或服务端会话机制进入模型可用上下文，才可能影响当前输出。"
+        },
+        {
+          "id": "in-context-implementation",
+          "kind": "implementation",
+          "q": "如何记录可复现的上下文快照？",
+          "a": "保存必要的片段 ID、版本、排列和预算决策，敏感文本按权限脱敏或受控保存，结合调用配置与实际用量。"
+        },
+        {
+          "id": "in-context-debug",
+          "kind": "debug",
+          "q": "用户偏好丢失如何定位？",
+          "a": "检查写入记录、当前作用域、检索命中、摘要内容、裁剪日志和实际请求，逐层找第一个丢失点。"
+        },
+        {
+          "id": "in-context-tradeoff",
+          "kind": "tradeoff",
+          "q": "为什么不永远发送全部历史？",
+          "a": "长历史会增加成本、延迟和噪声，也可能超过窗口；但过度压缩会丢约束。根据任务需要与回归样例权衡。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "区分保存状态和模型输入。"
+        ],
+        "competent": [
+          "能解释预算、摘要损失和接口差异。"
+        ],
+        "deep": [
+          "用真实请求快照定位丢失层，同时保护敏感数据。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "提供一段跨轮约束测试和实际上下文组装记录。",
+          "“连续 8 小时”等简历说法需提供测试时长、轮次与成功判据；当前均待核实。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
+          "title": "Claude Context windows",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.langchain.com/oss/python/concepts/memory",
+          "title": "LangChain Memory overview",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.langchain.com/oss/python/langchain/short-term-memory",
+          "title": "LangChain Short-term memory",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://docs.python.org/3.13/library/contextvars.html",
+          "title": "Python Context Variables",
+          "version": "Python 3.13",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "应用保存的状态怎样变成本次模型上下文？预算不足或用户说模型忘事时如何排查？"
+    },
+    {
+      "id": "ig-base-context",
+      "resumeGroupIds": [
+        "base-context"
+      ],
+      "mainQuestionId": "LBQ-0269",
+      "sourceQuestionIds": [
+        "LBQ-0002",
+        "LBQ-0061",
+        "LBQ-0157",
+        "LBQ-0179",
+        "LBQ-0224",
+        "LBQ-0228",
+        "LBQ-0269",
+        "LBQ-0278",
+        "LBQ-0324",
+        "LBQ-0336"
+      ],
+      "title": "上下文窗口、注意力与 KV Cache：分清不同成本",
+      "answer60": "上下文窗口限定模型一次可处理的序列范围，通常要结合输入和生成预算按接口核算。标准全注意力建立 token 两两关系，朴素实现会显式产生随长度平方增长的注意力矩阵；FlashAttention 改善内存访问和中间存储，并没有把全注意力计算变成线性。KV Cache 缓存历史键值以减少自回归解码重复计算，其大小还受层数、KV 头数、精度和批量影响。长窗口不保证模型有效利用全部证据。",
+      "answer180": "我会把三个问题分开。第一是接口允许多长：查模型与接口的输入输出限制，token 由实际 tokenizer 决定，中文字符与 token 没有固定一比一关系。增加最大长度参数也不会自动训练出可靠的长距离能力。第二是计算：标准全注意力要处理成对关系，朴素注意力矩阵占用随序列长度平方增加；FlashAttention 通过分块和重计算避免把完整矩阵写到高带宽内存，不能据此说数学上的全注意力变成线性计算。\n\n第三是解码缓存：KV Cache 保存历史 token 的键和值，避免每一步重新计算已有位置的这些表示。对固定模型和 batch，它通常随缓存序列长度线性增长，具体还受 GQA/MQA、dtype、量化与缓存策略影响，因此不能把所有显存都说成平方增长。\n\n训练或位置编码扩展可以改善长上下文适配，但效果要用长距离、干扰项与不同证据位置的任务测量。我会先定位实际瓶颈是 prefill、decode、缓存还是输入质量，再考虑压缩、检索或模型配置，避免把“支持更长”当“回答更准”。",
+      "followups": [
+        {
+          "id": "base-context-principle",
+          "kind": "principle",
+          "q": "注意力矩阵与 KV Cache 的增长一样吗？",
+          "a": "不一样。朴素全注意力矩阵是位置两两关系；固定模型下 KV Cache 保存每个已缓存位置的键值，通常随长度线性增长。"
+        },
+        {
+          "id": "base-context-implementation",
+          "kind": "implementation",
+          "q": "怎样核算一次请求预算？",
+          "a": "用对应 tokenizer 与接口规则统计消息、工具和多模态输入，并留生成空间；最终核对服务端实际计量。"
+        },
+        {
+          "id": "base-context-debug",
+          "kind": "debug",
+          "q": "长度没超限但答案漏掉中间证据如何查？",
+          "a": "改变证据位置、减少干扰、检查截断和任务难度，观察有效利用能力；不把未报错当作内容完整理解。"
+        },
+        {
+          "id": "base-context-tradeoff",
+          "kind": "tradeoff",
+          "q": "扩大窗口还是使用检索？",
+          "a": "取决于证据规模、更新频率、成本和任务。检索可能漏召回，长上下文可能增加噪声，两者都需对照。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "区分 token、窗口和输出预算。"
+        ],
+        "competent": [
+          "正确区分注意力计算、中间存储与 KV Cache。"
+        ],
+        "deep": [
+          "能定位 prefill/decode 与证据利用瓶颈，不夸大长窗口收益。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "记录实际模型/接口、输入输出长度与耗时。",
+          "任何显存、吞吐或上下文扩展倍数都需给配置和测量；目前不推定已测。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
+          "title": "Claude Context windows",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://huggingface.co/docs/transformers/tokenizer_summary",
+          "title": "Hugging Face Tokenization algorithms",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://huggingface.co/docs/transformers/v4.50.0/kv_cache",
+          "title": "Transformers KV cache",
+          "version": "4.50.0",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2205.14135",
+          "title": "FlashAttention",
+          "version": "arXiv:2205.14135",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/html/2309.00071v2",
+          "title": "YaRN",
+          "version": "arXiv:2309.00071",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "上下文窗口、注意力计算与 KV Cache 各自受什么约束？为什么支持长输入不等于能可靠利用全部证据？"
+    },
+    {
+      "id": "ig-base-hallucination",
+      "resumeGroupIds": [
+        "base-hallucination"
+      ],
+      "mainQuestionId": "LBQ-0058",
+      "sourceQuestionIds": [
+        "LBQ-0058",
+        "LBQ-0150",
+        "LBQ-0172",
+        "LBQ-0237",
+        "LBQ-0255"
+      ],
+      "title": "幻觉治理：从流畅答案走向可检查的声明",
+      "answer60": "语言模型生成高概率、流畅的文本，不等于每个事实都正确。幻觉可能来自知识缺失、错误上下文、歧义或推理失误；降低温度通常更稳定，却不保证更真实。我会把答案拆成可检查的声明，让可更新事实有来源、可计算内容用工具、缺证据时说明未知，再用正常与故意错误的样例验证。RAG、自我检查和多次投票都只能降低部分风险，不能承诺消除幻觉。",
+      "answer180": "我会先定义当前任务中的错误：是引用不存在、数字不被证据支持、事实过期，还是结论超出材料。仅把答案写得谨慎不够，要让它可以被外部检查。检索适合补充可更新资料，但也可能漏召回、取错版本或引入恶意文本；结构化输出能约束字段，却不保证字段内容真实。\n\n对具体声明，我会核对来源、适用条件与时间；对算术或数据库状态，调用对应工具并验证结果身份；对不足以判断的部分，输出未知或请求必要信息。低温度减少随机性不保证正确，多次生成一致也可能只是共同偏差。模型自评和 NLI 可作为辅助信号，不能把它们的分数当已校准的事实概率。\n\n验收集既要有能回答的问题，也要有资料缺失、冲突、数字篡改和错误前提。分别记录正确率、拒答是否合理以及漏放的错误，防止系统靠一律拒答取得表面安全。项目口述要说明仍会失败的边界，并拿出一个真实反例和修正过程，而不是声称“基本没有幻觉”。",
+      "followups": [
+        {
+          "id": "base-hallucination-principle",
+          "kind": "principle",
+          "q": "为什么温度为 0 也会答错？",
+          "a": "采样更确定只改变选 token 的随机性，不修复模型知识、输入证据或推理中的错误。"
+        },
+        {
+          "id": "base-hallucination-implementation",
+          "kind": "implementation",
+          "q": "怎样构造可检查回答？",
+          "a": "按声明关联来源与版本，对数字和计算提供可复核步骤；把未知、冲突和受限信息显式标出来。"
+        },
+        {
+          "id": "base-hallucination-debug",
+          "kind": "debug",
+          "q": "多次回答一致但事实错误该怎么排查？",
+          "a": "先查共同输入、模型偏差与错误前提，用外部权威证据核对；不能增加投票次数就当完成验证。"
+        },
+        {
+          "id": "base-hallucination-tradeoff",
+          "kind": "tradeoff",
+          "q": "拒答阈值越高越好吗？",
+          "a": "过高可能拒绝本来能回答的问题。应分别衡量错误放行与不必要拒答，并按具体任务风险选择策略。"
+        }
+      ],
+      "rubric": {
+        "basic": [
+          "知道流畅与低温度不等于真实。"
+        ],
+        "competent": [
+          "区分证据、结构校验与模型自评。"
+        ],
+        "deep": [
+          "能设计缺失/冲突/篡改负例并评价拒答代价。"
+        ]
+      },
+      "projectEvidence": {
+        "status": "unverified",
+        "prompts": [
+          "展示一个真实错误案例、证据和修复前后输出。",
+          "“幻觉率下降”等数字必须定义错误标准和样本；缺记录时只描述措施。"
+        ],
+        "note": "待核实：请用本人代码、版本、样例和实验记录替换设计设想；简历数字不作为已核验的项目结果。"
+      },
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations",
+          "title": "Claude Reduce hallucinations",
+          "version": "在线文档；核查日读取",
+          "checkedAt": "2026-09-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2203.11171",
+          "title": "Self-Consistency",
+          "version": "arXiv:2203.11171",
+          "checkedAt": "2026-09-29"
+        }
+      ],
+      "mainQuestion": "为什么语言模型会生成流畅但错误的内容？你如何用证据、验证和拒答降低风险并衡量代价？"
+    }
+  ]
+}

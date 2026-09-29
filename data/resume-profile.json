@@ -38,7 +38,9 @@
       "AGQ-0103",
       "AGQ-0129"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "cw-loop",
+     "guideId": "ig-cw-loop"
     },
     {
      "name": "上下文与记忆管理",
@@ -55,7 +57,9 @@
       "AGQ-0035",
       "AGQ-0048"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "cw-memory",
+     "guideId": "ig-cw-memory"
     },
     {
      "name": "MCP 扩展与工具描述优化",
@@ -70,7 +74,9 @@
       "AG-020",
       "AGQ-0030"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "cw-mcp",
+     "guideId": "ig-cw-mcp"
     },
     {
      "name": "安全与权限设计",
@@ -87,7 +93,9 @@
       "AGQ-0097",
       "AGQ-0104"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "cw-security",
+     "guideId": "ig-cw-security"
     },
     {
      "name": "Agent 评测体系",
@@ -124,7 +132,9 @@
       "AGQ-0038",
       "AGQ-0168"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "cw-recovery",
+     "guideId": "ig-cw-recovery"
     }
    ]
   },
@@ -163,7 +173,9 @@
       "RGQ-0133",
       "RGQ-0159"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "sz-chunking",
+     "guideId": "ig-sz-chunking"
     },
     {
      "name": "混合检索链路(BGE+FAISS / Jieba+BM25 / RRF)",
@@ -195,7 +207,9 @@
       "RGQ-0083",
       "RGQ-0092"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "sz-hybrid",
+     "guideId": "ig-sz-hybrid"
     },
     {
      "name": "精准溯源与置信度拒答",
@@ -210,7 +224,9 @@
       "RGQ-0112",
       "RGQ-0138"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "sz-citation",
+     "guideId": "ig-sz-citation"
     },
     {
      "name": "重排优化",
@@ -225,7 +241,9 @@
       "RGQ-0058",
       "RGQ-0163"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "sz-rerank",
+     "guideId": "ig-sz-rerank"
     },
     {
      "name": "异构文档解析与 OCR",
@@ -286,7 +304,9 @@
      "questionIds": [
       "LC-003"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "vt-graph",
+     "guideId": "ig-vt-graph"
     },
     {
      "name": "多模态 RAG 与反制检索",
@@ -303,7 +323,9 @@
       "RG-026",
       "RG-027"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "vt-multimodal",
+     "guideId": "ig-vt-multimodal"
     },
     {
      "name": "高并发与低时延优化",
@@ -318,7 +340,9 @@
       "PY-007",
       "PY-037"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "vt-concurrency",
+     "guideId": "ig-vt-concurrency"
     }
    ]
   },
@@ -351,7 +375,9 @@
       "LPQ-0042",
       "LPQ-0093"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "in-prompt",
+     "guideId": "ig-in-prompt"
     },
     {
      "name": "电商垂直知识库构建",
@@ -374,7 +400,9 @@
       "RG-022",
       "RG-025"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "in-knowledge",
+     "guideId": "ig-in-knowledge"
     },
     {
      "name": "上下文与多轮对话管理",
@@ -385,7 +413,9 @@
       "LP-002",
       "LPQ-0092"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "in-context",
+     "guideId": "ig-in-context"
     }
    ]
   },
@@ -417,7 +447,9 @@
       "LBQ-0324",
       "LBQ-0336"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "base-context",
+     "guideId": "ig-base-context"
     },
     {
      "name": "幻觉治理",
@@ -429,7 +461,9 @@
       "LBQ-0237",
       "LBQ-0255"
      ],
-     "mustKnow": true
+     "mustKnow": true,
+     "id": "base-hallucination",
+     "guideId": "ig-base-hallucination"
     }
    ]
   }

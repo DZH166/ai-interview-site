@@ -28,7 +28,7 @@ let passed = 0, failed = 0;
       /* data.js 拆分后题目正文走分片异步加载:依赖 Data.question 全量字段的用例
          必须等就绪,否则拿到的是 index-only 条目(无 options/answer)。
          (顶层 const 不挂 window,不能写 window.Data) */
-      await p.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded(), null, { timeout: 60000 });
+      if (hash.startsWith('#/study/')) { await p.evaluate(id => Data.ensureQuestion(id), hash.slice('#/study/'.length)); await p.waitForSelector('.study-wrap'); }
     }
     await test('hidden quiz conceals ALL explanations, including after hide and reload', async p => {
       await open(p, '#/study/MLQ-0001');
@@ -43,7 +43,7 @@ let passed = 0, failed = 0;
     });
     await test('quiz options and original snapshot survive reload, completion and both exports', async p => {
       await open(p, '#/home');
-      const original = await p.evaluate(() => Data.question('MLQ-0001'));
+      const original = await p.evaluate(() => Data.ensureQuestion('MLQ-0001'));
       await p.evaluate(() => MockView.startDirected(['MLQ-0001'], 'quiz regression'));
       await p.waitForSelector('#m-self');
       assert.strictEqual(await p.locator('.mock-run .quiz-opt').count(), original.options.length, 'missing options');
@@ -65,7 +65,10 @@ let passed = 0, failed = 0;
         q.answer = 'CHANGED_ANSWER_FIXTURE';
         route.fulfill({ contentType: 'application/json', body: JSON.stringify(payload) });
       });
+      await p.evaluate(async () => { for (const key of await caches.keys()) await caches.delete(key); });
       await p.reload(); await p.waitForSelector('#m-self');
+      const published = await p.evaluate(() => Data.ensureQuestion('MLQ-0001'));
+      assert.strictEqual(published.answer, 'CHANGED_ANSWER_FIXTURE', 'changed shard must really load');
       assert.strictEqual(await p.locator('.mock-run .quiz-opt').count(), original.options.length);
       assert(!(await p.locator('.mock-run').innerText()).includes('CHANGED_OPTION_FIXTURE'));
       await p.locator('#m-reveal').click();

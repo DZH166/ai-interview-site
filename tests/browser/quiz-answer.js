@@ -43,7 +43,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
         throw e;
       }
       /* quiz 题正文来自分片异步合并:依赖选项渲染的用例都走这道门 */
-      await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded(), null, { timeout: 60000 });
+      const qid = hash.startsWith('#/study/') ? hash.slice('#/study/'.length) : null;
+      if (qid) { await page.evaluate(id => Data.ensureQuestion(id), qid); await page.waitForSelector('[data-quiz-options]'); }
     };
     const reseed = async s => {
       await page.goto(BASE + '/__seed__');

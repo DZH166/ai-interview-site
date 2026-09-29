@@ -74,6 +74,22 @@ const ExpressCard = (() => {
 
   /* ---- 组装中间模型(两个来源在这里合流,后面两种输出共用) ----
      返回 {ok, error, title, source, ts, items:[...]} */
+  function questionForGuide(source, guide) {
+    const text = JSON.stringify(guide);
+    const followups = Array.isArray(guide.followups) ? guide.followups : [];
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+    return JSON.parse(JSON.stringify({
+      id: source.id, title: guide.title || source.title, prompt: guide.mainQuestion || guide.title || source.title,
+      format: 'qa', type: 'scenario', topic: source.topic, difficulty: source.difficulty,
+      answer: guide.answer60 || '', interview: guide.answer180 || '',
+      followups: followups.map(f => typeof f === 'string' ? { q: f, a: '' } : f).filter(f => f && typeof f.q === 'string'),
+      guideId: guide.id, guideRevision: (hash >>> 0).toString(16),
+      sourceQuestionId: source.id, sourceQuestionTitle: source.title,
+      sources: Array.isArray(guide.sources) ? guide.sources : [], referenceKind: 'guide'
+    }));
+  }
+
   function itemsFromRound(round, lookup) {
     const items = [];
     (round.items || []).forEach(it => {
@@ -85,12 +101,15 @@ const ExpressCard = (() => {
         title: (q && q.title) || it.title || qid,
         prompt: q ? String(q.prompt || '') : '',
         options: q && Array.isArray(q.options) ? q.options : [],
-        optionsMissing: !!(it.questionSnapshot && !q.options && current?.format === 'quiz'),
+        optionsMissing: !!(it.questionSnapshot && q.referenceKind !== 'guide' && !q.options && current?.format === 'quiz'),
         fusion_notes: q ? String(q.fusion_notes || '') : '',
         topic: q ? q.topic : '',
         difficulty: q ? q.difficulty : '',
         status: it.mark || '',
         self: String(it.self == null ? '' : it.self),
+        revision: String(it.revision == null ? '' : it.revision),
+        quizPicked: Array.isArray(it.quizPicked) ? it.quizPicked.slice() : [],
+        quizCorrect: typeof it.quizCorrect === 'boolean' ? it.quizCorrect : undefined,
         /* 模拟面试里写的是「我的回答」 */
         selfKind: 'answer',
         revealed: !!it.revealed,
@@ -103,6 +122,8 @@ const ExpressCard = (() => {
         currentRev: (current && current.content_version && current.content_version.rev) || '',
         hasSnapshot: !!it.questionSnapshot,
         snapshotCapturedLate: !!it.snapshotCapturedLate,
+        referenceKind: q?.referenceKind || '', guideRevision: q?.guideRevision || '',
+        sourceQuestionId: q?.sourceQuestionId || '', sourceQuestionTitle: q?.sourceQuestionTitle || '',
         revealed: !!it.revealed,
         /* 参考要点只在题目存在时给出;题目缺失就如实留白,不编 */
         answer: q ? String(q.answer || '') : '',
@@ -151,7 +172,6 @@ const ExpressCard = (() => {
       });
       return L.join('\n');
     }
-    const word = model.selfKind === 'note' ? '笔记' : '回答';
     L.push('# ' + model.title);
     L.push('');
     L.push('- 来源:' + model.source);
@@ -160,7 +180,11 @@ const ExpressCard = (() => {
     const weak = model.items.filter(i => i.status === 'weak').length;
     if (weak) L.push('- 其中标记「还不熟」' + weak + ' 题');
     const answered = model.items.filter(itemAnswered).length;
-    L.push('- 我写了' + word + '的:' + answered + ' 题');
+    L.push('- ' + (model.selfKind === 'note' ? '我写了笔记的:' : '有真实作答的:') + answered + ' 题');
+    if (model.selfKind !== 'note') {
+      L.push('- 我写了原回答的:' + model.items.filter(it => (it.self || '').trim()).length + ' 题');
+      L.push('- 我写了修订/补充的:' + model.items.filter(it => (it.revision || '').trim()).length + ' 题');
+    }
     L.push('');
     L.push('> 本文件由「面试加油工作台」生成,内容来自我本机浏览器的学习记录。');
     L.push('');
@@ -177,14 +201,17 @@ const ExpressCard = (() => {
       meta.push('状态:' + statusLabel(it.status));
       L.push(meta.join(' · '));
       L.push('');
+      if (it.sourceQuestionId) L.push('来源关联题:' + oneLine(it.sourceQuestionId + ' · ' + it.sourceQuestionTitle, 240),
+        '训练单元版本:' + oneLine(it.guideRevision, 40) + '（以下题面与参考按本次练习快照保留）', '');
+      if (it.selfKind === 'answer' && !it.hasSnapshot) L.push('_未保存历史题面；下面如有参考来自当前题库。_', '');
       if (it.prompt) L.push('### 完整题干', '', quote(it.prompt), '');
       if (it.options?.length) L.push('### 选项', '', ...it.options.map(o => quote(o.label + '. ' + o.text)), '');
       if (it.optionsMissing) L.push('_旧练习未保存选项，原题面不完整。_', '');
       const selfHead = it.selfKind === 'note' ? '我的笔记' : '我的回答';
-      if (it.self.trim()) {
+      if (answerText(it)) {
         L.push('### ' + selfHead);
         L.push('');
-        L.push(quote(clip(it.self, MAX_SELF)));
+        L.push(quote(clip(answerText(it), MAX_SELF)));
         L.push('');
       } else if (it.selfKind === 'answer') {
         /* 只有"模拟面试"这一路才谈得上"没作答";笔记来源本来就是空的,不写占位 */
@@ -194,13 +221,13 @@ const ExpressCard = (() => {
         L.push('');
       }
       if (it.interview) {
-        L.push('### 面试口述版');
+        L.push(it.referenceKind === 'guide' ? '### 参考学习资料 · 3 分钟展开' : '### 面试口述版');
         L.push('');
         L.push(quote(clip(it.interview, MAX_SELF)));
         L.push('');
       }
       if (it.answer) {
-        L.push('### 参考要点');
+        L.push(it.referenceKind === 'guide' ? '### 参考学习资料 · 60 秒口述' : '### 参考要点');
         L.push('');
         L.push(quote(clip(it.answer, MAX_SELF)));
         L.push('');
@@ -221,6 +248,7 @@ const ExpressCard = (() => {
           else L.push('_（对照过参考要点,当时没有写下回答）_', '');
         });
       }
+      if ((it.revision || '').trim()) L.push('### 参考后修订 / 补充', '', quote(clip(it.revision, MAX_SELF)), '');
       if (it.pitfalls.length) {
         L.push('### 常见误区');
         L.push('');
@@ -242,13 +270,15 @@ const ExpressCard = (() => {
     <section class="card">
       <h2><span class="num">${i + 1}</span>${esc(oneLine(it.title, 200))}</h2>
       <p class="meta">${esc(it.qid)}${it.topic ? ' · ' + esc(it.topic) : ''}${it.difficulty ? ' · ' + esc(it.difficulty) : ''} · 状态:${esc(statusLabel(it.status))}</p>
+      ${it.sourceQuestionId ? '<p class="meta">来源关联题:' + esc(it.sourceQuestionId + ' · ' + it.sourceQuestionTitle) + ' · 训练单元版本:' + esc(it.guideRevision) + '（本次练习快照）</p>' : ''}
+      ${it.selfKind === 'answer' && !it.hasSnapshot ? '<p class="empty">未保存历史题面；下面如有参考来自当前题库。</p>' : ''}
       ${it.prompt ? '<h3>完整题干</h3><pre>' + esc(it.prompt) + '</pre>' : ''}
       ${it.options?.length ? '<h3>选项</h3>' + it.options.map(o => '<pre>' + esc(o.label + '. ' + o.text) + '</pre>').join('') : ''}
       ${it.optionsMissing ? '<p class="empty">旧练习未保存选项，原题面不完整。</p>' : ''}
-      ${it.self.trim() ? '<h3>' + (it.selfKind === 'note' ? '我的笔记' : '我的回答') + '</h3><pre class="self">' + esc(clip(it.self, MAX_SELF)) + '</pre>' : ''}
-      ${(!it.self.trim() && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
-      ${it.interview ? '<h3>面试口述版</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}
-      ${it.answer ? '<h3>参考要点</h3><pre>' + esc(clip(it.answer, MAX_SELF)) + '</pre>' : ''}
+      ${answerText(it) ? '<h3>' + (it.selfKind === 'note' ? '我的笔记' : '我的回答') + '</h3><pre class="self">' + esc(clip(answerText(it), MAX_SELF)) + '</pre>' : ''}
+      ${(!answerText(it) && it.selfKind === 'answer') ? '<h3>我的回答</h3><p class="empty">（这一题当时没有作答）</p>' : ''}
+      ${it.interview ? '<h3>' + (it.referenceKind === 'guide' ? '参考学习资料 · 3 分钟展开' : '面试口述版') + '</h3><pre>' + esc(clip(it.interview, MAX_SELF)) + '</pre>' : ''}
+      ${it.answer ? '<h3>' + (it.referenceKind === 'guide' ? '参考学习资料 · 60 秒口述' : '参考要点') + '</h3><pre>' + esc(clip(it.answer, MAX_SELF)) + '</pre>' : ''}
       ${it.snapshotCapturedLate ? '<p class="empty">旧草稿未记录原参考版本；当前快照为恢复时补录，待核对。</p>' : ''}
       ${(it.qRev && it.currentRev && it.qRev !== it.currentRev) ? '<p class="empty">注:作答后题目内容有更新(' + esc(it.qRev) + ' → ' + esc(it.currentRev) + '),下方参考要点为' + (it.hasSnapshot ? '保存的快照' : '当前版本，旧参考未记录') + '。</p>' : ''}
       ${it.fusion_notes ? '<h3>场景与边界补充</h3><pre>' + esc(clip(it.fusion_notes, MAX_SELF)) + '</pre>' : ''}
@@ -256,6 +286,7 @@ const ExpressCard = (() => {
         '<div class="fu"><p class="fu-t"><b>追问 ' + (j + 1) + ':</b>' + esc(oneLine(f.q, 150)) + (f.legacy ? '（旧版草稿，题面未记录，待核对）' : '') + '</p>'
         + (f.self.trim() ? '<pre class="self">' + esc(clip(f.self, MAX_SELF)) + '</pre>' : '<p class="empty">(对照过参考要点,当时没有写下回答)</p>')
         + '</div>').join('') : ''}
+      ${(it.revision || '').trim() ? '<h3>参考后修订 / 补充</h3><pre class="self">' + esc(clip(it.revision, MAX_SELF)) + '</pre>' : ''}
       ${it.pitfalls.length ? '<h3>常见误区</h3><ul>' + it.pitfalls.map(p => '<li>' + esc(oneLine(p, 240)) + '</li>').join('') + '</ul>' : ''}
     </section>`).join('');
     const word = model.selfKind === 'note' ? '笔记' : '回答';
@@ -301,7 +332,7 @@ const ExpressCard = (() => {
   <div class="head">
     <h1>${esc(model.title)}</h1>
     <p>来源:${esc(model.source)}</p>
-    <p>生成时间:${esc(timeLabel(model.ts))} · ${model.kind === 'project' ? esc(model.summary) : `共 ${model.items.length} 题 · 我写了${word}的 ${model.items.filter(i => i.self.trim()).length} 题`}</p>
+    <p>生成时间:${esc(timeLabel(model.ts))} · ${model.kind === 'project' ? esc(model.summary) : `共 ${model.items.length} 题 · ${model.selfKind === 'note' ? '我写了笔记的' : '有真实作答的'} ${model.items.filter(itemAnswered).length} 题 · 我写了${word}的 ${model.items.filter(i => i.self.trim()).length} 题${model.selfKind === 'note' ? '' : ' · 修订/补充 ' + model.items.filter(i => (i.revision || '').trim()).length + ' 题'}`}</p>
     ${(model.notes || []).map(n => '<p>' + esc(n) + '</p>').join('')}
   </div>
   ${rows}
@@ -325,13 +356,13 @@ const ExpressCard = (() => {
     if (!round) return { ok: false, error: '找不到这一轮模拟面试记录。' };
     const items = itemsFromRound(round, lookup);
     if (!items.length) return { ok: false, error: '这一轮没有题目记录,没什么可导出的。' };
-    /* 诚实:资格 = 真实作答(SP-03)——主回答或任一追问有非空文本;
+    /* 诚实:资格 = 已提交选择，或主回答/任一追问/修订有非空文本;
        仅揭示参考/打分/浏览不算,不产出看着像材料其实空空如也的文件 */
     if (!hasRealAnswer(items)) {
-      return { ok: false, error: '这一轮你没有写下任何回答(主回答或追问),先答几题再导出吧。' };
+      return { ok: false, error: '这一轮你没有写下任何回答（主回答、追问或修订），也没有提交选择，先答几题再导出吧。' };
     }
     const model = {
-      title: '面试表达卡 · 模拟面试',
+      title: '面试表达卡 · 个人模拟面试回答',
       source: '模拟面试第 ' + (i + 1) + ' 轮（' + timeLabel(round.ts) + '）',
       selfKind: 'answer',
       ts: Date.now(),
@@ -340,12 +371,20 @@ const ExpressCard = (() => {
     return finish(model, 'md');
   }
 
+  function buildFromPracticeGroup(name, records, lookup) {
+    const answered = (records || []).filter(itemAnswered);
+    if (!answered.length) return { ok: false, error: '这组还没有已提交的个人回答。完成一次定向练习后再导出。' };
+    return finish({ title: '个人面试表达卡 · ' + oneLine(name, 100),
+      source: '本组每题最近一次已保存的真实作答（保留作答时题面）', selfKind: 'answer',
+      ts: Date.now(), items: itemsFromRound({ items: answered }, lookup) }, 'md');
+  }
+
   /* 我标记「还不熟 / 待复习」的题 → 表达卡(没有我的回答,给口述版与误区) */
   function buildFromMarks(marks, lookup) {
     const items = itemsFromMarks(marks, lookup);
     if (!items.length) return { ok: false, error: '当前没有标记为「还不熟 / 待复习」的题。' };
     const model = {
-      title: '面试表达卡 · 待攻克清单',
+      title: '复习参考资料 · 待攻克清单',
       source: '标记为「还不熟 / 待复习」的题（' + items.length + ' 题）',
       selfKind: 'note',
       ts: Date.now(),
@@ -430,10 +469,29 @@ const ExpressCard = (() => {
       ts: Date.now(), items, notes }, 'md');
   }
 
-  /* 「有真实作答」的唯一判定:主回答或任一追问有非空文本。
+  /* quizPicked 只存已经确认的选择;尚未提交的多选使用独立草稿字段。
+     页面、历史与导出共用同一段个人作答文字，参考答案不会混进来。 */
+  function answerText(it) {
+    if (!it) return '';
+    const lines = [];
+    const picked = Array.isArray(it.quizPicked) ? it.quizPicked.filter(x => typeof x === 'string' && x.trim()) : [];
+    if (picked.length) {
+      const options = it.options || (it.questionSnapshot && it.questionSnapshot.options) || [];
+      lines.push('我的选择：' + picked.map(label => {
+        const opt = options.find(o => o.label === label);
+        return label + (opt ? '. ' + opt.text : '');
+      }).join('；'));
+      if (typeof it.quizCorrect === 'boolean') lines.push('本次判定：' + (it.quizCorrect ? '正确' : '不正确'));
+    }
+    if ((it.self || '').trim()) lines.push(String(it.self).trim());
+    return lines.join('\n');
+  }
+
+  /* 「有真实作答」的唯一判定:已提交选择、主回答、修订或任一追问有非空文本。
      完成页摘要/可导出按钮/首页「今天是否练过」都引用这一条,不各抄一份。 */
   function itemAnswered(it) {
-    return !!(it && ((it.self || '').trim() || (it.followups || []).some(f => (f.self || '').trim())));
+    return !!(it && (answerText(it) || (typeof it.revision === 'string' && it.revision.trim())
+      || (it.followups || []).some(f => (f.self || '').trim())));
   }
   function hasRealAnswer(items) { return (items || []).some(itemAnswered); }
 
@@ -453,7 +511,7 @@ const ExpressCard = (() => {
   }
 
   return {
-    buildFromRound, buildFromMarks, buildFromProject, buildAnkiCsv, itemAnswered, hasRealAnswer,
+    buildFromRound, buildFromPracticeGroup, buildFromMarks, buildFromProject, buildAnkiCsv, itemAnswered, hasRealAnswer, answerText, questionForGuide,
     toMarkdown, toHtml, fileName, esc, quote, oneLine, clip, statusLabel,
     MAX_SELF, MAX_LINE
   };

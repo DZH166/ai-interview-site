@@ -142,7 +142,7 @@
   ],
   "answer": "最小MCP服务用SDK声明能力和处理函数，通过约定传输对外提供。以2025-11-25为例，常见标准传输为stdio和Streamable HTTP；SSE可作为HTTP响应载体，不是模型执行机制。接入还要处理参数、错误、授权和版本，最小演示不能替代生产服务。",
   "plain": "SDK可以减少协议收发代码，业务处理仍要自己负责。stdin/stdout并不意味着没有序列化或安全风险，远程HTTP也不等于浏览器EventSource就是完整MCP客户端。 交付的自检:最小实现跑通后,补错误返回、超时、取消三条路径的测试;只测happy path的服务器进生产就是排障黑洞。",
-  "deep": "### 先固定规范\n本题初始化与传输示例固定2025-11-25。2026-07-28的发现及逐请求元数据机制不同，升级必须整套验证。\n\n### 协议与业务分开\n日志不要污染stdio协议输出；schema有效后还要检查身份、对象权限、业务条件和资源限制。\n\n### 验证真实能力\n先用协议客户端验证发现、调用、错误和关闭，再用任务集评估工具选择；不能以连接成功替代业务正确。\n\n### 可验证的对照\n先用固定输入验证工具本身，再用协议客户端检查发现、合法调用、非法参数和受控错误。最后才评估模型是否知道何时使用它。stdio测试还要故意产生业务日志，确认不会混进协议消息；远程服务则检查认证、租户映射和资源限制。把这些验证分开可以说明到底是协议接线、业务逻辑还是模型选择出错，避免一句“Inspector能连上”就宣布全部完成。",
+  "deep": "### 先固定规范\n本题初始化与传输示例固定2025-11-25。升级其他版本时必须整套验证发现、初始化与调用约定。\n\n### 协议与业务分开\n日志不要污染stdio协议输出；schema有效后还要检查身份、对象权限、业务条件和资源限制。\n\n### 验证真实能力\n先用协议客户端验证发现、调用、错误和关闭，再用任务集评估工具选择；不能以连接成功替代业务正确。\n\n### 可验证的对照\n先用固定输入验证工具本身，再用协议客户端检查发现、合法调用、非法参数和受控错误。最后才评估模型是否知道何时使用它。stdio测试还要故意产生业务日志，确认不会混进协议消息；远程服务则检查认证、租户映射和资源限制。把这些验证分开可以说明到底是协议接线、业务逻辑还是模型选择出错，避免一句“Inspector能连上”就宣布全部完成。",
   "example": "不联网的设计练习：为报销查询定义工具名、输入schema、可信身份来源、成功结果与业务错误；分别画出stdio本地进程与Streamable HTTP服务边界。若编写SDK示例，应锁定包版本并补齐数据库等依赖再运行。",
   "interview": "最小MCP服务用SDK声明能力和处理函数，通过约定传输对外提供。以2025-11-25为例，常见标准传输为stdio和Streamable HTTP；SSE可作为HTTP响应载体，不是模型执行机制。接入还要处理参数、错误、授权和版本，最小演示不能替代生产服务。\n\n深入展开：先固定规范；协议与业务分开；验证真实能力。用下面的设计例子说明，不能当成用户已实现的项目经历。",
   "followups": [
@@ -163,7 +163,7 @@
   "check": {
    "q": "最小工具能查到数据是否代表服务安全？",
    "a": "还要验证权限、错误、资源限制、日志与生命周期；连接和业务正确是不同检查。",
-   "explain": "检验重点：省略业务依赖的示意代码被描述为可直接运行。；把断开连接与取消操作按所有版本一概处理。这些是需要主动排除的误解，应结合本题的条件说明判断依据。"
+   "explain": "确认 stdio 与 Streamable HTTP 分工、协议日志与业务校验；未运行 SDK 服务，示例明确为设计练习。"
   },
   "related": [
    "AG-002",
@@ -193,28 +193,35 @@
     "name": "小林系列 · MCP传输",
     "url": "https://xiaolinnote.com/ai/tools/13_mcp_transport.html",
     "note": "选题对照；站内答案独立整理，网站中的经历、比例与断言不自动视为事实。"
+   },
+   {
+    "kind": "official",
+    "name": "MCP Transports",
+    "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/transports",
+    "note": "2025-11-25"
+   },
+   {
+    "kind": "official",
+    "name": "MCP Tools",
+    "url": "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+    "note": "2025-11-25"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-13",
-   "note": "本轮对照一手资料修订；示例为设计或算术，未运行真实模型/生产系统。事实、版本边界与工程建议分开理解。"
+   "checked_date": "2026-09-29",
+   "note": "核心论点与所列一手来源交叉核对；工程配置和用户项目结果不据此视为已验证。"
   },
   "fusion_notes": "### MCP传输\n\n2025-11-25示例使用stdio或Streamable HTTP；SSE是可能的响应载体，旧HTTP+SSE传输演进不等于SSE格式消失。",
   "content_version": {
-   "rev": "ai-series-20260913",
-   "date": "2026-09-13",
-   "summary": "跨字段校正概念、版本与实验边界",
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "确认 stdio 与 Streamable HTTP 分工、协议日志与业务校验；未运行 SDK 服务，示例明确为设计练习。",
    "changed_fields": [
-    "answer",
-    "plain",
     "deep",
-    "example",
-    "interview",
-    "followups",
-    "pitfalls",
     "check",
-    "fusion_notes"
+    "sources",
+    "verify"
    ]
   },
   "metadata": {
@@ -224,7 +231,12 @@
      "XL-TOOLS-13"
     ],
     "before_hash": "2ed5e42db632a1233d4c55aebeed1756e7f19b9bbceea019c7873b29a57141cb",
-    "output_hash": "a1f9520ff452cb8e1f19b954fc9d8dc31061c8529467576dde13292fbbe92464"
+    "content_review": {
+     "rev": "core-review-20260929",
+     "date": "2026-09-29",
+     "previous_output_hash": "a1f9520ff452cb8e1f19b954fc9d8dc31061c8529467576dde13292fbbe92464"
+    },
+    "output_hash": "35bf3088b6200715702172ba588a22e04ab83a15f8fc9ea9613494cc131d25d8"
    }
   }
  },

@@ -1,6 +1,6 @@
 {
   "topic": "python-backend",
-  "checked_date": "2026-09-16",
+  "checked_date": "2026-09-29",
   "note": "重点标注:不改题库原文,只记录要突出的短语。level 含义——key=核心结论(最重)、term=关键术语、warn=易错与红线。why 写清这条为什么值得标。短语必须逐字出现在对应字段原文里,由 tools/highlight_audit.py 校验;该脚本还会算「标中字数占该字段比例」,超过 35% 报警、50% 报错——满屏黄等于没重点,这时要回去删条,不是放宽阈值。",
   "questions": {
     "PY-001": {
@@ -387,75 +387,9 @@
       "spans": [
         {
           "field": "answer",
-          "level": "term",
-          "text": "接收函数并返回新函数",
-          "why": "装饰器定义"
-        },
-        {
-          "field": "answer",
           "level": "key",
-          "text": "声明式、可嵌套、可被框架管理生命周期",
-          "why": "依赖注入比装饰器更进一步"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "套上去就多了保护/充电(新行为)",
-          "why": "装饰器在不改原函数上叠加行为"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "退房自动回收",
-          "why": "依赖注入统一生命周期"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "装饰器是『包一层』,依赖注入是『按需供给+统一生命周期』",
-          "why": "两者机制不同"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "记得 functools.wraps 保元信息",
-          "why": "装饰器要点:保留原函数元信息"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "优先用 Depends 而不是自制装饰器",
-          "why": "框架推荐做法"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "增强「函数行为」用装饰器,供给「请求上下文」用依赖注入",
-          "why": "分工原则"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "@ 在定义时立即执行(装饰)",
-          "why": "装饰器执行时机"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "按请求缓存同一依赖的结果",
-          "why": "依赖注入的缓存语义"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "路由上优先用 Depends 而不是自制装饰器",
-          "why": "框架路由注册约束"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "横切『函数行为』(重试/日志)",
-          "why": "选型分工:横切行为用装饰器"
+          "text": "也可以登记后原样返回",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -464,74 +398,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "等网络用 asyncio(async/await)",
-          "why": "选型决策一"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "线程只对『等待型』任务有效",
-          "why": "GIL 限制:线程只适合等待型"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "单线程管所有等待",
-          "why": "协程本质"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "人多只在『等人送菜』时有用",
-          "why": "线程受 GIL 限制"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "真实 GIL 在 I/O 时会释放",
-          "why": "比喻局限:别把 GIL 说死"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "等网络用 asyncio,同步 SDK 用线程池兜底",
-          "why": "选型口诀"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "任何并发都要配并发上限",
-          "why": "工程细节一"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "async 路由混入阻塞调用会卡死事件循环",
-          "why": "工程细节三:async 路由红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "GIL 只影响 CPython 的 Python 字节码执行",
-          "why": "GIL 作用范围"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "进程间通信要序列化(pickle),大对象传参成本高",
-          "why": "跨进程传参注意"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "def 路由自动进线程池",
-          "why": "FastAPI 路由调度规则"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "async def 路由里别放阻塞调用",
-          "why": "async 路由红线"
+          "text": "先区分 I/O 等待与 CPU 计算",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -890,74 +758,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "声明式,优先用,零代码",
-          "why": "第一层优先用"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "单字段的业务校验与归一化",
-          "why": "第二层单字段"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "能单字段的不用 model 级——层次越深,报错信息越难定位",
-          "why": "选择原则:浅层优先"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "第一道自动安检门(类型与约束,机器自动查)",
-          "why": "第一层比喻"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "能在第一道解决就别排到第三道——越靠后,旅客越难知道『到底哪一项不合格』",
-          "why": "越靠后越难定位"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "v2 里校验与序列化是分开的两套流程",
-          "why": "比喻局限:v2 关键"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "声明式约束优先(零代码、报错自动定位)",
-          "why": "三层第一"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "extra=forbid 拒绝未知字段",
-          "why": "v2 要点二"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "格式校验进模型,查库的业务校验进 service 层",
-          "why": "工程纪律:分层"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "团队级类型字典,一致性来源",
-          "why": "声明层复用"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "mode='before' 处理原始输入",
-          "why": "field_validator before 模式"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "业务校验与格式校验分层(格式进 Pydantic,业务进 service 层——查数据库的校验别塞进模型)",
-          "why": "工程纪律:校验分层"
+          "text": "模式决定拿到原始输入还是已解析值",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1478,62 +1280,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "gather——已知一批协程、要全部结果、顺序对应输入(简单聚合)",
-          "why": "原语一:gather"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "单个子任务自己以 CancelledError 结束不算失败,不会触发兄弟取消",
-          "why": "TaskGroup 细节"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "完成一个处理一个(流式消费结果,不等全批,如并发检索先到先用)",
-          "why": "原语三:完成即处理"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "TaskGroup=『纪律版全体集合』——有人走丢全团原地等(取消其他),保证没人被落下(结构化)",
-          "why": "TaskGroup 比喻"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "固定批次 gather/TaskGroup,动态流 Queue",
-          "why": "信号一:结果依赖"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "gather 默认语义的坑——第一个异常抛出但其余任务变孤儿继续跑",
-          "why": "gather 默认坑"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "队列管任务流解耦,信号量管同时数",
-          "why": "Queue vs Semaphore"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "gather 默认:第一个异常抛出,但其余任务继续跑(孤儿任务!结果被丢弃仍在消耗资源)",
-          "why": "gather 最危险默认"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "子任务抛普通异常(非 CancelledError)→ 取消兄弟任务 → await 处抛 ExceptionGroup",
-          "why": "TaskGroup 规则a"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "Semaphore 管『同时进行数』,Queue 管『任务流与解耦』",
-          "why": "分工"
+          "text": "不自动取消兄弟任务",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1612,74 +1360,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "三级方案按任务特征选",
-          "why": "后台任务的选型总纲"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "轻量收尾(发通知/写审计日志),进程死任务丢(不可靠,只做可丢的事)",
-          "why": "BackgroundTasks 的能力边界红线"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "定时任务无锁多实例重复执行",
-          "why": "定时任务最经典的线上事故"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "出餐口顺手擦桌子(快、顺手、但打烊就没人擦了——可丢)",
-          "why": "BackgroundTasks 的白话定位"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "把外卖订单写在下餐垫纸上(BackgroundTasks 做关键业务,一打扫就没了)",
-          "why": "误用 BackgroundTasks 的后果"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "BackgroundTasks 只做可丢的轻收尾",
-          "why": "口述里的一句话纪律"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "定时调度多实例必须分布式锁或专用实例",
-          "why": "定时调度的判据"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "任务 ID 幂等、参数只传 ID(对象重新查库——参数里的状态可能过期)",
-          "why": "任务设计的做法清单"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "重试策略显式(PY-023)、死信处理(重试耗尽进死信队列人工处理)",
-          "why": "队列任务的可靠性检查项"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "重复执行的任务(发重复通知)是经典事故",
-          "why": "多实例调度的事故口径"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "worker 独立进程(不与 API 混部——资源隔离,PY-019)",
-          "why": "部署边界判据"
-        },
-        {
-          "field": "example",
-          "level": "term",
-          "text": "参数传 ID,不传对象",
-          "why": "任务参数序列化的核心原则"
+          "text": "不是持久任务队列",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1980,74 +1662,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "选型口诀:边界用 Pydantic(不可信数据),内部用 dataclass(可信数据),接口适配用 TypedDict",
-          "why": "三者选型的口诀"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "边界数据用 dataclass(校验缺失)",
-          "why": "反模式一,最常踩"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "Pydantic=带安检的快递箱(进出边界都要查",
-          "why": "Pydantic 的白话定位"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "外面寄来的包裹不安检直接放冰箱(边界用 dataclass,危险)",
-          "why": "边界不校验的危险"
-        },
-        {
-          "field": "plain",
-          "level": "term",
-          "text": "TypedDict=货架标签",
-          "why": "TypedDict 是说明书不是容器"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "核心是『信任边界』意识:数据从哪来决定用什么容器",
-          "why": "选型背后的统一原则"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "演进策略:原型全 Pydantic,热点换 dataclass",
-          "why": "渐进式演进的做法"
-        },
-        {
-          "field": "interview",
-          "level": "term",
-          "text": "messages 数组是 TypedDict",
-          "why": "LLM 场景的典型分布"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "边界:API 请求/响应(PY-004)、LLM 返回解析(LP-003)、配置(PY-010)→Pydantic",
-          "why": "边界的清单"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "内部:组装器的片段(PY-022 Segment)、服务层的中间结果、领域实体→dataclass",
-          "why": "内部的清单"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "Pydantic v2(Rust 核心)校验已经很快,但仍是 dataclass 的数倍",
-          "why": "性能差异的准确口径"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "判断:内部数据的实例化频率(每请求数百次→dataclass 的开销差可见)",
-          "why": "何时值得换 dataclass"
+          "text": "返回普通 dict",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -2207,75 +1823,9 @@
       "spans": [
         {
           "field": "answer",
-          "level": "term",
-          "text": "contextvars 提供『协程/任务本地的全局变量』",
-          "why": "contextvars 的标准定义"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "传统全局变量在并发下被请求互相覆盖(PY-003);层层传参污染所有函数签名",
-          "why": "为什么需要它:两个反例"
-        },
-        {
-          "field": "answer",
           "level": "key",
-          "text": "contextvars 是异步安全的隐式上下文——每个请求一个独立的值槽",
-          "why": "FastAPI 日志靠它的原因"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "每个客人的抽屉是独立的(并发请求互不覆盖)",
-          "why": "请求隔离的白话"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "contextvars 的值还可以在任务创建时被复制或隔离",
-          "why": "上下文继承语义"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "三个陷阱我会主动讲:Task 的上下文继承时机",
-          "why": "口述里主动加分的陷阱清单"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "reset 纪律(长连接泄漏)",
-          "why": "长连接场景必须主动说出的坑"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "读取时缺失即失败(租户上下文缺失就是请求错乱的前兆)",
-          "why": "防御性编程的口径"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "每个 Task/协程继承创建时的上下文快照(copy-on-write 语义)",
-          "why": "机制的核心表述"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "后台任务要显式传上下文或依赖继承时机",
-          "why": "后台任务最易错的地方"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "reset 的纪律(中间件 finally reset,防长连接的上下文泄漏——WebSocket 长连接的上下文生命周期)",
-          "why": "长连接的泄漏红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "隐式上下文只装『环境』不装『数据』",
-          "why": "隐式与显式的边界判据"
+          "text": "不提供认证与授权",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -2588,74 +2138,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "LLM 流式的标准模式",
-          "why": "这个语法在 LLM 后端里的定位"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "同步生成器在 async 管道里会阻塞",
-          "why": "最容易踩的一处"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "数据源是异步的→async;纯 CPU 的转换→同步即可",
-          "why": "同步还是异步的选择判据"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "同步阻塞整个事件循环",
-          "why": "白话里点出的后果"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "上游取消→下游的 finally 清理",
-          "why": "生成器层的取消传播语义"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "异步生成器是 LLM 流式的标准模式",
-          "why": "口述开场句"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "管道的每层都要 async",
-          "why": "同步层会阻塞事件循环,管道纪律"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "async generator 的 aclose(或 async for 的正常结束/GC)触发 finally",
-          "why": "清理时机的机制"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "天然的背压(生产不会快于消费)",
-          "why": "生成器管道最重要的性质"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "多层 async 生成器的串联(每层 await 上游 yield 下游)",
-          "why": "管道组合的做法与逐层异步要求"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "超时(asyncio.timeout 包住整个流的消费,LP-004)",
-          "why": "流式超时的正确包法"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "多层异步管道(示意)",
-          "why": "示例的骨架说明"
+          "text": "资源所有权与关闭范围",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },

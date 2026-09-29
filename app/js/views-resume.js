@@ -69,6 +69,7 @@ const ResumeView = (() => {
           <button class="btn btn-small ${!showAll ? 'btn-primary' : ''}" data-rv-filter="must">必知题</button>
           <button class="btn btn-small ${showAll ? 'btn-primary' : ''}" data-rv-filter="all">全部(${pg.total})</button>
           ${mustIds.length >= 3 ? `<button class="btn btn-small" data-rv-must-mock>必知题定向自测(${mustIds.length}题)</button>` : ''}
+          <a class="btn btn-small" href="#/guides">简历训练单元</a>
         </div>
       </div>
       ${d.sections.map(s => renderSection(s)).join('')}
@@ -119,7 +120,9 @@ const ResumeView = (() => {
           <span class="muted small" style="margin-left:6px">${ids.length} 题</span>
           <span class="btn-row rv-summary-btns">
             <button type="button" class="btn btn-small" data-rv-mock="${gid}">定向自测(${ids.length}题)</button>
-            <button type="button" class="btn btn-small" data-rv-export="${gid}">导出表达卡</button>
+            <button type="button" class="btn btn-small" data-rv-export="${gid}">导出参考资料</button>
+            <button type="button" class="btn btn-small" data-rv-personal="${gid}">导出个人表达卡</button>
+            ${g.guideId ? `<a class="btn btn-small" href="#/guides/${encodeURIComponent(g.guideId)}">训练单元</a>` : ''}
           </span>
         </summary>
         ${g.resumePoint ? `<p class="muted small" style="margin:4px 0 6px">简历对应: ${esc(g.resumePoint)}</p>` : ''}
@@ -136,7 +139,7 @@ const ResumeView = (() => {
      narrative/qa 直接用 answer 要点。Markdown 标记剥掉,导出的是纯文本。 */
   function stripMd(s) {
     return String(s == null ? '' : s)
-      .replace(/```[\s\S]*?```/g, '')
+      .replace(/^```[^\n]*\n?/gm, '')
       .replace(/^#{1,6}\s+/gm, '')
       .replace(/^\s*[-*+]\s+/gm, '· ')
       .replace(/^\s*>\s?/gm, '')
@@ -157,15 +160,15 @@ const ResumeView = (() => {
     return stripMd(q.answer || '');   /* narrative / qa 都落在 answer 字段 */
   }
 
-  function buildGroupCardText(gid) {
-    const entry = rvIds.get(gid);
+  function buildGroupCardText(entry) {
     if (!entry) return null;
-    const lines = [`简历表达卡 · ${entry.name}`, ''];
+    const lines = [`简历参考资料 · ${entry.name}`, '以下是题库参考内容，不代表我的作答或已掌握。', ''];
     entry.ids.forEach(id => {
       const q = Data.question(id);
       if (!q) return;
       lines.push(`【${id}】${q.title || id}`);
       lines.push(`问：${questionPrompt(q) || '(无题面)'}`);
+      (q.options || []).forEach(o => lines.push(`${o.label}. ${stripMd(o.text)}`));
       lines.push(`答（要点）：${questionAnswer(q) || '(无参考要点)'}`);
       lines.push('');
     });
@@ -174,13 +177,37 @@ const ResumeView = (() => {
 
   /* 直接走 util.download(Blob + a[download])——Anki CSV 用的同一套真实下载,
      测试里等 'download' 事件就能落盘。文件名禁掉文件系统非法字符。 */
-  function exportGroupCard(gid) {
+  async function exportGroupCard(gid, btn, personal = false) {
     const entry = rvIds.get(gid);
-    const text = buildGroupCardText(gid);
-    if (!entry || !text) { toast('没有可导出的题目', 'err'); return; }
-    const safe = String(entry.name).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '');
-    download(`简历表达卡-${safe}.txt`, text, 'text/plain');
-    toast('已下载 简历表达卡-' + safe + '.txt');
+    if (!entry) return;
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = '准备资料中…';
+    try {
+      const records = [];
+      if (personal) {
+        const ids = new Set(entry.ids), seen = new Set();
+        (Store.data.mock.rounds || []).slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(rd => {
+          (rd.items || []).forEach(it => {
+            if (ids.has(it.qid) && !seen.has(it.qid) && ExpressCard.itemAnswered(it)) { records.push(it); seen.add(it.qid); }
+          });
+        });
+        if (!records.length) { toast('这组还没有个人作答，请先完成一次定向练习。', 'err'); return; }
+      }
+      const needs = personal ? records.filter(it => !it.questionSnapshot).map(it => it.qid) : entry.ids;
+      if (Data.ensureQuestion) await Promise.all(needs.filter(id => Data.question(id)).map(id => Data.ensureQuestion(id)));
+      else await Data.questionsReady();
+      if (!btn.isConnected) return;
+      if (personal) {
+        const result = ExpressCard.buildFromPracticeGroup(entry.name, records, id => Data.question(id));
+        if (!result.ok) { toast(result.error, 'err'); return; }
+        download(result.mdName, result.markdown, 'text/markdown');
+      } else {
+        const safe = String(entry.name).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '');
+        download(`简历参考资料-${safe}.txt`, buildGroupCardText(entry), 'text/plain');
+      }
+      toast(personal ? '已下载个人表达卡' : '已下载参考资料');
+    } catch (e) { toast('资料暂时未加载完整，请重试：' + e.message, 'err'); }
+    finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = label; } }
   }
 
   function wire(root) {
@@ -201,9 +228,12 @@ const ResumeView = (() => {
     $$('[data-rv-export]', root).forEach(btn => {
       btn.addEventListener('click', e => {
         stopToggle(e);
-        exportGroupCard(btn.dataset.rvExport);
+        exportGroupCard(btn.dataset.rvExport, btn);
       });
     });
+    $$('[data-rv-personal]', root).forEach(btn => btn.addEventListener('click', e => {
+      stopToggle(e); exportGroupCard(btn.dataset.rvPersonal, btn, true);
+    }));
     const mustBtn = $('[data-rv-must-mock]', root);
     if (mustBtn) mustBtn.addEventListener('click', () => {
       if (mustIds.length) MockView.startDirected(mustIds, '简历·必知题');

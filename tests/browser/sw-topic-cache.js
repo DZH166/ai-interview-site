@@ -37,6 +37,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 60000 }).catch(() => {});
     await page.reload();
     await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 60000 });
+    await page.evaluate(() => Data.questionsReady()); // Explicit cache coverage test, not startup behavior.
     /* 全量分片到位:index-only 的壳里没有 answer,有 answer 的题数远大于 0 才说明分片合并完了 */
     await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded()
       && Data.allQuestions().filter(q => q.answer).length > 100, null, { timeout: 60000 });
@@ -45,7 +46,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       const keys = await caches.keys();
       const shell = keys.find(k => k.startsWith('shell-'));
       const topics = keys.find(k => k.startsWith('topics-'));
-      const paths = async n => n ? (await (await caches.open(n)).keys()).map(r => new URL(r.url).pathname) : [];
+      const paths = async n => n ? (await (await caches.open(n)).keys()).map(r => new URL(r.url).pathname).filter(p => !p.endsWith('/data/cached-manifests.json')) : [];
       const mf = await (await fetch('data/manifest.json')).json();
       return {
         keys, shell, topics,
@@ -73,9 +74,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       const c = await caches.open(name);
       await c.put(new Request('data/topics/ghost.000000000000.json'),
         new Response('{"topic":"ghost","questions":[]}'));
-      const before = (await c.keys()).length;
+      const before = (await c.keys()).filter(r => r.url.includes('/data/topics/')).length;
       await fetch('data/manifest.json', { cache: 'no-store' });
-      const keys = await c.keys();
+      const keys = (await c.keys()).filter(r => r.url.includes('/data/topics/'));
       return { before, after: keys.length, still: keys.some(r => r.url.includes('ghost.000000000000.json')) };
     });
     check('幽灵分片已入缓存(前置条件)', ghost.before === snap.want.length + 1, JSON.stringify(ghost));
@@ -88,7 +89,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       await caches.delete(shell);
       const keys = await caches.keys();
       const topics = keys.find(k => k.startsWith('topics-'));
-      return { n: topics ? (await (await caches.open(topics)).keys()).length : -1, keys };
+      return { n: topics ? (await (await caches.open(topics)).keys()).filter(r => r.url.includes('/data/topics/')).length : -1, keys };
     }, snap.shell);
     check('shell 缓存整包失效后分片依然在', survived.n === snap.want.length, JSON.stringify(survived));
 

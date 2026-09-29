@@ -6,7 +6,7 @@ const App = (() => {
     home: HomeView, browse: BrowseView, study: StudyView,
     mock: MockView, review: ReviewView, docs: DocsView,
     search: SearchView, maintain: MaintainView, path: PathView,
-    resume: ResumeView
+    resume: ResumeView, guides: GuidesView, offline: OfflineView
   };
   let pendingAnchor = '';
 
@@ -20,6 +20,9 @@ const App = (() => {
     try { if (StudyView.flushNote) StudyView.flushNote(); } catch (e) {}
     try { if (DocsView.cleanup) DocsView.cleanup(); } catch (e) {}
     try { if (StudyView.cleanup) StudyView.cleanup(); } catch (e) {}
+    if (SearchView.cleanup) SearchView.cleanup();
+    if (GuidesView.cleanup) GuidesView.cleanup();
+    if (OfflineView.cleanup) OfflineView.cleanup();
     if (PathView.cleanup) PathView.cleanup();
     const fn = routes[view] || HomeView;
     try {
@@ -34,6 +37,8 @@ const App = (() => {
            ——本站其它深链都用 ?x= 形式,手抄/改写链接时很容易写成这种。 */
         fn.render(root, parts, query);
       } else if (view === 'mock') {
+        fn.render(root, parts);
+      } else if (view === 'guides') {
         fn.render(root, parts);
       } else {
         fn.render(root);
@@ -75,21 +80,13 @@ const App = (() => {
      重建 Data 内存(扩展题库/资料)并全量重建索引;失败抛错由调用方反馈真实结果。
      另外把上下文提供者交给 Search:数据版本变化时索引会按需自动重建,
      这样「某个调用点忘了重建索引」不再是一类可能的 bug。
-     全量题字段异步合并(Track E)后的两次构建:
-       ① 立即构建一次 —— 加载窗口内索引虽只有 index 元数据,但笔记/尝试等
-          动态层必须即刻生效(个人写入后立刻可检索,与拆分前行为一致);
-       ② questionsReady 后再构建一次 —— 补齐题干/答案/追问等全量静态字段,
-          半份索引被完整版覆盖。 */
+     元数据与个人记录立即可查；各分片完成后通过 onContentChange 分批补齐正文。
+     重建索引本身不触发全库下载。 */
   function rebuildIndex() {
     Data.init();
     Search.build(StudyView.currentCtx());
-    Data.questionsReady().then(() => {
-      /* 重进 init:让 contentVersion 以「已就绪」状态重算(搜静态层签名必须翻转,
-         否则静态层缓存一直是 index-only 的半份题库)。mergedBank 保证重入不丢字段。 */
-      Data.init();
-      Search.build(StudyView.currentCtx());
-    });
   }
+  Data.onContentChange(() => Search.build(StudyView.currentCtx()));
   window.rebuildIndex = rebuildIndex;
   Search.setContextProvider(() => {
     Data.init();                     /* 保证题库/资料内存与存储一致 */
@@ -121,8 +118,8 @@ const App = (() => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = $('#theme-toggle');
     if (!btn) return;
-    btn.textContent = isDark ? '☀️' : '🌙';
-    /* emoji 图标本身没有语义,读屏需要一句能听懂的状态描述 */
+    btn.textContent = isDark ? '亮' : '暗';
+    /* 短按钮文字配合读屏状态描述，明确切换后的主题 */
     btn.setAttribute('aria-label', isDark ? '切换到亮色模式' : '切换到暗色模式');
     btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
   }

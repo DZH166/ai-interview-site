@@ -371,6 +371,7 @@ mark.hl-warn { background: #ffe0da; font-weight: 500; }
 .mock-config { max-width: 760px; }
 .mock-run { max-width: 860px; }
 .mock-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.mock-progress > .btn { flex-shrink: 0; white-space: nowrap; }
 .progress { flex: 1; height: 6px; background: #eef2f7; border-radius: 3px; overflow: hidden; }
 .progress-in { height: 100%; background: var(--primary); transition: width .25s; }
 .mock-self { min-height: 130px; }
@@ -955,4 +956,21 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
   .resume-q-title { grid-column: 1 / -1; grid-row: 2; }
 }
 
-}
+/* 简历知识点训练：沿用现有令牌，长文保持稳定阅读宽度。 */
+.guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.guide-card { display: flex; flex-direction: column; gap: 8px; }
+.guide-card h2, .guide-card p { margin: 0; }
+.guide-card .btn { align-self: flex-start; margin-top: auto; }
+.guide-detail { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+.guide-detail > *, .guide-card { min-width: 0; overflow-wrap: anywhere; }
+.guide-index-head h1, .guide-detail h1, .offline-panel h1 { font-size: 20px; }
+.guide-detail h2, .guide-card h2 { font-size: 17px; }
+.guide-main-question { margin: 16px 0; line-height: 1.65; }
+.guide-reference summary, .guide-followup summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.guide-followup { border-bottom: 1px solid var(--line); padding: 8px 0; }
+.guide-links { display: grid; gap: 8px; overflow-wrap: anywhere; }
+.offline-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+#offline-bar { width: 100%; max-width: 640px; accent-color: var(--primary); }
+
+/* Long reference sections below the viewport are laid out when approached. */
+.q-sec { content-visibility: auto; contain-intrinsic-size: auto 220px; }

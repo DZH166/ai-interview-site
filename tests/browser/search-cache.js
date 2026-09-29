@@ -30,7 +30,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
        两次构建都会被观察到 —— 计数基线必须在「就绪后」重新校准,后面断言的才是
        真正要保护的契约:「就绪之后,个人写入只重建动态层,静态层不再重建」。 */
     await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded(), null, { timeout: 60000 });
-    await page.evaluate(() => { Data.init(); Search.build(StudyView.currentCtx()); });
+    await page.evaluate(async () => { Data.init(); Search.build(StudyView.currentCtx()); await Search.whenIdle(); });
 
     const first = await page.evaluate(() => Search.stats());
     check('就绪基线:静态层已建且题量达标', first.staticUnits > 300 && first.staticBuilds >= 1, JSON.stringify(first));
@@ -63,20 +63,28 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     check('深链展开具体那一轮', await page.evaluate(() => document.querySelector('.round-details[data-round-id="r-deeplink-1"]').open));
 
     /* ---- 性能测量(记录分布,不拿单次最好当结论) ---- */
-    const perf = await page.evaluate(() => {
+    const perf = await page.evaluate(async () => {
       /* 全量重建 = 构造内容版本变化触发静态层重建(动态重建另有 dynMs) */
       const t0 = performance.now();
       const ctxFull = StudyView.currentCtx(); ctxFull.contentVersion = 'perf-' + Math.random();
-      Search.build(ctxFull); const tBuild = performance.now() - t0;
+      Search.build(ctxFull); const tSubmit = performance.now() - t0;
+      await Search.whenIdle();
+      const tBuild = performance.now() - t0;
       const times = [];
       for (let i = 0; i < 5; i++) { const t = performance.now(); Search.query('向量检索 嵌入'); times.push(performance.now() - t); }
       times.sort((a, b) => a - b);
+      // 恢复真实内容版本后再量个人写入，避免把另一轮静态重建冒充动态重建。
+      Search.build(StudyView.currentCtx()); await Search.whenIdle();
+      const staticBefore = Search.stats().staticBuilds;
       const t1 = performance.now(); Store.setNote('RG-001', '性能测量笔记'); window.rebuildIndex(); const tDyn = performance.now() - t1;
-      return { buildMs: Math.round(tBuild * 100) / 100, dynMs: Math.round(tDyn * 100) / 100,
+      return { questionCount: Data.allQuestions().length, submitMs: Math.round(tSubmit * 100) / 100,
+               buildMs: Math.round(tBuild * 100) / 100, dynMs: Math.round(tDyn * 100) / 100,
+               dynamicOnly: Search.stats().staticBuilds === staticBefore,
+               fullBody: Search.query('fencing token').some(r => r.unit.qid === 'AG-033'),
                qMedianMs: Math.round(times[2] * 100) / 100, qMin: Math.round(times[0] * 100) / 100, qMax: Math.round(times[4] * 100) / 100 };
     });
-    console.log(`  PERF(349题,本机Chromium):静态重建 ${perf.buildMs}ms · 动态重建 ${perf.dynMs}ms · 查询中位 ${perf.qMedianMs}ms(${perf.qMin}~${perf.qMax})`);
-    check('性能量级安全(查询中位 < 50ms,重建 < 500ms)', perf.qMedianMs < 50 && perf.buildMs < 500, JSON.stringify(perf));
+    console.log(`  PERF(${perf.questionCount}题,本机Chromium):同步提交 ${perf.submitMs}ms · 全量索引就绪 ${perf.buildMs}ms · 动态重建 ${perf.dynMs}ms · 查询中位 ${perf.qMedianMs}ms(${perf.qMin}~${perf.qMax})`);
+    check('性能量级安全(全文查询中位 < 50ms,全量索引就绪 < 500ms)', perf.fullBody && perf.dynamicOnly && perf.qMedianMs < 50 && perf.buildMs < 500, JSON.stringify(perf));
 
     check('全程无页面 JS 异常', errors.length === 0, errors.join(' | '));
     console.log(`\n结果: ${passed} 通过, 0 失败`);

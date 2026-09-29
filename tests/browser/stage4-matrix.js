@@ -1,4 +1,5 @@
-/* 阶段4:重建可信并发矩阵——真实前置条件、noteDraft 副本、反向验证。
+/* 阶段4:真实前置条件、noteDraft 副本与同毫秒四态收敛。
+   禁用传播的反向回归在 Node save-protocol 套件验证，不在浏览器篡改 Storage。
    运行:PW=<playwright> CHROME=default PORT=xxxx node tests/browser/stage4-matrix.js */
 'use strict';
 const path = require('path'), assert = require('assert'), fs = require('fs');
@@ -10,7 +11,50 @@ function check(name, ok, detail) { assert(ok, name + (detail ? ' :: ' + detail :
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const diskNote = (P, qid) => P.evaluate(q => { try { return (JSON.parse(localStorage.getItem('aiiv:records')).questions[q] || {}).note; } catch (e) { return '(err)'; } }, qid);
 const diskDraft = (P, qid) => P.evaluate(q => { try { return (JSON.parse(localStorage.getItem('aiiv:records')).questions[q] || {}).noteDraft || null; } catch (e) { return '(err)'; } }, qid);
-const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms || 6000 }).then(() => true).catch(() => false);
+async function openApp(context, route = 'home') {
+  const page = await context.newPage();
+  await page.goto(BASE + '/index.html#/' + route);
+  await page.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
+  return page;
+}
+async function seedPair(browser, note, routeA = 'home') {
+  const context = await browser.newContext();
+  const A = await context.newPage();
+  await A.goto(BASE + '/__seed__');
+  await A.evaluate(value => localStorage.setItem('aiiv:records', JSON.stringify({
+    v: 3, resetEpoch: 0, resetTs: 0,
+    questions: { 'AG-001': { note: value, _updatedAt: 0 } },
+    mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {}
+  })), note);
+  assert.strictEqual(await diskNote(A, 'AG-001'), note, '真实种子必须写入独立 context');
+  await A.goto(BASE + '/index.html#/' + routeA);
+  await A.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
+  const B = await openApp(context);
+  return { context, A, B };
+}
+async function sameTimeWrite(page, note) {
+  assert.strictEqual(await page.evaluate(value => {
+    const r = Store.rec('AG-001'); r.note = value; r._updatedAt = 1700000000000;
+    return Store.saveNow();
+  }, note), true, '同毫秒测试必须通过真实 saveNow 成功落盘');
+}
+async function waitForFourStates(A, B, P, allowed) {
+  const started = Date.now();
+  let states, stable = 0, previous;
+  while (Date.now() - started < 6000) {
+    const [a, b, disk, reopen] = await Promise.all([
+      A.evaluate(() => Store.rec('AG-001').note), B.evaluate(() => Store.rec('AG-001').note),
+      diskNote(A, 'AG-001'), P.evaluate(() => Store.rec('AG-001').note)
+    ]);
+    states = { a, b, disk, reopen };
+    const converged = allowed.includes(a) && a === b && b === disk && disk === reopen;
+    stable = converged ? (a === previous ? stable + 1 : 1) : 0;
+    previous = a;
+    if (stable === 3) return states;
+    await sleep(50);
+  }
+  assert.fail('四态未收敛: ' + JSON.stringify(states));
+}
 
 (async () => {
   let browser;
@@ -20,29 +64,25 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     for (let i = 0; i < 50; i++) { try { if ((await fetch(BASE + '/index.html')).ok) { ready = true; break; } } catch (_) {} await sleep(100); }
     assert(ready);
     browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME && process.env.CHROME !== 'default' ? process.env.CHROME : undefined });
-    const context = await browser.newContext();
     const trace = [];
 
     /* ===== S1: 同毫秒顺序写(正常 saveNow 接口,同 _updatedAt) ===== */
     {
-      const A = await context.newPage(), B = await context.newPage();
-      await A.goto(BASE + '/__seed__');
-      await A.evaluate(() => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions: { 'AG-001': { note: '初始' } }, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {} })));
-      await A.goto(BASE + '/index.html#/home'); await B.goto(BASE + '/index.html#/home');
-      await A.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
-      await B.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
+      const { context, A, B } = await seedPair(browser, 'S1独立初始笔记');
       /* 前置:两页都就绪,基线一致 */
-      check('S1-pre 两页基线一致(初始笔记)', await diskNote(A, 'AG-001') === '初始' && await B.evaluate(() => Store.rec('AG-001').note) === '初始');
+      check('S1-pre 两页与磁盘均为独立初始笔记',
+        await A.evaluate(() => Store.rec('AG-001').note) === 'S1独立初始笔记'
+        && await B.evaluate(() => Store.rec('AG-001').note) === 'S1独立初始笔记'
+        && await diskNote(A, 'AG-001') === 'S1独立初始笔记');
       /* A 写 A 版本,B 写 B 版本,同 _updatedAt,正常接口 */
-      await A.evaluate(() => { const r = Store.rec('AG-001'); r.note = 'A同毫秒版本'; r._updatedAt = 1700000000000; Store.saveNow(); });
-      await B.evaluate(() => { const r = Store.rec('AG-001'); r.note = 'B同毫秒版本'; r._updatedAt = 1700000000000; Store.saveNow(); });
-      await wait(A, () => true, 1200);
-      const st = { a: await A.evaluate(() => Store.rec('AG-001').note), b: await B.evaluate(() => Store.rec('AG-001').note), disk: await diskNote(A, 'AG-001') };
-      const reopen = await (async () => { const P = await context.newPage(); await P.goto(BASE + '/index.html#/home'); await P.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *')); const v = await P.evaluate(() => Store.rec('AG-001').note); await P.close(); return v; })();
-      const converged = st.a === st.b && st.b === st.disk && reopen === st.disk;
-      trace.push({ case: 'S1 同毫秒顺序写', states: { ...st, reopen }, converged });
-      check('S1 同毫秒:四态收敛(' + st.disk + ')', converged, JSON.stringify(st) + ' reopen=' + reopen);
-      await A.close(); await B.close();
+      await sameTimeWrite(A, 'A同毫秒版本');
+      await sameTimeWrite(B, 'B同毫秒版本');
+      const P = await openApp(context);
+      const states = await waitForFourStates(A, B, P, ['A同毫秒版本', 'B同毫秒版本']);
+      const converged = states.a === states.b && states.b === states.disk && states.disk === states.reopen;
+      trace.push({ case: 'S1 正向同毫秒顺序写 A→B', states, converged });
+      check('S1 同毫秒 A→B: A/B/磁盘/重开四态收敛', converged, JSON.stringify(states));
+      await context.close();
     }
 
     /* ===== S2: 真实暂停恢复 =====
@@ -52,31 +92,36 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
        tests/stage4-pause-test.js(独立内存 + 共享 localStorage,暂停方不接收对方写入)。
        此处不再用假标记(__paused)伪装前置条件——审查报告 ST-02 指出的正是这种假构造。 */
     {
-      check('S2 暂停恢复已在 Node 双实例套件覆盖(tests/stage4-pause-test.js)', fs.existsSync(path.join(ROOT, 'tests', 'stage4-pause-test.js')));
+      check('S2 Node 暂停恢复回归文件存在(行为结果由独立 Node 套件报告)', fs.existsSync(path.join(ROOT, 'tests', 'stage4-pause-test.js')));
     }
 
     /* ===== S3: 关闭前输入副本(noteDraft)+ 备份往返可找回 ===== */
     {
-      const A = await context.newPage(), B = await context.newPage();
-      await A.goto(BASE + '/__seed__');
-      await A.evaluate(() => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions: { 'AG-001': { note: '已保存版' } }, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {} })));
-      await A.goto(BASE + '/index.html#/study/AG-001'); await B.goto(BASE + '/index.html#/home');
+      const { context, A, B } = await seedPair(browser, '已保存版', 'study/AG-001');
       await A.waitForFunction(() => document.querySelector('#note-area'));
-      await B.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
       /* A 输入但未提交;B 保存同题新笔记 */
       await A.locator('#note-area').fill('A关闭前的原文KEEPME');
-      await B.evaluate(() => { Store.setNote('AG-001', 'B保存的新版'); Store.saveNow(); });
-      await wait(A, () => A.evaluate(() => Store.rec('AG-001').note) === 'B保存的新版', 4000).catch(() => {});
+      const aUpdatedAt = await A.evaluate(() => Store.rec('AG-001')._updatedAt);
+      assert.strictEqual(await B.evaluate(previous => {
+        Store.setNote('AG-001', 'B保存的新版');
+        Store.rec('AG-001')._updatedAt = Math.max(Date.now(), previous + 1);
+        return Store.saveNow();
+      }, aUpdatedAt), true);
+      await A.waitForFunction(() => Store.rec('AG-001').note === 'B保存的新版'
+        && document.querySelector('#remote-note-conflict'), null, { timeout: 6000 });
       /* A pagehide:dirty 输入进 noteDraft */
       await A.evaluate(() => { window.dispatchEvent(new Event('pagehide')); });
-      await sleep(500);
+      await A.waitForFunction(() => {
+        const r = JSON.parse(localStorage.getItem('aiiv:records')).questions['AG-001'];
+        return r.note === 'B保存的新版' && r.noteDraft
+          && JSON.stringify(r.noteDraft).includes('A关闭前的原文KEEPME');
+      });
       const draft = await diskDraft(A, 'AG-001');
       check('S3a noteDraft 落盘且含原文', !!(draft && JSON.stringify(draft).includes('A关闭前的原文KEEPME')), JSON.stringify(draft).slice(0, 120));
       check('S3b 正式笔记保持 B 的版本(不被覆盖)', await diskNote(A, 'AG-001') === 'B保存的新版');
       /* 关闭 A,新页面 + 备份往返证明仍可找回 */
-      const P = await context.newPage();
-      await P.goto(BASE + '/index.html#/maintain');
-      await P.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
+      await A.close();
+      const P = await openApp(context, 'maintain');
       const exported = await P.evaluate(() => Store.exportFull());
       await P.evaluate(() => { Store.clearAll(); Store.saveNow(); });
       check('S3c 清空后备份往返:noteDraft 仍在完整备份里', exported.includes('A关闭前的原文KEEPME'));
@@ -85,48 +130,31 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
       const draftBack = await diskDraft(P, 'AG-001');
       check('S3d 恢复后输入副本可找回', !!(draftBack && JSON.stringify(draftBack).includes('A关闭前的原文KEEPME')), JSON.stringify(draftBack).slice(0, 120));
       trace.push({ case: 'S3 关闭副本往返', draftRestored: !!(draftBack && JSON.stringify(draftBack).includes('KEEPME')) });
-      await A.close(); await B.close(); await P.close();
+      await context.close();
     }
 
-    /* ===== 反向验证:禁用收敛传播,同毫秒场景必须重现分歧 ===== */
+    /* ===== S4: 独立存储、无拦截，交换写入先后验证真实正向收敛 =====
+       仅断言两种候选值之一及四态相同；同毫秒冲突的稳定决胜与禁传播反向
+       由 tests/save-protocol-test.js 和 tests/baseline2/issues-node-test.js 验证。 */
     {
-      const A = await context.newPage();
-      /* 注入:丢弃所有非显式发起的 aiiv:records 写入(即传播写被禁) */
-      await A.addInitScript(() => {
-        const orig = Storage.prototype.setItem;
-        Storage.prototype.setItem = function (k, v) {
-          if (k === 'aiiv:records') {
-            const stack = new Error().stack || '';
-            if (!/saveNow|importRecords|clearAll|importFull|importLibrary/.test(stack)) return; /* 丢弃传播写 */
-          }
-          return orig.call(this, k, v);
-        };
-      });
-      const B = await context.newPage();
-      await A.goto(BASE + '/__seed__');
-      await A.evaluate(() => localStorage.setItem('aiiv:records', JSON.stringify({ v: 3, questions: { 'AG-001': { note: '初始' } }, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: {} })));
-      await A.goto(BASE + '/index.html#/home'); await B.goto(BASE + '/index.html#/home');
-      await A.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
-      await B.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *'));
-      /* 同刻写入(决胜依赖传播);且 A 的 init 拦截会丢弃传播写 */
-      /* 文本对:hash(A文本)>hash(B文本),本页(A)决胜胜出;禁传播时磁盘留在 B 版本 */
-      await A.evaluate(() => { const r = Store.rec('AG-001'); r.note = 'A同毫秒版本'; r._updatedAt = 1700000000000; Store.saveNow(); });
-      await B.evaluate(() => { const r = Store.rec('AG-001'); r.note = 'B同毫秒版本'; r._updatedAt = 1700000000000; Store.saveNow(); });
-      await sleep(800);
-      const aMem = await A.evaluate(() => Store.rec('AG-001').note);
-      const diskV = await diskNote(A, 'AG-001');
-      /* 反向验证改在 Node 侧(save-protocol/传播禁用断言);浏览器侧验证正向收敛契约:
-         同刻冲突后 A 内存/磁盘/重开 收敛到同一稳定胜者(胜者由内容哈希决定,不写死文本)。 */
-      const reopen = await (async () => { const P = await context.newPage(); await P.goto(BASE + '/index.html#/home'); await P.waitForFunction(() => typeof Store !== 'undefined' && document.querySelector('#view > *')); const v = await P.evaluate(() => Store.rec('AG-001').note); await P.close(); return v; })();
-      const bMem = await (await context.newPage()).evaluate(() => Store.rec('AG-001').note).catch(() => null);
-      check('S4 正向收敛:同刻冲突后内存/磁盘/重开三方一致', aMem === diskV && diskV === reopen, `a=${aMem} disk=${diskV} reopen=${reopen}`);
-      trace.push({ case: 'S4 反向验证', divergence: true, aMem, diskV });
-      await A.close(); await B.close();
+      const { context, A, B } = await seedPair(browser, 'S4独立初始笔记');
+      check('S4-pre A/B/磁盘均为独立种子，无 S3 记录残留',
+        await A.evaluate(() => Store.rec('AG-001').note) === 'S4独立初始笔记'
+        && await B.evaluate(() => Store.rec('AG-001').note) === 'S4独立初始笔记'
+        && await diskNote(A, 'AG-001') === 'S4独立初始笔记');
+      await sameTimeWrite(B, 'B同毫秒版本');
+      await sameTimeWrite(A, 'A同毫秒版本');
+      const P = await openApp(context);
+      const states = await waitForFourStates(A, B, P, ['A同毫秒版本', 'B同毫秒版本']);
+      const converged = states.a === states.b && states.b === states.disk && states.disk === states.reopen;
+      check('S4 正向同毫秒 B→A: A/B/磁盘/重开四态收敛', converged, JSON.stringify(states));
+      trace.push({ case: 'S4 正向同毫秒顺序写 B→A（独立 context、无存储拦截）', states, converged });
+      await context.close();
     }
 
     fs.mkdirSync(path.join(ROOT, 'delivery', 'reviews'), { recursive: true });
     fs.writeFileSync(path.join(ROOT, 'delivery', 'reviews', 'stage4-matrix.json'),
-      JSON.stringify({ date: '2026-09-15', head: require('child_process').execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(), cases: trace }, null, 1), 'utf8');
+      JSON.stringify({ date: new Date().toISOString(), head: require('child_process').execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(), cases: trace }, null, 1), 'utf8');
     console.log(`\n结果: ${passed} 通过, 0 失败(轨迹: delivery/reviews/stage4-matrix.json)`);
   } finally { if (browser) await browser.close(); server.kill(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

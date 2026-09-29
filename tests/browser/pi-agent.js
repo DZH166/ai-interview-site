@@ -37,6 +37,7 @@ async function open(page, hash) {
     await open(page, '#/browse?t=pi-agent');
     await page.waitForFunction(() => document.querySelector('#f-topic')?.value === 'pi-agent');
     check('category filter displays exactly thirty questions', await page.locator('.q-item[data-qid]').count() === 30 && (await page.locator('#f-count').innerText()).includes('30'));
+    await page.locator('[data-question-prompt="PI-001"]').waitFor({ state: 'visible' });
     check('scenario prompt and fused answer are both visible on arrival', await page.locator('[data-question-prompt="PI-001"]').isVisible() && await page.locator('[data-sec="answer"] .q-sec-body').isVisible());
     check('fused card keeps the written answer and the spoken version apart', await page.locator('[data-sec="answer"] [data-part="answer"]').isVisible() && await page.locator('[data-sec="answer"] [data-part="interview"]').isVisible());
     await page.locator('[data-focus-toggle]').click();
@@ -65,12 +66,15 @@ async function open(page, hash) {
     check('long Pi question fits 360px without page overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     if(process.env.AUDIT_ARTIFACTS) { fs.mkdirSync(process.env.AUDIT_ARTIFACTS, { recursive: true }); await page.screenshot({ path: path.join(process.env.AUDIT_ARTIFACTS, 'pi-agent-360.png'), fullPage: true }); }
     await open(page, '#/docs/doc-pi-agent-1');
+    await page.locator('#doc-content').waitFor({ state: 'visible' });
     check('Pi glossary is available as a document, not extra questions', (await page.locator('#view').innerText()).includes('Pi 面试术语速查'));
     check('prerequisite links use real Pi question IDs', await page.locator('a[href="#/study/PI-001"]').count() > 0);
     await page.locator('#global-search-input').fill('Durable'); await page.locator('#global-search-input').press('Enter');
     await page.locator('#s-topic').selectOption('pi-agent');
+    await page.waitForFunction(() => [...document.querySelectorAll('#s-results a')].some(a => a.getAttribute('href').includes('PI-')));
     check('English terminology finds Pi content', await page.locator('#s-results a[href*="PI-"]').count() > 0);
     await page.locator('#s-input').fill('工具已经扣款'); await page.locator('#s-go').click();
+    await page.waitForFunction(() => !!document.querySelector('#s-results a[href*="PI-029"]'));
     check('Chinese question text is searchable', await page.locator('#s-results a[href*="PI-029"]').count() > 0);
     await open(page, '#/mock');
     for(const checkbox of await page.locator('#m-topics input').all()) await checkbox.uncheck();

@@ -16,6 +16,7 @@ on:
       - 'app/**'
       - 'tests/**'
       - 'projects/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
@@ -23,146 +24,91 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          # legacy-archive-test 对照固定历史提交逐对象检查，浅克隆没有基线。
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: JS 语法检查(node --check 逐文件)
+      - name: 安装本地桩测试依赖（不调用真实 API）
+        run: python -m pip install --quiet 'markdown-it-py==2.2.0' 'openai>=2.0' 'pydantic>=2.5'
+
+      - name: JS 语法检查
         run: |
           fail=0
-          for f in app/js/*.js; do
+          for f in app/js/*.js app/data.js app/sw.js; do
             node --check "$f" || fail=1
           done
           exit $fail
 
-      - name: 行为测试(Markdown/搜索/Store 迁移/计算例题/隔离与恢复)
-        run: node tests/behavior-tests.js
+      # 与本地使用同一个枚举器，包含 tests/*.js、baseline2/*-test.js、
+      # tests/*test.py；新增 loader/progressive/archive/core-content 自动纳入。
+      - name: 全部 Node 与 Python 套件
+        run: python tools/validate_all.py --unit --jobs 2
 
-      - name: 回归测试(记录层/界面层问题 B/C/E4/F/H1/H2 的复现断言)
-        run: node tests/regression-tests.js
-
-      - name: SRS 间隔重复调度(调度数学/唯一排期入口/备份合并/到期建议)
-        run: node tests/srs-test.js
-
-      - name: 多标签页远程合并(内存合并不回写/新者胜/幂等/非法拒绝)
-        run: node tests/remote-merge-test.js
-      - name: 保存前协议(无竞争直写/合并后再写/坏数据不覆盖/同刻决胜确定)
-        run: node tests/save-protocol-test.js
-      - name: 备份可预览恢复(预览不改状态/四类归类/与实际导入一致)
-        run: node tests/preview-restore-test.js
-
-      - name: 恢复预览旧问题与真实暂停回归
-        run: |
-          node tests/baseline2/issues-node-test.js
-          node tests/stage4-pause-test.js
-
-      - name: 清空与终态边界、冲突副本与快照校验
-        run: node tests/record-boundary-test.js
-
-      - name: 搜索分层缓存(静态层只建一次/动态层随写入重建/行为一致)
-        run: node tests/search-cache-test.js
-
-      - name: Pi Agent 题库完整性与幂等适配
+      - name: 融合适配器幂等检查
         run: |
           node tools/import-pi-agent.js --check
-          node tests/pi-agent-test.js
-
-      - name: AI系列融合覆盖与可验证算术
-        run: |
           node tools/fuse-ai-series.js --check
-          node tests/ai-series-test.js
-          python tests/ai-series-math-test.py
 
-      - name: 表达卡导出(工作台出口:内容真实/不产出空壳/转义正确)
-        run: node tests/express-card-test.js
-
-      - name: 学习记录冲突与项目证据卡
-        run: |
-          python -m pip install --quiet 'markdown-it-py==2.2.0'
-          node tests/learning-records-test.js
-          node tests/project-card-test.js
-
-      - name: Shell 缓存戳一致性(改了 app/ 却没重新盖章 → 老用户拿旧缓存)
-        run: node tests/shell-cache-stamp-test.js
-
-      - name: LP-003 mock 分支测试(桩客户端,无真实 API)
-        run: |
-          python -m pip install --quiet 'openai>=2.0' 'pydantic>=2.5' || true
-          python tests/lp003_mock_test.py
-
-      - name: 路径练习自动化验证(阶段2/6 展示代码运行)
-        run: python tests/path_exercise_test.py
-
-      - name: 项目A 调用层验证(回喂/六场景)
-        run: python tests/proj_a_test.py
-
-      - name: 项目C 四层失败验证(拒答/检索漏/证据预算/错误 fake)
-        run: python tests/proj_c_test.py
-
-      - name: 项目C 四层诊断真实性(职责分离/固定配置/独立 oracle)
-        run: python tests/proj_c_layers_test.py
-
-      - name: 项目C 引用与主张核对(引用不能绕过内容校验)
-        run: python tests/proj_c_claims_test.py
-
-      - name: 审计器自检(占位符与越权断言的检查器本身必须是可信的)
+      - name: 审计器自检
         run: |
           python tools/content_audit.py --selftest
           python tools/verify_sources.py --selftest
           python tools/highlight_audit.py --selftest
 
-      - name: 重点标注审计(每条标注必须逐字命中原文,不能重叠/重复)
-        run: python tools/highlight_audit.py --strict
+      - name: 重点标注、内容与来源结构审计
+        run: |
+          python tools/highlight_audit.py --strict
+          python tools/content_audit.py --strict
+          python tools/verify_sources.py --no-network
 
-      - name: 内容审计(十要素/交叉引用/学习路径引用)
-        run: python tools/content_audit.py --strict
+      - name: 题库结构与重复度检查
+        run: |
+          python tools/validate_bank.py
+          python tools/dedup_check.py
 
-      - name: 来源结构检查(不联网,只验证链接可枚举)
-        run: python tools/verify_sources.py --no-network
-
-      - name: 校验题库(10 要素完整性 / 引号纪律 / ID 唯一)
-        run: python tools/validate_bank.py
-
-      - name: 重复度检测(n-gram 相似度)
-        run: python tools/dedup_check.py
-
-      - name: 引号修复幂等性(应为 no-op)
+      - name: 引号修复幂等性（应为 no-op）
         run: |
           python tools/fix_quotes.py
           git diff --exit-code -- data/ || {
-            echo '::error::fix_quotes.py 产生了改动,说明 data/ 存在未按规范转义的引号';
+            echo '::error::fix_quotes.py 产生了改动，请先修复并提交 data/。';
             exit 1;
           }
 
-      - name: 构建可复现(data.js / sw.js 应无 diff)
+      - name: 构建可复现（入口、清单、全部分片与缓存戳）
         run: |
           python tools/build.py
-          git diff --exit-code -- app/data.js app/sw.js || {
-            echo '::error::build.py 产生了改动,仓库内的 app/data.js 或 sw.js 与源码/数据不同步。'
-            echo '::error::请在本地跑 python tools/build.py 后一并提交;自查用 node tests/shell-cache-stamp-test.js';
-            exit 1;
-          }
+          changes=$(git status --porcelain --untracked-files=all -- app/data.js app/data/ app/sw.js)
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            echo '::error::构建产物与提交内容不同步。请本地运行 python tools/build.py 并提交入口、manifest、分片及 sw.js。'
+            exit 1
+          fi
+
+      - name: 保存每套验证日志与退出码
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-validation
+          path: output/validation/
+          if-no-files-found: warn
 
   browser:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 浏览器二进制缓存:每条流水线都重下 Chromium 纯属等待。
-      # key 里带 playwright 版本 —— 版本一换就得重新拉,别复用旧二进制。
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -173,161 +119,19 @@ jobs:
           npm install --no-save playwright@1.61.1
           npx playwright install --with-deps chromium
 
-      # 真浏览器回归:界面层行为 + 窄屏/键盘可达性。
-      # 两个脚本自己会起隔离端口的本地静态服务(见 startServer),这里不用另起。
-      - name: 界面层真浏览器回归(记录状态机/保存失败/深链落点)
+      # 枚举全部 tests/browser/*.js（performance.js 除外）。串行执行，
+      # 避免多个浏览器争用 CPU 改变 search-cache 等套件的已有性能门槛。
+      # 各套件自建隔离服务器/浏览器上下文；枚举器分配独立 PORT。
+      - name: 全部浏览器回归（含按需加载、旧题访问、草稿与离线训练）
         env:
           PW: playwright
           CHROME: default
-          PORT: '8931'
-        run: node tests/browser/ui-repro.js
+        run: python tools/validate_all.py --browser --jobs 1
 
-      - name: 窄屏(360px)与键盘可达性回归
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8933'
-        run: node tests/browser/a11y-360.js
-
-      # 全链验收:从空存储走完整用户旅程,含导出→清空→导入往返。
-      # 其它套件都是「种好数据再验界面」,这一条证明没有预置数据时也能正常用、
-      # 且数据真的落盘、真的能恢复。
-      - name: 全链验收(空存储起,含工作台三件事/表达卡导出/导出清空导入往返)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8934'
-        run: node tests/browser/e2e-acceptance.js
-
-      - name: 项目口述/选定证据/真实下载/独立上下文恢复
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8935'
-        run: node tests/browser/project-evidence.js
-
-      - name: Pi Agent 分类/长答案/检索/自测/旧记录保留
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8936'
-        run: node tests/browser/pi-agent.js
-
-      - name: AI系列融合分类/来源索引/补充检索/旧记录
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8937'
-        run: node tests/browser/ai-series.js
-
-      - name: 重点标注(逐条命中/级别可区分/窄屏不溢出/未标注题不误伤)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8941'
-        run: node tests/browser/highlight.js
-
-      # 这三条是实测复现过的真缺陷(搜「向量检索」同题重复 8 次、高亮标签被打成
-      # <m<mark>a</mark>rk>、切筛选后详情停在已筛掉的题上)。修复前跑会失败。
-      - name: 搜索与浏览缺陷回归(同题不重复/高亮不破坏标签/切筛选后详情同步)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8945'
-        run: node tests/browser/search-browse-fix.js
-
-      - name: SRS 到期建议(手动队列优先/还记得忘了/定向复盘重排/首页口径)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8938'
-        run: node tests/browser/srs.js
-
-      - name: 追问二跳(先写后看/草稿恢复/轮次记录/表达卡追问练习)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8939'
-        run: node tests/browser/followup.js
-
-      - name: 多标签页并发(两页互写收敛/同一题新者胜/存储健康度)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8940'
-        run: node tests/browser/multitab.js
-
-      - name: 搜索缓存真数据验收(349 题/连续写入静态层不重建)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8941'
-        run: node tests/browser/search-cache.js
-
-      - name: 加固验收(CSP 无违规/SW 注册仍生效/Anki CSV 真实下载)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8942'
-        run: node tests/browser/hardening.js
-
-      - name: 跨页同步(ST-01 静置稳定/不抢焦点/ST-02 旧控件不覆盖/冲突处置)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8943'
-        run: node tests/browser/remote-sync.js
-
-      - name: 并发压力基线(7情境矩阵:同字段/异字段/同毫秒/双清空/暂停恢复/关闭竞争/清空交错)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8944'
-        run: node tests/browser/concurrency-matrix.js
-
-      - name: 学习记录完整性与真实版本恢复
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8944'
-        run: node tests/browser/learning-integrity.js
-
-      - name: 混合题型与简历练习(显隐/快照/分页/进度/布局)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8950'
-        run: |
-          node tests/browser/practice-contract.js
-          node tests/browser/resume-view.js
-          node tests/browser/nowcoder-quiz.js
-
-      - name: 可信并发矩阵(四态与原文副本)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8951'
-        run: node tests/browser/stage4-matrix.js
-
-      # 这 5 条此前只在本地跑,没进流水线 —— 其中 data-split 是分片架构
-      # (Track E:薄壳 + 20 个内容哈希分片)本身的守卫,架构改动没有它就是无护栏。
-      # 各套件自己起隔离端口的静态服务并串行执行,复用同一 PORT 即可。
-      - name: 分片架构与新增能力(分片完整性/复习统计/模拟计时/简历闭环/体验修复)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8953'
-        run: |
-          node tests/browser/data-split.js
-          node tests/browser/stats-view.js
-          node tests/browser/mock-timer.js
-          node tests/browser/resume-loop.js
-          node tests/browser/ux-fixes.js
-
-      # 分片缓存必须独立于 shell 版本,否则库一变就整包重下(Track E 的收益被吃掉)
-      - name: 分片缓存生命周期(独立缓存/增量清理/版本变更后幸存)
-        env:
-          PW: playwright
-          CHROME: default
-          PORT: '8954'
-        run: node tests/browser/sw-topic-cache.js
+      - name: 保存每套浏览器日志与退出码
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-validation
+          path: output/validation/
+          if-no-files-found: warn

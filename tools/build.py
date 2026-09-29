@@ -4,7 +4,7 @@ app/data/topics/ 分片,并输出交付统计。数据与界面分离:编辑请�
 再运行本脚本。
 
 拆分结构(Track E,改善首开时间):
-  - app/data.js          薄壳:除 questions 全量字段外的一切 + questions_index
+  - app/data.js          薄壳:题目索引及导航元数据（正文、文档与训练单元独立分片）
                          (id/topic/title/difficulty/type/format/tags),同步加载,
                          首屏列表/计数/简历页立即可用;
   - app/data/manifest.json  {hash, topics: {tid: {file, count}}},SW 预缓存,网络优先;
@@ -83,9 +83,20 @@ def main():
             "sections": md_sections(body),
         })
     docs.sort(key=lambda d: (d["order"], d["id"]))
+    guides_path = ROOT / "data" / "interview-guides.json"
+    guides = load_json(guides_path) if guides_path.exists() else {"version": 1, "guides": []}
+    review_path = ROOT / "data" / "content-reviews.json"
+    reviews = load_json(review_path) if review_path.exists() else {"reviews": []}
+    legacy_path = ROOT / "data" / "legacy-questions.json"
+    legacy = load_json(legacy_path) if legacy_path.exists() else {"questions": []}
+    review_map = {r["questionId"]: r for r in reviews["reviews"]}
+    for q in questions:
+        if q["id"] in review_map:
+            r = review_map[q["id"]]
+            q["contentReview"] = {k: r[k] for k in ("qualityStatus", "sourceStatus", "reviewKind", "reviewNote", "sources") if k in r}
     import hashlib as _hashlib
     content_hash = _hashlib.md5(json.dumps(
-        {"questions": questions, "docs": docs}, ensure_ascii=False, sort_keys=True
+        {"questions": questions, "docs": docs, "guides": guides, "legacy": legacy}, ensure_ascii=False, sort_keys=True
     ).encode("utf-8")).hexdigest()[:12]
     data = {
         "content_hash": content_hash,   # 数据内容哈希:可复现,替代曾硬编码的假日期
@@ -93,35 +104,29 @@ def main():
         # 全量 questions 不再进壳:3900 题占 11MB,同步加载拖死首开(Track E)。
         # 壳里只有 questions_index(id/topic/title/difficulty/type/format/tags),
         # 够浏览列表/计数/复习队列/统计热力表用;题干答案等全量字段走分片异步合并。
-        "questions_index": [
-            {k: q[k] for k in ("id", "topic", "title", "difficulty", "type", "format", "tags")
-             if k in q}
+        "question_rows": [
+            [q.get(k) for k in ("id", "topic", "title", "difficulty", "type", "format", "tags")]
             for q in questions
-        ],        "docs": docs,
+        ],
+        "docs": [{k: v for k, v in d.items() if k not in ("md", "sections")} for d in docs],
+        "legacy_index": [{k: q[k] for k in ("id", "topic", "title", "format", "difficulty", "type") if k in q} for q in legacy["questions"]],
         "sources": sources,
         "candidates": candidates,
         "paths": paths,
         "concepts": concepts,
         "projects": projects,
-        "highlights": highlights,
+        "highlights": {},
         "resume": load_json(ROOT / "data" / "resume-profile.json") if (ROOT / "data" / "resume-profile.json").exists() else {},
     }
-    js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。\n"
-          "   questions 全量字段在 app/data/topics/ 分片(按专题 + 内容哈希命名),\n"
-          "   由 Data.init 异步合并进来;壳里只有 questions_index 供首屏列表。 */\n"
-          "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,
-                                            separators=(",", ":")) + ";\n")
-    out = ROOT / "app" / "data.js"
-    out.write_text(js, encoding="utf-8", newline="\n")
-
     # ---- 题库分片:每专题一个 JSON,文件名带内容哈希(不可变缓存的基础) ----
     # 先清空再重生成:专题增删/更名后,上一轮的旧文件不能留着误导 SW 运行时缓存
     # 与 Data 的 manifest 枚举 —— 陈旧分片 = 陈旧题目,清理是正确性要求不是整洁要求。
     topics_dir = ROOT / "app" / "data" / "topics"
-    if topics_dir.exists():
-        import shutil
-        shutil.rmtree(topics_dir)
-    topics_dir.mkdir(parents=True)
+    topics_dir.mkdir(parents=True, exist_ok=True)
+    for old in topics_dir.glob("*.json"):
+        if old.resolve().parent != topics_dir.resolve():
+            raise SystemExit("Refusing to clean a generated file outside app/data/topics")
+        old.unlink()
     by_topic_qs = {}
     for q in questions:
         by_topic_qs.setdefault(q["topic"], []).append(q)
@@ -132,16 +137,43 @@ def main():
         qs = by_topic_qs[tid]
         # 文件内容哈希:与 content_hash 同源但独立 —— 只改某专题时,其余分片文件名
         # 不变,SW 运行时缓存的旧分片依然命中(不可变资产按内容寻址)。
-        th = _hashlib.md5(json.dumps(
-            {"topic": tid, "questions": qs}, ensure_ascii=False, sort_keys=True
-        ).encode("utf-8")).hexdigest()[:12]
+        payload = {"topic": tid, "questions": qs,
+                   "highlights": {q["id"]: highlights[q["id"]] for q in qs if q["id"] in highlights}}
+        # Hash the exact immutable payload; unrelated topics must stay byte-identical.
+        encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        th = _hashlib.md5(encoded.encode("utf-8")).hexdigest()[:12]
         fname = f"{tid}.{th}.json"
-        payload = {"topic": tid, "hash": content_hash, "questions": qs}
         (topics_dir / fname).write_text(
             json.dumps(payload, ensure_ascii=False, indent=None, separators=(",", ":")),
             encoding="utf-8", newline="\n")
         topic_manifest[tid] = {"file": fname, "count": len(qs)}
-    data_manifest = {"hash": content_hash, "topics": topic_manifest}
+    asset_dir = ROOT / "app" / "data" / "assets"
+    asset_dir.mkdir(parents=True, exist_ok=True)
+    for old in asset_dir.glob("*.json"):
+        if old.resolve().parent != asset_dir.resolve():
+            raise SystemExit("Refusing to clean a generated file outside app/data/assets")
+        old.unlink()
+    asset_manifest = {}
+    for name, value in {"docs": {"docs": docs}, "guides": guides, "legacy": legacy}.items():
+        encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        stamp = _hashlib.md5(encoded.encode("utf-8")).hexdigest()[:12]
+        fname = f"{name}.{stamp}.json"
+        (asset_dir / fname).write_text(encoded, encoding="utf-8", newline="\n")
+        asset_manifest[name] = {"file": fname}
+    data_manifest = {"hash": content_hash, "topics": topic_manifest, "assets": asset_manifest}
+    data["manifest"] = data_manifest
+    js = ("/* 由 tools/build.py 自动生成,请勿手改;编辑 data/ 后重新构建。\n"
+          "   questions 全量字段在 app/data/topics/ 分片(按专题 + 内容哈希命名),\n"
+          "   由 Data.ensureQuestion / ensureTopics 按需合并;壳内索引供首屏列表。 */\n"
+          "window.APP_DATA = " + json.dumps(data, ensure_ascii=False, indent=None,
+                                            separators=(",", ":")) + ";\n"
+          "{const keys=['id','topic','title','difficulty','type','format','tags'];\n"
+          "window.APP_DATA.questions_index=window.APP_DATA.question_rows.map(row=>Object.fromEntries(keys.flatMap((key,i)=>row[i]==null?[]:[[key,row[i]]])));\n"
+          "delete window.APP_DATA.question_rows;}\n")
+    out = ROOT / "app" / "data.js"
+    out.write_text(js, encoding="utf-8", newline="\n")
+
+
     (ROOT / "app" / "data" / "manifest.json").write_text(
         json.dumps(data_manifest, ensure_ascii=False, indent=None, separators=(",", ":")),
         encoding="utf-8", newline="\n")
@@ -171,6 +203,7 @@ def main():
                    "app/js/markdown.js", "app/js/highlight.js",
                    "app/js/search.js", "app/js/common.js", "app/js/express.js",
                    "app/js/views-practice.js", "app/js/views-resume.js", "app/js/views-stats.js",
+                   "app/js/views-guides.js",
                    "app/js/views-knowledge.js", "app/js/views-review.js", "app/js/app.js"]
     h = hashlib.md5()
     for rel in shell_files:

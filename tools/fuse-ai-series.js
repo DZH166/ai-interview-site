@@ -11,6 +11,20 @@ const canonical = v => Array.isArray(v) ? v.map(canonical) : v && typeof v === '
 const hash = v => crypto.createHash('sha256').update(JSON.stringify(canonical(v))).digest('hex');
 const dump = (v, indent = 2) => JSON.stringify(v, null, indent) + '\n';
 function managedHash(q) { const copy = structuredClone(q); delete copy.metadata.ai_series.output_hash; return hash(copy); }
+/* Reviewed corrections are explicit successors of the imported batch. Keep the
+   original mapping and guard BOTH the managed output and the review ledger. */
+function assertReviewedQuestion(q, ledger, batchId, sourceIds) {
+  const meta = q.metadata?.ai_series, review = meta?.content_review;
+  assert(review && typeof review.rev === 'string' && review.rev.trim(), 'Missing reviewed revision: ' + q.id);
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(review.date) && review.date === ledger.reviewedAt, 'Review date differs: ' + q.id);
+  assert(/^[a-f0-9]{64}$/.test(review.previous_output_hash || ''), 'Missing original managed hash: ' + q.id);
+  assert.strictEqual(meta.batch_id, batchId, 'Reviewed batch changed: ' + q.id);
+  assert.strictEqual(hash(meta.source_ids.slice().sort()), hash(sourceIds.slice().sort()), 'Reviewed source mapping changed: ' + q.id);
+  assert.strictEqual(managedHash(q), meta.output_hash, 'Reviewed question edited after approval: ' + q.id);
+  const record = [...(ledger.reviews || []), ...(ledger.extraReviews || [])].find(r => r.questionId === q.id);
+  assert(record && ['reviewed', 'revised'].includes(record.qualityStatus), 'Missing content review record: ' + q.id);
+  assert.strictEqual(hash(q), record.afterHash, 'Review ledger does not match question: ' + q.id);
+}
 function primary(url) {
   const parsed = new URL(url);
   const name = parsed.hostname + ' · ' + (parsed.pathname.split('/').filter(Boolean).pop() || '官方说明');
@@ -35,17 +49,27 @@ function generate() {
   for(const id of patchById.keys()) assert(targetIds.has(id), 'Edited item has no source mapping: ' + id);
   for(const id of targetIds) assert(byId.has(id) || newIds.has(id), 'Unresolved source mapping: ' + id);
   const changes = [], nextById = new Map();
+  const reviewFile = path.join(ROOT, 'data/content-reviews.json');
+  const ledger = fs.existsSync(reviewFile) ? json(reviewFile) : {};
   for(const id of targetIds) {
     const old = byId.get(id)?.q;
     if (old?.metadata?.ai_series) assert.strictEqual(managedHash(old), old.metadata.ai_series.output_hash, 'Managed question was edited; review before overwriting: ' + id);
     if (newIds.has(id) && old && !old.metadata?.ai_series) throw new Error('New ID conflicts with unrelated content: ' + id);
+    const rows = plan.items.filter(r => r.target_ids.includes(id));
+    if (old?.metadata?.ai_series?.content_review) {
+      assertReviewedQuestion(old, ledger, plan.batch_id, rows.map(r => r.source_id));
+      nextById.set(id, structuredClone(old));
+      changes.push({ id, disposition: newIds.has(id) ? 'new' : patchById.has(id) ? 'revised' : 'supplemented',
+        action: 'skip', before_hash: old.metadata.ai_series.before_hash, output_hash: old.metadata.ai_series.output_hash,
+        content_review: structuredClone(old.metadata.ai_series.content_review) });
+      continue;
+    }
     const authored = newIds.has(id) ? additions.find(q => q.id === id) : patchById.get(id);
     const q = old ? structuredClone(old) : { ...structuredClone(authored), sources: [], verify: {}, doc_refs: [] };
     if(authored) for(const key of ['title', 'prompt', 'answer', 'plain', 'deep', 'example', 'interview', 'followups', 'pitfalls', 'check']) {
       if(authored[key] !== undefined && !(key === 'example' && authored.keep_example && old)) q[key] = structuredClone(authored[key]);
     }
     delete q.primary_urls; delete q.keep_example;
-    const rows = plan.items.filter(r => r.target_ids.includes(id));
     q.fusion_notes = rows.map(r => '### ' + r.label + '\n\n' + r.insight).join('\n\n');
     q.tags = [...new Set([...(q.tags || []), 'AI系列融合'])];
     q.doc_refs = [...new Set([...(q.doc_refs || []), DOC, ...(q.topic === 'langchain' ? [FRAMEWORK_DOC] : [])])];
@@ -86,7 +110,7 @@ function generate() {
     index += '\n';
   }
   outputs.push([path.join(ROOT, 'data/docs/ai-series.md'), index.trimEnd() + '\n']);
-  const framework = `---\nid: ${FRAMEWORK_DOC}\ntopic: langchain\ntitle: LangChain 与 LangGraph：接口、状态和验证\norder: 9\nsummary: 从统一调用接口到Agent循环、中间件与可恢复状态，区分框架能力、应用责任和版本变化。\n---\n\n# 框架学习路线\n\n先理解模型请求和实际工具执行，再选择运行时。LangChain提供标准Agent入口，LangGraph提供更直接的状态与流程控制；二者可以组合。示例需要按所用版本验证，不把接口名称当作行为保证。\n\n` + additions.filter(q => q.topic === 'langchain').map(q => `## ${q.title}\n\n[进入 ${q.id}](#/study/${q.id})\n\n${q.plain}\n`).join('\n') +
+  const framework = `---\nid: ${FRAMEWORK_DOC}\ntopic: langchain\ntitle: LangChain 与 LangGraph：接口、状态和验证\norder: 9\nsummary: 从统一调用接口到Agent循环、中间件与可恢复状态，区分框架能力、应用责任和版本变化。\n---\n\n# 框架学习路线\n\n先理解模型请求和实际工具执行，再选择运行时。LangChain提供标准Agent入口，LangGraph提供更直接的状态与流程控制；二者可以组合。示例需要按所用版本验证，不把接口名称当作行为保证。\n\n` + additions.filter(q => q.topic === 'langchain').map(q => nextById.get(q.id) || q).map(q => `## ${q.title}\n\n[进入 ${q.id}](#/study/${q.id})\n\n${q.plain}\n`).join('\n') +
     '\n## 与旧题连接\n\n- [AG-010 框架取舍](#/study/AG-010)\n- [AG-005 状态与记忆](#/study/AG-005)\n- [AG-022 图编排](#/study/AG-022)\n- [全部98项融合索引](#/docs/' + DOC + ')\n\nJava与研究型Agent属于拓展，不能把未运行方案写成自己的已完成经历。\n';
   outputs.push([path.join(ROOT, 'data/docs/langchain.md'), framework]);
   const manifest = { batch_id: plan.batch_id, extraction_date: '2026-09-12', integrated_date: DATE, source_count: 98,
@@ -107,4 +131,4 @@ function main(args) {
   return summary;
 }
 if(require.main === module) main(process.argv.slice(2));
-module.exports = { generate, main, managedHash, hash };
+module.exports = { generate, main, managedHash, hash, assertReviewedQuestion };

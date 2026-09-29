@@ -2,186 +2,274 @@
 'use strict';
 
 const Data = (() => {
-  let questions = [];   /* 壳 questions_index + 分片全量 + 导入合并 */
-  let docs = [];
-  let userDocs = [];
-  let byId = new Map();
-
-  /* ---- 分片加载状态(Track E) ----
-     壳(questions_index)同步可用 → 列表/计数立即可渲染;
-     全量字段(prompt/answer/followups…)来自 app/data/topics/ 分片,异步合并。
-     needs-full 的功能(搜索索引/学习页/自测抽题)必须 questionsReady() 之后再读。 */
-  let fullReady = false;        /* 分片全部合并完成(或判定无需加载) */
-  let fullPromise = null;       /* 进行中的合并 Promise(幂等) */
-  let mergedBank = null;        /* 分片合并出的全量内置题(id -> q),重入 init 时复用 */
-
-  /* 兼容探测:壳里若已带非空全量 questions(Node 测试桩 / 未来回退形态),
-     直接视为已就绪,跳过分片加载 —— detect-and-skip,不是特判某个调用方。 */
-  function shellHasFullQuestions() {
-    const d = window.APP_DATA;
-    return !!(d && Array.isArray(d.questions) && d.questions.length);
+  let questions = [], docs = [], userDocs = [], legacy = [];
+  let byId = new Map(), manifestPromise = null, revision = 0;
+  const loaded = new Map(), states = new Map(), assets = new Map(), listeners = new Set();
+  const queue = [];
+  let active = 0;
+  const CACHE = 'topics-v1';
+  const appData = () => window.APP_DATA || {};
+  const fullShell = () => Array.isArray(appData().questions);
+  const isFullQuestion = q => !!q && (q.answer !== undefined || q.followups !== undefined || q.sources !== undefined);
+  function emit(kind, ids = [], topics = []) {
+    revision++;
+    listeners.forEach(fn => { try { fn({ kind, ids, topics }); } catch (e) { console.error(e); } });
   }
-  /* 该题是否已带全量字段(至少有答案类字段):index-only 的题不含 answer */
-  function isFullQuestion(q) {
-    return q && (q.answer !== undefined || q.followups !== undefined || q.sources !== undefined);
+  function onContentChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
+  function syncIssues() {
+    if (!Store.loadIssues) return;
+    const failures = [...states].filter(([, s]) => s.status === 'error').map(([id, s]) => id + ': ' + s.error);
+    if (failures.length) Store.loadIssues.topicFiles = failures;
+    else delete Store.loadIssues.topicFiles;
   }
-
   function init() {
-    const base = shellHasFullQuestions()
-      ? window.APP_DATA.questions
-      : ((window.APP_DATA && window.APP_DATA.questions_index) || []);
-    /* 启动隔离:坏扩展数据移入隔离键(原始保留,维护页可导出),合法数据才进内存 */
+    const base = fullShell() ? appData().questions : (appData().questions_index || []);
+    questions = base.map(q => loaded.get(q.id) || q);
+    legacy = (appData().legacy_index || []).map(q => loaded.get(q.id) || { ...q, archived: true });
     if (Store.resetLoadIssues) Store.resetLoadIssues();
-    const extra = Store.loadExtraBankSafe();
-    /* 重入防线(Track E):init 会被远端合并/导入等场景反复调用。
-       若直接从 questions_index 重建,已异步合并进来的全量字段会被冲掉 ——
-       全量题目只从 mergedBank(分片合并结果)取,shell 的 index 只在
-       mergedBank 尚未就绪时充当首屏占位。 */
-    let mergedFull = null;
-    if (!shellHasFullQuestions()) {
-      if (mergedBank) mergedFull = mergedBank.slice();
-      else if (fullReady) { mergedBank = []; mergedFull = mergedBank.slice(); }
-    }
-    questions = mergedFull !== null ? mergedFull : base.slice();
-    /* 用本轮新建的 seen 判重:不能用上一轮的 byId,否则重复 init 会把
-       已导入的扩展题误判为冲突而丢弃(init 必须可重入) */
-    const seen = new Set(questions.map(q => q.id));
-    extra.forEach(q => {
-      if (!q || !q.id || seen.has(q.id)) {
-        console.warn('导入题库题号缺失或与现有冲突,已跳过:', q && q.id);
-        return;
-      }
-      questions.push(q);
-      seen.add(q.id);
+    const seen = new Set([...questions, ...legacy].map(q => q.id));
+    Store.loadExtraBankSafe().forEach(q => {
+      if (q && q.id && !seen.has(q.id)) { questions.push(q); seen.add(q.id); }
     });
-    byId = new Map(questions.map(q => [q.id, q]));
-    docs = ((window.APP_DATA && window.APP_DATA.docs) || []).slice();
+    byId = new Map([...questions, ...legacy].map(q => [q.id, q]));
+    if (!assets.has('docs')) docs = (appData().docs || []).slice();
     userDocs = Store.loadUserDocsSafe();
-    /* 分片合并只做一次;init 可重入(远端变更/导入后重建内存),
-       已就绪或已在加载就直接沿用,不重复发请求。 */
-    if (!fullPromise) fullPromise = loadTopicFiles();
-    contentVersion = computeContentVersion();
+    syncIssues();
   }
-
-  /* ---- 分片异步合并 ----
-     manifest(SW 预缓存,网络优先)→ 全部专题文件 Promise.allSettled。
-     单片失败不炸全局:该专题题目缺失时,依赖全量字段的功能按「题目不存在」空态降级;
-     失败的分片重试一次(老 SW 缓存未含分片时的自愈),再失败才认输并进 loadIssues。 */
-  function loadTopicFiles() {
-    /* Node 测试桩 / 已含全量的壳:无需加载,立即就绪 */
-    if (shellHasFullQuestions()) { fullReady = true; return Promise.resolve(); }
-    if (typeof fetch !== 'function') { fullReady = true; return Promise.resolve(); }
-    const issues = [];
-    return fetch('data/manifest.json')
-      .then(r => { if (!r.ok) throw new Error('manifest ' + r.status); return r.json(); })
-      .then(mf => {
-        const entries = Object.values((mf && mf.topics) || {});
-        return Promise.allSettled(entries.map(e =>
-          fetchJsonRetry('data/topics/' + e.file)));
-      })
-      .then(results => {
-        results.forEach((res, i) => {
-          if (res.status === 'fulfilled') mergeTopic(res.value);
-          else issues.push(String((res.reason && res.reason.message) || res.reason));
-        });
-        if (issues.length) {
-          console.warn('题库分片加载失败 ' + issues.length + ' 个(对应专题题目不可用):', issues);
-          if (Store.loadIssues) Store.loadIssues.topicFiles = issues;
-        }
-        fullReady = true;
-      })
-      .catch(err => {
-        /* manifest 都拿不到:全量字段整体缺失,列表仍可用(index),详情降级空态 */
-        console.warn('题库分片 manifest 加载失败,仅索引可用:', err);
-        issues.push('manifest: ' + ((err && err.message) || err));
-        if (Store.loadIssues) Store.loadIssues.topicFiles = issues;
-        fullReady = true;
+  function loadProgress() {
+    const ids = [...new Set((appData().questions_index || questions).map(q => q.topic))];
+    return { ready: fullShell() ? ids.length : ids.filter(id => states.get(id)?.status === 'ready').length,
+      total: ids.length, loading: [...states.values()].filter(s => s.status === 'loading').length,
+      errors: [...states].filter(([, s]) => s.status === 'error').map(([topic, s]) => ({ topic, error: s.error })) };
+  }
+  function topicState(id) { const s = states.get(id); return { status: s?.status || 'idle', error: s?.error || '' }; }
+  function questionsLoaded() { const p = loadProgress(); return fullShell() || (p.total > 0 && p.ready === p.total); }
+  async function getManifest() {
+    // The manifest is pinned to this shell, so an open older tab never mixes releases.
+    if (appData().manifest) return appData().manifest;
+    if (!manifestPromise) {
+      manifestPromise = fetch('data/manifest.json').then(r => {
+        if (!r.ok) throw Error('题库清单 ' + r.status);
+        return r.json();
+      }).then(m => {
+        if (!m || !m.topics || !Object.keys(m.topics).length) throw Error('题库清单无效');
+        states.delete('manifest'); syncIssues(); return m;
+      }).catch(e => {
+        manifestPromise = null; states.set('manifest', { status: 'error', error: e.message }); syncIssues(); throw e;
       });
+    }
+    return manifestPromise;
   }
-
-  function fetchJsonRetry(url) {
-    return fetchJson(url).catch(first => fetchJson(url).catch(second => {
-      throw new Error(url + ' :: ' + ((second && second.message) || second));
-    }));
+  function runQueue() {
+    while (active < 2 && queue.length) {
+      const job = queue.shift(); active++;
+      Promise.resolve().then(job.run).then(job.resolve, job.reject).finally(() => { active--; runQueue(); });
+    }
   }
-  function fetchJson(url) {
-    return fetch(url).then(r => {
-      if (!r.ok) throw new Error(r.status);
-      return r.json();
+  function schedule(run, priority) {
+    let job;
+    const promise = new Promise((resolve, reject) => { job = { run, resolve, reject }; priority ? queue.unshift(job) : queue.push(job); runQueue(); });
+    promise.queueJob = job;
+    return promise;
+  }
+  async function readAsset(url, validate = () => {}) {
+    let cache, key = url;
+    if (typeof location !== 'undefined') key = new URL(url, location.href).href;
+    if (typeof caches !== 'undefined') {
+      try {
+        cache = await caches.open(CACHE); const hit = await cache.match(key);
+        if (hit) {
+          try { const value = await hit.json(); validate(value); return value; }
+          catch (_) { await cache.delete(key); }
+        }
+      } catch (_) { /* Network remains available if browser storage is disabled. */ }
+    }
+    const response = await fetch(url);
+    if (!response.ok) throw Error('下载失败 (' + response.status + ')');
+    let value;
+    try { value = await (cache ? response.clone() : response).json(); validate(value); }
+    catch (e) { if (cache) await cache.delete(key); throw e; }
+    // Await the cache write even on the first visit, before a worker controls this page.
+    if (cache) {
+      try { await cache.put(key, response); }
+      catch (e) { if (Store.loadIssues) Store.loadIssues.cache = '离线缓存写入失败: ' + e.message; }
+    }
+    return value;
+  }
+  function validateTopic(payload, id) {
+    if (!payload || !Array.isArray(payload.questions)) throw Error('专题数据无效');
+    const expected = (appData().questions_index || []).filter(q => q.topic === id).map(q => q.id);
+    const valid = new Map(payload.questions.filter(q => q && q.topic === id && isFullQuestion(q)).map(q => [q.id, q]));
+    if (expected.some(qid => !valid.has(qid))) throw Error('专题数据不完整');
+    return valid;
+  }
+  function mergeTopic(payload, id) {
+    const valid = validateTopic(payload, id);
+    const ids = [];
+    questions = questions.map(q => {
+      const value = valid.get(q.id);
+      if (!value) return q;
+      const next = { ...q, ...value }; loaded.set(q.id, next); byId.set(q.id, next); ids.push(q.id); return next;
     });
+    if (payload.highlights) appData().highlights = { ...(appData().highlights || {}), ...payload.highlights };
+    states.set(id, { status: 'ready' }); syncIssues(); emit('questions', ids, [id]);
   }
-
-  /* 单片合并:就地扩充 questions/byId,并同步进 mergedBank(重入 init 时复用)。
-     分片题目以题库校验的唯一 id 为准,与 index 里的同名条目按 id 对齐替换
-     (浅合并:index 提供的元数据字段保留)。 */
-  function mergeTopic(payload) {
-    const qs = (payload && payload.questions) || [];
-    if (!mergedBank) mergedBank = [];
-    const bankSeen = new Set(mergedBank.map(q => q.id));
-    qs.forEach(q => {
-      if (!q || !q.id || !isFullQuestion(q)) return;
-      if (!bankSeen.has(q.id)) { mergedBank.push(q); bankSeen.add(q.id); }
-      const existing = byId.get(q.id);
-      if (existing) Object.assign(existing, q);
-      else { questions.push(q); byId.set(q.id, q); }
+  function ensureTopic(id, priority = false) {
+    if (fullShell() || states.get(id)?.status === 'ready') return Promise.resolve();
+    if (states.get(id)?.promise) {
+      const state = states.get(id), index = queue.indexOf(state.job);
+      if (priority && index > 0) queue.unshift(queue.splice(index, 1)[0]);
+      return state.promise;
+    }
+    const state = { status: 'loading', error: '', promise: null };
+    states.set(id, state);
+    const task = schedule(async () => {
+      const mf = await getManifest(), entry = mf.topics[id];
+      if (!entry) throw Error('未找到专题清单: ' + id);
+      const payload = await readAsset('data/topics/' + entry.file, value => validateTopic(value, id));
+      mergeTopic(payload, id);
+    }, priority);
+    state.job = task.queueJob;
+    state.promise = task.catch(e => {
+      states.set(id, { status: 'error', error: e.message }); syncIssues(); emit('error', [], [id]); throw e;
     });
+    return state.promise;
   }
-
-  /* 全量题目就绪门控:needs-full 的功能(搜索索引/学习页正文/自测抽题)等这个。
-     已就绪立即 resolve;同一 Promise 复用,多调用方并发等待不重复加载。 */
-  function questionsReady() {
-    if (!fullPromise) fullPromise = loadTopicFiles();
-    return fullPromise;
+  async function ensureTopics(ids) {
+    await Promise.allSettled([...new Set(ids)].map(id => ensureTopic(id)));
+    return loadProgress();
   }
-  function questionsLoaded() { return fullReady; }
-
-  /* 静态内容版本(搜索分层缓存的失效依据,阶段7):
-     build.py 的内容哈希 + 题库规模。等长内容替换 → 哈希变 → 静态层重建;
-     个人笔记编辑 → 不影响 → 静态层不重建。
-     Track E:追加就绪标记 —— 分片合并前后题库长度相同(3900|3900),仅凭长度
-     搜静态层签名不会失效,搜索会一直用 index-only 的半份索引;ready 标记翻转
-     强制合并后重建一次静态层。 */
-  let contentVersion = '';
-  function computeContentVersion() {
-    const base = (window.APP_DATA && window.APP_DATA.content_hash) || '';
-    return base + '|' + questions.length + '|' + (fullReady ? 'full' : 'idx') + '|' + docs.map(d => d.id).join(',');
+  function validateAsset(value, name) {
+    const key = name === 'legacy' ? 'questions' : name;
+    const rows = value && value[key];
+    const record = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    const text = v => typeof v === 'string' && !!v.trim();
+    const texts = v => Array.isArray(v) && v.every(text);
+    if (!Array.isArray(rows) || rows.some(row => !record(row) || !text(row.id))
+        || new Set(rows.map(row => row.id)).size !== rows.length) throw Error('资源数据无效: ' + name);
+    const expected = name === 'docs' ? (appData().docs || []).map(d => d.id)
+      : name === 'legacy' ? (appData().legacy_index || []).map(q => q.id)
+      : [...new Set((appData().resume?.sections || []).flatMap(s => s.groups || []).map(g => g.guideId).filter(Boolean))];
+    const ids = new Set(rows.map(row => row.id));
+    if (expected.some(id => !ids.has(id)) || (name !== 'guides' && rows.length !== expected.length)) {
+      throw Error('资源数据不完整: ' + name);
+    }
+    if (name === 'docs' && rows.some(d => !text(d.title) || typeof d.md !== 'string')) throw Error('文档正文无效');
+    if (name === 'legacy') {
+      const index = new Map((appData().legacy_index || []).map(q => [q.id, q]));
+      if (rows.some(q => !text(q.title) || !text(q.answer) || q.topic !== index.get(q.id)?.topic
+          || (['quiz', 'qa'].includes(q.format) && !text(q.prompt))
+          || (q.format === 'quiz' && (!Array.isArray(q.options) || !q.options.length
+            || q.options.some(o => !record(o) || !text(o.label) || typeof o.text !== 'string' || typeof o.right !== 'boolean'))))) {
+        throw Error('旧题档案正文无效');
+      }
+    }
+    if (name === 'guides') {
+      if (!rows.length) throw Error('训练资料为空');
+      for (const g of rows) {
+        if (!['title','mainQuestionId','answer60','answer180'].every(k => text(g[k]))
+            || (g.mainQuestion !== undefined && !text(g.mainQuestion)) || !byId.has(g.mainQuestionId)
+            || !texts(g.sourceQuestionIds) || !g.sourceQuestionIds.length || !g.sourceQuestionIds.includes(g.mainQuestionId)
+            || g.sourceQuestionIds.some(id => !byId.has(id)) || !texts(g.resumeGroupIds)
+            || !Array.isArray(g.followups) || !g.followups.length || g.followups.some(f => !record(f) || !text(f.q) || !text(f.a))
+            || !record(g.rubric) || !['basic','competent','deep'].every(k => texts(g.rubric[k]))
+            || !record(g.projectEvidence) || !text(g.projectEvidence.note) || !texts(g.projectEvidence.prompts)
+            || !Array.isArray(g.sources) || !g.sources.length
+            || g.sources.some(s => !record(s) || !['url','title','version','checkedAt'].every(k => text(s[k])))) {
+          throw Error('训练单元数据不完整: ' + g.id);
+        }
+      }
+    }
   }
-  function contentVersionOf() { return contentVersion; }
-
+  async function ensureAsset(name) {
+    const state = assets.get(name);
+    if (state?.status === 'ready') return state.value;
+    if (state?.promise) return state.promise;
+    const next = { status: 'loading', promise: null }; assets.set(name, next);
+    next.promise = schedule(async () => {
+      const mf = await getManifest(), entry = mf.assets && mf.assets[name];
+      if (!entry) throw Error('未找到资源清单: ' + name);
+      const value = await readAsset('data/assets/' + entry.file, value => validateAsset(value, name));
+      assets.set(name, { status: 'ready', value });
+      if (name === 'docs') docs = value.docs || [];
+      if (name === 'legacy') {
+        legacy = (value.questions || []).map(q => ({ ...q, archived: true }));
+        legacy.forEach(q => { loaded.set(q.id, q); byId.set(q.id, q); });
+      }
+      if (name === 'guides') appData().guides = value;
+      emit(name, name === 'legacy' ? legacy.map(q => q.id) : []); return value;
+    }, true).catch(e => { assets.delete(name); throw e; });
+    return next.promise;
+  }
+  async function ensureQuestion(id) {
+    const q = byId.get(id);
+    if (!q || isFullQuestion(q)) return q;
+    if (q.archived) await ensureAsset('legacy'); else await ensureTopic(q.topic, true);
+    const result = byId.get(id);
+    if (!isFullQuestion(result)) throw Error('题目正文尚未加载，请重试');
+    return result;
+  }
+  const questionsReady = () => ensureTopics([...new Set(questions.map(q => q.topic))]);
+  const docsLoaded = () => docs.every(d => typeof d.md === 'string');
+  const ensureDocs = () => docsLoaded() ? Promise.resolve(docs) : ensureAsset('docs').then(() => docs);
+  async function ensureDoc(id) { if (!doc(id) || typeof doc(id).md !== 'string') await ensureDocs(); return doc(id); }
+  const ensureGuides = () => appData().guides ? Promise.resolve(appData().guides) : ensureAsset('guides');
+  function coreTopics() {
+    const ids = new Set((appData().resume?.sections || []).flatMap(s => s.groups || []).filter(g => g.mustKnow).flatMap(g => g.questionIds || []));
+    return [...new Set(questions.filter(q => ids.has(q.id)).map(q => q.topic))];
+  }
+  async function offlineStatus(scope = 'core') {
+    const mf = await getManifest(), ids = scope === 'all' ? Object.keys(mf.topics) : coreTopics();
+    const entries = ids.map(id => ['data/topics/' + mf.topics[id].file, id]);
+    for (const [name, entry] of Object.entries(mf.assets || {})) {
+      if (name === 'guides' || (scope === 'all' && name !== 'reviews')) entries.push(['data/assets/' + entry.file, name]);
+    }
+    if (typeof caches === 'undefined') return { ready: 0, total: entries.length, missing: entries.map(x => x[1]), supported: false };
+    try {
+      const cache = await caches.open(CACHE), missing = [];
+      for (const [url, id] of entries) if (!(await cache.match(new URL(url, location.href).href))) missing.push(id);
+      return { ready: entries.length - missing.length, total: entries.length, missing, supported: true };
+    } catch (_) { return { ready: 0, total: entries.length, missing: entries.map(x => x[1]), supported: false }; }
+  }
+  async function downloadOffline(scope, progress) {
+    const mf = await getManifest(), ids = scope === 'all' ? Object.keys(mf.topics) : coreTopics();
+    const before = await offlineStatus(scope);
+    if (!before.supported) return before;
+    // Browser eviction can remove cached bytes while the current page still holds the objects.
+    before.missing.forEach(id => {
+      if (states.get(id)?.status === 'ready') states.delete(id);
+      if (assets.get(id)?.status === 'ready') assets.delete(id);
+    });
+    const off = onContentChange(() => { if (progress) offlineStatus(scope).then(progress); });
+    try {
+      await ensureTopics(ids);
+      const jobs = [ensureAsset('guides')];
+      if (scope === 'all') { jobs.push(ensureAsset('docs')); if (mf.assets?.legacy) jobs.push(ensureAsset('legacy')); }
+      await Promise.allSettled(jobs);
+      return await offlineStatus(scope);
+    } finally { off(); }
+  }
+  function contentVersionOf() { return (appData().content_hash || '') + '|' + questions.length + '|' + revision + '|' + docs.map(d => d.id).join(','); }
   function allQuestions() { return questions; }
+  function legacyQuestions() { return legacy; }
   function question(id) { return byId.get(id); }
   function allDocs() { return docs; }
   function doc(id) { return docs.find(d => d.id === id) || userDocs.find(d => d.id === id); }
   function allUserDocs() { return userDocs; }
-  /* 删除/导入资料后调用:重建闭包内的集合,目录与索引立即同步 */
   function reloadUserDocs() { userDocs = Store.userDocsLoad(); return userDocs; }
-  /* 某专题的主章节:按 order 取最小(与文档目录排序一致);无则返回 null */
-  function topicMainDoc(topicId) {
-    const list = docs.filter(d => d.topic === topicId);
-    return list.length ? list.reduce((a, b) => ((a.order || 99) <= (b.order || 99) ? a : b)) : null;
-  }
-
-  function topic(id) { return ((window.APP_DATA && window.APP_DATA.topics) || []).find(t => t.id === id); }
-  function topicName(id) { const t = topic(id); return t ? t.name : (id || '通用'); }
-  function topicShort(id) { const t = topic(id); return t ? t.short : '??'; }
-
+  function topicMainDoc(id) { return docs.filter(d => d.topic === id).sort((a,b) => (a.order || 99) - (b.order || 99))[0] || null; }
+  function topic(id) { return (appData().topics || []).find(t => t.id === id); }
+  function topicName(id) { return topic(id)?.name || id || '通用'; }
+  function topicShort(id) { return topic(id)?.short || '??'; }
   const TYPES = { concept: '概念理解', principle: '原理解释', comparison: '方案比较', code: '代码阅读', debug: '故障排查', scenario: '项目情境' };
   const DIFFS = { basic: '基础', intermediate: '进阶', advanced: '高级' };
-  const VERIFY = {
-    verified: { label: '已内容核查', cls: 'vf-verified' },
-    partial: { label: '部分核查/版本相关', cls: 'vf-partial' },
-    todo: { label: '待核查', cls: 'vf-todo' }
-  };
-
-  function typeLabel(t) { return TYPES[t] || t; }
-  function diffLabel(d) { return DIFFS[d] || d; }
-
-  function statusInfo(id) {
-    const s = Store.rec(id).status || '';
-    return Store.STATUS.find(x => x.id === s) || Store.STATUS[0];
-  }
-
-  return { init, allQuestions, question, questionsReady, questionsLoaded, allDocs, doc, allUserDocs, reloadUserDocs, contentVersionOf, topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
+  const VERIFY = { verified: { label: '已内容核查', cls: 'vf-verified' }, partial: { label: '部分核查/版本相关', cls: 'vf-partial' }, todo: { label: '待核查', cls: 'vf-todo' } };
+  const typeLabel = t => TYPES[t] || t, diffLabel = d => DIFFS[d] || d;
+  function statusInfo(id) { return Store.STATUS.find(x => x.id === (Store.rec(id).status || '')) || Store.STATUS[0]; }
+  return { init, allQuestions, legacyQuestions, question, isFullQuestion, ensureQuestion, ensureTopics, topicState,
+    questionsReady, questionsLoaded, onContentChange, loadProgress, allDocs, doc, ensureDocs, ensureDoc, docsLoaded,
+    ensureGuides, coreTopics, offlineStatus, downloadOffline, allUserDocs, reloadUserDocs, contentVersionOf,
+    topicMainDoc, topic, topicName, topicShort, typeLabel, diffLabel, statusInfo, TYPES, DIFFS, VERIFY };
 })();
 
 /* 追问稳定身份(SP-02):qid + 题面内容哈希——
@@ -244,6 +332,7 @@ const QRender = (() => {
         ${(q.tags || []).length ? `<div class="verify-tags"><span class="rel-label">标签:</span>${(q.tags || []).map(t => badge(t, 'b-tag')).join('')}</div>` : ''}
         <div class="verify-line">核查状态:<b>${esc(Data.VERIFY[v.status || 'todo'].label)}</b> · 核查日期:${esc(v.checked_date || '—')}</div>
         ${v.note ? `<div class="verify-note">${esc(v.note)}</div>` : ''}
+        ${q.contentReview ? `<div class="verify-note"><b>核心内容审校：</b>${esc(({ revised: '已修订', reviewed: '已审校', needs_revision: '待修订' })[q.contentReview.qualityStatus] || '待审校')} · <b>依据：</b>${esc(({ primary_checked: '主要结论已核验', partial: '部分核验', unverified: '待核验' })[q.contentReview.sourceStatus] || '待核验')}<p>${esc(q.contentReview.reviewNote || '')}</p></div>` : ''}
         <ul class="src-list">${src || '<li class="muted">无来源记录</li>'}</ul>
       </div>`;
   }
@@ -394,9 +483,10 @@ const QRender = (() => {
      {at, correct, picked}(刻意保持最小:判定依据 + 重练乱序的触发依据)。
      有 lastSelfTest 的题渲染成「已作答」态(历史选择带对错着色 + 重做按钮),
      重做清掉 lastSelfTest 就地恢复可点击,不重渲。 */
-  function quizOptionsHtml(q, revealed, toolbar = true) {
+  function quizOptionsHtml(q, revealed, toolbar = true, attempt) {
     const r = Store.rec(q.id);
-    const last = r.lastSelfTest;
+    const last = attempt === undefined ? r.lastSelfTest
+      : (attempt.quizPicked?.length ? { picked: attempt.quizPicked, correct: attempt.quizCorrect } : null);
     const judged = !!last;
     const selfTest = r.quizHide !== false;   /* 自测优先模式(默认) */
     const multi = q.qtype === 'multi';
@@ -428,7 +518,7 @@ const QRender = (() => {
             <span class="quiz-txt">${mdHtml(o.text)}</span>
             <span class="quiz-mark">✓</span>
           </div>`;}).join('')}
-        ${multi && clickable ? '<button class="btn btn-small" data-quiz-confirm hidden>确认答案</button>' : ''}
+        ${multi && interactive ? '<button class="btn btn-small" data-quiz-confirm hidden>确认答案</button>' : ''}
         <div class="quiz-result${resultCls}" data-quiz-result${resultText ? '' : ' hidden'}>${esc(resultText)}</div>
         <button class="btn btn-small" data-quiz-redo${judged ? '' : ' hidden'}>重做</button>
       </div>
@@ -478,7 +568,7 @@ const QRender = (() => {
 
   /* 单题的「是否可交互」元数据缓存在 DOM 属性里(data-quiz-multi / quiz-judged),
      判定/重做只改这些属性与 class,浏览器保持既有监听器,无需重绑。 */
-  function wireQuizToggle(root) {
+  function wireQuizToggle(root, options = {}) {
     $$('[data-quiz-reveal]', root).forEach(btn => {
       btn.addEventListener('click', () => {
         const qid = btn.dataset.quizReveal;
@@ -493,7 +583,7 @@ const QRender = (() => {
         $$(`.quiz-answer-block`, host).forEach(blk => {
           blk.classList.toggle('quiz-answer-hidden', newHidden);
         });
-        const label = Data.question(qid)?.format === 'qa' ? '参考答案' : '正确答案';
+        const label = (options.question || Data.question(qid))?.format === 'qa' ? '参考答案' : '正确答案';
         btn.textContent = (newHidden ? '显示' : '隐藏') + label;
       });
     });
@@ -511,7 +601,8 @@ const QRender = (() => {
 
       const judge = () => {
         if (box.classList.contains('quiz-judged')) return;
-        const q = Data.question(qid);
+        if (options.canJudge && options.canJudge() === false) return;
+        const q = options.question || Data.question(qid);
         if (!q) return;
         const labels = [...picked];
         const rightSet = new Set((q.options || []).filter(o => o.right).map(o => o.label));
@@ -541,6 +632,7 @@ const QRender = (() => {
         const r = Store.rec(qid);
         r.lastSelfTest = { at: Date.now(), correct, picked: labels };
         touchSelfTest(r);
+        if (!options.onJudge) Store.markPracticed(qid, correct ? 'correct' : 'wrong');
         if (!correct) Store.setStatus(qid, 'weak');
         else Store.save();
         /* 答案区块就地展开(与揭示同一 class 契约):判定即揭示,不必再点一次 */
@@ -548,7 +640,8 @@ const QRender = (() => {
         $$('.quiz-answer-block', host).forEach(blk => blk.classList.remove('quiz-answer-hidden'));
         const revealBtns = $$('[data-quiz-reveal]', host).filter(b => b.dataset.quizReveal === qid);
         revealBtns.forEach(b => { b.textContent = '隐藏正确答案'; });
-        if (quizJudgeHook) { try { quizJudgeHook(qid, correct, labels); } catch (e) { /* 钩子失败不影响判定 */ } }
+        if (options.onJudge) options.onJudge({ qid, correct, picked: labels });
+        else if (quizJudgeHook) quizJudgeHook(qid, correct, labels);
       };
 
       box.addEventListener('click', e => {
@@ -572,12 +665,16 @@ const QRender = (() => {
       });
       if (confirmBtn) confirmBtn.addEventListener('click', judge);
       if (redoBtn) redoBtn.addEventListener('click', () => {
+        if (options.canJudge && options.canJudge() === false) return;
         /* 重做 = 清掉 lastSelfTest 恢复可点击(不撤销 weak 状态:那次作答真实发生过) */
         const r = Store.rec(qid);
         delete r.lastSelfTest;
         touchSelfTest(r);
         picked.clear();
-        box.classList.remove('quiz-judged');
+        box.classList.remove('quiz-judged', 'quiz-revealed');
+        const host = box.closest('.study-wrap, #q-detail, #view') || root;
+        $$('.quiz-answer-block', host).forEach(blk => blk.classList.add('quiz-answer-hidden'));
+        if (confirmBtn) confirmBtn.hidden = true;
         /* 乱序顺序以 lastSelfTest/status 为渲染依据,已渲染的顺序保持不动;
            重做后重新可点,揭示态保留(答案已看过,再点只为自检) */
         $$('.quiz-opt', box).forEach(el => {
@@ -588,6 +685,8 @@ const QRender = (() => {
         });
         if (resultLine) { resultLine.hidden = true; resultLine.textContent = ''; }
         redoBtn.hidden = true;
+        if (options.onRedo) options.onRedo({ qid });
+        else Store.save();
       });
     });
   }

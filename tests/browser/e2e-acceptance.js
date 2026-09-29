@@ -341,7 +341,7 @@ async function closeAnyModal(page) {
     '文件长度=' + cardMd.length);
   ok('待攻克清单用「我的笔记」标签,不冒充「我的回答」', cardMd.includes('### 我的笔记'));
   ok('卡片是给人看的成品(有标题/来源/题号)',
-    cardMd.includes('# 面试表达卡') && cardMd.includes('来源:') && cardMd.includes(firstQid));
+    cardMd.includes('# 复习参考资料 · 待攻克清单') && cardMd.includes('来源:') && cardMd.includes(firstQid));
 
   /* 走一遍真实模拟面试,再从完成页导出「我的回答」那一版。
      定向到一道有「面试口述版/参考要点」的叙述题(AG-001),避免随机抽到牛客 quiz 题

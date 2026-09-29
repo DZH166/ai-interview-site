@@ -17,7 +17,7 @@
  * CACHE_VERSION 由 tools/build.py 按内容哈希自动盖章,数据一变缓存名即变。
  */
 'use strict';
-const CACHE_VERSION = 'shell-b03d166cd947';
+const CACHE_VERSION = 'shell-095710aed22f';
 /* 分片专用缓存:不参与 shell 版本盖章,清理只按 manifest 名单增量做。
    命名带 -v1 是留给「分片路径/命名规则大改」时的兜底 —— 那种时候一次性换名重下。 */
 const TOPIC_CACHE = 'topics-v1';
@@ -39,6 +39,7 @@ const APP_SHELL = [
   './js/views-practice.js',
   './js/views-resume.js',
   './js/views-stats.js',
+  './js/views-guides.js',
   './js/views-knowledge.js',
   './js/views-review.js',
   './js/app.js',
@@ -57,7 +58,9 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys()
+    caches.open(CACHE_VERSION).then(c => c.match('./data/manifest.json'))
+      .then(r => r ? r.json().then(pruneTopicCache) : null)
+      .then(() => caches.keys())
       .then((keys) => Promise.all(
         /* TOPIC_CACHE 不在清理范围:分片的失效按 manifest 名单增量做,
            不能因为 shell 换了版本就把 10MB 分片一起丢掉 */
@@ -76,7 +79,7 @@ self.addEventListener('fetch', (e) => {
   const isNavigate = req.mode === 'navigate';
   const isManifest = url.pathname.endsWith('/data/manifest.json');
   const isData = url.pathname.endsWith('/data.js') || isManifest;
-  const isTopicFile = url.pathname.includes('/data/topics/');
+  const isTopicFile = url.pathname.includes('/data/topics/') || url.pathname.includes('/data/assets/');
 
   if (isNavigate) {
     e.respondWith(networkFirst(req, './index.html'));
@@ -108,14 +111,32 @@ async function networkFirstManifest(req) {
    名单为空一律不删 —— 那是坏 manifest 的信号,不是「题库空了」。 */
 async function pruneTopicCache(manifest) {
   const live = new Set(
-    Object.values((manifest && manifest.topics) || {})
+    [...Object.values((manifest && manifest.topics) || {}), ...Object.values((manifest && manifest.assets) || {})]
       .map((t) => t && t.file).filter(Boolean));
   if (!live.size) return;
   const cache = await caches.open(TOPIC_CACHE);
+  // Retain the previous manifest too: tabs open during an update still use those hashes.
+  const manifestKey = new URL('data/cached-manifests.json', self.registration.scope).href;
+  const previous = await cache.match(manifestKey);
+  let history = [];
+  try { if (previous) history = await previous.json(); } catch (_) {}
+  if (!history.length) {
+    // Upgrade from the old worker, which had no manifest history metadata.
+    const shells = (await caches.keys()).filter(k => k.startsWith('shell-') && k !== CACHE_VERSION);
+    const previousShell = shells[shells.length - 1];
+    if (previousShell) {
+      const old = await (await caches.open(previousShell)).match('./data/manifest.json');
+      try { if (old) { const mf = await old.json(); history = [[...Object.values(mf.topics || {}), ...Object.values(mf.assets || {})].map(x => x.file)]; } } catch (_) {}
+    }
+  }
+  const current = [...live];
+  if (JSON.stringify(history[0]) !== JSON.stringify(current)) history = [current, ...history].slice(0, 2);
+  history.flat().forEach(name => live.add(name));
+  await cache.put(manifestKey, new Response(JSON.stringify(history), { headers: { 'Content-Type': 'application/json' } }));
   const keys = await cache.keys();
   await Promise.all(keys.map((r) => {
     const name = new URL(r.url).pathname.split('/').pop();
-    return live.has(name) ? null : cache.delete(r);
+    return name === 'cached-manifests.json' || live.has(name) ? null : cache.delete(r);
   }));
 }
 
@@ -123,7 +144,8 @@ async function networkFirst(req, fallbackUrl) {
   const cache = await caches.open(CACHE_VERSION);
   try {
     const fresh = await fetch(req);
-    if (fresh && fresh.ok) cache.put(req, fresh.clone());
+    if (!fresh || !fresh.ok) throw Error('HTTP ' + (fresh && fresh.status));
+    await cache.put(req, fresh.clone());
     return fresh;
   } catch (err) {
     const hit = await cache.match(req);
@@ -144,7 +166,7 @@ async function cacheFirst(req) {
     return hit;
   }
   const fresh = await fetch(req);
-  if (fresh && fresh.ok) cache.put(req, fresh.clone());
+  if (fresh && fresh.ok) await cache.put(req, fresh.clone());
   return fresh;
 }
 
@@ -155,6 +177,6 @@ async function cacheFirstImmutable(req) {
   const hit = await cache.match(req);
   if (hit) return hit;
   const fresh = await fetch(req);
-  if (fresh && fresh.ok) cache.put(req, fresh.clone());
+  if (fresh && fresh.ok) await cache.put(req, fresh.clone());
   return fresh;
 }

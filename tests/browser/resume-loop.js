@@ -65,7 +65,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const beforeOpen = await firstDetails.evaluate(el => el.open);
     assert(beforeOpen, '前置:分组默认展开');
     /* 打开第一个分组(折叠它)再点按钮:如果按钮误触发 summary 切换,details 会被重新展开 */
-    await firstDetails.locator('summary').click();
+    await firstDetails.locator('summary').click({ position: { x: 4, y: 4 } });
     check('手动点击 summary 可折叠分组', !(await firstDetails.evaluate(el => el.open)));
     await page.evaluate(() => {
       window.__capStart = window.__capStart || [];
@@ -82,7 +82,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       && JSON.stringify(cap1.ids) === JSON.stringify(groupExpect[0].ids), JSON.stringify(cap1).slice(0, 120));
 
     /* 真实路径:不拦截,点按钮应跳到 #/mock/run 并留下定向会话草稿 */
-    await firstDetails.locator('summary').click();   /* 重新展开 */
+    await firstDetails.locator('summary').click({ position: { x: 4, y: 4 } });   /* 重新展开 */
     await firstDetails.locator('[data-rv-mock]').click();
     check('跳转到模拟会话页', await page.waitForFunction(() => location.hash.startsWith('#/mock/run'), null, { timeout: 15000 }).then(() => true).catch(() => false));
     const draft1 = await page.evaluate(() => {
@@ -93,6 +93,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     check('会话 label 以「简历·」开头且含组名',
       draft1 && draft1.label.startsWith('简历·') && draft1.label.includes(groupExpect[0].name), draft1 && draft1.label);
     check('会话题数 = 分组有效题号数', draft1 && draft1.count === groupExpect[0].ids.length, `${draft1 && draft1.count} vs ${groupExpect[0].ids.length}`);
+    await page.waitForSelector('#m-self');
     check('页面进度指示与题数一致', await page.evaluate(n => {
       const t = (document.querySelector('.mock-progress') || {}).textContent || '';
       return t.includes(`/ ${n} 题`);
@@ -112,6 +113,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const mustBtnLabel = (await page.locator('[data-rv-must-mock]').textContent()).trim();
     check('必知题按钮出现且标注题数', new RegExp(`必知题定向自测\\(${mustExpect.length}题\\)`).test(mustBtnLabel), mustBtnLabel);
     await page.locator('[data-rv-must-mock]').click();
+    await page.getByRole('button', { name: '保留草稿并开始新练习', exact: true }).click();
     await page.waitForFunction(() => location.hash.startsWith('#/mock/run'), null, { timeout: 15000 });
     const draft2 = await page.evaluate(() => {
       const d = Store.data.mock.draft;
@@ -131,14 +133,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     ]);
     const fname = download.suggestedFilename();
     /* 文件名与 ExpressCard.fileName 同一约定:去掉空白与非法字符 */
-    const safeName = `简历表达卡-${firstGroup.name}`.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '');
-    check('文件名形如 简历表达卡-<组名>.txt', fname === safeName + '.txt', fname);
+    const safeName = `简历参考资料-${firstGroup.name}`.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '');
+    check('文件名形如 简历参考资料-<组名>.txt', fname === safeName + '.txt', fname);
     const tmp = path.join(require('os').tmpdir(), 'aiiv-resume-card-' + Date.now() + '.txt');
     await download.saveAs(tmp);
     const text = fs.readFileSync(tmp, 'utf8');
     fs.unlinkSync(tmp);
     check('表达卡含每题【题号】头', firstGroup.ids.every(id => text.includes(`【${id}】`)), text.slice(0, 120));
-    check('表达卡含问/答行且非空', /问：.+/s.test(text) && /答（要点）：.+/s.test(text), text.slice(0, 200));
+    check('表达卡含问/答行且非空', /问：.+/s.test(text) && /答（要点）：.+/s.test(text) && !text.includes('(无参考要点)'), text.slice(0, 200));
     check('表达卡题数与分组一致', (text.match(/【/g) || []).length === firstGroup.ids.length);
 
     /* ---- ⑤ 全程无 JS 异常 ---- */

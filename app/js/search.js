@@ -8,7 +8,7 @@
 
    分层缓存(2026-09-13):重建开销的大头是静态内容(题库字段 + Markdown 章节解析),
    而触发重建的却往往是个人写入(记笔记/存尝试)。所以索引分两层:
-     - 静态层:题库/文档/概念/专项/项目,按题库规模签名缓存,基本只建一次;
+     - 静态层:标题同步可查，分片正文按批补齐，复用未变化的题目/文档索引;
      - 动态层:笔记/尝试/运行/草稿/导入资料,随 Store.rev 重建。
    查询时两层拼接,行为与单层完全一致(见 tests/search-cache-test.js)。 */
 'use strict';
@@ -17,6 +17,24 @@ const Search = (() => {
   let units = [];
   let builtRev = -1;
   let ctxProvider = null;
+  let dynamicUnits = [];
+  let generation = 0;
+  let pending = 0;
+  let idle = Promise.resolve();
+  let finishIdle = null;
+  let bodyCache = new Map();
+  let contentBase = '';
+  const listeners = new Set();
+  const clock = () => typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const subscribe = fn => { listeners.add(fn); return () => listeners.delete(fn); };
+  function notify() { listeners.forEach(fn => { try { fn(); } catch (e) { console.warn(e); } }); }
+  async function whenIdle() {
+    while (pending) {
+      const running = idle;
+      await running;
+      if (running === idle) return;
+    }
+  }
 
   /* 静态层缓存:签名 = 题库规模 + 文档数(导入题库会改长度,触发重建) */
   const staticCache = { sig: '', units: [], staticBuilds: 0, dynamicBuilds: 0 };
@@ -36,7 +54,7 @@ const Search = (() => {
   }
 
   /* ---- 静态层:题库字段 + 内置文档章节(不含任何个人数据) ---- */
-  function buildStatic(ctx) {
+  function buildStatic(ctx, layer) {
     const out = [];
     (ctx.questions || []).forEach(q => {
       const add = (field, text, weight, anchor) => {
@@ -44,12 +62,16 @@ const Search = (() => {
           out.push({ kind: 'q', qid: q.id, field, anchor, text: norm(text), raw: String(text), weight, topic: q.topic });
         }
       };
-      add('title', q.title, 3.0, 'top');
+      if (layer !== 'body') {
+        add('title', q.id + ' ' + q.title, 3.0, 'top');
+        add('tags', (q.tags || []).join(' '), 2.2, 'top');
+      }
+      if (layer === 'metadata') return;
       add('prompt', q.prompt, 2.5, 'top');
-      add('tags', (q.tags || []).join(' '), 2.2, 'top');
+      add('options', (q.options || []).map(o => o.label + '. ' + o.text).join('\n'), 1.5, 'answer');
       add('answer', q.answer, 1.6, 'answer');
       add('plain', q.plain, 1.0, 'plain');
-      add('deep', q.deep + (q.fusion_notes ? '\n' + q.fusion_notes : ''), 1.0, 'deep');
+      add('deep', (q.deep || '') + (q.fusion_notes ? '\n' + q.fusion_notes : ''), 1.0, 'deep');
       add('example', q.example, 0.8, 'example');
       add('interview', q.interview, 0.8, 'interview');
       (q.pitfalls || []).forEach(p => add('pitfalls', p, 0.8, 'pitfalls'));
@@ -57,8 +79,9 @@ const Search = (() => {
       if (q.check) { add('check', q.check.q, 0.8, 'check'); add('check', q.check.a, 0.7, 'check'); }
     });
     (ctx.docs || []).forEach(d => {
-      out.push({ kind: 'doc', docId: d.id, field: 'title', anchor: '', text: norm(d.title + ' ' + (d.summary || '')), raw: d.title, weight: 2.0, topic: d.topic });
-      Markdown.sections(d.md).forEach(sec => {
+      if (layer !== 'body') out.push({ kind: 'doc', docId: d.id, field: 'title', anchor: '', text: norm(d.title + ' ' + (d.summary || '')), raw: d.title, weight: 2.0, topic: d.topic });
+      if (layer === 'metadata') return;
+      Markdown.sections(d.md || '').forEach(sec => {
         const body = sec.buf.join('\n');
         if (body.trim()) {
           out.push({
@@ -104,11 +127,19 @@ const Search = (() => {
   function buildDynamic(ctx) {
     const out = [];
     const NL = String.fromCharCode(10);
-    const qs = ctx.questions || [];
+    const legacy = ctx.legacyQuestions || (typeof Data !== 'undefined' && Data.legacyQuestions ? Data.legacyQuestions() : []);
+    const qs = new Map((ctx.questions || []).concat(legacy).map(q => [q.id, q]));
     const records = ctx.records || {};
-    qs.forEach(q => {
-      const note = records.questions && records.questions[q.id] && records.questions[q.id].note;
-      if (note) out.push({ kind: 'note', qid: q.id, field: 'note', anchor: 'note', text: norm(note), raw: note, weight: 2.5, topic: q.topic });
+    const recordedIds = new Set(Object.keys(records.questions || {}));
+    ((records.mock && records.mock.rounds) || []).forEach(rd => (rd.items || []).forEach(it => recordedIds.add(it.qid)));
+    // 归档只为已有个人记录提供入口，不让删除的题重新混入活动题库。
+    legacy.filter(q => recordedIds.has(q.id)).forEach(q => {
+      out.push(...buildStatic({ questions: [q] }).map(unit => ({ ...unit, legacy: true })));
+    });
+    Object.entries(records.questions || {}).forEach(([qid, record]) => {
+      const q = qs.get(qid) || (typeof Data !== 'undefined' && Data.question(qid)) || {};
+      const note = record.note;
+      if (note) out.push({ kind: 'note', qid, field: 'note', anchor: 'note', text: norm(note), raw: note, weight: 2.5, topic: q.topic || '', legacy: !!q.archived });
     });
     const STATE_LABEL = { draft: '草稿', completed: '已完成', abandoned: '已放弃' };
     const seenTries = new Set();
@@ -183,14 +214,21 @@ const Search = (() => {
         weight: 2.0
       });
     });
-    /* 我的追问回答(已完成轮次):带题目与轮次身份,点击落到那一轮(SP 阶段7.4) */
+    /* 已完成轮次的原回答、修订与追问:保留题目及轮次身份。 */
     ((records.mock && records.mock.rounds) || []).forEach(rd => {
       const rid = rd.id || (typeof Store !== 'undefined' && Store.roundId ? Store.roundId(rd) : '');
       (rd.items || []).forEach(it => {
+        const topic = it.questionSnapshot?.topic || qs.get(it.qid)?.topic || '';
+        [['self', '原回答'], ['revision', '参考后修订 / 补充']].forEach(([field, label]) => {
+          if (typeof it[field] !== 'string' || !it[field].trim()) return;
+          out.push({ kind: 'answer', qid: it.qid, roundId: rid, field, anchor: '', topic,
+            title: it.title || it.questionSnapshot?.title || it.qid,
+            text: norm(label + ' ' + it[field]), raw: label + ':' + it[field], weight: 2.2 });
+        });
         (it.followups || []).forEach((f, index) => {
           if (!(f.self || '').trim()) return;
           out.push({
-            kind: 'fu', qid: it.qid, roundId: rid, fuId: f.id || 'legacy-' + index, field: 'fu', anchor: '', topic: '',
+            kind: 'fu', qid: it.qid, roundId: rid, fuId: f.id || 'legacy-' + index, field: 'fu', anchor: '', topic,
             text: norm('追问 ' + (f.q || '') + ' ' + f.self),
             raw: '追问(' + (f.q || '') + '):' + f.self,
             weight: 2.2
@@ -221,11 +259,60 @@ const Search = (() => {
       ? ctx.contentVersion
       : (ctx.questions || []).length + '|' + (ctx.docs || []).length;
     if (staticCache.sig !== sig) {
-      staticCache.units = buildStatic(ctx);
+      const token = ++generation;
+      if (finishIdle) finishIdle();
+      finishIdle = null;
+      // 同一构建中的新分片只补新对象；题库内容版本变化则全量作废。
+      const base = sig.split('|')[0];
+      if (base !== contentBase) bodyCache.clear();
+      contentBase = base;
+      const previous = bodyCache;
+      bodyCache = new Map();
+      const work = [];
+      staticCache.units = buildStatic(ctx, 'metadata');
+      const enqueue = (kind, source) => {
+        const key = kind + ':' + source.id;
+        const cached = previous.get(key);
+        if (cached && cached.source === source) {
+          bodyCache.set(key, cached);
+          staticCache.units.push(...cached.units);
+        } else work.push({ key, kind, source });
+      };
+      const bodyFields = ['prompt', 'answer', 'options', 'plain', 'deep', 'example', 'interview', 'pitfalls', 'followups', 'check', 'fusion_notes'];
+      (ctx.questions || []).filter(q => bodyFields.some(field => q[field] !== undefined)).forEach(q => enqueue('q', q));
+      (ctx.docs || []).filter(d => typeof d.md === 'string' && d.md.length).forEach(d => enqueue('doc', d));
       staticCache.sig = sig;
       staticCache.staticBuilds++;
+      pending = work.length;
+      let cursor = 0;
+      const append = job => {
+        const batch = buildStatic(job.kind === 'q' ? { questions: [job.source] } : { docs: [job.source] }, 'body');
+        bodyCache.set(job.key, { source: job.source, units: batch });
+        staticCache.units.push(...batch);
+      };
+      if (!work.length || (ctx.questions || []).length + (ctx.docs || []).length <= 80) {
+        work.forEach(append);
+        pending = 0;
+        idle = Promise.resolve();
+      } else {
+        idle = new Promise(resolve => { finishIdle = resolve; });
+        const pump = () => {
+          if (token !== generation) return;
+          const start = clock();
+          let count = 0;
+          while (cursor < work.length && count++ < 50 && clock() - start < 8) append(work[cursor++]);
+          pending = work.length - cursor;
+          // 个人数据失效后不可让旧任务重新发布旧笔记。
+          if (builtRev === curRev()) units = staticCache.units.concat(dynamicUnits);
+          if (pending) setTimeout(pump, 0);
+          else { const done = finishIdle; finishIdle = null; if (done) done(); }
+          notify();
+        };
+        setTimeout(pump, 0);
+      }
     }
-    units = staticCache.units.concat(buildDynamic(ctx));
+    dynamicUnits = buildDynamic(ctx);
+    units = staticCache.units.concat(dynamicUnits);
     staticCache.dynamicBuilds++;
     /* 索引构建完成:记下数据版本,后续任何写入都会让它过期并按需自动重建 */
     builtRev = curRev();
@@ -282,11 +369,26 @@ const Search = (() => {
     });
   }
 
+  function inScope(u, opt) {
+    if (opt.scope === 'q' && !(u.kind === 'q' || u.kind === 'note')) return false;
+    if (opt.scope === 'doc' && !(u.kind === 'doc' || u.kind === 'udoc')) return false;
+    if (opt.scope === 'note' && u.kind !== 'note') return false;
+    return !opt.topic || u.topic === opt.topic;
+  }
+
+  // 权重只使用前六次出现，无需 split 整段正文生成大量临时字符串。
+  function occurrenceWeight(text, term) {
+    let count = 0, from = 0;
+    while (count < 6) {
+      const pos = text.indexOf(term, from);
+      if (pos < 0) break;
+      count++; from = pos + term.length;
+    }
+    return count;
+  }
+
   function matchUnit(u, opt, altGroups) {
-    if (opt.scope === 'q' && !(u.kind === 'q' || u.kind === 'note')) return -1;
-    if (opt.scope === 'doc' && !(u.kind === 'doc' || u.kind === 'udoc')) return -1;
-    if (opt.scope === 'note' && u.kind !== 'note') return -1;
-    if (opt.topic && u.topic && u.topic !== opt.topic) return -1;
+    if (!inScope(u, opt)) return -1;
     let score = 0;
     for (const alt of altGroups) {
       /* 任一候选命中即算该词命中;分数只按实际命中的候选累计 */
@@ -294,8 +396,7 @@ const Search = (() => {
       for (const t of alt) {
         const idx = u.text.indexOf(t);
         if (idx >= 0) {
-          const count = u.text.split(t).length - 1;
-          const s = Math.min(count, 6) * u.weight * (u.field === 'title' ? 2 : 1);
+          const s = occurrenceWeight(u.text, t) * u.weight * (u.field === 'title' ? 2 : 1);
           if (s > best) best = s;
         }
       }
@@ -315,11 +416,11 @@ const Search = (() => {
     const strict = /^([a-z]{2,4}-\d{3})$/i.test(q.trim());
     const results = [];
     units.forEach(u => {
-      const score = matchUnit(u, opt, altGroups);
+      let score = matchUnit(u, opt, altGroups);
       if (score < 0) return;
       /* 题号直查加权 */
       if (terms.length === 1 && strict && u.field === 'title') score += 50;
-      results.push({ unit: u, score, snippet: makeSnippet(u.raw, altGroups.flat()), partial: false });
+      results.push({ unit: u, score, partial: false });
     });
     /* 零结果降级:严格 AND(含别名)一无所获时,退一步按 OR(任一候选命中)
        再扫一遍并打上 partial 标记——界面据此提示「部分匹配」。
@@ -328,12 +429,13 @@ const Search = (() => {
        别名展开在查询期做,静态层缓存签名与这道降级完全无关。 */
     if (!results.length) {
       units.forEach(u => {
+        if (!inScope(u, opt)) return;
         for (const alt of altGroups) {
           for (const t of alt) {
             const idx = u.text.indexOf(t);
             if (idx >= 0) {
-              const s = Math.min(u.text.split(t).length - 1, 6) * u.weight * (u.field === 'title' ? 2 : 1);
-              results.push({ unit: u, score: s, snippet: makeSnippet(u.raw, [t]), partial: true });
+              const s = occurrenceWeight(u.text, t) * u.weight * (u.field === 'title' ? 2 : 1);
+              results.push({ unit: u, score: s, hitTerms: [t], partial: true });
               return;   /* 同一条目只收一次:按用户词顺序取第一个命中的候选 */
             }
           }
@@ -344,7 +446,10 @@ const Search = (() => {
     /* 同一目标只留一条。一道题的 answer / deep / plain 各自命中一次,过去会刷出
        5~8 张卡片,标题与摘要还完全相同(摘要取该字段原文,标题统一取题名)。
        截断必须放在聚合之后,否则 60 条可能全是同一道题的各个字段。 */
-    return groupHits(results).slice(0, 60);
+    // 摘要只为最终可见的60条生成，不为数万条中间命中逐一跑高亮正则。
+    const termsForSnippet = altGroups.flat();
+    return groupHits(results).slice(0, 60).map(result => ({ ...result,
+      snippet: makeSnippet(result.unit.raw, result.hitTerms || termsForSnippet) }));
   }
 
   /* 聚合键:题目字段与个人笔记算作同一道题的正文;同一文档的多个章节算一份文档 */
@@ -355,6 +460,7 @@ const Search = (() => {
       case 'doc':
       case 'udoc':    return 'doc:' + u.docId;
       case 'fu':      return 'fu:' + u.roundId + ':' + u.qid + ':' + u.fuId;
+      case 'answer':  return 'answer:' + u.roundId + ':' + u.qid;
       case 'try':     return 'try:' + u.drillId + ':' + (u.attemptId || '');
       case 'run':     return 'run:' + u.pid + ':' + (u.runId || '');
       case 'drill':   return 'drill:' + u.drillId;
@@ -372,13 +478,13 @@ const Search = (() => {
       const k = groupKey(r.unit);
       const g = map.get(k);
       if (!g) {
-        map.set(k, { unit: r.unit, score: r.score, snippet: r.snippet, hits: 1,
+        map.set(k, { unit: r.unit, score: r.score, hitTerms: r.hitTerms, hits: 1,
                      fields: r.unit.field ? [r.unit.field] : [], partial: !!r.partial });
         return;
       }
       g.hits++;
       if (r.unit.field && g.fields.indexOf(r.unit.field) < 0) g.fields.push(r.unit.field);
-      if (r.score > g.score) { g.unit = r.unit; g.score = r.score; g.snippet = r.snippet; }
+      if (r.score > g.score) { g.unit = r.unit; g.score = r.score; g.hitTerms = r.hitTerms; }
       /* 部分匹配是整组结果级别的属性:组内任一命中来自降级扫描,该组就要提示 */
       if (r.partial) g.partial = true;
     });
@@ -424,16 +530,17 @@ const Search = (() => {
 
   function count() { ensureFresh(); return units.length; }
 
-  /* 分层缓存观测(测试与维护页用):静态层构建次数应恒为 1(题库规模不变时) */
+  /* 分层缓存观测：个人记录变化不应增加静态构建次数；pending 为尚待处理的正文数。 */
   function stats() {
     return {
       staticUnits: staticCache.units.length,
       dynamicUnits: units.length - staticCache.units.length,
       units: units.length,
       staticBuilds: staticCache.staticBuilds,
-      dynamicBuilds: staticCache.dynamicBuilds
+      dynamicBuilds: staticCache.dynamicBuilds,
+      pending
     };
   }
 
-  return { build, query, tokenize, count, stats, setContextProvider, ensureFresh, invalidate };
+  return { build, query, tokenize, count, stats, setContextProvider, ensureFresh, invalidate, subscribe, whenIdle };
 })();

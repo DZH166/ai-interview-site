@@ -55,7 +55,7 @@ test('same content is skipped and managed content edits are detectable', () => {
 await testAsync('built application retains the full bank and Pi Agent without touching personal records', async () => {
   const records = { v: 3, questions: { 'PY-001': { note: 'my existing note', fav: true, status: 'weak', practiceCount: 4 } }, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} };
   const disk = new Map([['aiiv:records', JSON.stringify(records)]]);
-  const c = { window: {}, console, toast() {}, debounce: f => f, esc: String,
+  const c = { window: {}, console, setTimeout, clearTimeout, performance, toast() {}, debounce: f => f, esc: String,
     localStorage: { getItem: k => disk.get(k) || null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) } };
   /* Track E:题库拆分后壳里只有 questions_index,vm 里用磁盘桩 fetch 模拟浏览器分片加载 */
   c.fs = fs; c.path = path; c.ROOT = ROOT;
@@ -74,6 +74,7 @@ await testAsync('built application retains the full bank and Pi Agent without to
   assert.strictEqual(JSON.stringify(c.S.data.questions), JSON.stringify(records.questions));
   assert.strictEqual(disk.get('aiiv:records'), JSON.stringify(records));
   c.Search.build({ questions: c.D.allQuestions(), docs: c.D.allDocs(), records: c.S.data });
+  await c.Search.whenIdle();   /* 标题同步可用，正文在有界批次完成后检索。 */
   assert(c.Search.query('固定发票校验').some(r => r.unit.qid === 'PI-001' && r.unit.field === 'prompt'));
   const card = c.Card.buildFromRound([{ ts: 1, items: [{ qid: 'PI-004', self: 'my independent answer' }] }], 0, id => c.D.question(id));
   assert(card.markdown.includes(questions[3].prompt)); assert(card.html.includes(questions[3].prompt));

@@ -11,8 +11,20 @@ async function test(name,fn){try{await fn();passed++;console.log('  PASS '+name)
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROME&&process.env.CHROME!=='default'?process.env.CHROME:undefined});
   async function fresh(seed){const ctx=await browser.newContext({serviceWorkers:'block'}),p=await ctx.newPage();await p.goto(BASE+'/__seed__');if(seed)await p.evaluate(d=>localStorage.setItem('aiiv:records',JSON.stringify(d)),seed);await open(p,'#/home');return p;}
   /* Track E:全量题字段异步合并 —— open 后等 questionsReady(与生产门控一致)再交互 */
-  async function open(p,hash){await p.goto(BASE+'/index.html'+hash);await p.waitForFunction(()=>typeof Store!=='undefined'&&Store.data.ui.lastHash===location.hash&&document.querySelector('#view > *'));await p.waitForFunction(()=>typeof Data!=='undefined'&&Data.questionsLoaded()===true,null,{timeout:20000});}
-  async function start(p){await p.evaluate(()=>MockView.startDirected(['AG-001'],'integrity test'));await p.waitForSelector('#m-self');}
+  async function open(p,hash){await p.goto(BASE+'/index.html'+hash);await p.waitForFunction(()=>typeof Store!=='undefined'&&Store.data.ui.lastHash===location.hash&&document.querySelector('#view > *'));if(hash.startsWith('#/study/')){await p.evaluate(id=>Data.ensureQuestion(id),hash.slice('#/study/'.length));await p.waitForSelector('#note-area');}}
+  async function start(p){
+   const errors=[],requests=[],responses=[];
+   const onError=e=>errors.push(e.message),onRequest=r=>requests.push({url:r.url(),error:r.failure()?.errorText});
+   const onResponse=r=>{if(r.status()>=400)responses.push({url:r.url(),status:r.status()});};
+   p.on('pageerror',onError);p.on('requestfailed',onRequest);p.on('response',onResponse);
+   try{await p.evaluate(()=>MockView.startDirected(['AG-001'],'integrity test'));await p.waitForSelector('#m-self');}
+   catch(e){
+    const state=await p.evaluate(()=>({hash:location.hash,view:document.querySelector('#view')?.innerText,
+     topic:Data.topicState('agent'),questionLoaded:Data.question('AG-001')?.answer!==undefined,
+     draft:Store.data.mock.draft,loadIssues:Store.loadIssues}));
+    console.error('  START_DIAGNOSTICS '+JSON.stringify({errors,requests,responses,state}));throw e;
+   }finally{p.off('pageerror',onError);p.off('requestfailed',onRequest);p.off('response',onResponse);}
+  }
   await test('failed completion preserves draft and can retry exactly once',async()=>{
    const p=await fresh();await start(p);await p.locator('#m-self').fill('durable answer');await p.evaluate(()=>MockView.flushDraft());
    await p.evaluate(()=>{const original=Storage.prototype.setItem;window.restoreStorage=()=>Storage.prototype.setItem=original;Storage.prototype.setItem=function(k,v){if(k==='aiiv:records')throw new DOMException('full','QuotaExceededError');return original.call(this,k,v);};});
@@ -40,14 +52,25 @@ async function test(name,fn){try{await fn();passed++;console.log('  PASS '+name)
   });
   await test('two restored conflict editors do not echo writes and keep both versions',async()=>{
    const a=await fresh({v:3,questions:{'AG-001':{note:'canonical note',noteDraft:{text:'first unresolved version',updatedAt:100,resolved:false}}},mock:{rounds:[],draft:null},drillAttempts:{},ui:{}});
+   try{
    await open(a,'#/study/AG-001');const b=await a.context().newPage();await open(b,'#/study/AG-001');
-   for(const p of [a,b])await p.evaluate(()=>{window.writes=0;const original=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='aiiv:records')window.writes++;return original.call(this,k,v);};});
-   await b.locator('#note-area').fill('second unresolved version');await sleep(600);
+   for(const p of [a,b])await p.evaluate(()=>{window.writes=0;window.lastWrite=performance.now();const original=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='aiiv:records'){window.writes++;window.lastWrite=performance.now();}return original.call(this,k,v);};});
+   await b.locator('#note-area').fill('second unresolved version');
+   /* 先观察两页与磁盘的真实合并结果，再开始“无回声”窗口；固定 600ms
+      可能把尚未执行的首页/学习页保存误当成回声。持续写回不能通过此有界等待。 */
+   await Promise.all([a,b].map(p=>p.waitForFunction(()=>{
+    const disk=JSON.parse(localStorage.getItem('aiiv:records'));
+    return [Store.rec('AG-001'),disk.questions['AG-001']].every(q=>{
+     const values=Object.values(q.noteDraft?.versions||{}).map(v=>v.text);
+     return q.note==='canonical note'&&values.includes('first unresolved version')&&values.includes('second unresolved version');
+    })&&performance.now()-window.lastWrite>=400;
+   },null,{timeout:6000})));
    const before=await Promise.all([a,b].map(p=>p.evaluate(()=>window.writes)));await sleep(700);
    assert.deepStrictEqual(await Promise.all([a,b].map(p=>p.evaluate(()=>window.writes))),before);
    const values=await b.evaluate(()=>Object.values(Store.rec('AG-001').noteDraft.versions).map(v=>v.text));
    assert(values.includes('first unresolved version'));assert(values.includes('second unresolved version'));
-   assert.strictEqual(await a.locator('#note-area').inputValue(),'first unresolved version');await a.context().close();
+   assert.strictEqual(await a.locator('#note-area').inputValue(),'first unresolved version');
+   }finally{await a.context().close();}
   });
   await test('regrading one attempt recomputes from its original SRS state',async()=>{
    const p=await fresh();await start(p);await p.locator('#m-self').fill('real answer');await p.locator('#m-reveal').click();await p.locator('[data-mark="ok"]').click();
@@ -59,8 +82,10 @@ async function test(name,fn){try{await fn();passed++;console.log('  PASS '+name)
   });
   await test('old reference snapshots survive a published content update and export',async()=>{
    const p=await fresh();await start(p);const before=await p.evaluate(()=>Data.question('AG-001'));await p.locator('#m-self').fill('old version answer');await p.locator('#m-reveal').click();await p.locator('[data-fu-id]').first().fill('follow-up answer');await p.locator('[data-fu-reveal]').first().click();
-   await p.route('**/data.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync(path.join(ROOT,'app/data.js'),'utf8')+'\n{const q=window.APP_DATA.questions.find(x=>x.id==="AG-001");q.title="NEW_TITLE_FIXTURE";q.answer="NEW_REFERENCE_FIXTURE";q.followups[0].a="NEW_FOLLOWUP_FIXTURE";q.content_version={rev:"NEW_REV_FIXTURE"};}\n'}));
-   await p.reload();await p.waitForSelector('#mock-fu-list');const text=await p.locator('#view').innerText();assert(!text.includes('NEW_FOLLOWUP_FIXTURE'));assert(!text.includes('NEW_TITLE_FIXTURE'));
+   const mf=JSON.parse(fs.readFileSync(path.join(ROOT,'app/data/manifest.json'),'utf8'));const file=mf.topics.agent.file;
+   await p.route('**/data/topics/'+file,route=>{const payload=JSON.parse(fs.readFileSync(path.join(ROOT,'app/data/topics',file),'utf8'));const q=payload.questions.find(x=>x.id==='AG-001');q.title='NEW_TITLE_FIXTURE';q.answer='NEW_REFERENCE_FIXTURE';q.followups[0].a='NEW_FOLLOWUP_FIXTURE';q.content_version={rev:'NEW_REV_FIXTURE'};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});});
+   await p.evaluate(async()=>{for(const name of await caches.keys())await caches.delete(name);});
+   await p.reload();await p.waitForSelector('#mock-fu-list');const published=await p.evaluate(()=>Data.ensureQuestion('AG-001'));assert.strictEqual(published.answer,'NEW_REFERENCE_FIXTURE','new shard fixture must actually load');const text=await p.locator('#view').innerText();assert(!text.includes('NEW_FOLLOWUP_FIXTURE'));assert(!text.includes('NEW_TITLE_FIXTURE'));
    await p.locator('#m-finish').click();await p.waitForSelector('.round-list');const saved=await p.evaluate(()=>({item:Store.data.mock.rounds[0].items[0],card:buildExpressCard('round',0)}));
    assert.strictEqual(saved.item.title,before.title);assert.strictEqual(saved.item.qRev,before.content_version.rev);assert(!saved.card.markdown.includes('NEW_REFERENCE_FIXTURE'));await p.context().close();
   });

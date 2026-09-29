@@ -32,9 +32,9 @@ async function open(page, hash) {
     /* 开始一轮定向练习:固定用一道有追问的叙述题(牛客 quiz 题无 followups 字段) */
     await open(page, '#/home');
     /* Track E:followups 属于全量字段,等分片合并完成后再挑题,否则永远找不到 */
-    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
+    await page.evaluate(() => Data.ensureQuestion('AG-001'));
     await page.evaluate(() => {
-      const withFu = Data.allQuestions().find(q => q.format !== 'quiz' && (q.followups || []).length);
+      const withFu = Data.question('AG-001');
       if (!withFu) throw new Error('no narrative question with followups');
       window.__fuQid = withFu.id;
       MockView.startDirected([withFu.id], '追问测试');
@@ -48,6 +48,7 @@ async function open(page, hash) {
 
     /* 对照参考要点后,追问二跳出现;未对照前不出现 */
     check('未对照前没有追问区', await page.locator('#mock-fu-list').count() === 0);
+    await page.locator('#m-self').fill('我的主回答');
     await page.locator('#m-reveal').click();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
     check('对照后出现追问二跳区', (await page.locator('#mock-fu-list .fu').count()) === fuCount);
@@ -75,7 +76,7 @@ async function open(page, hash) {
     check('刷新后已对照的追问保持揭示', await page.locator('#mock-fu-list .fu-a').count() === 1);
 
     /* 完成本轮(第 1 题就结束:结束本轮同样收尾入历史);轮次记录带追问;表达卡含追问练习 */
-    await page.locator('#m-self').fill('我的主回答');
+    await page.locator('#m-revision').fill('参考后补充的回答');
     await page.locator('#m-quit').click();
     await page.waitForFunction(() => document.querySelector('.round-list'));
     const roundHasFu = await page.evaluate(() => {
@@ -102,19 +103,21 @@ async function open(page, hash) {
     await page.locator('#m-reveal').click();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
     /* reload 后回到 run 视图:等全量分片重新合并完成(Track E),followups 才在 Data 里 */
-    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
-    await page.evaluate(() => {
+    await page.evaluate(qid => Data.ensureQuestion(qid), firstQid);
+    const identitySeed = await page.evaluate(() => {
       const d = Store.data.mock.draft;
       const qid = d.items[d.idx].qid;
       d.answers[qid].fu = {};   /* 清掉前面的回答,单独构造 */
       const q0 = Data.question(qid).followups[0].q;
       const id0 = fuId(qid, q0);
       d.answers[qid].fu[id0] = { id: id0, q: q0, self: '绑定在原题面的回答', revealed: false };
-      Store.saveNow();
+      return JSON.parse(JSON.stringify(Store.data));
     });
-    await page.reload();
+    await page.goto(BASE + '/__seed__');
+    await page.evaluate(d => localStorage.setItem('aiiv:records', JSON.stringify(d)), identitySeed);
+    await open(page, '#/mock/run');
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
-    await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
+    await page.evaluate(qid => Data.ensureQuestion(qid), firstQid);
     check('重排前:回答显示在原题面下',
       await page.evaluate(() => {
         const qid = Store.data.mock.draft.items[Store.data.mock.draft.idx].qid;
@@ -136,8 +139,11 @@ async function open(page, hash) {
       if (q) q.followups.reverse();
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
     });
+    await page.evaluate(async () => { for (const key of await caches.keys()) await caches.delete(key); });
     await page.reload();
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
+    const published = await page.evaluate(qid => Data.ensureQuestion(qid), firstQid);
+    check('重排发布确已加载', published.followups[0].q !== q0text);
     check('重排后:回答仍显示在原题面下(身份跟内容走,不跟位置走)',
       await page.evaluate(() => {
         const qid = Store.data.mock.draft.items[Store.data.mock.draft.idx].qid;
@@ -148,13 +154,15 @@ async function open(page, hash) {
         return el && el.value === q0 && fuq && Store.data.mock.draft.answers[qid].fu[id0].q === fuq.textContent.replace(/^追问 \d+:/, '');
       }));
     /* 改写题面:旧回答不绑定新题,进入「待核对」 */
-    await page.evaluate(() => {
+    const orphanSeed = await page.evaluate(() => {
       const qid = Store.data.mock.draft.items[Store.data.mock.draft.idx].qid;
       const d = Store.data.mock.draft;
       d.answers[qid].fu = { 'AG-001-fu-old': { id: 'AG-001-fu-old', q: '已被改写的旧题面', self: '旧回答原文', revealed: false } };
-      Store.saveNow();
+      return JSON.parse(JSON.stringify(Store.data));
     });
-    await page.reload();
+    await page.goto(BASE + '/__seed__');
+    await page.evaluate(d => localStorage.setItem('aiiv:records', JSON.stringify(d)), orphanSeed);
+    await open(page, '#/mock/run');
     await page.waitForFunction(() => document.querySelector('#mock-fu-list'));
     check('题面改写后:旧回答进入待核对区,不冒充新题的回答',
       await page.evaluate(() => {
@@ -195,10 +203,10 @@ async function open(page, hash) {
     await open(page, '#/home');
     check('首页「今天已写过模拟回答」认可只写追问的轮次',
       await page.evaluate(() => document.querySelector('.desk-todos').textContent.includes('今天已写过模拟回答')));
-    check('首页数量口径分列主回答与追问',
+    check('首页数量口径分列原回答、追问与修订',
       await page.evaluate(() => {
         const t = document.querySelector('.desk-out').textContent;
-        return t.includes('主回答 0') && t.includes('追问回答 1 条');
+        return t.includes('原回答 0') && t.includes('追问回答 1 条') && t.includes('修订/补充 0 题');
       }));
 
     check('全程无页面 JS 异常', errors.length === 0);

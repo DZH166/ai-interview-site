@@ -47,6 +47,23 @@ const DocsView = (() => {
     if (docId) {
       const d = Data.doc(docId);
       if (!d) { main.innerHTML = '<div class="empty">未找到文档</div>'; return; }
+      if (d.md === undefined && !d.id.startsWith('udoc-') && typeof Data.ensureDoc === 'function') {
+        const load = () => {
+          main.innerHTML = '<div class="empty" role="status">文档加载中…</div>';
+          Data.ensureDoc(docId).then(() => {
+            if (!main.isConnected || $('#doc-main', root) !== main) return;
+            const full = Data.doc(docId);
+            if (!full || full.md === undefined) throw new Error('文档正文尚未取得');
+            renderReader(main, full);
+          }).catch(() => {
+            if (!main.isConnected || $('#doc-main', root) !== main) return;
+            main.innerHTML = '<div class="empty">' + (navigator.onLine === false ? '当前离线，尚未下载这份文档。' : '文档暂时未能加载。') + '<button class="btn btn-small" data-doc-retry>重试</button></div>';
+            $('[data-doc-retry]', main).addEventListener('click', load);
+          });
+        };
+        load();
+        return;
+      }
       renderReader(main, d);
     } else {
       renderIndex(main);
@@ -281,6 +298,15 @@ const DocsView = (() => {
 
 /* ---------- 全局搜索 ---------- */
 const SearchView = (() => {
+  let stopIndex = null, stopContent = null, refreshTimer = null;
+  let renderToken = 0;
+  function cleanup() {
+    renderToken++;
+    if (stopIndex) stopIndex();
+    if (stopContent) stopContent();
+    if (refreshTimer) clearTimeout(refreshTimer);
+    stopIndex = stopContent = refreshTimer = null;
+  }
   /* 字段名 → 用户看得懂的位置说明。搜索卡片上标出「命中在哪」,
      同一目标命中多个字段时会并列多个(见 Search.groupHits)。 */
   const FIELD_LABELS = {
@@ -288,14 +314,17 @@ const SearchView = (() => {
     deep: '原理', example: '例子', interview: '面试表达', followups: '追问', pitfalls: '误区',
     check: '理解检查', note: '笔记', section: '章节', concept: '概念定义', project: '项目说明',
     drill: '专项练习', try: '我的复盘', run: '运行记录', draft: '项目草稿',
-    speak_short: '30 秒口述', speak_long: '2 分钟口述'
+    speak_short: '30 秒口述', speak_long: '2 分钟口述', options: '选项',
+    self: '原回答', revision: '参考后修订 / 补充', fu: '追问回答'
   };
   const fieldLabelOf = f => FIELD_LABELS[f] || f || '';
 
   function render(root, parts, query) {
+    cleanup();
+    const token = renderToken;
     const fromPath = parts && parts.length ? parts.join('/') : '';
     const fromQuery = (query && query.q) ? String(query.q) : '';
-    const q = fromPath || fromQuery || (Store.data.ui.search.q || '');
+    const q = fromPath || fromQuery || ((Store.data.ui.search || {}).q || '');
     const saved = Store.data.ui.search || {};
     root.innerHTML = `
       <div class="search-page">
@@ -316,32 +345,75 @@ const SearchView = (() => {
           </select>
           <span class="muted" id="s-count"></span>
         </div>
+        <div id="s-progress" class="muted small" role="status"></div>
         <div id="s-results"></div>
       </div>`;
-    const input = $('#s-input');
-    /* 深链进入时索引必须等全量题库合并(Track E):未就绪先给「加载中」空态,
-       questionsReady 后再真正查询;用户手动点搜索时索引通常已建好,同步路径不变。 */
-    const goSearch = (val, keep) => {
-      if (Data.questionsLoaded()) { doSearch(val, keep); return; }
-      $('#s-results').innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
-        /* 等待期间用户可能已离开搜索页:DOM 换人了就别往回写 */
-        if (!document.getElementById('s-results')) return;
-        doSearch(val, keep);
-      });
+    const input = $('#s-input', root), resultBox = $('#s-results', root);
+    let activeQuery = q;
+    let loadFailed = false;
+    const current = () => token === renderToken && resultBox.isConnected && $('#s-results', root) === resultBox;
+    const progress = () => {
+      if (!current()) return;
+      const p = Data.loadProgress ? Data.loadProgress() : null;
+      const indexing = Search.stats().pending;
+      const failed = loadFailed || !!(p && p.errors && p.errors.length);
+      $('#s-progress', root).innerHTML = failed
+        ? '部分正文暂未加载，已有题名和个人笔记仍可检索。<button class="btn btn-small" data-search-retry>重试正文加载</button>'
+        : ((p && p.ready < p.total) || indexing
+          ? `题名和个人笔记已可检索，正文正在补充${p ? '（专题 ' + p.ready + '/' + p.total + '）' : ''}…`
+          : '已加载正文检索就绪');
+      const retry = $('[data-search-retry]', root);
+      if (retry) retry.addEventListener('click', loadBodies);
     };
-    $('#s-go').addEventListener('click', () => doSearch(input.value));
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
-    $('#s-scope').addEventListener('change', e => { saved.scope = e.target.value; doSearch(input.value, true); });
-    $('#s-topic').addEventListener('change', e => { saved.topic = e.target.value; doSearch(input.value, true); });
-    if (q) goSearch(q, true); else $('#s-results').innerHTML = '<div class="empty">输入关键词开始搜索;支持多个关键词(空格分隔,需同时命中)。</div>';
+    const refresh = () => {
+      if (!current()) return;
+      if (activeQuery) doSearch(activeQuery, true, true);
+      progress();
+    };
+    const scheduleRefresh = () => {
+      if (!current() || refreshTimer) return;
+      refreshTimer = setTimeout(() => { refreshTimer = null; refresh(); }, 80);
+    };
+    const contentChanged = () => {
+      if (!current()) return;
+      scheduleRefresh();
+    };
+    function loadBodies() {
+      loadFailed = false;
+      // 全文搜索是显式需要全库的入口；标题已先返回，不阻塞交互。
+      const jobs = [Data.questionsReady()];
+      if (Data.ensureDocs) jobs.push(Data.ensureDocs());
+      if (Data.legacyQuestions && Data.ensureQuestion) {
+        const ids = new Set(Object.keys(Store.data.questions || {}));
+        (Store.data.mock.rounds || []).forEach(rd => (rd.items || []).forEach(it => ids.add(it.qid)));
+        Data.legacyQuestions().filter(item => ids.has(item.id)).forEach(item => jobs.push(Data.ensureQuestion(item.id)));
+      }
+      Promise.allSettled(jobs).then(results => {
+        if (!current()) return;
+        loadFailed = results.some(r => r.status === 'rejected');
+        contentChanged();
+        progress();
+      });
+      progress();
+    }
+    if (Search.subscribe) stopIndex = Search.subscribe(scheduleRefresh);
+    if (Data.onContentChange) stopContent = Data.onContentChange(contentChanged);
+    const submit = keep => { activeQuery = input.value; doSearch(activeQuery, keep); };
+    $('#s-go').addEventListener('click', () => submit(false));
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(false); });
+    $('#s-scope').addEventListener('change', () => submit(true));
+    $('#s-topic').addEventListener('change', () => submit(true));
+    if (q) doSearch(q, true); else resultBox.innerHTML = '<div class="empty">输入关键词开始搜索;支持多个关键词(空格分隔,需同时命中)。</div>';
+    loadBodies();
   }
 
-  function doSearch(q, keepUrl) {
+  function doSearch(q, keepUrl, passive) {
     const scope = $('#s-scope').value;
     const topic = $('#s-topic').value;
-    Store.data.ui.search = { q, scope, topic }; Store.save();
-    if (!keepUrl) go('#/search/' + encodeURIComponent(q));
+    if (!passive) {
+      Store.data.ui.search = { q, scope, topic }; Store.save();
+      if (!keepUrl) go('#/search/' + encodeURIComponent(q));
+    }
     const results = Search.query(q, { scope, topic: topic || '' });
     /* 聚合后已是去重的目标数,不再说「约」;触到上限时说明只显示了前 60 条 */
     $('#s-count').textContent = results.length
@@ -353,7 +425,7 @@ const SearchView = (() => {
       box.innerHTML = `<div class="empty">没有找到与「${esc(q)}」相关的内容。<br><span class="muted">提示:换更短的关键词,或检查范围/专题筛选。</span></div>`;
       return;
     }
-    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿', fu: '我的追问回答' };
+    const kindName = { q: '题目', note: '我的笔记', doc: '章节', udoc: '导入资料', concept: '概念', project: '动手项目', drill: '专项练习', try: '我的尝试', run: '我的运行记录', draft: '我的项目草稿', fu: '我的追问回答', answer: '我的练习回答' };
     /* 零结果降级标记:严格 AND(含别名)没扫到、靠 OR 兜底的查询,顶部给一句
        明示,避免用户误以为这就是全部精确匹配。 */
     const partialNotice = results.length && results[0].partial
@@ -382,6 +454,10 @@ const SearchView = (() => {
           ? `&tab=speak&field=${encodeURIComponent(u.field.slice(6))}` : '&tab=draft');
         title = (window.APP_DATA.projects.projects.find(x => x.id === u.pid) || {}).name || u.pid;
         sub = '<span class="badge b-tag">草稿</span>';
+      } else if (u.kind === 'answer') {
+        href = `#/review?t=rounds&r=${encodeURIComponent(u.roundId || '')}&q=${encodeURIComponent(u.qid || '')}`;
+        title = '我的练习回答 · ' + (u.title || u.qid || '');
+        sub = '<span class="badge b-tag">原回答与修订</span>';
       } else if (u.kind === 'fu') {
         /* 我的追问回答:落到复习中心那一轮,展开并定位(不只到主题顶部) */
         href = `#/review?t=rounds&r=${encodeURIComponent(u.roundId || '')}&q=${encodeURIComponent(u.qid || '')}&f=${encodeURIComponent(u.fuId || '')}`;
@@ -399,6 +475,7 @@ const SearchView = (() => {
         const a = u.anchor && u.anchor !== 'top' ? `?a=${encodeURIComponent(u.anchor)}` : '';
         href = `#/study/${u.qid}${a}`;
         title = Data.question(u.qid) ? Data.question(u.qid).title : u.qid;
+        if (u.legacy || (Data.question(u.qid) || {}).archived) sub = '<span class="badge b-tag">旧题存档</span>';
       } else if (u.anchor) {
         href = `#/docs/${u.docId}?s=${encodeURIComponent(u.anchor)}`;
         const d = Data.doc(u.docId);
@@ -429,7 +506,7 @@ const SearchView = (() => {
     }).join('');
   }
 
-  return { render };
+  return { render, cleanup };
 })();
 
 /* ---------- 学习路径 ---------- */
@@ -1261,6 +1338,8 @@ const HomeView = (() => {
     const practicedToday = rounds.some(r => typeof r.ts === 'number' && new Date(r.ts).toDateString() === today
       && (r.items || []).some(it => ExpressCard.itemAnswered(it)));
     const lastRoundMain = lastRound ? (lastRound.items || []).filter(it => (it.self || '').trim()).length : 0;
+    const lastRoundQuiz = lastRound ? (lastRound.items || []).filter(it => it.quizPicked?.length).length : 0;
+    const lastRoundRevised = lastRound ? (lastRound.items || []).filter(it => (it.revision || '').trim()).length : 0;
     const lastRoundFu = lastRound ? (lastRound.items || []).reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0) : 0;
     const lastRoundAnswered = lastRound ? (lastRound.items || []).filter(it => ExpressCard.itemAnswered(it)).length : 0;
     const marks = pendingMarks();
@@ -1324,7 +1403,7 @@ const HomeView = (() => {
         <div class="out-card">
           <h3>最近一轮的表达卡</h3>
           ${lastRound ? `
-            <p class="muted">${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题,有真实作答的 ${lastRoundAnswered} 题(主回答 ${lastRoundMain} · 追问回答 ${lastRoundFu} 条)。
+            <p class="muted">${fmtTime(lastRound.ts)} · ${(lastRound.items || []).length} 题,有真实作答的 ${lastRoundAnswered} 题(原回答 ${lastRoundMain} · 已提交选择 ${lastRoundQuiz} · 追问回答 ${lastRoundFu} 条 · 修订/补充 ${lastRoundRevised} 题)。
             导出后是你自己写的回答 + 面试口述版 + 参考要点,能直接念。</p>
             <button class="btn btn-primary" id="d-card-round" ${lastRoundAnswered ? '' : 'disabled'}>导出表达卡</button>
             ${lastRoundAnswered ? '' : `<p class="muted small" style="margin-top:6px">这一轮你一题都没写回答,先答几题再导出——不给空壳文件。</p>`}

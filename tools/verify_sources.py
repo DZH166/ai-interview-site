@@ -234,6 +234,9 @@ def main():
     today = datetime.date.today().isoformat()
     results = []
     print("来源核验 %s 共 %d 个唯一链接" % (today, len(items)))
+    if args.no_network:
+        print("结构性检查完成（%d 个链接可枚举）；本次未请求网络，不判断可达性或标题，不写报告。" % len(items))
+        return
     print("-" * 72)
     for url, meta in items:
         if args.no_network:

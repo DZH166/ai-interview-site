@@ -79,39 +79,30 @@
   "prerequisites": [
    "PY-003"
   ],
-  "answer": "四个原语的分工:①gather——已知一批协程、要全部结果、顺序对应输入(简单聚合);return_exceptions=True 收集失败不中断;②TaskGroup(3.11+)——结构化并发:任一子任务以非取消异常失败时自动取消其余并抛异常组(『全要或全不要』,作用域内任务必然完成或取消,无泄漏);注意:单个子任务自己以 CancelledError 结束不算失败,不会触发兄弟取消;③as_completed——完成一个处理一个(流式消费结果,不等全批,如并发检索先到先用);④Queue——生产者消费者解耦(多 worker 消费、动态任务流、背压控制)。选择信号:结果依赖关系(DAG 用分层 gather/TaskGroup)、失败语义(聚合 vs fail-fast)、完成顺序是否重要。3.11+ 优先 TaskGroup(结构化并发消除任务泄漏)。",
-  "plain": "并发任务的管理方式像带团旅游:gather=『全体集合再走』(名单固定,收齐所有人的票);TaskGroup=『纪律版全体集合』——有人走丢全团原地等(取消其他),保证没人被落下(结构化);as_completed=『谁先到景点谁先玩』(不排队等全团);Queue=『食堂打饭』——窗口(消费者)与人流(生产者)解耦,人多就多开窗口。选错的表现:用 gather 做『谁先到谁先用』(白等最慢的),用 TaskGroup 做『部分失败可接受』(一人丢全团取消,过于严格)。比喻局限:TaskGroup 的『结构化』还有作用域保证(离开代码块时任务必然结束)——这是防任务泄漏的硬保证,旅游比喻没有。",
-  "deep": "1) gather vs TaskGroup 的语义差异(面试高频):\n   - gather(return_exceptions=True):全部跑完,结果含异常——适合『尽力而为的聚合』;\n   - gather 默认:第一个异常抛出,但其余任务继续跑(孤儿任务!结果被丢弃仍在消耗资源)——最危险的默认;\n   - TaskGroup 的精确规则(三种场景已在本机 Python 3.13 运行验证):\n     a. 子任务抛普通异常(非 CancelledError)→ 取消兄弟任务 → await 处抛 ExceptionGroup(实测:子任务 b 抛 ValueError,兄弟 c 被取消,t_c.cancelled()==True);\n     b. 单个子任务以 CancelledError 结束(如它内部主动取消自己)→ 不算失败、不取消兄弟,整组正常完成(实测:无异常上抛,其余任务照常 done);\n     c. 父任务/组被取消 → 取消沿作用域传播到所有子任务,CancelledError 抛给父(实测如此);\n   迁移建议:默认语义的聚合用 gather(return_exceptions=True) 或 TaskGroup+收集,裸 gather 逐步消灭。\n2) as_completed:提交一批,迭代完成顺序的 future——首个可用结果即可启动下游(流式聚合,RG-040 的多路检索先到先融合);注意超时与取消的配合(慢任务的处理策略)。\n3) Queue 模式:生产者-消费者解耦(worker 池:queue + N 个 consumer task);join/task_done 的完成计数;maxsize 背压(生产快于消费时阻塞生产者——天然的削峰);与信号量的分工:Semaphore 管『同时进行数』,Queue 管『任务流与解耦』(批量任务管道用 Queue,一次性并发用 gather)。\n4) 取消的传播与清理:TaskGroup 的取消会传播到子任务的 await 点(finally 清理执行);shield 保护关键段(不可中断的原子操作);取消是协作式的(PY-003)——长计算段要让出。\n5) 超时组合:asyncio.timeout(3.11 上下文管理器)/wait_for 包裹各原语;分层超时(单任务超时<整组超时,LP-004 的预算思想)。",
-  "example": "```python\n# 多路检索:先到先用(as_completed)\nasync def hybrid_search(q):\n    tasks = [dense_search(q), bm25_search(q), graph_search(q)]\n    results = []\n    for coro in asyncio.as_completed(tasks, timeout=2.0):\n        results.append(await coro)     # 先完成先融合\n    return merge(results)\n\n# 结构化并发(TaskGroup)\nasync def enrich_all(items):\n    async with asyncio.TaskGroup() as tg:\n        results = [tg.create_task(enrich(i)) for i in items]\n    return [r.result() for r in results]   # 全成功才到这里\n```",
-  "interview": "口述版:『四原语按三个信号选:结果依赖(固定批次 gather/TaskGroup,动态流 Queue)、失败语义(聚合 return_exceptions vs fail-fast TaskGroup)、完成顺序敏感(as_completed 先到先用)。我会重点讲 gather 默认语义的坑——第一个异常抛出但其余任务变孤儿继续跑,3.11+ 的 TaskGroup 用结构化并发消灭这个问题。Queue 与 Semaphore 的分工:队列管任务流解耦,信号量管同时数。』追问展开:孤儿任务的危害、TaskGroup 的异常组处理、Queue 背压。",
+  "answer": "按生命周期选择原语：gather 聚合结果，默认首个异常向外传播但不自动取消兄弟任务；return_exceptions=True 将异常作为结果收集。TaskGroup 在普通子任务失败时取消其余任务并等待退出；as_completed 按完成顺序消费；有界 Queue 用于生产者消费者背压。它们不自动回滚外部副作用。",
+  "plain": "同时问三个服务，有两种不同约定：一种把各自结果都收回来，包括失败；另一种发现普通异常后让同组其他任务取消。gather 与 TaskGroup 对这些约定的支持不同。程序收到异常不等于其余工作已停，更不等于已经发出去的订单被撤销。先说清想保留什么结果、谁负责收尾，再选择原语。",
+  "deep": "Python 3.13 中，TaskGroup 普通子任务异常会触发同组取消，异常通常以异常组上抛；单个子任务取消不等同整组失败。取消是协作式的，吞掉 CancelledError 或阻塞事件循环会影响结束。shield 不把操作变成事务，也不让父任务忽略取消。gather 本身并非危险反模式，调用者应明确后续等待/取消责任。部分超时可用各任务独立 timeout 配合 gather(return_exceptions=True)，或 wait/as_completed 后取消并 await 剩余任务。Queue 的 task_done/join 是工作计数，不是业务成功证明。",
+  "example": "Python 3.13，仅标准库，可本地运行：\n```python\nimport asyncio\nasync def branch(delay):\n    async with asyncio.timeout(0.03):\n        await asyncio.sleep(delay)\n        return \"ok\"\nasync def main():\n    results = await asyncio.gather(branch(0), branch(0.1),\n                                   return_exceptions=True)\n    assert results[0] == \"ok\"\n    assert isinstance(results[1], TimeoutError)\n    print(\"partial result and timeout collected\")\nasyncio.run(main())\n```\n这里每个分支独立超时，证明 gather 也能实现有界的部分结果策略。",
+  "interview": "按生命周期选择原语：gather 聚合结果，默认首个异常向外传播但不自动取消兄弟任务；return_exceptions=True 将异常作为结果收集。TaskGroup 在普通子任务失败时取消其余任务并等待退出；as_completed 按完成顺序消费；有界 Queue 用于生产者消费者背压。它们不自动回滚外部副作用。\n\n展开时先说明：策略由超时范围和任务生命周期共同决定，不由函数名单独决定。",
   "followups": [
    {
-    "q": "裸 gather 的『孤儿任务』危害?",
-    "a": "gather 默认第一个异常立即上抛,但未完成的任务不会被取消——它们继续在后台跑(消耗配额/连接/费用),结果被丢弃。危害:成本泄漏(调 LLM 的孤儿任务继续计费)+资源占用。修复:gather(return_exceptions=True)(收全)+手动取消,或迁移 TaskGroup(自动取消)。这正是 3.11 引入 TaskGroup 的动机。"
+    "q": "TaskGroup 能撤回已经发送的消息吗？",
+    "a": "不能。任务取消只影响后续执行；外部副作用要用幂等、对账或补偿。"
    },
    {
-    "q": "TaskGroup 的 ExceptionGroup 怎么处理?",
-    "a": "取分组异常:eg.exceptions 遍历(可能多个子任务同时失败);判断类型用 except* 语法(3.11+:按异常类型分别捕获);业务上通常记日志全部子异常+按首个根因分类。语法新但思路老:聚合错误信息保留全部根因(PY-005 的异常链思想的并发版)。"
-   },
-   {
-    "q": "Queue 的背压怎么起作用?",
-    "a": "maxsize 限制队列长度:满时 put 阻塞——生产者被迫减速,上游压力传导(而不是无限堆积到内存爆炸)。这是『推回压』的标准实现:下游容量决定上游速率(LP-012 批处理的削峰、AG-033 的任务排队都复用)。无界队列是内存事故的常见根源。"
-   },
-   {
-    "q": "TaskGroup 里某个子任务自己 raise CancelledError,整组会失败吗?",
-    "a": "不会(本机 Python 3.13 实测):单个子任务以 CancelledError 结束不算失败,兄弟任务照常完成,await TaskGroup 也不抛异常。这个语义可以用来表达『这个子任务自愿放弃,但整组继续』;它与『子任务抛普通异常→取消兄弟+抛异常组』的 fail-fast 规则是两回事。注意区分:父任务取消整组时,CancelledError 会正常向外传播。"
+    "q": "有界 Queue 的背压是什么？",
+    "a": "队列满时 await put 等待消费释放容量；生产任务和队列之外的缓冲仍要分别限制。"
    }
   ],
   "pitfalls": [
-   "裸 gather 默认语义的孤儿任务(成本泄漏)。",
-   "gather 用作流式消费(应该 as_completed),整体延迟被最慢者绑架。",
-   "Queue 无 maxsize,生产快于消费时内存无界增长。",
-   "3.11 前后 API 混用认知(uvicorn 老文档的 on_event vs lifespan 式混乱)。"
+   "把 gather 默认传播异常说成自动取消全部。",
+   "把 TaskGroup 当作业务事务。",
+   "取消后不等待清理或吞掉 CancelledError。"
   ],
   "check": {
-   "q": "需求:并发调 3 个搜索源,任何一个 2 秒内没返回就跳过它用另外两个的结果。原语组合怎么写?",
-   "a": "as_completed(timeout=2.0) 的变体:迭代完成的任务,超时后未完成的任务取消(asyncio.timeout 包整体+对剩余任务 cancel)。注意 as_completed 的 timeout 到期抛 TimeoutError——捕获后对剩余任务逐个 cancel(或 wait_for 的两个阶段:第一阶段 2s 收快者,第二段取消慢者)。这题考『部分结果+超时取消』的组合——gather 做不到(要么全等要么全弃),as_completed/wait 才是对的原语。",
-   "explain": "检验点:『部分结果+超时』需求与 as_completed/wait 的匹配——gather 的聚合思维解决不了。"
+   "q": "部分分支超时后仍希望保留成功结果，gather 做不到吗？",
+   "a": "能做到：分支内设独立超时，return_exceptions=True 收集成功值与超时异常；也可用 wait 显式管理。",
+   "explain": "策略由超时范围和任务生命周期共同决定，不由函数名单独决定。"
   },
   "related": [
    "PY-003",
@@ -124,29 +115,32 @@
   ],
   "sources": [
    {
-    "name": "Python 官方文档 · Coroutines and Tasks(3.11 TaskGroup)",
-    "url": "https://docs.python.org/3/library/asyncio-task.html",
     "kind": "official",
-    "note": "2026-09-06 已核验 gather/create_task/to_thread;TaskGroup 语义同源"
-   },
-   {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "原语选型为独立整理"
+    "name": "Python asyncio tasks",
+    "url": "https://docs.python.org/3.13/library/asyncio-task.html",
+    "note": "Python 3.13；仅支持本题相关机制，工程例子为独立设计。"
    }
   ],
   "verify": {
-   "status": "verified",
-   "checked_date": "2026-09-07",
-   "note": "gather/TaskGroup 语义已核验;TaskGroup 三场景(子任务普通失败/单子任务自取消/父取消)已在本机 Python 3.13 运行验证;示例为演示。"
+   "status": "partial",
+   "checked_date": "2026-09-29",
+   "note": "核心机制已对照一手资料；设计例子不代表用户项目已完成，性能与外部服务行为未实测。"
   },
   "content_version": {
-   "rev": "2026-09-07",
-   "summary": "TaskGroup 语义精确化:只有「非取消异常失败」才取消兄弟;单子任务自取消不影响整组(三种场景已实测)。",
-   "changes": [
-    "答案/原理:区分三类取消场景",
-    "新增追问:子任务自取消会怎样"
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正“gather 做不到部分超时”和 shield 原子性，保留 TaskGroup 取消边界。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "sources",
+    "verify"
    ]
   }
  },
@@ -239,35 +233,30 @@
    "PY-015",
    "PY-003"
   ],
-  "answer": "三级方案按任务特征选:①BackgroundTasks(FastAPI 内建)——响应后同进程执行的轻量收尾(发通知/写审计日志),进程死任务丢(不可靠,只做可丢的事);②任务队列(arq/Celery/dramatiq+Redis)——可靠异步任务(重试/持久化/独立 worker 进程),LLM 批处理/重生成/文档入库用这级(LP-012);③定时调度(APScheduler/cron+队列)——周期任务(夜间评测/索引重建/报表)。设计纪律:任务幂等(至少一次投递,AG-003)、任务参数序列化(不传对象传 ID)、任务可观测(状态/重试/耗时入盘)、优雅停机(在途任务收尾或断点续跑,PY-015)。反模式:用 BackgroundTasks 做关键业务(发版即丢)、在请求进程里跑长任务(占 worker)、定时任务无锁多实例重复执行(PY-017 分布式锁)。",
-  "plain": "三级方案像餐厅的三个后厨通道:BackgroundTasks=出餐口顺手擦桌子(快、顺手、但打烊就没人擦了——可丢);任务队列=正式外卖订单系统(有单据、可重试、独立厨房,打烊了订单还在系统里明天接着做);定时调度=每日例行的备菜计划(每天凌晨自动切菜腌肉)。选错的表现:把外卖订单写在下餐垫纸上(BackgroundTasks 做关键业务,一打扫就没了);或者让前厅服务员自己炖 3 小时的汤(请求进程跑长任务,客人全堵在门口)。比喻局限:多实例部署时『定时任务只跑一份』需要分布式锁——餐厅单店没有这个问题,连锁店才有(PY-017)。",
-  "deep": "1) BackgroundTasks 的边界:同进程内 await/执行,响应返回后开始;适用:轻、快(<秒级)、可丢(审计日志/统计打点/清缓存);不适用:LLM 调用(慢且贵且必须成功)、需要重试的业务、跨进程可见的任务。误用的根源是『顺手』——它语法太方便,需要纪律约束(评审 checklist:BackgroundTasks 里的任务丢失了有影响吗?有→升级队列)。\n2) 任务队列(arq 为 async 优选):\n   - 特性:任务函数+参数序列化到 Redis→独立 worker 进程消费→重试/超时/结果存储;\n   - 与 LP-012 的批处理关系:arq 管单任务异步化(重生成/文档处理),平台级批处理 API 管海量任务——量级不同;\n   - 队列选择:arq(async 原生轻量)、Celery(生态全但重)、dramatiq(中间态)——按团队与规模;\n   - 任务设计(AG-003 的落点):任务 ID 幂等、参数只传 ID(对象重新查库——参数里的状态可能过期)、重试策略显式(PY-023)、死信处理(重试耗尽进死信队列人工处理)。\n3) 定时调度:APScheduler(进程内,多实例需分布式锁)/平台级(云调度器+HTTP 触发——更稳)/cron+管理命令(最朴素)。多实例部署的定时任务:分布式锁(PY-017)或单实例专用部署(调度与业务分离)——重复执行的任务(发重复通知)是经典事故。\n4) 可观测与运维:任务状态机(排队/执行/成功/失败/重试,AG-030 复用)、队列深度与执行时长监控(堆积告警)、失败任务的重放工具(运维界面或命令)、任务版本(代码升级后排队中的旧任务兼容性——参数 schema 演进)。\n5) 与 lifespan 的整合:worker 独立进程(不与 API 混部——资源隔离,PY-019)/lifespan 启动调度器关闭时优雅停止(PY-015)。",
-  "example": "```python\n# arq 任务(独立 worker 进程)\nasync def reindex_document(ctx, doc_id: str):\n    doc = await load(doc_id)               # 参数传 ID,不传对象\n    chunks = await parse_and_chunk(doc)\n    await upsert_index(doc.id, chunks)     # 幂等 upsert\n\nclass WorkerSettings:\n    functions = [reindex_document]\n    max_retries = 3\n    job_timeout = 600\n\n# API 侧入队\n@app.post(\"/docs/{doc_id}/reindex\")\nasync def reindex(doc_id: str):\n    await queue.enqueue_job(\"reindex_document\", doc_id, _id=f\"reindex:{doc_id}\")\n    return {\"queued\": True}                # _id 幂等:重复提交去重\n```",
-  "interview": "口述版:『后台任务三级:BackgroundTasks 只做可丢的轻收尾(发版即丢,纪律是评审时问「任务丢了有影响吗」);可靠异步上任务队列(arq 异步原生,任务幂等+参数传 ID+重试显式+死信队列);定时调度多实例必须分布式锁或专用实例(重复执行的经典事故)。LLM 应用的映射:批处理/文档入库/重生成走队列,审计打点走 BackgroundTasks,夜间评测/索引重建走调度。运维三件:队列深度监控、失败重放工具、任务版本兼容。』追问展开:任务参数序列化的原则、死信队列、与批处理 API 的分工。",
+  "answer": "FastAPI BackgroundTasks 在响应后于应用进程中运行，适合能接受该进程生命周期风险的任务；它不是持久任务队列。需要重启恢复、重试或独立扩缩容时，可评估持久队列与 worker；定时器负责触发，可靠性还取决于存储、确认、幂等和监控配置。",
+  "plain": "网页告诉用户“任务已接收”，不代表后台已经做完。BackgroundTasks 像当前店员忙完接待后继续处理，店员进程退出可能影响工作；持久队列像有记录的待办箱，但仍要安排领取、失败重试和结果核对。不能仅把任务放进 Redis 就保证永远不丢或一定成功，关键是测试中途崩溃后如何恢复。",
+  "deep": "选型先问失败后谁负责恢复：BackgroundTasks 的任务留在应用进程内；队列把任务交给独立 worker；调度器解决“何时触发”，不能替代“触发后是否完成”的确认。关键审计、必须送达的通知不能仅因执行短就认定可丢。任务参数使用业务 ID 和明确版本，读取最新状态还是提交快照由业务合同决定。\n\n设计练习中可把业务变更与待发布事件写入同一数据库事务，再由发布器投递队列，避免“数据库已提交、入队失败”无人补发；这类 outbox 仍需幂等消费和监控，并不自动得到跨系统恰好一次。worker 记录尝试次数、错误分类和下一次重试时间，暂时故障可限次退避，永久参数错误应尽早结束，超过上限转待处理队列。外部服务超时可能已产生副作用，先查操作 ID 再决定重试。\n\n定时任务要说明停机错过的触发是补跑还是合并，以及多实例是否可能重复触发。租约到期只表示可以重新领取，不代表旧 worker 已经停止；写产物时仍需版本检查或目标系统支持的隔离措施。验收看任务年龄、失败原因和恢复后的产物一致性，不只看队列长度或接口返回成功。",
+  "example": "本地设计练习：上传请求保存 doc_id、version 和 job_id，任务状态从 queued 到 running，再进入 succeeded 或 failed。worker 写入以文档版本隔离的索引，核对产物后才记录成功；用户取消则登记取消请求，不能把“已请求”说成底层执行已经停止。\n\n依次注入三个故障：入队前应用退出，确认发布器能补投；索引写完但状态确认前 worker 退出，重试先查同版本产物，不能重复累加；旧版本慢任务晚于新版本结束，提交时拒绝把旧版本重新设为当前。最后检查用户查询的是已确认产物，失败记录保留原因。这里是故障设计与验收步骤，并未声称运行过 arq 或线上任务队列。",
+  "interview": "我先按可丢失程度、任务时长和恢复需求选。BackgroundTasks 可处理能够接受应用进程退出风险的工作；需要独立扩容和故障恢复时评估队列与 worker；周期执行再加入调度器。以文档索引为例，我会固定文档版本，保存任务状态和产物引用，对重复投递做幂等。最容易漏的是索引已写、成功状态没确认的窗口，所以重试要核对副作用，不能只再次调用。最终用停机、重复投递和旧任务晚到的测试证明恢复边界，吞吐与可靠性数字仍需真实测量。",
   "followups": [
    {
-    "q": "任务参数为什么传 ID 不传对象?",
-    "a": "参数要序列化排队(对象可能不可序列化);排队期间的陈旧性:排队 10 分钟后执行,10 分钟前的对象快照可能是旧状态——传 ID 让任务执行时重新查库(最新状态),配合幂等处理状态已变的情况(对象已删除→任务安全退出)。这是『任务与请求的时间解耦』的基本功。"
+    "q": "传 doc_id 总比传快照好吗？",
+    "a": "不一定。若任务必须处理上传时版本，应同时固定版本或快照；读取最新状态可能改变用户提交的任务。"
    },
    {
-    "q": "死信队列怎么设计?",
-    "a": "重试耗尽的任务不静默丢弃→进死信队列(独立存储:原参数+错误历史+尝试次数);死信的处理:告警+运维界面重放(修复后手动/自动重投)+定期分析死信模式(系统性问题的信号,EN-013)。没有死信机制的任务系统,失败任务等于黑洞(用户等待无下文)。"
-   },
-   {
-    "q": "定时任务和批处理 API 怎么分工?",
-    "a": "定时调度管『编排触发』(每天 2 点启动夜间评测),批处理 API 管『LLM 调用本身』(LP-012,五折+不占在线配额)——调度器把任务提交给批处理 API,结果回收也是调度任务。分工口诀:调度管『什么时候做』,队列管『怎么可靠地做』,批处理 API 管『怎么便宜地对 LLM 做』。"
+    "q": "至少一次投递加幂等是否无条件恰好一次？",
+    "a": "只有幂等范围、键生命周期和副作用提交边界正确时才可能取得所需效果；不能据口号承诺所有外部操作。"
    }
   ],
   "pitfalls": [
-   "BackgroundTasks 里调 LLM/写关键数据,发布重启任务蒸发。",
-   "多实例部署的定时任务无锁,每个实例都执行一遍(重复通知×N)。",
-   "任务参数传大对象快照,执行时状态已过期。",
-   "队列无深度监控,积压 10 万任务无人发现(用户等待无下文)。"
+   "把 BackgroundTasks 当持久队列。",
+   "把 Redis 存储等同重启绝不丢任务。",
+   "无条件承诺最终成功或恰好一次。"
   ],
   "check": {
-   "q": "需求:用户上传文档后『异步解析入库』。任务执行到一半服务发布重启。你的设计怎么保证文档最终入库?",
-   "a": "①任务入队持久化(arq 的 job 在 Redis,重启不丢);②任务幂等(reindex_document 按 doc_id upsert,重复执行安全——AG-003);③执行一半崩溃:重试机制从头重跑(解析入库设计为幂等整体操作)或检查点续跑(大文档分块+进度记录,AG-005);④重启后 worker 自动恢复消费(lifespan/独立 worker 进程的自动重启,PY-019);⑤死信兜底:重试耗尽进死信告警人工。链路核心:持久化队列+幂等任务+重试——三者齐了,『最终入库』才成立(至少一次投递+幂等消费=恰好一次效果,AG-003 的公式)。",
-   "explain": "检验点:『至少一次投递+幂等消费』的可靠性公式在文档入库场景的完整落地。"
+   "q": "任务写完索引后进程崩溃，未确认成功，怎么恢复？",
+   "a": "先按业务 ID 与版本核对产物；重试必须避免重复副作用，并记录成功、失败或待人工处理状态。",
+   "explain": "验证崩溃窗口与确认边界，而非只测试正常任务。"
   },
   "related": [
    "PY-015",
@@ -281,22 +270,39 @@
   ],
   "sources": [
    {
-    "name": "arq 文档 / FastAPI BackgroundTasks 文档",
-    "url": "https://arq-docs.helpmanual.io/",
-    "kind": "official-docs",
-    "note": "库语义参考(未逐页抓取,标注)"
+    "kind": "official",
+    "name": "FastAPI Background Tasks",
+    "url": "https://fastapi.tiangolo.com/tutorial/background-tasks/",
+    "note": "文档快照 2026-09-29；仅支持本题相关机制，工程例子为独立设计。"
    },
    {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "三级方案与纪律为独立整理"
+    "kind": "official",
+    "name": "Redis Distributed Locks",
+    "url": "https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/",
+    "note": "在线文档；核查日读取；仅支持本题相关机制，工程例子为独立设计。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "库 API 以官方文档为准;方案分级为独立整理。"
+   "checked_date": "2026-09-29",
+   "note": "核心机制已对照一手资料；设计例子不代表用户项目已完成，性能与外部服务行为未实测。"
+  },
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "移除不可丢审计当轻任务、错误 arq 示意参数和持久/恰好一次绝对保证。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "sources",
+    "verify"
+   ]
   }
  },
  {

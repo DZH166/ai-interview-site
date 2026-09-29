@@ -3,6 +3,7 @@
 
 /* ---------- 浏览与搜索 ---------- */
 const BrowseView = (() => {
+  let detailRequest = 0;
   const defaults = { topic: '', diff: '', type: '', status: '', fav: false, kw: '', qid: '' };
   let batchMode = false;
 
@@ -207,6 +208,7 @@ const BrowseView = (() => {
   }
 
   function select(root, f, qid) {
+    const request = ++detailRequest, route = location.hash;
     f.qid = qid; saveFilters(f);
     DetailQid = qid;
     $$('.q-item', root).forEach(el => el.classList.toggle('active', el.dataset.qid === qid));
@@ -214,11 +216,15 @@ const BrowseView = (() => {
     if (!q) return;
     /* 详情面板渲染标准区块(答案/追问/理解检查)需要全量题字段(Track E):
        全量未合并时先上占位,就绪后重进本函数;此时列表/选中态已同步,不重做。 */
-    if (q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+    if (q.answer === undefined && !q.followups && !q.sources) {
       $('#q-detail', root).innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
-        if (!root.isConnected || DetailQid !== qid) return;   /* 已换题/换页:丢弃 */
+      (Data.ensureQuestion ? Data.ensureQuestion(qid) : Data.questionsReady()).then(() => {
+        if (!root.isConnected || DetailQid !== qid || request !== detailRequest || location.hash !== route) return;
         select(root, filters(), qid);
+      }).catch(() => {
+        if (request !== detailRequest || location.hash !== route) return;
+        $('#q-detail', root).innerHTML = '<div class="empty">' + (navigator.onLine === false ? '当前离线，尚未下载本题所属专题。' : '本题暂时无法加载。') + '<button class="btn" data-load-retry>重试</button></div>';
+        $('[data-load-retry]', root).onclick = () => select(root, filters(), qid);
       });
       return;
     }
@@ -332,6 +338,7 @@ const BrowseView = (() => {
 
 /* ---------- 学习模式 ---------- */
 const StudyView = (() => {
+  let renderRequest = 0;
   let currentQid = '';
   let activeKeyHandler = null;
 
@@ -345,7 +352,7 @@ const StudyView = (() => {
     if (handler) document.addEventListener('keydown', handler);
   }
   /* 路由离开学习页时清理全局监听(App.route 调用) */
-  function cleanup() { setKeyHandler(null); }
+  function cleanup() { renderRequest++; setKeyHandler(null); }
 
   /* 同页动作前同步:把文本框值写进内存+立即落盘(重渲染将读 Store 最新值) */
   function captureNote(qid) {
@@ -479,15 +486,19 @@ const StudyView = (() => {
   }
 
   function render(root, qid, anchor) {
+    const request = ++renderRequest, route = location.hash;
     let q = Data.question(qid);
-    /* 全量题字段异步合并(Track E):壳里只有 index 元数据,正文渲染必须等 questionsReady。
-       判定「还没全量」:无 answer 字段且加载未完成(导入题/Node 桩天然带全量,立即渲染)。
-       等待期给轻量占位;等不到(分片缺失)→ 按空态降级,绝不炸页。 */
-    if (q && q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
+    /* 壳里只有索引元数据，正文只等待本题所属分片。
+       导入题/完整存档直接渲染；加载失败保留重试入口。 */
+    if (q && q.answer === undefined && !q.followups && !q.sources) {
       root.innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
-        if (!root.isConnected) return;                  /* 等待期间已离开学习页 */
+      (Data.ensureQuestion ? Data.ensureQuestion(qid) : Data.questionsReady()).then(() => {
+        if (!root.isConnected || request !== renderRequest || location.hash !== route) return;
         render(root, qid, anchor);                      /* 就绪后按同一 qid 重进;缺失走下方空态 */
+      }).catch(() => {
+        if (request !== renderRequest || location.hash !== route) return;
+        root.innerHTML = '<div class="empty">' + (navigator.onLine === false ? '当前离线，尚未下载本题所属专题。' : '本题暂时无法加载。') + '<button class="btn" data-load-retry>重试</button></div>';
+        $('[data-load-retry]', root).onclick = () => render(root, qid, anchor);
       });
       return;
     }
@@ -501,6 +512,7 @@ const StudyView = (() => {
     const needRevNotice = !!(cv && Store.rec(qid).contentRev !== cv.rev);
     root.innerHTML = `
       <div class="study-wrap">
+        ${q.archived ? '<p class="notice">这道题已归入历史存档。旧笔记和练习仍保留，统计与新抽题使用当前题库。</p>' : ''}
         ${needRevNotice ? `
         <div class="notice rev-notice" data-rev-notice>
           <b>♻ 本题内容有更新(${esc(cv.rev)})</b>:${esc(cv.summary)}
@@ -658,10 +670,13 @@ const StudyView = (() => {
 const MockView = (() => {
   let state = null; /* {config, items:[{qid}], idx, answers:{qid:{self, revealed, mark}}, directed, label, sid, sessionId} */
   let sessionSeq = 0;
+  let renderRequest = 0;
+  const clone = value => JSON.parse(JSON.stringify(value));
 
   /* 跨页稳定的会话身份(SP-06):完成/放弃登记进 mock.ended,
      其它页据此拒绝旧草稿复活;旧数据无 sessionId 时按内容补确定性 ID。 */
   function newSessionId() { return 'ms-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8); }
+  function sessionIdentity(d) { return d && (d.sessionId || ('legacy-' + Store.contentHash(JSON.stringify([d.savedAt, d.items])))); }
 
   function draftLoad() { return (Store.data.mock && Store.data.mock.draft) || null; }
   function activeSession() {
@@ -689,11 +704,15 @@ const MockView = (() => {
     if (!ans.questionSnapshot) {
       const current = Data.question(qid);
       if (!current) return null;
-      /* 半份题快照防线(Track E):index-only 的题目(全量未合并)不能进快照 ——
-         快照会随草稿/轮次永久落盘,存成残题比没有题更糟。调用方都在
-         questionsReady 门控之后,这里只拦「万一漏网的路径」,返回 null 走跳过逻辑。 */
-      if (current.answer === undefined && !current.followups && !current.sources && !Data.questionsLoaded()) return null;
-      ans.snapshotCapturedLate = !!(ans.self || ans.revealed || Object.keys(ans.fu || {}).length);
+      if (state.guideSnapshot) {
+        ans.snapshotCapturedLate = !!(ans.self || ans.revision || ans.revealed || Object.keys(ans.fu || {}).length);
+        ans.questionSnapshot = ExpressCard.questionForGuide(current, state.guideSnapshot);
+        return ans.questionSnapshot;
+      }
+      /* 索引元数据不能存成永久快照。renderRun 按题加载，
+         尚未访问的题保持无快照；旧草稿完整快照不依赖当前题库。 */
+      if (current.answer === undefined && !current.followups && !current.sources) return null;
+      ans.snapshotCapturedLate = !!(ans.self || ans.revision || ans.revealed || Object.keys(ans.fu || {}).length);
       ans.questionSnapshot = JSON.parse(JSON.stringify(Object.fromEntries(
         ['id','title','format','options','qtype','topic','type','difficulty','tags','prompt','answer','plain','interview','pitfalls','fusion_notes','followups','content_version']
           .filter(k => current[k] !== undefined).map(k => [k, current[k]]))));
@@ -702,15 +721,25 @@ const MockView = (() => {
     return ans.questionSnapshot;
   }
 
+  function draftOf(s) {
+    return clone({ config: s.config, items: s.items, idx: s.idx, answers: s.answers,
+      directed: !!s.directed, label: s.label || '', savedAt: Date.now(), sessionId: s.sessionId,
+      qms: s.qms || {}, durationMs: s.durationMs || 0, guideId: s.guideId, guideSnapshot: s.guideSnapshot });
+  }
+  function stateOf(d) {
+    return Object.assign(clone(d), { config: d.config || { count: d.items.length }, answers: clone(d.answers || {}),
+      idx: Math.min(Math.max(d.idx || 0, 0), d.items.length - 1),
+      sessionId: sessionIdentity(d),
+      sid: ++sessionSeq, ended: false, qms: clone(d.qms || {}), durationMs: d.durationMs || 0, qStartAt: null });
+  }
   function draftSave() {
     if (!activeSession()) return false;
-    Store.data.mock.draft = {
-      config: state.config, items: state.items, idx: state.idx,
-      answers: state.answers, directed: !!state.directed,
-      label: state.label || '', savedAt: Date.now(),
-      sessionId: state.sessionId
-    };
-    return Store.saveNow(); /* 失败时保留编辑态供重试 */
+    Store.data.mock.draft = draftOf(state);
+    const ok = Store.saveNow();
+    state.saveError = !ok;
+    const indicator = $('#mock-save-status');
+    if (indicator) indicator.textContent = ok ? '草稿已保存' : '保存失败，回答保留在当前页面，请重试';
+    return ok;
   }
   /* 会话终结登记:completed(有轮次)/abandoned(放弃)——终态优先于旧草稿 */
   function markEnded(sessionId, status) {
@@ -721,10 +750,6 @@ const MockView = (() => {
       Store.data.mock.ended[sessionId] = { status, ts: Date.now() };
     }
   }
-  function draftClear() {
-    if (Store.data.mock && Store.data.mock.draft) { Store.data.mock.draft = null; Store.save(); }
-  }
-
   /* 草稿的追问回答统一为按 ID 的对象存储(SP-02):
      { [fuId]: {id, q(作答时题面), self, revealed} };
      旧格式(数组下标键 0/1/…)无法确定与当前题面的对应关系——
@@ -758,13 +783,20 @@ const MockView = (() => {
      同时同步追问二跳的回答框(按追问 ID):追问回答也是会话草稿的一部分。 */
   function captureInput() {
     const ta = $('#m-self');
-    if (!ta || !state || state.ended) return;
-    const q = questionForSession(state.items[state.idx].qid || state.items[state.idx].id);
-    if (!q) return;
-    const ans = state.answers[q.id] || {};
-    if ((ans.self || '') !== ta.value) {
-      state.answers[q.id] = Object.assign(ans, { self: ta.value, qRev: q.content_version ? q.content_version.rev : '' });
-      draftSave();
+    if (!ta || !state || state.ended || ta.dataset.sessionId !== state.sessionId) return;
+    const id = state.items[state.idx].qid || state.items[state.idx].id;
+    const q = questionForSession(id) || { id };
+    const ans = state.answers[q.id] || (state.answers[q.id] = {});
+    let changed = false;
+    if (!ta.readOnly && (ans.self || '') !== ta.value) {
+      Object.assign(ans, { self: ta.value, qRev: q.content_version ? q.content_version.rev : '' });
+      changed = true;
+    }
+    const revision = $('#m-revision');
+    if (revision && revision.dataset.sessionId === state.sessionId && revision.dataset.questionId === id
+        && (ans.revision || '') !== revision.value) {
+      ans.revision = revision.value;
+      changed = true;
     }
     $$('#mock-fu-list [data-fu-id]', document).forEach(el => {
       /* 与主回答同一条纪律(ST-02):只有用户真实编辑过(dirty)的输入才可提交;
@@ -777,12 +809,20 @@ const MockView = (() => {
         cur.self = el.value;
         cur.q = fq;                     /* 作答时题面快照 */
         state.answers[q.id].fu[id] = cur;
-        draftSave();
+        changed = true;
       }
     });
+    if (changed) draftSave();
   }
   /* pagehide 兜底:与 captureInput 相同(名称保留供 App.flush 调用) */
-  function flushDraft() { captureInput(); }
+  function flushDraft() {
+    if (!state || state.ended) return true;
+    captureInput();
+    if (state.qStartAt == null) return !state.saveError;
+    settleQms();
+    state.qStartAt = null;
+    return draftSave();
+  }
 
   /* 计时(Track A):结算当前题自上次进入以来的时长,累加进 qms[qid] 并重置起点。
      供所有离开当前题的动作调用(自评/导航/结束);state 缺计时字段时静默初始化,
@@ -792,36 +832,85 @@ const MockView = (() => {
     const q = state.items[state.idx] || {};
     const id = q.qid || q.id;
     if (!id) return;
-    if (state.qStartAt == null) { state.qStartAt = Date.now(); return; }
+    if (state.qStartAt == null) return;
     const now = Date.now();
     if (now > state.qStartAt) {
       state.qms = state.qms || {};
       state.qms[id] = (state.qms[id] || 0) + (now - state.qStartAt);
+      state.durationMs = (state.durationMs || 0) + (now - state.qStartAt);
     }
     state.qStartAt = now;   /* 重置起点:同一题多次结算只计新增段 */
   }
 
-  /* 结束/放弃会话:作废所有挂起的防抖回调(按会话 ID 判定),清除草稿 */
-  function endSession() {
+  /* 切换只有一个提交点:先保存完整的候选 mock，再更换编辑态和路由。
+     失败时原草稿/副本/终态一起回滚，重试不会把旧回答抹掉。 */
+  function switchSession(candidate, disposition, expectedId) {
+    if (!flushDraft()) return false;
+    const fresh = Store.refreshFromDisk();
+    if (!fresh.ok) { toast('读取最新草稿失败，请重试', 'err'); return false; }
+    const current = draftLoad();
+    const currentId = sessionIdentity(current);
+    if ((currentId || '') !== (expectedId || '')) {
+      toast('草稿已在另一页变化，请关闭弹窗后重新选择。', 'err'); return false;
+    }
+    const before = clone(Store.data.mock);
+    const next = clone(before);
+    next.alternates = (next.alternates || []).filter(d => sessionIdentity(d) !== candidate?.sessionId);
+    if (current && currentId !== candidate?.sessionId) {
+      if (disposition === 'keep') {
+        next.alternates = next.alternates.filter(d => sessionIdentity(d) !== currentId);
+        next.alternates.push({ ...clone(current), sessionId: currentId });
+      } else if (disposition === 'discard') {
+        next.ended = next.ended || {};
+        next.ended[currentId] = { status: 'abandoned', ts: Date.now() };
+      }
+    }
+    next.draft = candidate ? clone(candidate) : null;
+    Store.data.mock = next;
+    if (!Store.saveNow()) {
+      Store.data.mock = before;
+      toast('切换未保存，原草稿完整保留。恢复存储后可重试。', 'err');
+      return false;
+    }
     if (state) state.ended = true;
-    draftClear();
+    state = candidate ? stateOf(candidate) : null;
+    if (candidate) {
+      if (location.hash === '#/mock/run') renderRun($('#view'));
+      else go('#/mock/run');
+    }
+    return true;
+  }
+
+  function continueDraft() {
+    const d = draftLoad();
+    if (!d || !d.items?.length) return false;
+    state = stateOf(d);
+    if (location.hash === '#/mock/run') renderRun($('#view')); else go('#/mock/run');
+    return true;
+  }
+
+  function requestSession(candidate) {
+    candidate = { ...clone(candidate), sessionId: sessionIdentity(candidate), savedAt: Date.now() };
+    if (!flushDraft()) { toast('请先保存当前回答，再开始新练习。', 'err'); return; }
+    const fresh = Store.refreshFromDisk();
+    if (!fresh.ok) { toast('读取最新草稿失败，请重试。', 'err'); return; }
+    const d = draftLoad();
+    if (!d || !d.items?.length) { switchSession(candidate, 'keep', ''); return; }
+    const expectedId = sessionIdentity(d);
+    modal('保留未完成的练习', `<p>「${esc(d.label || '上次自测')}」还有未完成内容。请选择如何处理。</p><p class="muted small">保留的草稿可在自测页继续；只有保存成功才会切换。</p>`, [
+      { label: '继续上次练习', primary: true, onClick: continueDraft },
+      { label: '保留草稿并开始新练习', onClick: () => switchSession(candidate, 'keep', expectedId) },
+      { label: '放弃旧草稿并开始新练习', danger: true, onClick: () => switchSession(candidate, 'discard', expectedId) }
+    ]);
   }
 
   function render(root, parts) {
+    renderRequest++;
     if (parts && parts[0] === 'run') {
       if (!state) {
         const d = draftLoad();
         if (d && Array.isArray(d.items) && d.items.length) {
-          state = {
-            config: d.config || { topics: [], diffs: [], count: d.items.length },
-            items: d.items, idx: Math.min(d.idx || 0, d.items.length - 1),
-            answers: d.answers || {}, directed: !!d.directed, label: d.label || '',
-            sessionId: d.sessionId || ('ms-legacy-' + (d.savedAt || 0) + '-' + (d.items[0] && d.items[0].qid || '')),
-            sid: ++sessionSeq, ended: false,
-            /* 计时(Track A):草稿不保存时间数据,恢复后从本次渲染重新起算——
-               单题时长按段累计,丢的只是刷新前未结算的段,总时长从恢复时刻起算,可接受 */
-            startedAt: Date.now(), qms: {}
-          };
+          state = stateOf(d);
         }
       }
       if (state) { renderRun(root); return; }
@@ -833,6 +922,7 @@ const MockView = (() => {
 
   function renderConfig(root) {
     const draft = draftLoad();
+    const alternates = (Store.data.mock.alternates || []).filter(d => d.items?.length && !Store.data.mock.ended?.[d.sessionId]);
     const hasDraft = draft && Array.isArray(draft.items) && draft.items.length;
     const topics = (window.APP_DATA.topics || []);
     const counts = {};
@@ -849,6 +939,7 @@ const MockView = (() => {
           <button class="btn btn-small" id="m-discard">放弃草稿</button>
         </div>
       </div>` : ''}
+      ${alternates.length ? `<details class="card" style="margin-bottom:12px"><summary>保留的练习草稿 · ${alternates.length} 份</summary>${alternates.map((d, i) => `<p>${esc(d.label || '自测')} · ${d.items.length} 题 · ${fmtTime(d.savedAt)} <button class="btn btn-small" data-m-alternate="${i}">继续这份草稿</button></p>`).join('')}</details>` : ''}
       <div class="card mock-config">
         <h2>自测 / 模拟面试</h2>
         <p class="muted">参考答案默认隐藏:先在输入框写下你的回答,再对照参考要点并自我复盘。抽题会优先选择你最近没有练过的题。未完成的轮次会自动保存草稿,刷新后可继续。</p>
@@ -878,60 +969,50 @@ const MockView = (() => {
         <button class="btn btn-primary" id="m-start">开始练习</button>
       </div>`;
     if (hasDraft) {
-      $('#m-resume', root).addEventListener('click', () => go('#/mock/run'));
+      $('#m-resume', root).addEventListener('click', continueDraft);
       $('#m-discard', root).addEventListener('click', () => {
         const d = draftLoad();
-        if (d) markEnded(d.sessionId || 'ms-legacy-' + (d.savedAt || 0), 'abandoned');
-        Store.saveNow();
-        endSession();
-        state = null;
-        toast('已放弃未完成的草稿');
-        renderConfig(root);
+        if (!d) return;
+        modal('放弃这份草稿？', '<p>这会删除本次未完成回答。已完成的历史轮次会保留。</p>', [
+          { label: '继续保留', primary: true },
+          { label: '确认放弃', danger: true, onClick: () => {
+            if (!switchSession(null, 'discard', sessionIdentity(d))) return false;
+            toast('已放弃未完成的草稿'); renderConfig(root);
+          } }
+        ]);
       });
     }
+    $$('[data-m-alternate]', root).forEach(btn => btn.addEventListener('click', () => requestSession(alternates[Number(btn.dataset.mAlternate)])));
     $('#m-start').addEventListener('click', () => {
       const selTopics = $$('#m-topics input:checked').map(i => i.value);
       const selDiffs = $$('#m-diffs input:checked').map(i => i.value);
       const count = parseInt($('#m-count').value, 10);
       const pool = Data.allQuestions().filter(q => selTopics.includes(q.topic) && selDiffs.includes(q.difficulty));
       if (!pool.length) { toast('没有符合条件的题目,请放宽筛选', 'err'); return; }
-      /* 抽题只需 qid,但答题要全量字段(Track E):把「等就绪」串在进 run 页之前,
-         renderRun 的占位门控再兜一层,双保险。 */
-      endSession(); /* 丢弃旧会话(作废其挂起回调) */
-      state = {
+      /* 抽题只需索引；进入每一题时由 renderRun 按需加载正文。 */
+      requestSession({
         config: { topics: selTopics, diffs: selDiffs, count },
         items: sample(pool, Math.min(count, pool.length)).map(q => ({ qid: q.id })),
         idx: 0, answers: {}, directed: false, label: '',
         sessionId: newSessionId(),
-        sid: ++sessionSeq, ended: false,
-        startedAt: Date.now(), qms: {}   /* 计时(Track A):整轮起点 + 单题累计时长 */
-      };
-      draftSave();
-      go('#/mock/run');
+        savedAt: Date.now(), qms: {}, durationMs: 0
+      });
     });
   }
 
   /* 定向复习入口(今日复习/错题本重做等):只包含给定队列的普通自测会话 */
-  function startDirected(qids, label) {
+  function startDirected(qids, label, metadata = {}) {
     if (!qids || !qids.length) { toast('队列为空', 'err'); return; }
-    /* 定向复习队列来自各入口的 qid;答题渲染需要全量字段(Track E)。
-       会话状态在这里就建好并落盘(语义不变),只是跳转延到就绪之后 ——
-       避免草稿里先记下「index 半份题」的快照。 */
-    const launch = () => {
-      endSession();
-      state = {
-        config: { topics: [], diffs: [], count: qids.length, label: label || '定向复习' },
-        items: qids.map(id => ({ qid: id })),
+    const ids = [...new Set(qids)].filter(id => Data.question(id));
+    if (!ids.length) { toast('队列中的题目已不存在', 'err'); return; }
+    requestSession({
+        config: { topics: [], diffs: [], count: ids.length, label: label || '定向复习' },
+        items: ids.map(id => ({ qid: id })),
         idx: 0, answers: {}, directed: true, label: label || '定向复习',
         sessionId: newSessionId(),
-        sid: ++sessionSeq, ended: false,
-        startedAt: Date.now(), qms: {}   /* 计时(Track A):定向复习同样记时长 */
-      };
-      draftSave();
-      go('#/mock/run');
-    };
-    if (Data.questionsLoaded()) { launch(); return; }
-    Data.questionsReady().then(launch);
+        savedAt: Date.now(), qms: {}, durationMs: 0,
+        guideId: metadata.guideId, guideSnapshot: metadata.guideSnapshot ? clone(metadata.guideSnapshot) : undefined
+    });
   }
 
   function sample(pool, n) {
@@ -963,7 +1044,7 @@ const MockView = (() => {
             <div class="fu-q">追问 ${i + 1}:${esc(f.q)}</div>
             <textarea data-fu-id="${esc(id)}" data-fu-q="${esc(f.q)}" data-dirty="0" class="mock-fu-self" placeholder="先写下你的回答(自动保存)……">${esc(st.self || '')}</textarea>
             ${st.revealed
-              ? `<div class="fu-a">${QRender.mdHtml(f.a)}</div>`
+              ? `<div class="fu-a" data-fu-reference="${esc(id)}" tabindex="-1">${QRender.mdHtml(f.a)}</div>`
               : `<button class="btn btn-small" data-fu-reveal="${esc(id)}">对照参考要点</button>`}
           </div>`;
         }).join('')}
@@ -982,24 +1063,33 @@ const MockView = (() => {
       </div>`;
   }
 
-  function renderRun(root) {
-    const q = questionForSession(state.items[state.idx].qid || state.items[state.idx].id);
-    if (!q) { toast('题目不存在,跳过', 'err'); state.idx++; if (state.idx >= state.items.length) finish(root); else renderRun(root); return; }
-    /* 会话题目以 qid 进入,正文渲染需要全量字段(Track E):未就绪先占位,就绪后重进。
-       questionForSession 会把题目快照进会话答案 —— 必须等全量合并后再快照,
-       否则存下来的是只有 index 元数据的半份题。 */
-    if (q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) {
-      root.innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
-        if (!root.isConnected || !state || state.ended) return;   /* 已离开/已结束:丢弃 */
-        renderRun(root);
+  function renderRun(root, preserve = false, focusSelector = '') {
+    if (!state || state.ended) return;
+    settleQms(); state.qStartAt = null;
+    const request = ++renderRequest, route = location.hash, session = state.sessionId;
+    const id = state.items[state.idx].qid || state.items[state.idx].id;
+    const current = Data.question(id);
+    const matches = () => request === renderRequest && state?.sessionId === session && !state.ended && location.hash === route;
+    if (!state.answers[id]?.questionSnapshot && !state.guideSnapshot && current && current.answer === undefined && !current.followups && !current.sources) {
+      root.innerHTML = '<div class="empty">正在加载本题…</div>';
+      (Data.ensureQuestion ? Data.ensureQuestion(id) : Data.questionsReady()).then(() => {
+        if (matches()) renderRun(root);
+      }).catch(() => {
+        if (!matches()) return;
+        root.innerHTML = '<div class="empty">' + (navigator.onLine === false ? '当前离线，尚未下载本题所属专题；草稿已保留。' : '本题暂时无法加载，草稿已保留。') + '<button class="btn" data-load-retry>重试</button></div>';
+        $('[data-load-retry]', root).onclick = () => renderRun(root);
       });
       return;
     }
+    const q = questionForSession(id) || { id, title: id + ' · 题目已下架，原题面未记录' };
+    const scroll = { x: window.scrollX, y: window.scrollY };
+    const focused = preserve && document.activeElement;
+    const focusId = focused?.id, focusFu = focused?.dataset?.fuId, focusMark = focused?.dataset?.mark;
+    const selection = focused && typeof focused.selectionStart === 'number' ? [focused.selectionStart, focused.selectionEnd] : null;
     const qid = q.id;
     /* 计时(Track A):每次进入本题重置起点;离开本题的各出口(自评/上一题/下一题/完成)
        把「now - 起点」累加进 qms,而不是覆盖——用户回看旧题再花的时间也算练过 */
-    state.qStartAt = Date.now();
+    state.qStartAt = document.hidden ? null : Date.now();
     const ans = state.answers[qid] || { self: '', revealed: false, mark: '' };
     root.innerHTML = `
       <div class="card mock-run">
@@ -1011,21 +1101,30 @@ const MockView = (() => {
         ${QRender.metaLine(q)}
         <h2 class="q-title-sm">${esc(q.title)}</h2>
         ${QRender.promptHtml(q)}
-        ${q.format === 'quiz' ? QRender.quizOptionsHtml(q, ans.revealed, false) : ''}
-        ${!q.options && Data.question(qid)?.format === 'quiz' ? '<p class="notice">旧练习未保存选项，原题面不完整；请打开当前题目重新练习。</p>' : ''}
-        <label class="note-label">你的回答(先自己写,再对照)</label>
-        <textarea id="m-self" class="mock-self" placeholder="像面试口述一样,写下你的答案要点……">${esc(ans.self || '')}</textarea>
+        ${q.sourceQuestionId ? `<p class="muted small">本次练习：训练单元主问 · <a href="#/study/${encodeURIComponent(q.sourceQuestionId)}">来源关联题 ${esc(q.sourceQuestionId)} · ${esc(q.sourceQuestionTitle || '')}</a> · 资料版本 ${esc(q.guideRevision || '')}</p>` : ''}
+        ${q.format === 'quiz' ? QRender.quizOptionsHtml(q, ans.revealed, false, ans) : ''}
+        ${q.referenceKind !== 'guide' && !q.options && Data.question(qid)?.format === 'quiz' ? '<p class="notice">旧练习未保存选项，原题面不完整；请打开当前题目重新练习。</p>' : ''}
+        <label class="note-label" for="m-self">${ans.revealed ? '你的原回答' : '你的回答(先自己写,再对照)'}</label>
+        <textarea id="m-self" data-session-id="${esc(state.sessionId)}" class="mock-self" ${ans.revealed ? 'readonly aria-describedby="m-original-hint"' : ''} placeholder="像面试口述一样,写下你的答案要点……">${esc(ans.self || '')}</textarea>
+        ${ans.revealed ? '<p id="m-original-hint" class="muted small">原回答已保留，请在下方修订或补充。</p>' : ''}
+        <div class="muted small" role="status" aria-live="polite" id="mock-save-status">${state.saveError ? '保存失败，回答保留在当前页面，请重试' : '草稿已保存'}</div>
+        <button class="btn btn-small" id="mock-save-retry">保存草稿</button>
         <div class="mock-actions">
           ${!ans.revealed
             ? '<button class="btn btn-primary" id="m-reveal">对照参考要点</button>'
             : `<div class="mock-ref">
-                 <h4>参考要点(直接答案)</h4>
+                 <h4 id="m-reference-title" tabindex="-1">${q.referenceKind === 'guide' ? '参考学习资料 · 60 秒口述' : '参考要点(直接答案)'}</h4>
                  ${QRender.mdHtml(q.answer)}
                  ${q.plain ? `<details><summary>${q.format === 'quiz' ? '展开解析' : '展开大白话解释'}</summary>${QRender.mdHtml(q.plain)}</details>` : ''}
-                 ${q.interview ? `<details><summary>展开面试表达</summary>${QRender.mdHtml(q.interview)}</details>` : ''}
+                 ${q.interview ? `<details><summary>${q.referenceKind === 'guide' ? '参考学习资料 · 3 分钟展开' : '展开面试表达'}</summary>${QRender.mdHtml(q.interview)}</details>` : ''}
                  <a href="#/study/${qid}" target="_self">查看完整解析 →</a>
                </div>
                ${renderFollowups(q, ans)}
+               <div class="mock-revision">
+                 <label class="note-label" for="m-revision">参考后修订 / 补充</label>
+                 <p id="m-revision-hint" class="muted small">用自己的话重写或补充，说明刚才遗漏的原理、边界或证据。这里单独保存，原回答与追问不会被覆盖。</p>
+                 <textarea id="m-revision" data-session-id="${esc(state.sessionId)}" data-question-id="${esc(qid)}" class="mock-self" aria-describedby="m-revision-hint" placeholder="对照参考后，我会这样回答……">${esc(ans.revision || '')}</textarea>
+               </div>
                <div class="mock-mark">
                  <span>自我复盘:</span>
                  <button class="status-btn st-ok ${ans.mark === 'ok' ? 'active' : ''}" data-mark="ok">基本掌握了</button>
@@ -1043,16 +1142,51 @@ const MockView = (() => {
 
     const selfBox = $('#m-self');
     const sid = state.sid; /* 回调绑定本题所属会话:会话结束/更换后不得写回 */
-    /* quiz 点击作答(Stage1):与学习页共用同一套委托(选项点击/确认/重做)。
-       模拟会话此前只走「对照」路径,没有挂 quiz 交互 —— 现在补挂,
-       判定结果经 QRender.setQuizJudgeHook 的钩子写回会话草稿(下方注册)。 */
-    QRender.wireQuizToggle(root);
+    /* 判分只使用本轮题面快照。回调在重绘前捕获尚未防抖的个人文字。 */
+    QRender.wireQuizToggle(root, {
+      question: q,
+      canJudge: () => state && state.sid === sid && activeSession(),
+      onJudge: ({ qid: judgeQid, correct, picked }) => {
+        if (!state || state.ended || state.sid !== sid || judgeQid !== qid) return;
+        captureInput();
+        const a = state.answers[qid];
+        a.revealed = true; a.quizPicked = picked.slice(); a.quizCorrect = correct;
+        if (!correct) a.mark = 'weak';
+        draftSave();
+        renderRun(root, true, '[data-quiz-redo]:not([hidden])');
+      },
+      onRedo: ({ qid: redoQid }) => {
+        if (!state || state.ended || state.sid !== sid || redoQid !== qid) return;
+        captureInput();
+        const a = state.answers[qid];
+        delete a.quizPicked; delete a.quizCorrect;
+        a.revealed = false;
+        draftSave();
+        renderRun(root, true, '[data-quiz-pick][tabindex="0"]');
+      }
+    });
+    /* 判题和重做会替换触发控件；让键盘继续停在本题可操作的位置，
+       并通过重做按钮的描述读出刚才的判题结果。 */
+    const quizResult = $('[data-quiz-result]', root);
+    if (quizResult) {
+      quizResult.id = 'm-quiz-result';
+      $('[data-quiz-redo]', root)?.setAttribute('aria-describedby', quizResult.id);
+    }
+    $('#mock-save-retry', root).onclick = () => { captureInput(); settleQms(); draftSave(); };
     selfBox.addEventListener('input', debounce(() => {
-      if (!state || state.ended || state.sid !== sid) return;
+      if (!state || state.ended || state.sid !== sid || !selfBox.isConnected || selfBox.readOnly) return;
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { self: selfBox.value });
       /* 计时(Track A):自评落笔时结算一次,本题已花的时长先入账;
          后续再停留则由导航/结束时继续累计 */
       if (qid === (state.items[state.idx].qid || state.items[state.idx].id)) settleQms();
+      draftSave();
+    }, 200));
+    const revisionBox = $('#m-revision', root);
+    if (revisionBox) revisionBox.addEventListener('input', debounce(() => {
+      if (!state || state.ended || state.sid !== sid || !revisionBox.isConnected) return;
+      if (qid !== (state.items[state.idx].qid || state.items[state.idx].id)) return;
+      state.answers[qid] = Object.assign(state.answers[qid] || {}, { revision: revisionBox.value });
+      settleQms();
       draftSave();
     }, 200));
 
@@ -1061,20 +1195,13 @@ const MockView = (() => {
       captureInput();
       state.answers[qid] = Object.assign(state.answers[qid] || {}, { revealed: true, self: selfBox.value });
       draftSave();
-      renderRun(root);
+      renderRun(root, true, '#m-reference-title');
     });
     /* quiz 点击作答(Stage1):共用 common.js 的判定,判定完成后把同一信号写进
        会话草稿 —— 等价于一次「对照后自评」:答错记 mark=weak(完成轮次时经
        setStatus reschedule 排期,与复盘标记同一条路径),picked 存进草稿供轮次
        回看;答对只记 picked,不替用户自评。钩子绑定本题所属会话(sid),会话
        结束/更换后不得写回。 */
-    QRender.setQuizJudgeHook((judgeQid, correct, labels) => {
-      if (!state || state.ended || state.sid !== sid || judgeQid !== qid) return;
-      const a = state.answers[qid] = Object.assign(state.answers[qid] || {}, { revealed: true });
-      a.quizPicked = labels;
-      if (!correct && a.mark !== 'weak') a.mark = 'weak';
-      draftSave();
-    });
 
     /* 追问二跳:回答框防抖落盘;揭示按钮只放开对应追问的参考要点 */
     $$('#mock-fu-list [data-fu-id]', root).forEach(el => {
@@ -1102,7 +1229,7 @@ const MockView = (() => {
       cur.q = f ? f.q : cur.q;
       state.answers[qid].fu[id] = cur;
       draftSave();
-      renderRun(root);
+      renderRun(root, true, `[data-fu-reference="${CSS.escape(id)}"]`);
     }));
     $$('[data-mark]', root).forEach(b => b.addEventListener('click', () => {
       captureInput();
@@ -1123,16 +1250,24 @@ const MockView = (() => {
         Store.setStatus(qid, b.dataset.mark);   /* 同一信号重复点击:状态幂等,不再排期 */
       }
       draftSave();
-      renderRun(root);
+      renderRun(root, true);
     }));
     const prev = $('#m-prev');
-    if (prev) prev.addEventListener('click', () => { captureInput(); settleQms(); state.idx--; draftSave(); renderRun(root); });
+    if (prev) prev.addEventListener('click', () => { captureInput(); settleQms(); state.qStartAt = null; state.idx--; draftSave(); renderRun(root); });
     const next = $('#m-next');
-    if (next) next.addEventListener('click', () => { captureInput(); settleQms(); state.idx++; draftSave(); renderRun(root); });
+    if (next) next.addEventListener('click', () => { captureInput(); settleQms(); state.qStartAt = null; state.idx++; draftSave(); renderRun(root); });
     const finishBtn = $('#m-finish');
     if (finishBtn) finishBtn.addEventListener('click', () => finish(root));
     const quitBtn = $('#m-quit');
     if (quitBtn) quitBtn.addEventListener('click', () => finish(root));
+    if (preserve) {
+      const target = focusSelector ? root.querySelector(focusSelector)
+        : focusId ? document.getElementById(focusId)
+        : focusFu ? root.querySelector(`[data-fu-id="${CSS.escape(focusFu)}"]`)
+        : focusMark ? root.querySelector(`[data-mark="${CSS.escape(focusMark)}"]`) : null;
+      if (target) { target.focus({ preventScroll: true }); if (selection && target.setSelectionRange) target.setSelectionRange(...selection); }
+      window.scrollTo({ left: scroll.x, top: scroll.y, behavior: 'instant' });
+    }
   }
 
   function finish(root) {
@@ -1142,24 +1277,27 @@ const MockView = (() => {
     const sid = state.sid;
     const previousMock = JSON.parse(JSON.stringify(Store.data.mock));
     const previousQuestions = JSON.parse(JSON.stringify(Store.data.questions));
-    /* 统一资格定义:真实作答 = 主回答或追问有非空文本(与表达卡同一判定) */
+    /* 真实作答 = 已提交选择、主回答、追问或本人修订，与历史和表达卡共用判定。 */
     const answered = state.items.filter(q => {
       const a = state.answers[q.qid || q.id] || {};
       const fu = a.fu || {};
-      return (a.self || '').trim() || Object.keys(fu).some(k => (fu[k].self || '').trim());
+      return ExpressCard.itemAnswered({ ...a, followups: Object.values(fu) });
     }).length;
     if (!answered) { toast('本轮还没有真实作答,已按原样记录'); }
     const round = {
       ts: Date.now(),
       sessionId: state.sessionId,
-      /* 计时(Track A):整轮总时长;旧数据恢复路径 startedAt 缺失时记 0,
-         消费方一律 durationMs || 0 兜底 */
-      durationMs: state.startedAt ? Math.max(0, Date.now() - state.startedAt) : 0,
+      /* 只累计题面可见时长，刷新恢复已保存的时间；旧记录缺失时记 0。 */
+      durationMs: state.durationMs || 0,
+      guideId: state.guideId, guideSnapshot: state.guideSnapshot,
       config: state.config,
       items: state.items.map(q => {
         const id = q.qid || q.id;
         const a = state.answers[id] || {};
-        const question = questionForSession(id);
+        /* 只归档实际访问时捕获的快照。结束一轮不能把未访问的题补成
+           当前正文快照，也不能写入备份校验明确不接受的 null。 */
+        const question = a.questionSnapshot || null;
+        const meta = question || Data.question(id) || q;
         /* 追问二跳的记录:只保留真实写过的(有回答或已对照),没碰过的不占位 */
         /* 追问按 ID 收集(含旧格式迁移的待核对条目),带作答时题面快照;
            题目当前不在题库也照常收集(历史真实发生过) */
@@ -1170,10 +1308,10 @@ const MockView = (() => {
         }).filter(x => x.self.trim() || x.revealed);
         const qRev = a.qRev || '';
         /* quiz 点击作答(Stage1):picked 字母序列随轮次留档(历史真实发生过) */
-        return { qid: id, title: question ? question.title : id, self: a.self || '', revealed: !!a.revealed, mark: a.mark || '', qRev,
-                 quizPicked: a.quizPicked,
+        return { qid: id, title: meta.title || id, self: a.self || '', revision: a.revision || '', revealed: !!a.revealed, mark: a.mark || '', qRev,
+                 quizPicked: a.quizPicked, quizCorrect: a.quizCorrect,
                  ms: (state.qms || {})[id] || 0,   /* 计时(Track A):本题累计毫秒;无数据为 0,消费方 ms || 0 兜底 */
-                 questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate, followups };
+                 ...(question ? { questionSnapshot: question, snapshotCapturedLate: !!a.snapshotCapturedLate } : {}), followups };
       })
     };
     Store.data.mock.rounds.unshift(round);
@@ -1205,7 +1343,7 @@ const MockView = (() => {
     const notes = [];
     if (weakIds.length) notes.push({ fact: `你把 ${weakIds.length} 题标了「还不熟」(${weakIds.slice(0, 3).join(', ')}${weakIds.length > 3 ? '…' : ''})`,
       step: '它们已进错题本与今日复习队列;明天复习时先不看答案,重写一遍回答再对照。', href: '#/review', label: '去复习队列' });
-    if (unanswered.length) notes.push({ fact: `${unanswered.length} 题本轮没有写下回答(${unanswered.slice(0, 3).map(i => i.qid).join(', ')}${unanswered.length > 3 ? '…' : ''})`,
+    if (unanswered.length) notes.push({ fact: `${unanswered.length} 题本轮没有提交作答(${unanswered.slice(0, 3).map(i => i.qid).join(', ')}${unanswered.length > 3 ? '…' : ''})`,
       step: '只对照参考不算练过;重开一轮时勾选这些题所在专题,先写再比。', href: '#/mock', label: '再练一轮' });
     if (fuMissing.length) notes.push({ fact: `${fuMissing.length} 题的追问对照了参考但没写回答`,
       step: '面试官会顺着回答追问——挑一题进学习页,把追问的回答补写一遍。', href: '#/study/' + (fuMissing[0].qid || ''), label: '去补追问' });
@@ -1232,12 +1370,14 @@ const MockView = (() => {
     const weak = round.items.filter(i => i.mark === 'weak');
     /* 与表达卡同一资格判定:有真实作答(主回答或追问)的题数;追问单独计数,不冒充主问题 */
     const mainAnswered = round.items.filter(i => (i.self || '').trim()).length;
+    const revised = round.items.filter(i => (i.revision || '').trim()).length;
+    const quizAnswered = round.items.filter(i => i.quizPicked?.length).length;
     const fuAnswered = round.items.reduce((n, i) => n + (i.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
     const realAnswered = round.items.filter(i => ExpressCard.itemAnswered(i)).length;
     root.innerHTML = `
       <div class="card">
         <h2>本轮完成</h2>
-        <p class="muted">${fmtTime(round.ts)} · 共 ${round.items.length} 题 · 有真实作答 ${realAnswered} 题(主回答 ${mainAnswered} · 追问回答 ${fuAnswered} 条) · 对照参考要点 ${revealed.length} 题${weak.length ? ` · 标记还不熟 ${weak.length} 题(已进入错题本与今日复习)` : ''}</p>
+        <p class="muted">${fmtTime(round.ts)} · 共 ${round.items.length} 题 · 有真实作答 ${realAnswered} 题(文字主回答 ${mainAnswered} · 已提交选择 ${quizAnswered} · 追问回答 ${fuAnswered} 条 · 修订/补充 ${revised} 题) · 对照参考要点 ${revealed.length} 题${weak.length ? ` · 标记还不熟 ${weak.length} 题(已进入错题本与今日复习)` : ''}</p>
         <div class="round-list">
           ${round.items.map((it, i) => `
             <div class="round-item">
@@ -1247,23 +1387,30 @@ const MockView = (() => {
                 <a class="rel-link" href="#/study/${it.qid}">打开题目</a>
               </div>
               <div class="round-title">${esc(it.title)}</div>
-              ${it.self ? `<div class="round-self"><b>我的回答:</b>${esc(it.self)}</div>` : '<div class="round-self muted">(主回答未写)</div>'}
+              ${ExpressCard.answerText(it) ? `<div class="round-self"><b>我的回答:</b>${esc(ExpressCard.answerText(it))}</div>` : '<div class="round-self muted">(主回答未写)</div>'}
               ${(it.followups || []).filter(fu => (fu.self || '').trim() || fu.revealed).map(fu => `
                 <div class="round-self"><b>追问(${esc((fu.q || '').slice(0, 40))}${(fu.q || '').length > 40 ? '…' : ''}):</b>${(fu.self || '').trim() ? esc(fu.self) : '<span class="muted">对照过参考,未写回答</span>'}</div>`).join('')}
+              ${(it.revision || '').trim() ? `<div class="round-self"><b>参考后修订 / 补充:</b>${esc(it.revision)}</div>` : ''}
             </div>`).join('')}
         </div>
         <div class="mock-nav">
           <button class="btn" id="m-again">再来一轮</button>
-          <button class="btn btn-primary" id="m-card">导出这一轮的表达卡</button>
+          <button class="btn btn-primary" id="m-card">导出这一轮的个人表达卡</button>
           <a class="btn" href="#/review">查看历史轮次</a>
           <a class="btn" href="#/home">返回工作台</a>
         </div>
         <p class="muted small" style="margin-top:8px">表达卡 = 你写的回答 + 面试口述版 + 参考要点,可下载 Markdown 或打印成 PDF。</p>
         ${renderNextSteps(round)}
       </div>`;
-    $('#m-again').addEventListener('click', () => { endSession(); state = null; go('#/mock'); });
+    /* 完成时已提交终态；返回配置页不能清掉另一页后来创建的草稿。 */
+    $('#m-again').addEventListener('click', () => { state = null; go('#/mock'); });
     $('#m-card').addEventListener('click', () => exportExpressCard('round', 0));
   }
 
+  document.addEventListener('visibilitychange', () => {
+    if (!state || state.ended || !document.querySelector('.mock-run')) return;
+    if (document.hidden) flushDraft();
+    else if (location.hash === '#/mock/run') state.qStartAt = Date.now();
+  });
   return { render, startDirected, flushDraft, applyRemote };
 })();

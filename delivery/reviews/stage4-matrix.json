@@ -1,9 +1,9 @@
 {
- "date": "2026-09-15",
- "head": "d852492827f6631b5342b71efdf2e5054a330a18",
+ "date": "2026-09-29T16:58:54.732Z",
+ "head": "336c0f9f5fd840e6b6057264c23a7f1f18f0f8c4",
  "cases": [
   {
-   "case": "S1 同毫秒顺序写",
+   "case": "S1 正向同毫秒顺序写 A→B",
    "states": {
     "a": "A同毫秒版本",
     "b": "A同毫秒版本",
@@ -17,10 +17,14 @@
    "draftRestored": true
   },
   {
-   "case": "S4 反向验证",
-   "divergence": true,
-   "aMem": "B保存的新版",
-   "diskV": "B保存的新版"
+   "case": "S4 正向同毫秒顺序写 B→A（独立 context、无存储拦截）",
+   "states": {
+    "a": "A同毫秒版本",
+    "b": "A同毫秒版本",
+    "disk": "A同毫秒版本",
+    "reopen": "A同毫秒版本"
+   },
+   "converged": true
   }
  ]
 }

@@ -56,6 +56,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
         const meta = document.querySelector('.q-item-meta');
         return !!(t && t.textContent && meta && meta.textContent);
       }));
+    check('首页列表不隐式加载全库', await page.evaluate(() => !Data.questionsLoaded()));
+    await page.evaluate(() => Data.questionsReady()); // Explicit whole-bank fixture for this structural audit.
     await page.waitForFunction(() => typeof Data !== 'undefined' && Data.questionsLoaded() === true, null, { timeout: 20000 });
     check('questionsLoaded() false→true(全量分片合并完成)',
       await page.evaluate(() => Data.allQuestions().every(q => q.answer !== undefined || q.followups !== undefined || q.sources !== undefined)));
@@ -84,11 +86,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     /* ---- 4. 离线:在线首访后断网,SW 运行时缓存的分片仍渲染学习页 ---- */
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
-    /* 主动把所有分片拉一遍(应用在首页 boot 已自动做;这里确保缓存写入后再断网) */
-    await page.evaluate(async () => {
-      const m = await (await fetch('data/manifest.json')).json();
-      await Promise.all(Object.values(m.topics).map(e => fetch('data/topics/' + e.file).then(r => r.text())));
-    });
+    /* Cache verification must not refetch: first-visit persistence is asserted by lazy-loading.js. */
+    check('已请求分片均确实落入缓存', await page.evaluate(async () => {
+      const cache = await caches.open('topics-v1');
+      return !!await cache.match(new URL('data/topics/' + window.APP_DATA.manifest.topics.agent.file, location.href));
+    }));
     await context.setOffline(true);
     await page.goto(BASE + '/index.html#/study/AG-001');
     await page.waitForFunction(() => document.querySelector('#note-area'), null, { timeout: 20000 });

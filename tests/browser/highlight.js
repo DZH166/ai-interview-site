@@ -40,6 +40,7 @@ const expectedSpans = annotated.reduce((n, id) => n + highlights[id].spans.lengt
     page.on('pageerror', e => errors.push(e.message));
 
     await open(page, '#/home');
+    await page.evaluate(() => Data.questionsReady());
 
     /* ---- 数据层:构建产物里的标注与源文件一致 ---- */
     const shipped = await page.evaluate(() => Object.keys((window.APP_DATA.highlights) || {}).length);

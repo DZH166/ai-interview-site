@@ -5,12 +5,21 @@ const ReviewView = (() => {
   const roundIdOf = rd => rd.id || (Store.roundId ? Store.roundId(rd) : '');
   let tab = 'today';
 
+  function recordedQuestions() {
+    const active = Data.allQuestions();
+    if (!Data.legacyQuestions) return active;
+    const ids = new Set(Object.keys(Store.data.questions || {}));
+    (Store.data.mock.rounds || []).forEach(rd => (rd.items || []).forEach(it => ids.add(it.qid)));
+    const activeIds = new Set(active.map(q => q.id));
+    return active.concat(Data.legacyQuestions().filter(q => ids.has(q.id) && !activeIds.has(q.id)));
+  }
+
   /* ---- 今日复习队列 ----
      规则(可解释):①状态「待复习」或「还不熟」入队;②有复盘原因的题加「未消化」标记排前;
      ③标「基本掌握」自然移出,「还不熟/待复习」保留——不自动假定掌握。
      (间隔安排是启发式提示,不覆盖手动状态。) */
   function getTodayQueue() {
-    const qs = Data.allQuestions();
+    const qs = recordedQuestions();
     return qs.filter(q => {
       const r = Store.rec(q.id);
       return r.status === 'review' || r.status === 'weak';
@@ -68,7 +77,7 @@ const ReviewView = (() => {
      回到这里,而不是被当成永远掌握。判定统一走 SRS.isDue,不在这里另抄一份。 */
   function getDueSuggestions(now) {
     const t = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
-    return Data.allQuestions().filter(q => {
+    return recordedQuestions().filter(q => {
       const r = Store.rec(q.id);
       /* 有效性条件统一在 SRS.suggestable:未练习/已在手动队列/排期缺失或非法/状态与信号矛盾 → 不建议 */
       return SRS.suggestable(r, t);
@@ -85,7 +94,7 @@ const ReviewView = (() => {
     const ids = new Set();
     (Store.data.mock.rounds || []).forEach(rd =>
       (rd.items || []).forEach(it => { if (it.mark === 'weak') ids.add(it.qid); }));
-    return Data.allQuestions().filter(q => ids.has(q.id));
+    return recordedQuestions().filter(q => ids.has(q.id));
   }
 
   function render(root) {
@@ -152,7 +161,7 @@ const ReviewView = (() => {
     if (tab === 'mistakes') { renderMistakes(box); return; }
     if (tab === 'rounds') { renderRounds(box); return; }
     if (tab === 'stats') { StatsView.render(box); return; }   /* Track C:纯 DOM 统计,委托给独立模块 */
-    const qs = Data.allQuestions();
+    const qs = recordedQuestions();
     let items = [];
     if (tab === 'fav') items = qs.filter(q => Store.rec(q.id).fav);
     else if (tab === 'weak') items = qs.filter(q => (Store.rec(q.id).status || '') === 'weak');
@@ -172,7 +181,7 @@ const ReviewView = (() => {
       return `
         <div class="review-item">
           <div class="ri-main" data-qid="${q.id}" role="button" tabindex="0" aria-label="打开 ${esc(q.title)}">
-            <div class="q-item-title">${esc(q.title)}</div>
+            <div class="q-item-title">${esc(q.title)}${q.archived ? ' <span class="badge b-tag">旧题存档</span>' : ''}</div>
             <div class="q-item-meta">
               <span class="qid">${q.id}</span>
               ${QRender.badge(Data.topicShort(q.topic), 'b-topic')}
@@ -415,14 +424,16 @@ const ReviewView = (() => {
     box.innerHTML = renderRoundTrend(rounds) + rounds.map((rd, ri) => {
       const items = rd.items || [];
       const revealed = items.filter(it => it.revealed).length;
+      const answered = items.filter(ExpressCard.itemAnswered).length;
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';
       const marked = items.filter(it => it.mark === 'weak').length;
       const fuCount = items.reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
+      const revised = items.filter(it => (it.revision || '').trim()).length;
       const focusRound = dq && dq.r && (rd.id === dq.r || roundIdOf(rd) === dq.r);
       return `
         <details class="round-details" ${ri === 0 || focusRound ? 'open' : ''} data-round-id="${esc(rd.id || roundIdOf(rd) || '')}">
           <summary class="round-summary">
-            <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 对照参考 ${revealed} 题${fuCount ? ` · 追问回答 ${fuCount} 条` : ''}
+            <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 真实作答 ${answered} 题 · 对照参考 ${revealed} 题${fuCount ? ` · 追问回答 ${fuCount} 条` : ''}${revised ? ` · 修订/补充 ${revised} 题` : ''}
             ${marked ? `<span class="badge st-weak">还不熟 ${marked}</span>` : ''}
             ${label ? `<span class="badge b-tag">${label}</span>` : ''}
           </summary>
@@ -432,6 +443,7 @@ const ReviewView = (() => {
           </div>
           <div class="round-list">
             ${items.map((it, i) => {              const q = Data.question(it.qid);
+              const mainAnswer = ExpressCard.answerText ? ExpressCard.answerText(it) : (it.self || '');
               const st = it.mark ? (Store.STATUS.find(s => s.id === it.mark) || { label: it.mark }) : null;
               return `
                 <div class="round-item" data-qid="${esc(it.qid)}">
@@ -441,8 +453,10 @@ const ReviewView = (() => {
                     <span class="muted" style="font-size:12px">${it.revealed ? '已对照参考' : '未对照参考'}</span>
                   </div>
                   <div class="round-title">${esc(it.title || (q ? q.title : it.qid))}</div>
-                  ${it.self ? `<div class="round-self"><b>我的回答:</b>${esc(it.self)}</div>` : '<div class="round-self muted">(未作答)</div>'}
+                  ${!it.questionSnapshot ? '<p class="muted small">未保存历史题面；下面如有参考来自当前题库。</p>' : ''}
+                  ${mainAnswer ? `<div class="round-self"><b>我的回答:</b>${esc(mainAnswer)}</div>` : '<div class="round-self muted">(主问题未作答)</div>'}
                   ${(it.followups || []).map((f, index) => `<div class="round-self saved-followup" data-followup-id="${esc(f.id || 'legacy-' + index)}"><b>追问:${esc(f.q || '(题面未记录)')}</b>${f.legacy ? '<span class="badge vf-todo">待核对</span>' : ''}<p>${esc(f.self || '(未作答)')}</p></div>`).join('')}
+                  ${(it.revision || '').trim() ? `<div class="round-self saved-revision"><b>参考后修订 / 补充:</b>${esc(it.revision)}</div>` : ''}
                 </div>`;
             }).join('')}
           </div>
@@ -484,9 +498,10 @@ const MaintainView = (() => {
   function render(root) {
     const qs = Data.allQuestions();
     const extra = Store.extraBankLoad();
-    const base = (window.APP_DATA.questions || []).length;
+    const base = (window.APP_DATA.questions_index || window.APP_DATA.questions || []).length;
     const byStatus = { verified: 0, partial: 0, todo: 0 };
-    qs.forEach(q => { byStatus[q.verify && q.verify.status || 'todo']++; });
+    const withBody = qs.filter(q => q.answer !== undefined || q.sources !== undefined);
+    withBody.forEach(q => { byStatus[q.verify && q.verify.status || 'todo']++; });
     root.innerHTML = `
       <div class="maintain-grid">
         <div class="card">
@@ -494,7 +509,8 @@ const MaintainView = (() => {
           <div class="kv"><span>内置题目</span><b>${base}</b></div>
           <div class="kv"><span>导入追加</span><b>${extra.length}</b></div>
           <div class="kv"><span>当前合计</span><b>${qs.length}</b></div>
-          <div class="kv"><span>已核查 / 部分 / 待核查</span><b>${byStatus.verified} / ${byStatus.partial} / ${byStatus.todo}</b></div>
+          <div class="kv"><span>已加载正文：已核查 / 部分 / 待核查</span><b>${byStatus.verified} / ${byStatus.partial} / ${byStatus.todo}</b></div>
+          <p class="muted small">已载入 ${withBody.length} / ${qs.length} 题正文，按需继续加载。<a href="#/offline">管理离线内容与下载</a></p>
           <div class="kv"><span>文档章节(内置/导入)</span><b>${Data.allDocs().length} / ${Data.allUserDocs().length}</b></div>
           <div class="kv"><span>来源 / 候选</span><b>${(window.APP_DATA.sources.sources||[]).length} / ${(window.APP_DATA.candidates.candidates||[]).length}</b></div>
           <div class="kv"><span>个人记录占用</span><b id="st-size">…</b></div>
@@ -596,9 +612,16 @@ const MaintainView = (() => {
         stQuota.textContent = '(浏览器不支持估计)';
       }
     }
-    $('#b-export').addEventListener('click', () => {
-      download('ai-interview-bank-' + dateStr() + '.json',
-        JSON.stringify({type:'aiiv-bank',exported_at:new Date().toISOString(),questions:Data.allQuestions()},null,2));
+    $('#b-export').addEventListener('click', async e => {
+      const button = e.currentTarget;
+      button.disabled = true; button.textContent = '正在准备完整题库…';
+      try {
+        await Data.questionsReady();
+        if (!Data.questionsLoaded()) throw new Error('部分题目正文未能加载，请重试');
+        download('ai-interview-bank-' + dateStr() + '.json',
+          JSON.stringify({type:'aiiv-bank',exported_at:new Date().toISOString(),questions:Data.allQuestions()},null,2));
+      } catch (error) { toast(error.message || '题库准备失败，请重试', 'err'); }
+      finally { button.disabled = false; button.textContent = '导出当前题库'; }
     });
     $('#r-export').addEventListener('click', () => {
       download('aiiv-records-' + dateStr() + '.json', Store.exportRecords());

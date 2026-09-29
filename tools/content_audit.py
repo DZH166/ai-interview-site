@@ -148,6 +148,7 @@ def load_ids():
     for f in sorted((ROOT / "data" / "questions").glob("*.json")):
         for q in json.loads(f.read_text(encoding="utf-8")):
             ids.add(q["id"])
+    question_count = len(ids)
     paths = json.loads((ROOT / "data" / "paths.json").read_text(encoding="utf-8"))
     drill_ids = set()
     stage_ids = set()
@@ -168,7 +169,7 @@ def load_ids():
             ids.add(p["id"])
     dids = doc_ids()
     print("题库 %d 题 / 专项练习 %d 个 / 阶段 %d / 项目 %d / 文档 %d"
-          % (len(ids - drill_ids), drills_total, len(stage_ids),
+          % (question_count, drills_total, len(stage_ids),
              len(projs.get("projects", [])), len(dids)))
     return ids, drill_ids, dids, paths
 

@@ -14,35 +14,30 @@
    "PY-013",
    "PY-020"
   ],
-  "answer": "三者按校验需求分:①Pydantic 模型——边界数据(外部输入:API 请求/LLM 返回/配置文件):需要运行时校验与转换;②dataclass——内部数据的结构化承载(业务对象在代码内传递):类型标注给 mypy 与 IDE,不需要运行时开销;③TypedDict——描述『已有 dict 的形状』(兼容 JSON 结构/框架接口,如 messages 数组):不能实例化只是类型声明。选型口诀:边界用 Pydantic(不可信数据),内部用 dataclass(可信数据),接口适配用 TypedDict(描述外部 dict)。反模式:内部纯数据用 Pydantic(无谓的校验开销)、边界数据用 dataclass(校验缺失)。",
-  "plain": "三种容器像三种包装:Pydantic=带安检的快递箱(进出边界都要查,不可信的 Outside 数据用);dataclass=家里整理箱(内部搬运,自己人的东西不用每次安检);TypedDict=货架标签(描述『这个格子里放什么形状的东西』——它本身不是容器,是说明书)。错误用法:家人拿快递箱装自己的书(内部用 Pydantic,每次开箱安检浪费);外面寄来的包裹不安检直接放冰箱(边界用 dataclass,危险)。比喻局限:Pydantic 模型也可以当纯类型用(不校验),dataclass 也能加校验(自己写)——区别在『默认行为与生态意图』。",
-  "deep": "1) 技术差异:\n   - Pydantic:运行时校验+类型转换('5'→5)+序列化+schema 生成;实例化有开销(校验成本);\n   - dataclass(标准库):生成 __init__/__repr__ 等,无校验;slots/frozen 配置;轻量;\n   - TypedDict:纯类型层面(mypy 检查),运行时就是普通 dict;total=False 可选键。\n2) LLM 应用的典型分布:\n   - 边界:API 请求/响应(PY-004)、LLM 返回解析(LP-003)、配置(PY-010)→Pydantic;\n   - 内部:组装器的片段(PY-022 Segment)、服务层的中间结果、领域实体→dataclass(或 Pydantic 若要序列化);\n   - 适配:messages 数组(PY-020 的 ChatMessage)、OpenAI SDK 的参数结构→TypedDict(mypy 检查 dict 字面量)。\n3) 转换边界:Pydantic 模型在校验后可以 .to_dataclass()(内部传递用轻量结构)——但增加转换代码;务实做法:单一 Pydantic 模型贯穿(简单项目),或边界 Pydantic+内部 dataclass(性能敏感/大型项目)。判断:内部数据的实例化频率(每请求数百次→dataclass 的开销差可见)。\n4) 性能差异:Pydantic v2(Rust 核心)校验已经很快,但仍是 dataclass 的数倍(大数据量批量实例化可测出);dataclass(slots=True)的内存与访问速度最优;\n5) 演进路径:原型期全 Pydantic(校验兜住一切);性能热点出现→热点路径换 dataclass(PY-018 的 profiling 驱动);外部结构→TypedDict 标注(不改运行时)。",
-  "example": "```python\nfrom dataclasses import dataclass\nfrom typing import TypedDict\nfrom pydantic import BaseModel\n\n# 边界:LLM 返回解析(不可信 → 校验)\nclass LLMExtract(BaseModel):\n    order_id: str\n    amount: float\n\n# 内部:组装器片段(可信 → 轻量)\n@dataclass(slots=True)\nclass Segment:\n    kind: str\n    priority: int\n    content: str\n\n# 适配:messages 数组形状(描述 dict)\nclass ChatMessage(TypedDict):\n    role: str\n    content: str\n```",
-  "interview": "口述版:『三选一口诀:边界数据用 Pydantic(不可信,要校验转换)、内部数据用 dataclass(可信,轻量)、外部 dict 形状用 TypedDict(纯类型标注)。LLM 应用典型分布:LLM 返回解析/API 边界/配置是 Pydantic;组装器片段/内部实体是 dataclass;messages 数组是 TypedDict。演进策略:原型全 Pydantic,热点换 dataclass(PY-018 的 profiling 驱动)。核心是『信任边界』意识:数据从哪来决定用什么容器。』追问展开:v2 性能、slots 的作用、三者混用的边界转换。",
+  "answer": "TypedDict 描述字典的静态类型；可以调用其构造器，返回普通 dict，不会自动校验字段。dataclass 生成初始化等方法，默认也不做字段类型校验。Pydantic v2 提供运行时解析、校验与序列化；按边界校验、对象行为和性能需求选型，内部也可以合理使用 Pydantic。",
+  "plain": "TypedDict 像表格填写规范，检查器能指出列名或类型问题，但运行时得到的仍是普通字典。dataclass 帮你生成整理数据的方法，Pydantic 则会按规则检查和转换输入。给箱子贴“冻结”标签不代表箱子里面的列表也冻住了；选哪个要看具体约束，不能把容器名字当成安全或性能保证。",
+  "deep": "TypedDict 的 total/Required/NotRequired 影响静态键约束，不能用 isinstance(value, MyTypedDict) 做结构校验。dataclass(slots=True) 限制常规实例动态属性，但收益要测；frozen=True 限制字段重新赋值，不会冻结嵌套 list，也不保证线程安全或所有字段可哈希。Pydantic 通常按配置转换输入，严格模式、字段验证和业务查询仍是不同层；不存在所有模型通用的 .to_dataclass() 方法。无需给三者排固定性能倍数。",
+  "example": "Python 3.13，仅标准库，可本地运行：\n```python\nfrom typing import TypedDict\nfrom dataclasses import dataclass\nclass Item(TypedDict):\n    count: int\nx = Item(count=\"wrong\")  # 静态检查器应报错，运行时不会\nassert type(x) is dict and x[\"count\"] == \"wrong\"\n@dataclass(frozen=True)\nclass Basket:\n    items: list[str]\nb = Basket([])\nb.items.append(\"a\")\nassert b.items == [\"a\"]  # frozen 没冻结嵌套列表\ntry:\n    hash(b)\nexcept TypeError:\n    print(\"unhashable nested field\")\n```\n这段程序故意展示运行时边界，不是建议绕过校验。",
+  "interview": "TypedDict 描述字典的静态类型；可以调用其构造器，返回普通 dict，不会自动校验字段。dataclass 生成初始化等方法，默认也不做字段类型校验。Pydantic v2 提供运行时解析、校验与序列化；按边界校验、对象行为和性能需求选型，内部也可以合理使用 Pydantic。\n\n展开时先说明：区分静态类型约定、运行时容器与业务验证。",
   "followups": [
    {
-    "q": "Pydantic v2 为什么快?还有哪些场景会慢?",
-    "a": "v2 核心用 Rust(pydantic-core)重写,校验与序列化在 Rust 层——比 v1(Python)快 5~50×。仍慢的场景:超大模型(数百字段)的单次实例化、深度嵌套的海量实例(批量转换)——热点 profiling 确认后再优化(换 dataclass 或延迟校验)。"
+    "q": "边界用了 Pydantic 就不用业务检查了吗？",
+    "a": "仍需检查权限、记录存在、余额等业务条件；模型结构合法不是业务有效。"
    },
    {
-    "q": "dataclass 的 slots=True 和 frozen=True 什么时候用?",
-    "a": "slots:实例不再有 __dict__,内存省 30~50%、属性访问更快——大量实例(批量处理)用;副作用:不能动态加属性。frozen:不可变(创建后不能改)——可哈希(能进 set/dict key)、线程安全语义;内部常量配置/值对象用 frozen。两者可组合。"
-   },
-   {
-    "q": "TypedDict 能做运行时校验吗?",
-    "a": "不能——它是纯类型声明(mypy 静态检查用),运行时就是普通 dict(塞什么都行)。需要运行时校验的 dict 用 Pydantic(或 typing 的运行时检查库,但不推荐)。分工:静态保证结构一致性用 TypedDict,运行时保证用 Pydantic——PY-020 的『两道岗』在容器选型上的体现。"
+    "q": "frozen dataclass 一定能作字典键吗？",
+    "a": "不一定。自动生成的哈希还要对参与字段求哈希，list 等不可哈希字段会导致 TypeError。"
    }
   ],
   "pitfalls": [
-   "边界数据(LLM 返回)用 dataclass/TypedDict——没有运行时校验,脏数据直进业务。",
-   "批量热路径用 Pydantic 反复实例化,profiling 发现校验是热点。",
-   "TypedDict 当运行时容器用(isinstance 检查会失败——它就是 dict)。",
-   "内部简单数据也定义 Pydantic 模型+全字段校验,代码与开销双重冗余。"
+   "说 TypedDict 不能实例化。",
+   "把 frozen 等同深层不可变、可哈希和线程安全。",
+   "凭固定倍数决定性能选型。"
   ],
   "check": {
-   "q": "函数 A 接收『从 LLM 返回解析后的订单』,函数 B 接收『内部生成的分页参数』。分别用什么容器?",
-   "a": "A 用 Pydantic 模型:LLM 返回是边界数据(不可信),解析后必须运行时校验(LP-003 的闭环)——OrderExtract(BaseModel)。B 用 dataclass(slots):内部分页参数是自己构造的可信数据,轻量即可——PageParams(dataclass)。判据:数据从可信边界外还是内部来,决定校验需求与容器选择。",
-   "explain": "检验点:按『信任边界』选容器的判断,而不是『统一用一种』的教条。"
+   "q": "Item(count=\"wrong\") 一定运行时报错吗？",
+   "a": "不会，仅构造普通 dict；静态检查可能报错，运行时需另加校验。",
+   "explain": "区分静态类型约定、运行时容器与业务验证。"
   },
   "related": [
    "PY-013",
@@ -55,22 +50,45 @@
   ],
   "sources": [
    {
-    "name": "Python 官方文档 · dataclasses / typing.TypedDict",
-    "url": "https://docs.python.org/zh-cn/3/library/dataclasses.html",
     "kind": "official",
-    "note": "语义参考(未逐页抓取,标注)"
+    "name": "Python typing",
+    "url": "https://docs.python.org/3.13/library/typing.html",
+    "note": "Python 3.13；仅支持本题相关机制，工程例子为独立设计。"
    },
    {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "选型口诀为独立整理"
+    "kind": "official",
+    "name": "Python dataclasses",
+    "url": "https://docs.python.org/3.13/library/dataclasses.html",
+    "note": "Python 3.13；仅支持本题相关机制，工程例子为独立设计。"
+   },
+   {
+    "kind": "official",
+    "name": "Pydantic validators",
+    "url": "https://docs.pydantic.dev/latest/concepts/validators/",
+    "note": "Pydantic v2；仅支持本题相关机制，工程例子为独立设计。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "容器语义为官方稳定知识;选型口诀为独立整理。"
+   "checked_date": "2026-09-29",
+   "note": "核心机制已对照一手资料；设计例子不代表用户项目已完成，性能与外部服务行为未实测。"
+  },
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正 TypedDict 构造、frozen 深度与哈希、虚构转换方法和无条件性能数字。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "sources",
+    "verify"
+   ]
   }
  },
  {
@@ -239,35 +257,30 @@
    "PY-003",
    "PY-009"
   ],
-  "answer": "contextvars 提供『协程/任务本地的全局变量』:ContextVar.set() 设置的值在当前异步任务链中可见,不同请求互不干扰——解决并发下的『请求上下文传递』问题:trace_id、当前用户、租户信息在中间件设置一次,后续所有代码(包括深层调用的日志)自动读取。为什么 FastAPI 日志靠它:传统全局变量在并发下被请求互相覆盖(PY-003);层层传参污染所有函数签名;contextvars 是异步安全的隐式上下文——每个请求一个独立的值槽。配套:ContextVar 与日志 formatter(PY-009 的结构化日志自动携带)、与 SQLAlchemy 会话绑定(PY-016 的会话隔离)、跨服务的 header 传播(trace 上下文,EN-025)。",
-  "plain": "contextvars 像『每人一个的工位抽屉』:你把工牌(trace_id)放进自己抽屉,办公室所有人(深层函数)都能查到『当前是谁在办事』——而每个客人的抽屉是独立的(并发请求互不覆盖)。对比:全局变量=『一块共用的白板』(A 写上自己的名字,B 一来就擦掉写自己的——A 后续查名字查到 B);层层传参=『每办一件事都要复印一遍工牌给所有经办人』(签名污染)。比喻局限:contextvars 的值还可以在任务创建时被复制或隔离(copy_context)——抽屉比喻没有这个『上下文继承』语义。",
-  "deep": "1) 机制:ContextVar.set 返回 Token(可 reset 恢复);每个 Task/协程继承创建时的上下文快照(copy-on-write 语义)——asyncio.create_task 自动继承当前上下文;线程间不共享(每线程独立)。\n2) FastAPI 的标准模式:\n```python\nrequest_id: ContextVar[str] = ContextVar(\"request_id\", default=\"-\")\n\n@app.middleware(\"http\")\nasync def trace(request, call_next):\n    token = request_id.set(gen_id())\n    try:\n        return await call_next(request)\n    finally:\n        request_id.reset(token)      # 清理\n\n# 任意深层:logger.info(...) 自动带当前请求的 request_id(PY-009)\n```\n3) 使用场景清单:trace_id/请求 ID(PY-014)、当前用户/租户(EN-007 的租户上下文注入——DAO 强制过滤的来源)、事务/会话绑定(PY-016 的请求级会话)、特性开关快照(请求期间一致的开关状态)。\n4) 陷阱:①在错误的层级 set(中间件 set 后又在依赖里 set 不同值——覆盖混乱);②Task 的上下文继承语义:create_task 复制当前上下文(之后的 set 不影响已创建的任务)——后台任务要显式传上下文或依赖继承时机;③第三方库的线程池执行(to_thread 传播上下文,但自定义线程池要手动 copy_context,AG-023 的线程池注意);④reset 的纪律(中间件 finally reset,防长连接的上下文泄漏——WebSocket 长连接的上下文生命周期)。\n5) 与显式传参的权衡:contextvars 是隐式(签名干净但依赖关系不可见);显式传参(每个函数带 ctx 参数)更显式但签名污染。实践:横切关注点(trace/租户)用 contextvars(它们天然是环境不是参数),业务数据显式传参——隐式上下文只装『环境』不装『数据』。",
-  "example": "```python\n# 租户上下文(EN-007 的落地)\ntenant_id: ContextVar[str | None] = ContextVar(\"tenant\", default=None)\n\n# 中间件/依赖:set\n# repository 层:自动读取并注入过滤条件\nasync def get_orders(...):\n    tid = tenant_id.get()\n    if not tid:\n        raise RuntimeError(\"租户上下文缺失\")   # 防御:无上下文即失败\n    ...  # WHERE tenant_id = :tid 自动注入\n```",
-  "interview": "口述版:『contextvars 是协程本地的全局变量:中间件 set 一次,所有深层代码(含日志 formatter)自动读取,请求间互不干扰。FastAPI 日志靠它的原因:全局变量并发互踩、层层传参污染签名。三个陷阱我会主动讲:Task 的上下文继承时机(create_task 快照)、reset 纪律(长连接泄漏)、to_thread 的传播。设计边界:横切环境(trace/租户)用 contextvars,业务数据显式传参——隐式只装环境。防御性编程:读取时缺失即失败(租户上下文缺失就是请求错乱的前兆)。』追问展开:Task 继承语义、与 thread-local 的区别、租户上下文的防御。",
+  "answer": "ContextVar 把值绑定到当前执行上下文，适合请求 ID 等横切信息。asyncio Task 默认复制创建时的当前 context；以后对变量的 set 通常互不影响，但若值是可变对象，复制 context 不会深拷贝对象。它提供传播机制，不提供认证与授权。",
+  "plain": "ContextVar 像每个任务携带的环境卡片。创建子任务时复制卡片上的绑定，此后父任务换自己的编号，子任务不会自动换；但如果卡片都指向同一个可修改盒子，盒中变化仍共享。因此它不是深拷贝或权限系统。请求结束时恢复旧绑定，让下一段工作不会误用当前环境，业务身份仍由认证确定。",
+  "deep": "ContextVar 建议在模块级创建，保存请求标识等上下文绑定；set 返回 token，用 try/finally 中的 reset 恢复之前的绑定，而不是统一重置为空。这样嵌套调用临时覆盖值时，退出后还能回到外层请求。token 不能重复使用，也不能拿其他 context 的 token 恢复当前绑定。\n\nasyncio Task 默认继承创建时的 context，之后父任务重新 set 不会更新已创建任务；但绑定若指向同一可变对象，修改对象仍可能相互可见，不能把浅层复制理解为深拷贝。asyncio.to_thread 提供上下文传播，其他线程池或进程边界必须检查实际 API；跨进程任务通常把关联 ID 显式写进任务载荷，并在 worker 的处理范围内设置和恢复。\n\n日志设计要在请求仍有正确上下文时取值。如果先把日志发给后台线程，再在那里读请求 ContextVar，读到的可能是后台线程的上下文；可在生产日志记录时附加关联 ID，消费者只负责输出。租户字段必须来自可信认证并在数据访问层检查；ContextVar 便于传递信息，不是权限证明。关键业务函数仍可接收显式参数，减少隐藏依赖，便于单独测试。",
+  "example": "Python 3.13，仅标准库，可本地运行：\n```python\nimport asyncio\nfrom contextvars import ContextVar\nrequest_id = ContextVar(\"request_id\", default=\"unset\")\nasync def main():\n    async def read():\n        await asyncio.sleep(0)\n        return request_id.get()\n    token = request_id.set(\"first\")\n    try:\n        task = asyncio.create_task(read())\n        request_id.set(\"second\")\n        assert await task == \"first\"\n    finally:\n        request_id.reset(token)\n    assert request_id.get() == \"unset\"\n    print(\"context restored\")\nasyncio.run(main())\n```",
+  "interview": "ContextVar 把值绑定到当前执行上下文，适合请求 ID 等横切信息。asyncio Task 默认复制创建时的当前 context；以后对变量的 set 通常互不影响，但若值是可变对象，复制 context 不会深拷贝对象。它提供传播机制，不提供认证与授权。\n\n展开时先说明：区分变量重新绑定与共享对象修改。",
   "followups": [
    {
-    "q": "contextvars 和 threading.local 的区别?",
-    "a": "threading.local 是线程级(一线程一值);contextvars 是『上下文级』——一个线程内可以有多个并发上下文(asyncio 任务),且上下文可显式复制传播。async 环境必须用 contextvars(thread.local 在协程切换时共享错误——同线程的所有协程看到同一个值,请求互踩)。历史迁移:老代码的 threading.local 在 async 化时必须改造。"
+    "q": "ContextVar 里放 list 是否隔离列表修改？",
+    "a": "不自动隔离。context 复制保留对象引用，避免共享可变值或主动复制并明确所有权。"
    },
    {
-    "q": "create_task 的上下文继承有什么注意?",
-    "a": "任务继承创建时刻的上下文快照:set 之后创建的任务看到新值,创建之后 set 的不影响已创建任务。场景:后台任务要在创建时捕获当前请求的 trace_id(自动继承✅);但后台任务自己 set 的新值不影响创建者(隔离✅)。长生命周期的 worker(启动时创建,之后每请求 set)——worker 内读不到请求上下文(要显式传递)!这是 background worker 丢 trace 的经典原因(PY-024)。"
-   },
-   {
-    "q": "租户上下文缺失就抛错,会不会太严格?",
-    "a": "不严格,是防御:租户上下文缺失意味着请求未经鉴权中间件(内部调用忘了挂中间件/新入口没接入)——此时 DAO 若用『默认租户』或不过滤,就是越权事故(RG-015 的铁律)。fail fast 于缺失上下文,逼所有入口正确接入——比静默放行(数据混租)便宜一万倍。例外:系统级任务(无租户语义的清理任务)显式声明 system 上下文(显式的例外,不是默认的豁免)。"
+    "q": "启动时创建的 worker 能自动读后来请求的 ID 吗？",
+    "a": "不能依赖这种行为；通过任务载荷显式传递，再在 worker 处理范围设置和重置。"
    }
   ],
   "pitfalls": [
-   "async 项目用 threading.local,请求间值互踩(经典迁移 bug)。",
-   "后台 worker 读不到请求上下文(create_task 时机),trace 断链。",
-   "中间件不 reset,长连接/WebSocket 的上下文泄漏到后续逻辑。",
-   "把业务数据塞进 contextvars(应只装环境),隐式依赖失控。"
+   "把 context 复制说成对象深拷贝。",
+   "将未经认证的租户参数当授权来源。",
+   "不 reset 或日志初始化时就缓存请求值。"
   ],
   "check": {
-   "q": "日志里 trace_id 全是同一个值(所有请求共享)。最可能的原因?",
-   "a": "trace_id 用了全局变量或 threading.local 而不是 contextvars——并发请求互相覆盖( everyone 看到最后一个请求的 ID)。也可能:中间件 set 的时机在响应后(顺序错)、或日志 formatter 读的是模块级缓存(读了一次就固定)。排查顺序:确认 ContextVar 的使用(不是普通变量)→确认中间件的 set 在 call_next 前→确认 formatter 动态读取(record 时取值,不是初始化时)。这是 async 化项目的经典第一坑。",
-   "explain": "检验点:trace_id 共享的根因(全局变量/threading.local)与三处检查点。"
+   "q": "子任务创建后父任务 set 新 ID，子任务会自动看到吗？",
+   "a": "默认不会，它使用创建时复制的 context；可变对象内部修改属于另一问题。",
+   "explain": "区分变量重新绑定与共享对象修改。"
   },
   "related": [
    "PY-003",
@@ -281,22 +294,39 @@
   ],
   "sources": [
    {
-    "name": "Python 官方文档 · contextvars",
-    "url": "https://docs.python.org/zh-cn/3/library/contextvars.html",
     "kind": "official",
-    "note": "语义参考(未逐页抓取,标注)"
+    "name": "Python Context Variables",
+    "url": "https://docs.python.org/3.13/library/contextvars.html",
+    "note": "Python 3.13；仅支持本题相关机制，工程例子为独立设计。"
    },
    {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "FastAPI 模式与陷阱为独立整理"
+    "kind": "official",
+    "name": "Python asyncio tasks",
+    "url": "https://docs.python.org/3.13/library/asyncio-task.html",
+    "note": "Python 3.13；仅支持本题相关机制，工程例子为独立设计。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "contextvars 语义为官方稳定知识;FastAPI 模式为独立整理。"
+   "checked_date": "2026-09-29",
+   "note": "核心机制已对照一手资料；设计例子不代表用户项目已完成，性能与外部服务行为未实测。"
+  },
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正 context 深拷贝暗示与安全来源，加入创建时继承测试。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "sources",
+    "verify"
+   ]
   }
  },
  {

@@ -10,8 +10,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function open(page, hash) {
   await page.goto(BASE + '/index.html' + hash);
   await page.waitForFunction(() => typeof Store !== 'undefined' && Store.data.ui.lastHash === location.hash && document.querySelector('#view > *'));
+  if (hash.startsWith('#/study/')) await page.waitForSelector('#note-area');
   const anchor = new URLSearchParams(hash.split('?')[1] || '').get('a');
-  if(anchor) await page.locator(`[data-sec="${anchor}"].open`).waitFor();
+  if(anchor) await page.locator(`[data-sec="${anchor}"].open.flash`).waitFor();
   await page.locator('body').ariaSnapshot();
 }
 (async () => {
@@ -53,8 +54,10 @@ async function open(page, hash) {
     await page.locator('#global-search-input').fill('fencing token'); await page.locator('#global-search-input').press('Enter');
     const target = page.locator('a[href="#/study/AG-033?a=deep"]').first(); await target.waitFor();
     check('fusion-only phrase is searchable at the original question', await target.count() === 1);
-    await target.click(); await page.locator('[data-sec="deep"].open').waitFor();
+    await target.click(); await page.locator('[data-sec="deep"].open.flash').waitFor();
     check('search opens the deep section containing the supplement', (await page.locator('[data-sec="deep"]').innerText()).includes('失联不等于进程已停止'));
+    const bounds = await page.locator('[data-sec="deep"]').boundingBox();
+    check('search anchor lands in the visible viewport', bounds && bounds.y >= 0 && bounds.y < 200);
     await open(page, '#/docs/doc-ai-series-1');
     check('source index contains all 98 article references', await page.locator('#view a[href^="https://xiaolinnote.com/ai/"]').count() === 98);
     check('source index links to both new and original questions', await page.locator('#view a[href="#/study/LC-001"]').count() > 0 && await page.locator('#view a[href="#/study/AG-001"]').count() > 0);

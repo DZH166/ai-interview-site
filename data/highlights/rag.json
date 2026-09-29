@@ -1,6 +1,6 @@
 {
   "topic": "rag",
-  "checked_date": "2026-09-16",
+  "checked_date": "2026-09-29",
   "note": "",
   "questions": {
     "RG-001": {
@@ -312,74 +312,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "再用重排模型对『问题+每个候选段落』逐对精细打分,选出真正相关的 top 3~5",
-          "why": "rerank 的核心动作"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "答案常被排在 5 名以外时",
-          "why": "值得加 rerank 的时机"
-        },
-        {
-          "field": "plain",
-          "level": "term",
-          "text": "重排=技术面试官把每份简历和 JD 放在一起细读再打分",
-          "why": "rerank 的比喻"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "没有海选,面试官忙不过来;没有面试,录用的人不对",
-          "why": "召回+重排两段缺一不可"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "rerank 解决的是召回噪声:双塔检索快但 query 和文档没有词级交互",
-          "why": "为什么 rerank 更准"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "上线前一定对比加与不加的端到端指标",
-          "why": "上线的工程红线"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "向量检索(双塔)把 query 和 doc 各自独立编码成向量",
-          "why": "双塔机制"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "注意力能对齐『能改吗』和『修改步骤』这种细粒度对应",
-          "why": "交叉编码器为什么准"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "召回 top-k(k=50~100,双路混合)→ rerank 输出相关性分 → 按分排序取 top-n(n=3~6)→ 进提示词",
-          "why": "rerank 的标准流程参数"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "知识库很小(几十条)或召回已经很准时,rerank 收益有限",
-          "why": "不该加 rerank 的边界"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "相关答案排第 1 但三个『相似不相关』紧贴其后",
-          "why": "召回噪声的实例"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "分差拉开,前 3 进入提示词,噪声被挤出",
-          "why": "rerank 效果的实例"
+          "text": "正确证据必须先进入候选",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -388,74 +322,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "向量检索匹配『语义』,BM25 匹配『精确词』",
-          "why": "两路各自的强项"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "两者的失败模式几乎不重叠",
-          "why": "混合检索互补的核心结论"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "两路证词合并,比任何一路单独作证都可靠",
-          "why": "混合互补的直觉"
-        },
-        {
-          "field": "plain",
-          "level": "term",
-          "text": "RRF 公式是倒数求和(1/排名),不是简单相加名次",
-          "why": "RRF 公式术语"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "混合检索解决的是失败模式互补:语义改写靠向量,精确符号靠 BM25",
-          "why": "混合检索的核心判据"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "我会上评测集验证混合确实≥单路,再串 rerank 精排",
-          "why": "上线须验证的红线"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "BM25 一句话:基于词频的经典打分",
-          "why": "BM25 一句话定义"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "查询词在文档出现越多、词越稀有、文档越短越精确,分数越高",
-          "why": "BM25 的打分直觉"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "k 常取 60(平滑用)",
-          "why": "RRF 平滑参数细节"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "加权分数:各路分数归一化后加权(如 0.6 向量 + 0.4 BM25),可调但脆",
-          "why": "加权融合脆弱的红线"
-        },
-        {
-          "field": "example",
-          "level": "warn",
-          "text": "E-4021 语义信号弱,结果跑偏",
-          "why": "向量路对精确符号弱的实例"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "两路互补正是价值所在",
-          "why": "混合检索价值收束句"
+          "text": "可互补但不保证优于单路",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -768,74 +636,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "切分时给每块稳定 ID 与元数据(文档、章节、页码)",
-          "why": "引用数据基础"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "用轻量模型/NLI 判断每个带引用的句子是否真被对应块支持",
-          "why": "句级校验防线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "好引用=读者点开脚注能看到原话(可验证)",
-          "why": "好引用的标准"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "比不标更糟,因为它借用了『有出处』的信任",
-          "why": "引用表演更糟的红线"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "模型很擅长把引用标得很好看,不校验等于裸奔",
-          "why": "必须校验的红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "前端引用必须可点击跳原文并显示版本日期,这是用户信任的基础",
-          "why": "前端可点击可溯源"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "全局唯一且稳定(文档重建时保持可追溯,用 内容hash+版本 而非自增号)",
-          "why": "稳定 ID 设计要点"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "要求『逐句标注』而非『整段标一个』",
-          "why": "粒度决定可校验性"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "每个论断句取其标注的块,用 NLI/轻量模型判断 entailment(支持/矛盾/无关)",
-          "why": "对齐与判定术语"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "矛盾→拦截该句或整答降级;全部无引用且含事实→触发拒答改写",
-          "why": "处置逻辑红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "当年未休年假可按日薪 300% 折算",
-          "why": "引用对齐实例"
-        },
-        {
-          "field": "example",
-          "level": "warn",
-          "text": "这是模型编造",
-          "why": "未支持即编造的实例"
+          "text": "引用 ID 存在只是第一步",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -844,74 +646,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "检索为空/分数低于阈值、证据互相冲突且无法判定、问题超出知识库范围(自查询判断)、模型自评『证据不足』",
-          "why": "什么时候拒的判据"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "宁可说不知道,不可一本正经地编",
-          "why": "拒答核心红线"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "硬编一个答案才是零分",
-          "why": "编造代价红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "漏答率(该答没答)和错答率(不该答硬答),两头都要看",
-          "why": "两类错误都要看"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "编造的代价远高于拒答,但必须监控过度拒答率防止产品不可用",
-          "why": "两类错误权衡红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "高频拒答聚起来就是知识库建设清单",
-          "why": "拒答反哺知识库"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "top-k 分数断层(第一名远低于历史正常水平)",
-          "why": "检索层触发信号"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "话术统一管理,别让每个 prompt 各写一套",
-          "why": "话术统一红线"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "阈值过高→过度拒答,过低→硬答幻觉。灰度调参,监控双指标",
-          "why": "阈值权衡红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "原则:风险越高越偏保守,但要量化过度拒答率防止『把产品做成摆设』",
-          "why": "保守但有量化底线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "应答组 top1 分数:0.62 ~ 0.95(中位 0.81)",
-          "why": "阈值标定分布实例"
-        },
-        {
-          "field": "example",
-          "level": "warn",
-          "text": "过度拒答率 = 3%(每周人工抽检确认是否真该拒)",
-          "why": "过度拒答率监控实例"
+          "text": "区分检索失败、资料缺失、冲突与问题不清",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -996,74 +732,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "解析→切分→向量化→写入时带版本与内容 hash,未变的块 ID 不变(增量更新)",
-          "why": "增量更新管线"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "核心原则:索引是派生物,一切以文档真相源为准,任何派生都可重建",
-          "why": "索引是派生物原则"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "不是把旧书撕了随便塞新页(原地覆盖)",
-          "why": "红线:别原地覆盖"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "书架上『新书到货』前先少量上架试卖(灰度)",
-          "why": "灰度切换比喻"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "最容易漏的是三个联动:语义缓存失效、旧引用的可追溯访问、更新后的检索回归",
-          "why": "三个联动易漏红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "大改版双版本灰度可回滚",
-          "why": "双版本可回滚"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "查询默认只取 status=生效 的最新版本(元数据过滤,见 RG-007 自查询);保留下线版本供引用回溯",
-          "why": "版本过滤与回溯"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "管线幂等:同一输入跑两次结果一致(可安全重试)",
-          "why": "幂等可重试"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "大改版→双版本并存+灰度(新版本服务 10% 流量,评测对比后全量);出问题秒级回滚",
-          "why": "双版本灰度切换"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "更新后跑评测集(RG-009),特别是涉及被更新主题的 case",
-          "why": "更新须回归红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "120 块中 87 块未变(复用)",
-          "why": "增量比对复用实例"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "v3 置为生效(过滤条件切换),v2 标记 archived(仍可访问)",
-          "why": "版本切换与归档实例"
+          "text": "证据版本需可区分",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1136,74 +806,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "现代多语言 embedding 模型(训练语料覆盖多语言,对齐到同一语义空间)可以做到『中文问题命中英文文档』",
-          "why": "多语言 embedding 跨语言命中"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "混合检索的关键词路是单语言的——BM25 对跨语言无效",
-          "why": "关键词路跨语言失效红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "多语言 embedding 像一个懂多国语言的图书管理员",
-          "why": "多语言 embedding 比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "『按书名关键字翻找』(BM25)的老管理员只会字面匹配",
-          "why": "关键词路字面匹配失效"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "多语言 embedding 训练时用平行语料(同一句话的多语言版本)做对比学习",
-          "why": "对齐原理"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "构造跨语言评测集(每种语言 30~50 条:问题+目标文档)",
-          "why": "跨语言评测集做法"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "常见组合:向量路跨语言 + 查询翻译补关键词路",
-          "why": "混合检索组合建议"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "术语一致性(产品名不翻译)要维护术语表",
-          "why": "术语一致性红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "跨语言的核心是多语言 embedding 把各语言对齐到同一语义空间",
-          "why": "口述核心定义"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "专用单语言模型在各自语言上通常仍更强,全语言一个模型是取舍",
-          "why": "单语vs多语权衡红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "库:英文 HR 手册(源文档)+ 中文翻译版(重要文档入库时生成)",
-          "why": "双语入库做法"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "直接命中英文 「Paternity Leave Policy」(多语言 embedding)",
-          "why": "向量路跨语言命中实例"
+          "text": "实际语言对和术语测试",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1504,74 +1108,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "HyDE 的做法:先用 LLM 根据问题生成一段『假设性答案』",
-          "why": "HyDE 做法定义"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "事实错误不影响大局,因为检索匹配的是『形态与主题』,不是事实",
-          "why": "事实错误不影响红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "HyDE 就是这个『先编后搜』",
-          "why": "HyDE 比喻"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "真实 HyDE 用的是向量相似不是关键词",
-          "why": "双路并用"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "表述形态错位",
-          "why": "HyDE 适用前提术语"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "对时效敏感库慎用(假设可能是旧知识)",
-          "why": "时效库风险红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "缓解:假设答案与原问题双路检索后 RRF 融合,原问题路保底",
-          "why": "双路融合保底"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "上 HyDE 前后跑 recall@k 对比",
-          "why": "须评测验证"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "HyDE 的洞察是「问句和答案在向量空间形态错位」",
-          "why": "口述核心洞察"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "工程上我必配双路:假设答案路+原问题路 RRF 融合,防假设偏见带偏",
-          "why": "双路防偏见红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "怎么把发票抬头改成公司?",
-          "why": "用户查询示例"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "请直接写一段可能包含答案的知识库条目(可含错误)",
-          "why": "假设答案生成提示"
+          "text": "不把假设文档当证据",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1580,74 +1118,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "HyDE 在查询侧——在线为每个问题生成假设答案去检索",
-          "why": "HyDE 变换侧"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "HyPE 在建库侧——离线为每个文档块生成多个『它可能被怎么问到』的假设问题",
-          "why": "HyPE 变换侧"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "HyDE=客人每次来,现场派一个员工『猜客人会怎么问』再去匹配",
-          "why": "HyDE 比喻"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "HyPE=开店前把每件商品可能被问到的问题都写在标签上",
-          "why": "HyPE 比喻"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "一父多索引",
-          "why": "HyPE 索引结构术语"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "HyPE 失败于『问题分布外』(真实问法不在预生成的假设里",
-          "why": "HyPE 分布外失败红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "HyPE 的 LLM 成本在建库时一次性付出(库更新时增量补),在线零额外开销",
-          "why": "成本结构对比"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "都应与原始向量检索并存(保留一条『朴素路』做保底与对照)",
-          "why": "保留朴素路保底红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "两者同源于「问句-答案形态错位」,差别在变换侧",
-          "why": "口述核心"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "生产上无论用哪个都保留朴素向量路做保底,用评测集验证增益",
-          "why": "朴素路保底红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "for chunk in chunks:",
-          "why": "HyPE 建库遍历块"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "for q in questions:",
-          "why": "为每个块生成假设问题"
+          "text": "缩写不是所有论文和框架的统一命名",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1656,62 +1128,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "语义切分在『句子向量相似度骤降处』断开,让每块主题内聚",
-          "why": "语义切分定义"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "对结构清晰的文档(本身有标题层级)收益有限——结构感知切分(RG-002)已经免费拿到了边界",
-          "why": "有结构文档不必语义切分"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "语义切分像『按话题切』——发现前后句子『说的不是一件事』了才下刀",
-          "why": "语义切分比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "语义切分判定的是『向量相似度骤降』",
-          "why": "判定的是相似度非理解"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "相似度低于移动平均 X 个标准差处断开",
-          "why": "骤降点判定"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "无结构长文本(访谈记录、聊天导出、自由写作)——没有标题可依赖",
-          "why": "语义切分适用场景"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "结构切分直接拿边界",
-          "why": "有结构文档不必语义切分"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "语义切分不是默认更优,必须实测(RG-009)",
-          "why": "必须实测红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "语义切分按「向量相似度骤降」找话题边界,块的主题纯度更高",
-          "why": "口述核心"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "无结构纯文本才上语义切分",
-          "why": "必须实测红线"
+          "text": "固定或结构分块是应保留的基线",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1720,74 +1138,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "块增强=让每个孤立的块携带足够的上下文",
-          "why": "块增强定义"
-        },
-        {
-          "field": "answer",
-          "level": "term",
-          "text": "上下文块头——在块前拼接文档标题+章节路径",
-          "why": "上下文块头术语"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "在碎片上方补一行『(《差旅制度》第 4 节·交通费·2024 版)』",
-          "why": "块头补上下文实例"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "增强还可以是『主动生成』的",
-          "why": "增强也可是主动生成"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "上下文块头(contextual chunk headers)三件套:文档标题+章节路径+文档级摘要",
-          "why": "块头三件套术语"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "标题要选『有信息量的』(部门/主题/版本),不要塞页码噪声",
-          "why": "标题噪声红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "元数据增强:适用范围/生效日期/密级——除了检索,还是权限过滤(RG-015)与版本管理(RG-014)的基础",
-          "why": "元数据的双重作用"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "增强不是越多越好,噪声标题也会稀释向量信号",
-          "why": "增强非越多越好红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "块增强四招:上下文块头(标题+章节路径拼进块文本)",
-          "why": "口述块头"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "每项增强逐项开关跑评测确认边际收益——噪声增强也会稀释向量",
-          "why": "逐项评测红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "原块:「报销比例为实际发生额的 70%,上限 800 元/晚。」",
-          "why": "原块无上下文"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "①嵌入信号含『住宿标准』",
-          "why": "块头提升检索实例"
+          "text": "不能让生成背景改变原文含义",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1795,69 +1147,9 @@
       "spans": [
         {
           "field": "answer",
-          "level": "term",
-          "text": "稠密嵌入:文本→固定维度的紧凑向量(如 1024 维,几乎每维非零)",
-          "why": "稠密定义"
-        },
-        {
-          "field": "answer",
           "level": "key",
-          "text": "两者是互补而非二选一——现代检索栈常见『稠密(语义)+稀疏(词面)』混合",
-          "why": "互补而非二选一"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "稠密=把整段话压成一个密集的『意思指纹』",
-          "why": "稠密比喻"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "SPLADE 是学出来的点亮规则(还会点亮同义词的格子",
-          "why": "SPLADE 扩展同义词"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "稠密:维度固定(384~3072),语义压缩,同义/跨语言/隐含主题可匹配",
-          "why": "稠密本质"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "保留词面精确性的同时获得语义扩展——『E-4021』『AX-9』这类精确符号依旧强",
-          "why": "learned sparse 价值"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "多语言→稠密(稀疏跨语言弱,需分词器/翻译,RG-016)",
-          "why": "多语言选稠密"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "本质区别在表示空间:稠密是固定维度语义指纹,泛化好但不可解释",
-          "why": "口述本质区别"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "稀疏侧从 BM25 升级到 learned sparse 是低风险的增强路径",
-          "why": "低风险增强路径"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "查询「错误码 E-4021」:稀疏全胜(精确词面),稠密大概率跑偏",
-          "why": "精确符号稀疏胜"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "doc 侧扩展点亮了『退款』",
-          "why": "SPLADE 扩展同义词"
+          "text": "取决于训练与输入约定",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1866,74 +1158,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "值得微调的信号:①领域术语错位(医疗/法律/内部黑话,通用模型不敏感)",
-          "why": "微调信号"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "用对比学习损失(InfoNCE 类)训练,锚定『难负例』质量是效果关键",
-          "why": "难负例是效果关键红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "微调=带它入行:拿你们行业里『问题-正确文档』的配对让它反复练习",
-          "why": "微调比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "要防止把通用语义能力练坏(灾难性遗忘,AD-001)",
-          "why": "防灾难性遗忘红线"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "改写/块增强/混合检索/rerank 全部用尽且评测显示瓶颈在『向量区分度』",
-          "why": "微调是最后手段红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "难负例质量决定微调上限",
-          "why": "难负例决定上限"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "留出通用检索测试集(监控通用能力退化)、混合通用数据回放",
-          "why": "防灾难性遗忘红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "领域 recall@k/MRR 提升 ≥ 有意义阈值(如 +5%)+ 通用集不退化 + 端到端忠实度验证",
-          "why": "验收三条件"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "微调嵌入是「最后一张牌」:先穷尽改写/增强/混合/rerank,评测确认瓶颈在向量区分度才动",
-          "why": "口述微调纪律"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "最后别忘了重嵌入全库的成本",
-          "why": "重嵌入成本红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "命中被采纳的块(手术安全核查)",
-          "why": "正例构造"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "当前模型 top10 里相似度最高的『错误答案』",
-          "why": "难负例定义"
+          "text": "数据量没有通用最低门槛",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -1941,63 +1167,9 @@
       "spans": [
         {
           "field": "answer",
-          "level": "term",
-          "text": "Matryoshka 嵌入(套娃模型)是训练时就设计好的降维友好",
-          "why": "套娃嵌入术语"
-        },
-        {
-          "field": "answer",
           "level": "key",
-          "text": "典型组合:二值量化+重打分(1-bit 存储、原向量精排 top 候选)是亿级规模的主流方案",
-          "why": "工业组合"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "降维=把 1024 维砍到 256 维(整段信息均匀变少,像把文章缩写到 1/4 长)",
-          "why": "降维比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "二值量化几乎必然要『重打分』兜底",
-          "why": "二值必重打分红线"
-        },
-        {
-          "field": "deep",
-          "level": "term",
-          "text": "Matryoshka(模型训练时保证前缀可用,截断即可用)",
-          "why": "套娃机制术语"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "32×节省+位运算超快(汉明距离)",
-          "why": "二值量化收益"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "原向量重打分取 top-k(两阶段检索)",
-          "why": "两阶段检索标配"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "每一步用 recall@k 对照全精度基线(RG-009),退化超阈值即回退",
-          "why": "实测对照基线红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "量化砍数值精度(维度不变,INT8 平滑、二值激进但快 32 倍)",
-          "why": "量化机制"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "决策顺序:先量化后降维",
-          "why": "决策顺序红线"
+          "text": "不要求 embedding 模型先做 MRL 训练",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -2234,74 +1406,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "rerank 不是银弹,常见失败模式五种",
-          "why": "总起"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "级联放大(rerank 分数被下游当绝对置信度用,分数尺度变化引发拒答误判)",
-          "why": "级联放大红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "重排是『第二轮面试官』,它自己也会看走眼",
-          "why": "重排比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "最后 HR 把面试分当唯一录取标准(级联放大)",
-          "why": "级联放大比喻"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "分语言评测 rerank 增益,某语言增益为负",
-          "why": "语言失配修法"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "查询类型错位:精确符号类查询在 rerank 后反而掉",
-          "why": "查询类型错位红线"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "rerank 分数只用于排序,不要直接当『相关性置信度』做拒答/分支决策",
-          "why": "级联放大红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "rerank 上线时建立『分桶基线』,任何上游变更(嵌入/切分/提示词)后重跑分桶回归",
-          "why": "分桶基线预防"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "诊断核心是「分桶评测」——全局指标好看不等于每类查询都受益",
-          "why": "口述诊断核心"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "rerank 分数只管排序,别直接当置信度用",
-          "why": "级联放大红线"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "修法:英文路由到多语言 rerank 模型;符号类查询跳过 rerank",
-          "why": "修法实例"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "全局指标恢复了,分桶才暴露问题——这就是分桶的价值",
-          "why": "分桶价值"
+          "text": "正确证据有没有进入候选",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -2754,68 +1860,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "①表达容量——高维区分更细粒度的语义差异,recall 上限更高",
-          "why": "维度权衡一"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "中等维度(768~1536)常已接近天花板",
-          "why": "维度权衡三"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "结论倾向:大多数应用 768~1536 维足够,3072 维旗舰的价值在极细粒度区分场景",
-          "why": "结论倾向"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "1024 维是『街区级地图』,3072 维是『门牌级地图』——找一栋楼(细粒度区分)门牌级更好",
-          "why": "维度比喻"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "维度是「表达容量×存储延迟」的权衡,且边际递减——多数场景 768~1536 够用",
-          "why": "口述权衡"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "维度的钱不如花在 rerank——同成本下重排边际收益更高",
-          "why": "维度钱不如rerank"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "同模型套娃截断(256/512/768/1536)跑评测集 recall@k——典型曲线:768→1536 提升 1~3%",
-          "why": "边际递减结论"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "维度只在你『同模型截断』或『同家族对比』时才是可控变量",
-          "why": "跨模型不可比红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "1000 万向量:768 维 FP32≈30GB,1536≈60GB,3072≈120GB",
-          "why": "存储数学示例"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "与 rerank 的联动:『中维度检索+强 rerank』通常优于『高维检索+无 rerank』",
-          "why": "维度与rerank联动"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "决策:1024 维(+0.02 recall 的 3072 不值 2× 存储)",
-          "why": "维度拐点决策实例"
+          "text": "维度高不保证检索质量高",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -2824,68 +1870,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "①开源交叉编码器(bge-reranker 类)——可私有化、延迟可控(自部署)",
-          "why": "开源路线取舍"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "③LLM 当 reranker(listwise/pointwise 打分)——最强语义理解",
-          "why": "LLM路线取舍"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "基线纪律:先无 rerank 基线,再逐个实测(RG-009)",
-          "why": "无基线红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "请总工程师亲自把关(LLM reranker)——眼光最好,但一小时看不了几件(慢贵)",
-          "why": "LLM reranker比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "样品要寄出去(数据出域)且每件都收费",
-          "why": "商用API出域代价"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "开源自部署(可私有化可微调——领域术语强的库这是核心优势,代价是 GPU 运维)",
-          "why": "口述开源路线"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "LLM reranker(最强语义+理由可读,贵慢 10~100×,只适合小候选集或离线)",
-          "why": "LLM路线边界"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "微调:领域难例对(RG-026 的难负例思想)可显著提升领域表现——这是相对商用 API 的核心优势",
-          "why": "开源可微调优势"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "代价:数据出域(文档内容发第三方——合规评估,EN-012)、网络延迟(20~100ms)、按量计费(高频场景成本可观,RG-018 的账)",
-          "why": "商用API代价"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "成本与延迟比交叉编码器高 10~100×,只适合 top 5~10 的小候选集或离线",
-          "why": "LLM候选集限制"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "决策流程:无 rerank 基线 → 合规约束筛查(出域?)→ 延迟与成本预算 → 候选实测(同评测集)→ 领域微调需求评估 → 分桶验证(RG-031)",
-          "why": "决策流程"
+          "text": "实际任务质量",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -2894,68 +1880,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "RRF(倒数排名融合)——只用排名不碰分数量纲,稳健默认(RG-006)",
-          "why": "RRF默认稳健"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "某路静默失败(向量服务挂了只剩 BM25,质量降级无告警——要每路健康监控)",
-          "why": "静默失败红线"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "⑤级联过滤——某路高置信直接短路(精确 ID 命中直接置顶)",
-          "why": "级联过滤策略"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "RRF=『只看各评委的名次,不看打分』(不同评委打分尺度不同,名次最公平)",
-          "why": "RRF比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "某位评委缺席了没人发现(某路静默失败)",
-          "why": "静默失败比喻"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "合并策略按成熟度演进:冷启动 RRF(零调参稳健)",
-          "why": "口述演进"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "某路静默失败(必须每路健康告警——这是级联失败的起点)",
-          "why": "静默失败级联起点"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "冷启动:RRF(k=60 默认)——零调参稳健",
-          "why": "冷启动策略"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "健康监控:每路独立返回数/延迟/分数分布——某路空结果或延迟尖刺告警(RG-032 的级联防护:静默失败是级联的起点)",
-          "why": "健康监控红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "分数透传:融合后保留每路的原始贡献(排查『为什么这个块排第一』需要各路证据,RG-004 排查的依赖)",
-          "why": "分数透传"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "融合改进常只提升 recall 一两个点,但它是免费的(纯排序逻辑)",
-          "why": "融合免费收益"
+          "text": "没有通用最优方案",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -3414,62 +2340,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "单阈值(相似度)只是信号之一,融合框架把五类信号加权决策",
-          "why": "单阈值不够"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "⑤历史信号——同类问题的历史拒答/差评率(这类问题系统历来答不好)",
-          "why": "历史信号"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "设计纪律:每个信号独立监控(哪个信号误判可归因)、决策留痕(拒答理由可解释)、阈值可按主题分级(RG-012)",
-          "why": "设计纪律红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "拒答决策像医生问诊:不能只量体温(单一相似度)",
-          "why": "问诊比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "单一体温 37.8 度就拒收,会把大量正常人也拒了;全面评估才准",
-          "why": "单阈值误拒红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "拒答融合的五类信号:检索(分数/断层)、主题覆盖先验、模型两级自评、多路一致性、历史聚类表现——单相似度阈值的信息量太少",
-          "why": "口述五类信号"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "覆盖:主题分类器(问题主题→库内该主题的文档密度表)——密度低=先天不足(拒答与主题相关的先验)",
-          "why": "覆盖信号"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "规则树(起步):硬规则(空检→必拒)+加权投票(软信号)+否决项(合规类问题必转人工,LP-009);可解释、可调试",
-          "why": "规则树起步"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "决策输出设计:不只输出『拒/答』,输出『置信分+理由』——高置信直接答;中置信答+标注不确定性;低置信拒答(带理由与出口,RG-012 的话术)",
-          "why": "三态输出"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "融合器本身要评估——用标注集测『应答误拒率/应拒误答率』(RG-012 的两类错误),对比单阈值基线证明融合价值",
-          "why": "融合器自身评估红线"
+          "text": "不证明事实正确",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -3611,69 +2483,9 @@
       "spans": [
         {
           "field": "answer",
-          "level": "term",
-          "text": "rerank 训练数据的形态:查询-正例-负例的三元组(或多负例组)",
-          "why": "数据形态定义"
-        },
-        {
-          "field": "answer",
           "level": "key",
-          "text": "负例的关键是『难』——用当前检索系统 top 候选中『相似但不相关』的",
-          "why": "难负例核心"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "标注的粒度可以更细(相关度分级 0~3,不只二分类)",
-          "why": "分级标注价值"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "负例的关键是『难』——简历漂亮但不合适的『高仿负例』",
-          "why": "难负例比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "rerank 可以输出分级(0~3 的相关度),不只二分",
-          "why": "分级差异红线"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "先 rerank 后嵌入微调的顺序(RG-026 的判据)",
-          "why": "顺序决策红线"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "rerank 逐对打分数据量小、部署影响局部(只换精排)、风险低",
-          "why": "风险低差异"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "分级标注的价值:二分类训出的 rerank 只会『相关/不相关』",
-          "why": "分级标注价值"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "分级(部分回答/完全回答)让它学会『排序』——top-k 的内部顺序优化需要分级信号",
-          "why": "排序需分级"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "难负例的『难度分布』(太容易=学不到,太难=标注噪声)",
-          "why": "难负例难度红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "课程式训练(易→难的负例递进)+失败分析(当前 rerank 的错误 case→定向补数据,RG-031 的分桶联动)",
-          "why": "迭代方式"
+          "text": "没有通用结论",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -3682,74 +2494,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "MTEB 类综合基准(多任务:检索/聚类/分类/STS)提供粗筛信号",
-          "why": "MTEB 粗筛定位"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "④污染风险——热门模型可能过拟合榜单",
-          "why": "污染风险红线"
-        },
-        {
-          "field": "answer",
-          "level": "key",
-          "text": "自建评测集的质量决定选型的可信度——这是『评测先于选型』的又一体现",
-          "why": "评测先于选型"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "MTEB 榜单像『高考平均分排行』:能说明学生(模型)的基础素质",
-          "why": "榜单比喻"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "按维度切榜单看,而不是看总分",
-          "why": "不要只看总分红线"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "MTEB 的四个偏差:任务/语言/指标/污染——它是粗筛信号不是选型依据",
-          "why": "四偏差红线"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "许可坑必查(学术模型禁商用)",
-          "why": "许可红线"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "不能做的:直接按排名选型(偏差如上)",
-          "why": "选型红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "规模:100~300 对起步(粗排够用),500+ 对细排",
-          "why": "评测集规模"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "许可坑:部分学术模型禁止商用(选型前查许可,RG-009 的来源治理同源)",
-          "why": "许可红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "切换不是免费的,选型时把『未来切换成本』也算进去(锁定意识,EN-022 的供应商治理在嵌入模型的同构)",
-          "why": "锁定效应"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "决策:B(质量差距 2% 内,成本与部署更优)",
-          "why": "多维决策收束"
+          "text": "不能把它等同单一英文检索 nDCG 榜",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },
@@ -4108,62 +2854,8 @@
         {
           "field": "answer",
           "level": "key",
-          "text": "标准管线是『先检索全部→再流式生成』(引用编号在生成前已知)",
-          "why": "标准管线"
-        },
-        {
-          "field": "answer",
-          "level": "warn",
-          "text": "变异管线是『检索与生成交错』(生成中发现需要更多资料→追加检索→引用块后到)——后到的引用打乱编号体系",
-          "why": "交错问题红线"
-        },
-        {
-          "field": "plain",
-          "level": "key",
-          "text": "推荐:尽量先备齐(两阶段)——编号稳定观众不晕",
-          "why": "推荐两阶段"
-        },
-        {
-          "field": "plain",
-          "level": "warn",
-          "text": "必须现补的(迭代检索)用『动态页码』(占位+追加帧)",
-          "why": "交错方案"
-        },
-        {
-          "field": "interview",
-          "level": "key",
-          "text": "标准两阶段(检索完编号固定再流式生成",
-          "why": "推荐口述"
-        },
-        {
-          "field": "interview",
-          "level": "warn",
-          "text": "交错检索(迭代 RAG)用占位+追加帧(临时标记→映射帧→引用列表动态累积",
-          "why": "交错方案红线"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "追加帧:新引用块作为独立帧(引用列表的增量更新)——前端的引用列表动态增长",
-          "why": "追加帧"
-        },
-        {
-          "field": "deep",
-          "level": "warn",
-          "text": "流中的引用校验(引用编号在已知集合内的断言)与流后的完整校验(RG-011 的句级校验在流后的补验)",
-          "why": "引用校验"
-        },
-        {
-          "field": "deep",
-          "level": "key",
-          "text": "编号稳定的代价:追加编号不重排(顺序可能不完美——但稳定性优先于美观)",
-          "why": "稳定性优先"
-        },
-        {
-          "field": "example",
-          "level": "key",
-          "text": "前端:临时标记 → 最终编号的映射渲染;引用列表动态累积",
-          "why": "前端映射"
+          "text": "后补引用只解决关联呈现",
+          "why": "本题口述需要首先说明的机制或条件。"
         }
       ]
     },

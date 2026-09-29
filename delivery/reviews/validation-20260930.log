@@ -1,0 +1,4944 @@
+Frozen candidate validation, local date 2026-09-30
+65 functional suites and 12 tool checks passed. Performance exit code: 1.
+Suite counts are not assertion counts. Deliberate negative-test diagnostics are retained.
+
+===== SUITE: tests/ai-series-test.js; exit=0; seconds=1.49 =====
+  PASS all 98 source topics resolve to real questions without duplicating IDs
+  PASS 13 new questions and 72 existing questions retain deterministic source ownership
+  PASS curated corrections appear across the actual learning fields
+  PASS new framework category contains six distinct learning questions with valid prerequisites
+  PASS built data and fused search do not create answers or erase existing user state
+
+结果: 5 通过, 0 失败
+
+===== SUITE: tests/asset-loader-test.js; exit=0; seconds=0.17 =====
+PASS docs: empty asset rejects without caching or losing navigation; retry loads healthy bytes
+PASS legacy: empty asset rejects without caching or losing navigation; retry loads healthy bytes
+PASS guides: empty asset rejects without caching or losing navigation; retry loads healthy bytes
+PASS docs/legacy: missing required body or wrong identity rejects and remains retryable
+PASS guides: nested fields used by the view and directed practice cannot poison the asset
+PASS invalid cached asset is evicted and the healthy network response repairs it
+PASS current generated assets meet the runtime contract and keep active/archive counts separate
+
+结果: 7 通过, 0 失败
+
+===== SUITE: tests/behavior-tests.js; exit=0; seconds=0.93 =====
+== Markdown 列表 ==
+  PASS 列表用例 1
+  PASS 列表用例 2
+  PASS 列表用例 3
+  PASS 列表用例 4
+  PASS 列表用例 5
+  PASS 列表用例 6
+  PASS sections 编号
+== Search 片段与锚点 ==
+  PASS 文档正文命中有真实片段
+  PASS 文档命中带 sec 锚点
+  PASS 笔记可检索且带 note 锚点
+  PASS 题目原理字段命中锚点为 deep
+  PASS 无结果返回空
+  PASS 大小写不敏感但无词则空
+  PASS 多关键词同时命中
+== Store 记录导入/导出 ==
+  PASS 首次导入统计
+  PASS 导入后笔记
+  PASS 旧备份不覆盖新笔记
+  PASS 无时间戳时状态只补空不覆盖
+  PASS 更新的备份覆盖笔记
+  PASS 重复导入轮次幂等
+  PASS 旧备份不复活刚取消的收藏
+  PASS 非法字段整批拒绝
+  PASS 拒绝后状态不变
+  PASS 坏轮次整批拒绝
+  PASS 类型不匹配报错
+  PASS 非 JSON 报错
+  PASS 未知版本报错
+  PASS 隔离恢复:题目记录
+  PASS 隔离恢复:轮次
+  PASS 完整备份类型
+  PASS 资料备份类型
+== 导入题库校验(通过 MaintainView 前置的独立实现)==
+  PASS 合法题库+资料导入
+  PASS 重复导入幂等
+== A1/A3: 导入入口统一校验 / 启动隔离 / 完整恢复 / 清空语义 ==
+  PASS 坏 library 整体拒绝
+  PASS 坏 library 未写入
+  PASS library 未知版本拒绝
+  PASS full 未知版本拒绝
+  PASS 坏资料 id 拒绝
+  PASS 缺正文的资料拒绝
+  PASS 隔离后内存只含合法题
+  PASS 坏数据进入隔离键
+  PASS 隔离数据可导出(原始内容保留)
+  PASS 记录入口拒绝 full
+  PASS 资料入口拒绝 full
+  PASS 完整恢复统计(记录/轮次/题库/资料)
+  PASS 完整恢复笔记
+  PASS 完整恢复幂等
+  PASS 更新的备份明确清空笔记
+  PASS 更新的备份明确清空状态
+  PASS 更新的备份明确取消收藏
+  PASS 旧备份不清空新笔记
+  PASS 无变化的更新不提升时间戳
+== R3-1/2/3: 隔离失败保原文 / 来源类型兼容 / pathProgress 合并 ==
+  PASS 隔离容量失败: 内存返回合法子集
+  PASS 隔离容量失败: 原键字节未动
+  PASS 隔离容量失败: 无假成功(隔离为空)
+  PASS 原始内容可直接导出
+  PASS 重试(第二次启动): 隔离成功
+  PASS 重复启动不累积隔离项
+  PASS 真实题库 7 种来源类型全部接受
+  PASS website 归一映射
+  PASS 阶段进度: 取消晚于备份done → 保留取消态
+  PASS 阶段进度: 备份取消更晚 → 采用取消态
+  PASS 阶段进度: 旧版 number 形状迁移
+  PASS 阅读位置: 本地为空才采用备份
+== R4-1.1: 阶段状态统一(最新事件判定/取消留痕/旧格式) ==
+  PASS 取消晚于完成 → 未完成(报告用例)
+  PASS 时间戳有效(fmtTime 不再 NaN)
+  PASS 旧 number 形状 → done
+  PASS 重新完成(晚于取消)→ done
+  PASS 空/null → none
+  PASS 旧备份不复活完成态(本地取消 200 更新)
+  PASS 本地仅完成(无取消事件)且备份同刻 done → 本地保留 done
+== R6-1.1: 阶段1 前两题参考答案的每条断言实际验证 ==
+  PASS 题1:抛 TypeError(槽位赋值)
+  PASS 题1:异常前列表已改(副作用)
+  PASS 题1:print 未执行
+  PASS 题1对照:t += 重绑定不抛
+  PASS 题2:单元素输入看似正常(陷阱)
+  PASS 题2:重复词 AttributeError(int.append)
+  PASS 题1参考不再声称"没有异常"
+  PASS 题2参考不再声称"逻辑能算对"
+  PASS 题2参考给出正确修复(get 0 + 1 / Counter / setdefault)
+== R7: reviewReasons 取消语义(整套覆盖,非并集)==
+  PASS 更新的备份取消原因 → 生效
+  PASS 旧备份空数组不清空当前
+  PASS 更新备份新增原因 → 生效
+== R9: 备份 round-trip(真实题库数据,非最小 fixture)==
+  PASS round-trip: 记录恢复(笔记/收藏/状态)
+  PASS round-trip: drillTries 迁移恢复(drillAttempts)
+  PASS round-trip: reviewReasons 恢复
+  PASS round-trip: 轮次恢复
+  PASS round-trip: 阶段取消态恢复
+  PASS round-trip: 阅读位置恢复
+  PASS round-trip: 扩展题恢复(Store 层)
+  PASS round-trip: 资料恢复(Store 层)
+  PASS round-trip: 重复恢复幂等
+  PASS round-trip: drillTries 不重复
+== R6: drillAttempts 稳定归属(全链)==
+  PASS 旧格式迁移 1 条
+  PASS 迁移后 2 条 attempt
+  PASS 迁移幂等
+  PASS round-trip: attempts 恢复
+  PASS round-trip: 幂等
+  PASS updatedAt 新者胜
+  PASS 坏 attempt 整批拒绝
+== R9b: 项目记录与口述草稿 round-trip ==
+  PASS 项目记录恢复:runOutput
+  PASS 项目记录恢复:debug
+  PASS 项目记录恢复:stepStatus
+  PASS 口述草稿恢复:speak_plan
+  PASS 口述保存时间恢复
+  PASS 重复恢复幂等:运行记录不翻倍
+  PASS 草稿不被重复导入覆盖
+== R8: 项目草稿/运行备份矩阵 + 迁移三入口 ==
+  PASS 先访问路径后恢复:runOutput 不漏
+  PASS 口述恢复
+  PASS 项目B 历史不因 A 跳过
+  PASS 本地A + 备份B 共存
+  PASS 同 runId 幂等
+  PASS importRecords 迁移到顶层
+  PASS 旧题目记录 drillTries 已迁出
+== B1: PY-003 展示代码从题库字段提取并实际运行 ==
+  PASS PY-003 可运行展示块数量(无锁版+锁版)
+  PASS 展示代码块1(无锁版)原样运行成功
+  PASS 展示代码块1 输出 10
+  PASS 展示代码块2(锁版)原样运行成功
+  PASS 展示代码块2 输出 1000
+== 计算例题复算 ==
+  PASS FD-026 4K=0.5GiB
+  PASS FD-026 32K=4GiB
+  PASS FD-026 128K=16GiB
+  PASS EN-009 0.0833 QPS
+  PASS EN-009 10.5M TPM
+
+结果: 124 通过, 0 失败
+
+===== SUITE: tests/data-loader-test.js; exit=0; seconds=0.12 =====
+PASS init is index-only and makes no background downloads
+PASS one topic is sufficient; unrelated topics are not fetched
+PASS failed manifest preserves index and is retryable
+PASS successful topics remain usable after another topic fails
+PASS concurrent requests share a fetch and loaded topics emit incremental events
+PASS a foreground question moves ahead of queued background topics without duplication
+
+===== SUITE: tests/express-card-test.js; exit=0; seconds=0.07 =====
+== 1. 没有内容时,必须明确报错,而不是产出空文件 ==
+  PASS 没有任何轮次 → ok:false
+  PASS 并且给出人能看懂的原因
+  PASS 该轮没有题目记录 → ok:false
+  PASS 有题但一题都没写回答 → ok:false(不产出空壳)
+  PASS 未作答的报错说明里点明了原因
+
+== 2. 正常一轮:内容必须真的来自记录 ==
+  PASS 有回答 → ok:true
+  PASS 题数与记录一致(3 题)
+  PASS Markdown 含我写的回答原文
+  PASS Markdown 含题目标题
+  PASS Markdown 含面试口述版
+  PASS Markdown 含参考要点
+  PASS Markdown 含状态标签「还不熟」
+  PASS 未作答的题如实写「这一题当时没有作答」,不拿参考要点冒充
+  PASS 题库里找不到的题不编造参考要点
+  PASS 开头写明来源与题数
+
+== 3. 我写的内容不得破坏卡片结构、不得带出脚本 ==
+  PASS 恶意/粘手的回答 → 仍然成功导出
+  PASS 回答整体进引用块:每一行都以 > 开头(不会被解析成标题/表格/分隔线)
+  PASS Markdown 里题目数仍为 1(没有被回答里的 --- 切成两题)
+  PASS 打印版 HTML 里脚本被转义
+  PASS 打印版 HTML 里竖线/井号原样保留(不误伤内容)
+
+== 4. 超长回答被截断,不会撑爆文件 ==
+  PASS 超长回答被截到上限内
+  PASS 截断处给出省略号(不静默丢内容)
+
+== 5. 打印版 HTML 是一份能独立打开的文件 ==
+  PASS 含 DOCTYPE 与结束标签
+  PASS 含打印样式(打印时不留灰底)
+  PASS 含全部 3 题的卡片
+  PASS Markdown 与 HTML 的题数一致
+
+== 6. 待攻克清单(没有我的回答,给口述版与误区) ==
+  PASS 有标记 → ok:true
+  PASS 题库里找不到的题被跳过,不放占位条目
+  PASS 含面试口述版
+  PASS 含常见误区
+  PASS 待攻克清单用「我的笔记」标签,不把笔记冒充成「我的回答」
+  PASS 笔记原文被带进卡片
+  PASS 模拟面试那一路仍叫「我的回答」
+  PASS 待攻克卡不给没有笔记的题编「未作答」占位(那是模拟面试才有的事)
+  PASS 没有标记的题 → ok:false
+  PASS 标记的题都不在题库里 → ok:false(不产出空文件)
+
+== 7. 文件名可直接落盘 ==
+  PASS Markdown 文件名以「日期.md」结尾
+  PASS HTML 文件名以「日期.html」结尾
+  PASS 文件名不含 Windows 非法字符
+  PASS Markdown 与 HTML 文件名不同
+
+== 8. 追问二跳进入表达卡(只带真实写过的) ==
+  PASS 有回答的轮次 → ok:true
+  PASS Markdown 含「追问练习」一节
+  PASS 写过的追问带原文
+  PASS 没碰过的追问不占位
+  PASS HTML 也含追问且回答被带出
+  PASS 对照过但没写的追问标注「没有写下回答」,不冒充
+  PASS 旧格式轮次(无追问)正常导出,无追问一节
+
+== 9. Anki CSV 导出(与待攻克清单同源,转义正确) ==
+  PASS 有标记 → ok:true,且只含题库中存在的题
+  PASS CSV 带 Anki 指令头(separator/html/notetype/deck/columns; no GUID override)
+  PASS 每行 3 列，首字段是稳定题号
+  PASS 正面含题干与题号
+  PASS 背面含答案/表达/误区三段
+  PASS 正面不是只有题号(题干必须在正面字段里)
+  PASS 内容先 HTML 转义(原始引号不进入 CSV 字段,导入 HTML 渲染也安全)
+  PASS 换行转为 <br>(字段内不再有裸换行)
+  PASS 内容经过 HTML 转义(导入 Anki 按 HTML 渲染也不注入)
+  PASS 文件名为 .csv
+  PASS 无标记 → ok:false,不产出空文件
+
+== 10. 统一资格:只写追问的真实练习可导出(SP-03) ==
+  PASS 只写追问可导出
+  PASS 卡片带追问原文
+  PASS 仅揭示未写 → 仍拒绝
+  PASS 纯空白 → 仍拒绝
+  PASS itemAnswered/hasRealAnswer 可独立判定
+
+结果: 63 通过, 0 失败
+
+===== SUITE: tests/fusion-review-guard-test.js; exit=0; seconds=0.07 =====
+PASS exact reviewed correction preserves original source ownership
+PASS unreviewed answer change is rejected
+PASS updating only managed hash cannot bypass review ledger
+PASS missing per-question review is rejected
+PASS reviewed revision cannot change original source mapping
+PASS original managed revision remains traceable
+PASS review date must belong to its ledger
+
+===== SUITE: tests/learning-records-test.js; exit=0; seconds=0.23 =====
+  PASS importRecords: older backup preserves explicit note/status/favourite clearing
+  PASS importRecords: untouched defaults accept legacy data; newer backup still wins
+  PASS importFull: older backup preserves explicit note/status/favourite clearing
+  PASS importFull: untouched defaults accept legacy data; newer backup still wins
+  PASS parallel draft never silently replaces a just-submitted answer
+  PASS submit-and-new does not invent an unsolved rating
+  PASS a rating-only draft requires a choice and is retained when abandoned
+  PASS equal timestamps choose the same latest record regardless of import order
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/legacy-archive-test.js; exit=0; seconds=5.42 =====
+  PASS 254 archived source objects exactly match removed baseline IDs
+  PASS archived question remains in personal review/mistake queues without changing active bank or records
+
+===== SUITE: tests/legacy-null-snapshot-test.js; exit=0; seconds=0.26 =====
+PASS released finish actually saves null for a removed unsnapshotted question
+PASS load normalizes only round sentinel in memory, retaining original disk until normal save
+PASS preview is read-only and agrees with import; repeated import stays idempotent
+PASS full backup retains individual answers and round identity
+PASS adoptRemote and refreshFromDisk accept and propagate only normalized historical records
+PASS save-before-write reconciles old null sentinel while retaining the new local note
+PASS both exports identify missing historical snapshots without synthesizing one
+PASS other malformed snapshots and draft null still reject entire restore and remote adoption
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/mock-revision-test.js; exit=0; seconds=0.12 =====
+PASS original, followup and revision remain separate in both exports
+PASS revision-only answers count once, but reference reveal and whitespace never count
+PASS backup import and reload preserve all three answers in rounds and both draft slots
+PASS non-text revision is rejected before backup or remote records can change storage
+PASS old backups without revision stay valid and never synthesize one from references
+PASS actual finish omits unvisited snapshots, preserves visited evidence and makes an importable backup
+
+结果: 6 通过, 0 失败
+
+===== SUITE: tests/pi-agent-test.js; exit=0; seconds=1.67 =====
+  PASS 30 stable native IDs, three groups and 90 nested follow-ups
+  PASS all source objects and hashes survive the adaptation without loss
+  PASS all main content, terminology, rubrics and exercises are visible native fields
+  PASS source URLs remain pinned and prerequisites resolve within the new bank
+  PASS same content is skipped and managed content edits are detectable
+  PASS built application retains the full bank and Pi Agent without touching personal records
+  PASS a locally edited managed question blocks the entire import without changing files
+
+结果: 7 通过, 0 失败
+
+===== SUITE: tests/preview-restore-test.js; exit=0; seconds=0.1 =====
+== 预览四类归类与「不改状态」 ==
+  PASS 预览成功
+  PASS 预览不改状态(内存)
+  PASS 预览不落盘
+  PASS 归类:新增 1
+  PASS 归类:采用备份 ≥1(RG-001)
+  PASS 归类:保留本机 ≥1(RG-002)
+  PASS 归类:撤销 1(RG-003 明确清空)
+  PASS 轮次新增预告
+  PASS 一致备份预览:noChanges
+  PASS 非法备份预览拒绝
+  PASS 未知版本预览拒绝
+  PASS 实际导入后 RG-001=备份覆盖用
+  PASS 实际导入后 RG-002=保留本地
+  PASS 实际导入后 RG-003=被撤销(空)
+  PASS 实际导入后 RG-040=新增
+  PASS 实际导入轮次数与预告一致
+
+结果: 16 通过, 0 失败
+
+===== SUITE: tests/project-card-test.js; exit=0; seconds=0.33 =====
+  PASS selected run identity, both pitches and legacy outline are exported
+  PASS explicit historic run exports that run and labels current speech as a draft
+  PASS missing evidence is an error, never silently replaced with newest
+  PASS empty project does not produce an empty card
+  PASS design-only speech can be exported without claiming a completed run
+  PASS HTML and Markdown render user markup literally
+  PASS building a card never mutates saved runs or drafts
+  PASS long personal text is preserved in project materials
+  PASS real Markdown rendering preserves quotes, entities and code literally
+
+结果: 9 通过, 0 失败
+
+===== SUITE: tests/record-boundary-test.js; exit=0; seconds=0.13 =====
+  PASS new reset version retains records already written by its sender
+  PASS post-clear project evidence and terminal sessions survive filtering
+  PASS a terminal event is retained even when its draft is absent
+  PASS alternate drafts synchronize without an active draft and obey reset and terminal boundaries
+  PASS backup preview describes the alternate draft that import actually retains
+  PASS equal reset counters still honor the later clear timestamp
+  PASS invalid question snapshots and note drafts are rejected before import
+  PASS invalid guide snapshots are rejected before draft, alternate or round import changes records
+  PASS old drafts without guide fields and valid guide snapshots survive import and reload
+  PASS guide question snapshot metadata is validated without requiring new fields on old snapshots
+  PASS conflict drafts retain both input versions when merged
+  PASS failed clear preserves memory and disk and reports failure
+  PASS a resumed stale tab cannot overwrite a newer reset on disk
+
+结果: 13 通过, 0 失败
+
+===== SUITE: tests/regression-tests.js; exit=0; seconds=0.09 =====
+
+== 问题 B:恢复规则不确定 / 字段顺序依赖(projectDrafts 字段级合并)==
+  PASS B-1 更新的备份:第一个字段被恢复
+  PASS B-1 更新的备份:第二个字段也被恢复
+  PASS B-1 更新的备份:第三个字段也被恢复
+  PASS B-1 未采用内容时不得抬高 updatedAt
+  PASS B-2 本地更新的明确清空不被旧备份复活
+
+== 问题 C:无 runId 的历史项目运行记录被静默丢弃 ==
+  PASS C 无 runId 的旧运行记录必须被保留(可迁移补齐 id)而不是静默丢弃
+  PASS C 迁移后重复导入仍幂等
+
+== 问题 E-4:「最新一次尝试」按数组顺序而非时间判定 ==
+  PASS E-4 最新一次自评是「已解决」时不得进入待消化队列
+  PASS E-4 最新一次确实未解决时必须进入队列
+
+== 问题 F:个人项目运行/排查记录不可检索 ==
+  PASS F 已保存的项目运行记录可被全文检索到
+  PASS F 项目草稿可被全文检索到
+
+== 问题 H-1:测试中的恒真断言 ==
+  PASS H-1 断言不得恒真(形如 `... || true`)
+  PASS H-1 真实语义:重复完整恢复后运行记录不翻倍
+
+== 问题 H-2:清空记录后检索索引未失效(搜得到已清空的数据)==
+  PASS H-2 前置:清空前确实可检索到
+  PASS H-2 清空全部记录后检索不得再返回已清空的数据
+
+结果: 15 通过, 0 失败
+
+===== SUITE: tests/remote-merge-test.js; exit=0; seconds=0.09 =====
+== 1. 合法远程记录:合并进内存,不回写磁盘 ==
+  PASS 合并成功
+  PASS 对方的笔记进入本页内存
+  PASS 本页原有记录保留
+  PASS 合并结果传播到磁盘(收敛契约)
+  PASS 报告说明合并了什么
+  PASS 数据版本已推进(索引会按需重建)
+== 2. 冲突:逐记录 _updatedAt 新者胜 ==
+  PASS 本地较新:保留本地
+  PASS 对方较新:采用对方
+== 3. 轮次/尝试/草稿:同一套合并规则 ==
+  PASS 对方的新轮次进入本页
+  PASS 重复合并幂等(按内容去重)
+  PASS 对方的专项尝试进入本页
+  PASS 本地较新的尝试保留
+== 4. 非法载荷整体拒绝 ==
+  PASS 坏 JSON → ok:false
+  PASS 非对象 → ok:false
+  PASS 校验不过 → ok:false
+  PASS 拒绝后内存未动
+  PASS 拒绝后磁盘未动
+== 4b. 变更语义(ST-01):处理条数≠变更,无业务变化不推进版本 ==
+  PASS 重复合并:changed=false
+  PASS 重复合并:版本不推进
+  PASS 仅元数据变化:changed=false(不触发界面刷新)
+  PASS 仅元数据变化:版本不推进
+  PASS 真实变更:changed=true
+  PASS 变更集合指明题目
+  PASS 真实变更:版本推进
+== 4c. 清空纪元(SP-05):旧快照不得越过清空边界 ==
+  PASS 清空后纪元为 1
+  PASS 清空后内存为空
+  PASS 旧纪元快照不复活被清空笔记
+  PASS 旧纪元合并返回 staleEpoch 标记
+  PASS 清空后新写的记录正常同步
+  PASS 清空前的笔记仍不复活
+  PASS 采用更高纪元
+  PASS 更高纪元清空时刻之前的记录被抹掉(RG-050)
+  PASS 更高纪元清空时刻之前的记录被抹掉(RG-051)
+  PASS 新纪元的记录不受旧纪元快照影响
+  PASS 主动恢复:纪元不回退
+  PASS 主动恢复:备份内容按用户意图恢复
+== 4d. 会话终态(SP-06):终态优先于旧草稿 ==
+  PASS 终态会话的旧草稿不复活
+  PASS abandoned 终态同样拒绝草稿复活
+  PASS 终态合并到达后,本页残留的同会话草稿被清除
+  PASS 无终态:草稿正常恢复
+  PASS 同会话草稿:新者胜
+  PASS 同会话草稿:旧的不覆盖新的(乱序到达安全)
+== 5. 存储健康度 ==
+  PASS recordsSizeKB 返回正数
+
+结果: 43 通过, 0 失败
+
+===== SUITE: tests/save-notification-test.js; exit=0; seconds=0.09 =====
+PASS 主动合并通知在提交后发出，通知中的冲突副本保存不递归
+PASS 提交失败不通知/不替换内存，恢复存储后重试只通知一次
+PASS 本页写入和仅远端UI元数据变化不触发远端通知
+
+结果: 3 通过, 0 失败
+
+===== SUITE: tests/save-protocol-test.js; exit=0; seconds=0.08 =====
+== 1. 无竞争:直接写 ==
+  PASS 返回 true
+  PASS 磁盘为新值
+== 2. 磁盘有对方新内容:合并后再写,不丢对方 ==
+  PASS 返回 true
+  PASS 对方数据保留(不丢)
+  PASS 本页数据写入
+  PASS 本页内存收敛到合并结果
+== 3. 磁盘数据非法:返回 false,不覆盖 ==
+  PASS 返回 false
+  PASS 磁盘坏数据未被覆盖(用户可导出原始字节)
+  PASS lastSaveError 已设置
+  PASS 恢复后重试成功
+== 4. 同刻冲突:决胜确定 ==
+  PASS 同刻决胜确定(两次一致): 内存版本
+  PASS 本页内存与磁盘一致
+
+== 6. 传播回归:同刻内存胜者必须写回磁盘(禁用传播应失败) ==
+  PASS 前置真实分歧:内存为同刻胜者，磁盘为败者
+  PASS 收敛传播生效:合并胜者已写回磁盘(内存=磁盘)
+  PASS 胜者由内容哈希决定(对称稳定): B版本
+
+结果: 15 通过, 0 失败
+
+===== SUITE: tests/search-cache-test.js; exit=0; seconds=0.1 =====
+== 1. 首次构建与查询 ==
+  PASS 查询命中静态字段
+  PASS 查询命中章节
+  PASS 查询命中笔记
+  PASS 查询命中尝试
+  PASS 查询命中导入资料
+  PASS 查询命中概念
+  PASS 静态层只构建了一次
+== 2. 个人写入:只重建动态层 ==
+  PASS 个人写入后静态层构建次数仍为 1
+  PASS 动态层重建了一次
+  PASS 旧笔记搜不到
+  PASS 新笔记搜得到
+  PASS 静态内容仍在(拼接行为一致)
+== 3. 题库规模变化:静态层重建 ==
+  PASS 题库变了,静态层重建一次(共 2 次)
+  PASS 新题可检索
+== 4. 动态层不丢字段类型 ==
+  PASS 运行记录可检索
+  PASS 口述草稿可检索
+
+== 5. 内容版本失效(阶段7):等长内容更新必须重建静态层 ==
+  PASS 初始:命中旧内容
+  PASS 等长内容更新:静态层重建(相对+1)
+  PASS 旧内容不再命中
+  PASS 新内容命中
+  PASS 同版本:静态层不重建
+  PASS 回退签名:同规模不重建
+  PASS 回退签名:查询正常
+
+== 6. 我的追问回答进索引,带题目与轮次身份(阶段7.4) ==
+  PASS 追问回答可检索
+  PASS 结果带题目身份
+  PASS 结果带轮次身份
+
+结果: 26 通过, 0 失败
+
+===== SUITE: tests/search-progressive-test.js; exit=0; seconds=0.21 =====
+  PASS strict and partial search preserve scope/topic
+  PASS record-linked archived note is searchable without active-bank membership
+  PASS original/revision/followup search retain round identity and topic filters
+  PASS large bank exposes titles before finishing body index
+  PASS body becomes searchable after bounded batches
+  PASS older batches cannot resurrect removed content
+
+6 passed
+
+===== SUITE: tests/shell-cache-stamp-test.js; exit=0; seconds=0.13 =====
+== 1. 解析 build.py 的盖章清单 ==
+  PASS 能从 build.py 解析出 shell_files 清单
+  PASS 清单规模合理(≥10 个 shell 文件)
+  PASS 清单包含 app/data.js
+  PASS 清单不含 sw.js 自身(自引用会导致两次构建互相追尾)
+
+== 2. 缓存戳一致性 ==
+  PASS sw.js 里能读到 CACHE_VERSION
+  PASS CACHE_VERSION 形如 shell-<12位十六进制>
+  PASS CACHE_VERSION 等于按当前 app shell 内容重算的哈希
+
+== 3. 哈希本身可信(自检) ==
+  PASS 改动任一 shell 文件内容后哈希必须变化(哈希不是常量)
+  PASS 清单顺序变化后哈希应变化(说明是顺序敏感的累积哈希,而非集合)
+  PASS 重算两次结果稳定(不含时间戳等易变因素)
+
+== 4. 预缓存清单覆盖完整 ==
+  PASS app/js 下每个 js 文件都在 build.py 的盖章清单里(新模块不能漏)
+  PASS build.py 盖章的每个文件都在 sw.js 的 APP_SHELL 预缓存里
+  PASS APP_SHELL 里每个条目在磁盘上都存在(否则 SW 安装时 c.addAll 会整体失败)
+
+结果: 13 通过, 0 失败
+
+===== SUITE: tests/srs-test.js; exit=0; seconds=0.09 =====
+== 1. 调度数学(SM-2 简化) ==
+  PASS 首次 good:间隔 1 天
+  PASS 首次 good:到期 = 现在+1天
+  PASS 首次 good:ease 初值 2.5
+  PASS 首次 good:streak=1
+  PASS 第二次 good:间隔 6 天
+  PASS 第三次 good:间隔 = 6×2.5 = 15
+  PASS 第三次 good:streak=3
+  PASS 首次 easy:间隔 3 天
+  PASS 首次 easy:ease 2.65
+  PASS easy 延长:间隔 = 6×2.5×1.3 = 20(取整)
+  PASS hard:间隔 = 10×1.2 = 12
+  PASS hard:ease 2.35
+  PASS hard:streak 不变
+  PASS again:间隔清零
+  PASS again:到期 = 现在(当天就该再看)
+  PASS again:streak 归零
+  PASS again:lapses +1
+  PASS again:ease 2.3
+  PASS 连续 again:ease 收敛到下限 1.3
+  PASS ease 不会低于下限
+  PASS 间隔上限 180 天
+  PASS 未知评分抛错
+  PASS 非法时间抛错
+  PASS weak → again
+  PASS review → hard
+  PASS ok → good
+  PASS 未练习无映射
+== 2. Store 集成:setStatus 是唯一排期入口 ==
+  PASS 标 weak:产生 srs
+  PASS 标 weak:立即到期
+  PASS 标 weak:lastRating = again
+  PASS 标 ok:到期在未来
+  PASS 标 ok:lastRating = good
+  PASS 重复标 ok:到期日不变
+  PASS 标 review:lastRating = hard
+  PASS 标 review:至少 1 天
+  PASS 清空状态:srs 一并清掉
+  PASS 只练习不标状态:无 srs
+  PASS 备份往返:srs 被恢复
+== 3. 备份校验与合并(srs 随状态归属) ==
+  PASS 合法 srs 校验通过
+  PASS srs.due 非数字被拒
+  PASS srs.lastRating 非法被拒
+  PASS srs 非对象被拒
+  PASS 更新的备份:srs 整份采用
+  PASS 更新的备份:状态随备份
+  PASS 旧备份不覆盖新 srs
+  PASS 备份清空状态 → srs 一并清
+  PASS 本地原有 due 已无关紧要(引用检查)
+== 4. 到期判定与展示 ==
+  PASS 无 srs → 永不到期
+  PASS due 在过去 → 到期
+  PASS due 在未来 → 不到期
+  PASS due = 现在 → 到期(<=)
+  PASS 坏 due → 不到期(不猜)
+  PASS 到期文案:已到期
+  PASS 到期文案:24 小时内(不足一天,不得显示已到期)
+  PASS 到期文案:未来 1 毫秒不显示已到期
+  PASS 到期文案:1 天后(纯剩余时长,不用日历词)
+  PASS 到期文案:3 天后
+== 4b. 建议有效性(SP-01 配套):suggestable ==
+  PASS 无状态不产生建议(未练习)
+  PASS weak/review 不产生建议(已在手动队列)
+  PASS 状态与信号矛盾不产生建议(ok 但 lastRating=again)
+  PASS 排期缺失不产生建议
+  PASS 非法排期不产生建议
+  PASS 一致且到期 → 建议
+  PASS 一致但未到期 → 不建议
+== 5. 轮次上限只有一份 ==
+  PASS Store.MAX_ROUNDS = 100
+  PASS views-practice 完成本轮使用 Store.MAX_ROUNDS(不再各写一个数字)
+  PASS views-practice 不再硬编码 slice(0, 50)
+  PASS store.js 的 mergeRounds 也用 MAX_ROUNDS
+== 6. 常驻防线:srs.js 在预缓存与盖章清单里 ==
+  PASS build.py 盖章清单含 app/js/srs.js
+  PASS sw.js APP_SHELL 含 ./js/srs.js
+  PASS index.html 在 store.js 之前加载 srs.js
+
+结果: 71 通过, 0 失败
+
+===== SUITE: tests/stage4-pause-test.js; exit=0; seconds=0.09 =====
+== 真实暂停恢复(双 Store 实例,后台页错过事件) ==
+  PASS pre: A/B 基线一致(初始)
+  PASS pre: A 写入落盘
+  PASS S2-pre B 仍是旧内存(暂停真实生效)
+  PASS S2a 磁盘保持 A 的新值(B 的旧内存未覆盖)
+  PASS S2b B 内存收敛到 A 的新值(合并语义)
+  PASS S2c A 内存仍为自己的值(A 没有理由变化)
+== 暂停恢复+收敛传播(B 后台页也带一条新写入) ==
+  PASS pre2: 磁盘为 A 版本
+  PASS S2-pre2 磁盘与 B 内存收敛(同刻决胜或 LWW,二者都是稳定规则)
+  PASS S2b2 A 内存收敛到磁盘胜者
+  PASS S2c2 磁盘稳定
+
+结果: 10 通过, 0 失败
+
+===== SUITE: tests/baseline2/issues-node-test.js; exit=0; seconds=0.08 =====
+== MR-01: 预览必须识别「旧runId迁移后可恢复」的项目记录 ==
+  PASS MR-01a 预览不得返回 noChanges(有可迁移内容)
+  PASS MR-01b 对照:实际导入 runsAdded=1(迁移并入计划)
+  PASS MR-01c 对照:正文完整恢复
+== MR-02: 预览必须显示「将覆盖」的项目运行 ==
+  PASS MR-02a 预览不得返回 noChanges(有覆盖)
+  PASS MR-02b 预览提供项目运行覆盖明细(r1 新旧正文)
+== ST-01: 同毫秒跨页写入必须收敛(审查报告场景:A页写A/B页写B) ==
+  PASS ST-01a 内存与磁盘收敛到同一版本
+  PASS ST-01b 收敛值是两者之一
+  PASS ST-01c 交换顺序后内存与磁盘仍收敛
+  PASS ST-01d 两次运行收敛到同一稳定胜者(内容哈希大者): A同毫秒版本
+
+结果: 9 通过, 0 失败(阶段0:失败项即待修复问题)
+
+===== SUITE: tests/ai-series-math-test.py; exit=0; seconds=0.48 =====
+.....
+
+----------------------------------------------------------------------
+
+Ran 5 tests in 0.251s
+
+
+
+OK
+
+===== SUITE: tests/core-content-test.py; exit=0; seconds=1.02 =====
+test_every_core_quiz_explains_every_option_and_answers_agree (__main__.CoreContentTest.test_every_core_quiz_explains_every_option_and_answers_agree) ... ok
+
+test_exact_core_review_coverage_without_extra_inflation (__main__.CoreContentTest.test_exact_core_review_coverage_without_extra_inflation) ... ok
+
+test_finetune_example_is_static_and_tokenizes_before_trainer (__main__.CoreContentTest.test_finetune_example_is_static_and_tokenizes_before_trainer) ... ok
+
+test_followups_rubric_and_project_claim_boundaries (__main__.CoreContentTest.test_followups_rubric_and_project_claim_boundaries) ... ok
+
+test_guides_cover_17_groups_and_keep_topic_question_separate (__main__.CoreContentTest.test_guides_cover_17_groups_and_keep_topic_question_separate) ... ok
+
+test_known_transport_and_embedding_regressions (__main__.CoreContentTest.test_known_transport_and_embedding_regressions) ... ok
+
+test_local_python_examples_run_from_actual_displayed_source (__main__.CoreContentTest.test_local_python_examples_run_from_actual_displayed_source) ... ok
+
+test_review_hash_binds_to_actual_source_content (__main__.CoreContentTest.test_review_hash_binds_to_actual_source_content) ... ok
+
+test_sources_are_versioned_and_quality_is_not_source_status (__main__.CoreContentTest.test_sources_are_versioned_and_quality_is_not_source_status) ... ok
+
+
+
+----------------------------------------------------------------------
+
+Ran 9 tests in 0.767s
+
+
+
+OK
+
+===== SUITE: tests/lp003_mock_test.py; exit=0; seconds=5.16 =====
+== LP-003 mock 分支测试 ==
+
+  PASS 拒答 → 终态
+
+  PASS 拒答只调用 1 次
+
+  PASS 拒答不回喂错误信息
+
+  PASS 截断 → SDK 异常识别为终态
+
+  PASS 截断只调用 1 次
+
+  PASS 临时错误重试后成功
+
+  PASS 临时错误共调用 3 次
+
+  PASS schema 失败回喂后成功
+
+  PASS schema 失败共调用 2 次
+
+  PASS 第二次请求带回喂错误
+
+  PASS 数值约束(amount=-3)在结构校验层被拒
+
+  PASS 数值约束错误回喂内容含 greater_than 语义
+
+  PASS 业务非法(订单非当前用户)→ 终态
+
+  PASS 业务非法重试至上限(3 次)
+
+  PASS 业务错误随重试回喂
+
+  PASS 业务分支真实命中:错误由应用层校验产生(首请求无回喂)
+
+  PASS 合法结果直接返回
+
+  PASS 合法结果只调用 1 次
+
+
+
+结果: 18 通过, 0 失败
+
+===== SUITE: tests/path_exercise_test.py; exit=0; seconds=9.73 =====
+== 阶段2:两种推进写法都正确,size<=0 快速失败 ==
+
+  PASS 阶段2 展示代码运行成功
+
+  [debug s2 stdout]: 流式输出|的本质是|生成器||流式输出|的本质是|生成器||size=0 → size 必须为正|
+
+  PASS range 版输出完整文本
+
+  PASS while 版输出完整文本
+
+  PASS size=0 快速失败而非静默
+
+  PASS 忘记推进索引确实死循环(反例验证)
+
+== 阶段3:三种收尾对照展示代码 ==
+
+  PASS 阶段3 展示代码运行成功
+
+  PASS 对照1:c 完成未被取消(孤儿任务)
+
+  PASS 对照3:TaskGroup 取消 c
+
+== 阶段6:完整工具调用循环 ==
+
+  PASS 阶段6 展示代码运行成功
+
+  PASS 天气问题:两轮(意图→执行→回传→终答)
+
+  PASS 工具结果进入模型回答
+
+  PASS 无需工具的问题一轮直接回答
+
+  PASS 未知工具:错误回传且循环按规则结束
+
+  PASS 未知工具:失败说明而非成功建议
+
+  PASS 未知工具:仍走两轮(回喂后终答)
+
+  PASS 工具异常被包装回喂而非透传
+
+  PASS 工具异常:失败说明而非成功建议
+
+  PASS 成功路径:失败字样不出现(协议不误伤)
+
+  PASS 达到 max_rounds 有护栏终止
+
+
+
+结果: 19 通过, 0 失败
+
+===== SUITE: tests/proj_a_test.py; exit=0; seconds=0.68 =====
+{"ts":"2026-09-30 00:54:56,541","event":"retry schema: 1 validation error for Order
+
+channel
+
+  Input should be 'alipay' or 'wechat' [type=literal_error, input_value='cash', input_type=str]
+
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error"}
+
+{"ts":"2026-09-30 00:54:56,553","event":"retry temp: slow"}
+
+{"ts":"2026-09-30 00:54:56,573","event":"retry temp: slow"}
+
+  PASS 正常返回 1 次调用
+
+  PASS 拒答→终态
+
+  PASS 截断→终态且指向调大预算
+
+  PASS 回喂生效:第 2 次成功
+
+  PASS 第 2 次请求真的包含错误信息
+
+  PASS 临时错误 3 次成功
+
+  PASS 业务错误重试耗尽终态
+
+  PASS 脚本用尽不静默
+
+
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/proj_c_claims_test.py; exit=0; seconds=0.23 =====
+.......
+
+----------------------------------------------------------------------
+
+Ran 7 tests in 0.003s
+
+
+
+OK
+
+===== SUITE: tests/proj_c_layers_test.py; exit=0; seconds=0.21 =====
+== 项目C 接口(运行侧 / 评测侧职责分离)==
+
+  PASS 暴露 retrieve()
+
+  PASS 暴露 generate()
+
+  PASS 暴露 validate()
+
+  PASS 暴露 diagnose()
+
+  PASS 暴露 coverage_oracle()
+
+  PASS 暴露 evaluate()
+
+  PASS 存在唯一固定配置 CONFIG
+
+== G-0 越权归因检查器的反向对照 ==
+
+  PASS G-0a 裸断言「库里没有」会被检查器判为越权
+
+  PASS G-0b 否定/悬置语气的文案不会被误判
+
+
+
+== G-1 「库里到底有没有」不能由运行侧的关键词表决定 ==
+
+  PASS G-1 diagnose() 可换库(docs 参数)
+
+  PASS G-1a 库里存在该知识时必须答出(引用 d5)
+
+  PASS G-1b 答出路径不得断言「库里没有」
+
+  PASS G-1c 拒答路径不得断言「库里没有」(只能报证据不足)
+
+  PASS G-1d 拒答时明确把「是否真没有」交给评测侧标注
+
+
+
+== G-2 库外主题的层级归因(评测侧独立 oracle)==
+
+  PASS G-2 oracle 判定「库里确实没有」: 公司年会在哪里办?
+
+  PASS G-2 oracle 判定「库里确实没有」: 你们支持比特币支付吗?
+
+  PASS G-2 oracle 判定「库里确实没有」: 怎么改绑手机号?
+
+  PASS G-2 评测归因第①层: 公司年会在哪里办?
+
+  PASS G-2 评测归因第①层: 你们支持比特币支付吗?
+
+  PASS G-2 评测归因第①层: 怎么改绑手机号?
+
+
+
+== G-3 第③层(证据组织不完整)必须被真实检出 ==
+
+  PASS G-3 源码中存在第③层的产出路径
+
+  PASS G-3 证据被预算裁剪时必须归因第③层
+
+
+
+== G-4 第④层校验必须检查回答内容,而不是看一个开关 ==
+
+  PASS G-4a 单证据下,忽略证据的回答必须判为不遵循
+
+  PASS G-4b 遵循证据的回答必须判为通过
+
+  PASS G-4c 双证据下忽略证据的回答必须归因第④层
+
+  PASS G-4d 单证据下凭空作答也必须归因第④层
+
+
+
+== G-5 0 分文档不得作为「候选证据」展示 ==
+
+  PASS G-5 0 分文档不出现在候选里(必须显式丢弃或标注)
+
+
+
+== G-6 失败层级由数据状态与固定配置决定,不靠逐题手调参数 ==
+
+  PASS G-6a 评测集不得携带逐题阈值
+
+== 评测(样例集 12 条,只证明流程;不代表系统一般正确率)==
+
+  [PASS] 退款政策是什么
+
+        标注 required=['d1'] | 候选 [('d1', 3)] | 采用 ['d1'] | 层级 实际=0 期望=0
+
+        判定:答出且回答覆盖全部给定证据
+
+  [PASS] 现货商品多久发货
+
+        标注 required=['d2'] | 候选 [('d2', 4), ('d5', 2)] | 采用 ['d2', 'd5'] | 层级 实际=0 期望=0
+
+        判定:答出且回答覆盖全部给定证据
+
+  [PASS] 开发票和会员免运费怎么弄
+
+        标注 required=['d3', 'd4'] | 候选 [('d4', 3), ('d3', 2)] | 采用 ['d4', 'd3'] | 层级 实际=0 期望=0
+
+        判定:答出且回答覆盖全部给定证据
+
+  [PASS] 下单后要退款、要开发票、还要换货怎么办
+
+        标注 required=['d1', 'd3', 'd5'] | 候选 [('d3', 4), ('d1', 2)] | 采用 ['d3', 'd1'] | 层级 实际=3 期望=3
+
+        判定:证据组织不完整:达标证据 4 条,预算 top_k=2 只纳入 2 条,被裁掉的是 d2,d5。该调预算或改切分/排序,而不是怪生成器。
+
+  [PASS] 如何退货
+
+        标注 required=['d1'] | 候选 [] | 采用 [] | 层级 实际=2 期望=2
+
+        判定:证据不足,拒答:检索零召回(所有文档得分 0)。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。
+
+  [PASS] 七天内能退货吗
+
+        标注 required=['d1'] | 候选 [('d1', 1), ('d5', 1)] | 采用 [] | 层级 实际=2 期望=2
+
+        判定:证据不足,拒答:有候选但最高分 1 < 门槛 2。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。
+
+  [PASS] 公司在哪个城市
+
+        标注 required=无(库外) | 候选 [] | 采用 [] | 层级 实际=1 期望=1
+
+        判定:证据不足,拒答:检索零召回(所有文档得分 0)。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。
+
+  [PASS] 公司年会在哪里办
+
+        标注 required=无(库外) | 候选 [] | 采用 [] | 层级 实际=1 期望=1
+
+        判定:证据不足,拒答:检索零召回(所有文档得分 0)。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。
+
+  [PASS] 你们支持比特币支付吗
+
+        标注 required=无(库外) | 候选 [('d1', 1), ('d3', 1)] | 采用 [] | 层级 实际=1 期望=1
+
+        判定:证据不足,拒答:有候选但最高分 1 < 门槛 2。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。
+
+  [PASS] 怎么改绑手机号
+
+        标注 required=无(库外) | 候选 [] | 采用 [] | 层级 实际=1 期望=1
+
+        判定:证据不足,拒答:检索零召回(所有文档得分 0)。这不等于「库里没有」——是否真的没有,需要与标注对照才能下结论。
+
+  [PASS] 开发票和会员免运费怎么弄
+
+        标注 required=['d3', 'd4'] | 候选 [('d4', 3), ('d3', 2)] | 采用 ['d4', 'd3'] | 层级 实际=4 期望=4
+
+        判定:生成未遵循证据:摘录核对未通过;缺少证据正文:d3;无法从所引证据核对的分句:无。改写需人工复核。(给定证据 d4,d3)
+
+  [PASS] 现货商品多久发货
+
+        标注 required=['d2'] | 候选 [('d2', 4), ('d5', 2)] | 采用 ['d2', 'd5'] | 层级 实际=4 期望=4
+
+        判定:生成未遵循证据:摘录核对未通过;缺少证据正文:d2,d5;无法从所引证据核对的分句:本店支持30天无理由退款,并额外赠送5张免运费券。改写需人工复核。(给定
+
+  层级归因正确: 12/12
+
+  本次真实触达的层级: [0, 1, 2, 3, 4]
+
+  PASS G-6b 固定配置下四层均可被真实触达(评测集覆盖 0/1/2/3/4)
+
+
+
+结果: 29 通过, 0 失败
+
+===== SUITE: tests/proj_c_test.py; exit=0; seconds=0.17 =====
+== 第①层:库里没有(评测侧独立标注)==
+
+  PASS 运行侧只报「证据不足」,不下「库里没有」的结论
+
+  PASS 运行侧的文案里出现「库里没有」时,必须是否定/悬置语气(不是裸断言)
+
+  PASS 评测侧独立标注确认该主题不在库中
+
+  PASS 评测表把库外主题归因第①层
+
+  PASS 库外主题归因第①层: 公司年会在哪里办
+
+  PASS 库外主题归因第①层: 你们支持比特币支付吗
+
+  PASS 库外主题归因第①层: 怎么改绑手机号
+
+== 第②层:库里有但检索漏(词形盲区)==
+
+  PASS 独立标注确认库里确实有退款政策
+
+  PASS 运行侧拒答且归因第②层
+
+  PASS 评测表归因第②层
+
+  PASS 对照:换成「退款」立刻命中 d1
+
+== 第③层:证据组织不完整(预算裁剪)==
+
+  PASS 运行侧真实检出第③层(而不是判为正常)
+
+  PASS 第③层给出被裁掉的证据
+
+  PASS 评测表归因第③层
+
+  PASS 源码中存在第③层产出路径
+
+== 第④层:生成不遵循证据 ==
+
+  PASS 多证据时只复述第一条 → 拦下并归因第④层
+
+  PASS 单证据凭空作答也必须被拦下(旧版此处放行)
+
+  PASS 校验直接看回答文本,与故障来源无关
+
+== 正常路径不回退 ==
+
+  PASS 正常回答不回退
+
+  PASS 两证据都在预算内 → 逐条纳入
+
+== 固定配置下的层级覆盖 ==
+
+  PASS 四层(0/1/2/3/4)在唯一 CONFIG 下全部真实触达
+
+  PASS 评测集不含逐题阈值(EVAL 条目只有标注与期望)
+
+  PASS oracle 是标注而非规则(未标注查询不猜)
+
+
+
+结果: 23 通过, 0 失败
+
+===== SUITE: tests/browser/a11y-360.js; exit=0; seconds=8.95 =====
+== A. 360px 窄屏不横向溢出 ==
+  PASS 工作台 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 学习路径 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 练习 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 文档阅读 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 自测 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 复习 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 维护 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 搜索 无横向溢出 (scrollWidth 360 ≤ 360)
+  PASS 学习页 无横向溢出 (scrollWidth 360 ≤ 360)
+
+== B. 全局骨架 ==
+  PASS 存在 main 容器
+  PASS lang 已声明
+  PASS main 是程序化跳转的落点(tabindex=-1)
+  PASS 有「跳到主内容」的跳过导航链接,且是第一个可聚焦元素
+  PASS 主导航有 aria-label
+  PASS 当前页在导航里标了 aria-current(高亮读屏读得到)
+  PASS 主题切换按钮有可读名称
+  PASS 主题切换按钮报告开合状态(aria-pressed)
+  PASS 全局搜索输入有可读名称(aria-label)
+  PASS 提示条容器是 live region(读屏能播报保存结果)
+  PASS 点「跳到主内容」后焦点落在 main 上
+  PASS 跳过链接不会破坏 hash 路由(不会跳到 #view)
+
+== C. 键盘焦点可见 ==
+  PASS 可聚焦元素都能拿到焦点且样式可见(共 154 个)
+
+== D. 纯键盘操作对话框 ==
+  PASS 「开始新尝试」按钮可被键盘聚焦
+  PASS 有草稿时弹出确认对话框,且焦点进入对话框内
+  PASS 对话框 role=dialog 且 aria-modal=true
+  PASS 对话框有可访问名称(aria-labelledby 指向真实标题)
+  PASS 连按 12 次 Tab 焦点始终留在对话框内(有焦点圈定)
+  PASS Esc 能关闭对话框
+  PASS 关闭后焦点回到触发按钮
+
+== D2. 空草稿时的行为 ==
+  PASS 没有草稿内容时不弹确认对话框(直接开始)
+  PASS 确实产生了 1 条新的草稿记录
+  PASS 新草稿是空的,没有伪造内容
+
+== E. 学习页键盘导航 ==
+  PASS 方向键可切换题目
+  PASS 整轮 360px 巡检无 JS 异常
+
+结果: 34 通过, 0 失败
+
+===== SUITE: tests/browser/ai-series.js; exit=0; seconds=6.56 =====
+  PASS new framework topic appears without removing Pi Agent
+  PASS 3646 questions are loaded and new questions have no fabricated practice
+  PASS framework category has six questions
+  PASS scenario prompt and fused answer arrive together without clicking
+  PASS fusion keeps written answer and spoken version as separate labelled parts
+  PASS new question explains replay and displays fusion notes
+  PASS every analysis block is expanded on arrival
+  PASS existing MCP question uses corrected nondependency explanation
+  PASS LoRA dimensions and validation case are displayed
+  PASS existing question retains its ID and gains the specific resilience note
+  PASS fusion-only phrase is searchable at the original question
+  PASS search opens the deep section containing the supplement
+  PASS search anchor lands in the visible viewport
+  PASS source index contains all 98 article references
+  PASS source index links to both new and original questions
+  PASS framework guide links to all six LC questions
+  PASS new content fits a 360px viewport
+  PASS old notes, favourite, mastery and Pi learning state remain intact
+  PASS no browser errors during fusion workflow
+
+结果: 19 通过, 0 失败
+
+===== SUITE: tests/browser/concurrency-matrix.js; exit=0; seconds=17.23 =====
+  PASS 1. 同字段顺序写入:四态收敛到后写者(B写)
+  PASS 2. 不同题并发写入:两条都保留(无静默丢弃)
+  PASS 3. 同毫秒双写:决胜规则确定且磁盘/重开一致
+  PASS 4. 双清空:两次清空都被采纳(取较晚清空),笔记不复活
+  PASS 5. 暂停恢复:B 的旧内存不得覆盖 A 已保存的新值
+  PASS 6. pagehide 竞争:已保存版本不被旧输入覆盖(A 的输入留在冲突副本)
+  PASS 7. 清空后新写入保留、被清空内容不复活
+
+结果: 7 通过, 0 失败(矩阵记录: delivery/reviews/concurrency-matrix.json)
+
+===== SUITE: tests/browser/data-split.js; exit=0; seconds=2.92 =====
+  PASS manifest 枚举出全部专题分片
+  PASS 分片文件名带内容哈希
+  PASS APP_SHELL 不预缓存分片(按需运行时缓存)
+  PASS 壳同步可用:questions_index 有全量 id
+  PASS 浏览列表在壳阶段就渲染(index-only)
+  PASS 列表项渲染 index 字段(标题/专题/难度)
+  PASS 首页列表不隐式加载全库
+  PASS questionsLoaded() false→true(全量分片合并完成)
+  PASS 题库总数与源数据一致
+  PASS 分片题目 id 在 manifest 专题里
+  PASS 学习页渲染完整正文(答案区块存在)
+  PASS 搜索命中全量字段(fusion_notes/answer 来自分片)
+  PASS 已请求分片均确实落入缓存
+  PASS 离线:SW 缓存优先返回分片,学习页正文完整
+  PASS 离线:浏览列表照常工作
+  PASS 全程无页面 JS 异常
+
+结果: 16 通过, 0 失败
+
+===== SUITE: tests/browser/e2e-acceptance.js; exit=0; seconds=18.06 =====
+== 0. 空存储启动 ==
+  PASS 空存储时工作台正常渲染(不依赖任何预置数据)
+
+== 1. 答题并落盘 ==
+  PASS 练习页能列出题目
+  PASS 存在可用的状态按钮
+  PASS 笔记真的写进了 localStorage(不是只在界面上)
+  PASS 状态确实被记录
+
+== 2. 真实恢复(刷新)==
+  PASS 刷新后笔记内容还在输入框里
+  PASS 刷新后状态高亮还在
+
+== 3. 个人内容检索 ==
+  PASS 搜自己写的笔记能搜到(正式深链 #/search/<词>)
+  PASS 搜索命中落点带笔记锚点(能定位到笔记区)
+  PASS 兼容写法 #/search?q=<词> 的输入框会带上关键词
+  PASS 兼容写法 #/search?q=<词> 也能搜到结果
+
+== 4. 专项练习全流程 ==
+  PASS 专项作答真的落到 drillAttempts
+  PASS 该次尝试被记为 completed 而不是停在草稿
+
+== 5. 项目运行记录(证据)持久化 ==
+  PASS 项目页能找到项目卡片
+  PASS 保存后产生 1 条运行记录
+  PASS 运行记录带 runId(恢复时不会被静默丢弃)
+  PASS 运行记录内容与录入一致
+  PASS 刷新后运行记录在「我的运行记录」里可见
+
+== 6. 导出/清空/导入往返 ==
+  PASS 导出个人记录能拿到文件且内容包含刚写的数据
+  PASS 清空后本地记录里不再有笔记
+  PASS 点「导入记录」会打开文件选择器
+  PASS 导入后笔记被完整还原
+  PASS 导入后专项尝试也被还原(不是只还原题目记录)
+  PASS 导入结果对话框能正常关闭(不挡后续操作)
+
+== 7. 工作台与出口 ==
+  PASS 工作台首屏是「今天的三件事」
+  PASS 三件事都渲染出来了
+  PASS 第 1 件事的数字与磁盘记录一致
+  PASS 有「带走点东西」出口区
+  PASS 有「待攻克清单」导出按钮
+  PASS 待攻克清单确实可导出(有 weak 题)
+  PASS 没有模拟面试记录时,「最近一轮表达卡」按钮是禁用的
+  PASS 并说明了为什么不能导出
+  PASS 点导出真的下载到了文件
+  PASS 卡片内容带上了我自己写的笔记
+  PASS 待攻克清单用「我的笔记」标签,不冒充「我的回答」
+  PASS 卡片是给人看的成品(有标题/来源/题号)
+  PASS 能从工作台进入模拟面试并开始
+  PASS 能一题题翻到最后一题
+  PASS 模拟面试完成页有「导出这一轮的表达卡」
+  PASS 模拟面试也能导出表达卡
+  PASS 这一版用「我的回答」标签
+  PASS 卡片里真的有我写的那句回答
+  PASS 卡片带上了面试口述版与参考要点
+  PASS 练过一轮之后,工作台的表达卡按钮变为可用
+  PASS 导入后检索索引已重建,能重新搜到笔记
+  PASS 整条链路无 JS 异常
+
+结果: 46 通过, 0 失败
+
+===== SUITE: tests/browser/followup.js; exit=0; seconds=5.69 =====
+  PASS 题目有追问可用(题库校验保证非空)
+  PASS 未对照前没有追问区
+  PASS 对照后出现追问二跳区
+  PASS 追问参考默认不显示
+  PASS 对照后该追问参考显示
+  PASS 回答进入会话草稿(按追问 ID)
+  PASS 草稿保存作答时题面快照
+  PASS 刷新后追问回答保留(按 ID 定位)
+  PASS 刷新后已对照的追问保持揭示
+  PASS 完成轮次的题目记录带追问(只留真实写过的)
+  PASS 表达卡含「追问练习」一节
+  PASS 表达卡带追问原文
+  PASS 重排前:回答显示在原题面下
+  PASS 重排发布确已加载
+  PASS 重排后:回答仍显示在原题面下(身份跟内容走,不跟位置走)
+  PASS 题面改写后:旧回答进入待核对区,不冒充新题的回答
+  PASS 完成页展示追问回答与题面快照(主回答未写如实标注)
+  PASS 完成页表达卡资格:只写追问可导出
+  PASS 下一步建议区分「事实」与「推断」,并给出可跳转出口
+  PASS 首页「今天已写过模拟回答」认可只写追问的轮次
+  PASS 首页数量口径分列原回答、追问与修订
+  PASS 全程无页面 JS 异常
+
+结果: 22 通过, 0 失败
+
+===== SUITE: tests/browser/guides-offline.js; exit=0; seconds=6.98 =====
+PASS 专题快照映射接口存在
+PASS 主问与参考来自训练单元，原题只保留来源
+PASS 专题问答不继承原题选择题和选项
+PASS 参考与追问均为不可变快照
+PASS 表达卡保留专题主问、本人回答和两档参考
+PASS 训练主问不被误报为缺失选择题选项
+PASS Worker一直未ready时有界失败并恢复下载按钮
+PASS 17个训练单元都有列表入口
+PASS 桌面训练列表使用多列网格
+PASS 详情展示明确主问与分档参考
+PASS 360宽训练详情无横向溢出
+PASS 390宽训练详情无横向溢出
+PASS 训练模式使用专题主问，不依赖原题正文
+PASS 来源题回链保留
+PASS 对照后原回答只读且修订为空
+PASS 主参考采用60秒与3分钟版本
+PASS 新版训练资料确已加载
+PASS 手机刷新独立恢复原回答、追问和修订
+PASS 恢复仍使用原训练快照
+PASS 390宽练习页无横向溢出
+PASS 导出分别包含原回答、修订、追问及完整训练参考
+PASS 完成页实际下载独立保留原回答和本人修订
+PASS Guide完成轮次保留原单元身份
+PASS 训练路径无页面异常
+PASS 单片下载失败不会虚报离线就绪
+PASS 重试把核心专题与训练资料写入真实CacheStorage
+PASS 缓存驱逐能识别内存中仍存在的缺片
+PASS 驱逐后重新下载实际恢复缓存
+PASS 断网重载仍能打开17个已下载训练单元
+PASS 离线练习刷新保留草稿
+
+结果: 30 通过, 0 失败
+
+===== SUITE: tests/browser/hardening.js; exit=0; seconds=3.31 =====
+  PASS index.html 带 CSP meta
+  PASS 待攻克卡出现 Anki 出口按钮
+  PASS 契约 modal 含字段映射与更新说明
+  PASS Anki CSV 触发真实下载
+  PASS CSV 含指令头(首字段更新映射)与两道题
+  PASS SW 实际控制页面并在断网后加载题库与学习页
+  PASS index.html 不再含内联脚本
+  PASS 全程无 CSP 违规
+  PASS 全程无页面 JS 异常
+
+结果: 9 通过, 0 失败
+
+===== SUITE: tests/browser/highlight.js; exit=0; seconds=3.28 =====
+  PASS build ships every annotated question
+  PASS build ships every highlight span
+  PASS every span of every annotated question is applied (1396 field-groups)
+  PASS audit actually exercised every annotated question
+  PASS marks are keyed to the question id, not the text (AD-001 真号 7 个 / 幽灵号 0 个 / AGQ-0001 干净)
+  PASS study page shows the marks (AD-001 → 8)
+  PASS a key mark carries exactly the annotated phrase
+  PASS three levels use three different background colours
+  PASS key level is bold while term level is not
+  PASS no level falls back to the browser default mark colour or stays transparent
+  PASS marks do not break the 360px layout
+  PASS no page errors while rendering highlights
+
+结果: 12 通过, 0 失败
+
+===== SUITE: tests/browser/lazy-loading.js; exit=0; seconds=8.07 =====
+PASS 首页不后台下载题库
+PASS 学习页加载结束不会覆盖已切换的首页
+PASS 只加载目标Agent专题
+PASS 失败会向调用者报告
+PASS 失败保留全部元数据索引
+PASS 网络恢复后可重新加载
+PASS 坏缓存被剔除并重新下载
+PASS 首次访问已经缓存当前专题
+PASS 真实停服后刷新仍能读首次访问的题目
+PASS 未缓存题目报告加载失败，不误报题目不存在
+PASS 明确告知当前离线且尚未下载
+PASS 全程无JS异常
+结果: 12 通过, 0 失败
+
+===== SUITE: tests/browser/learning-integrity.js; exit=0; seconds=13.37 =====
+  PASS failed completion preserves draft and can retry exactly once
+  PASS remote completion prevents peer draft resurrection and duplicate rounds
+  PASS unresolved note conflict survives navigation and reload without replacing remote note
+  PASS two restored conflict editors do not echo writes and keep both versions
+  PASS regrading one attempt recomputes from its original SRS state
+  PASS merely revealing references does not increment practice count
+  PASS old reference snapshots survive a published content update and export
+  PASS legacy follow-up uncertainty survives completion, search, and export
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/browser/legacy-null-snapshot.js; exit=0; seconds=3.66 =====
+PASS local startup preserves old answers and normalizes only the historical null field
+PASS history explicitly reports the missing historical question while retaining personal text
+PASS real expression-card download keeps the missing-snapshot notice and both personal answers
+PASS browser restore preview accepts the released sentinel without modifying disk or memory
+PASS imported record survives refresh without an invented snapshot
+PASS a historical null no longer blocks starting and finishing new practice
+PASS compatibility flow has no page exceptions
+
+结果: 7 通过, 0 失败
+
+===== SUITE: tests/browser/mock-timer.js; exit=0; seconds=7.59 =====
+  PASS 模拟面试历史渲染 3 轮
+  PASS 趋势条渲染 3 格(≥2 轮才显示)
+  PASS 趋势条从左到右按 weak 率着色
+  PASS 带 ms 的轮次 hover 显示平均每题秒数
+  PASS hover 显示日期与题数与 weak 数
+  PASS 旧轮次(无 ms)hover 平均每题显示 —
+  PASS 趋势条带图例说明
+  PASS 少于 2 轮不渲染趋势条
+  PASS 完成的轮次落盘且为最新一条
+  PASS 轮次记录 durationMs > 0
+  PASS 每题记录 ms 为非负数字且总时长为正
+  PASS 轮次项作答内容已捕获
+  PASS 2 轮后趋势条出现
+  PASS 真实会话轮次的平均每题出现在趋势条
+  PASS 旧格式轮次平均每题显示 —
+  PASS 全程无 JS 异常
+
+结果: 16 通过, 0 失败
+
+===== SUITE: tests/browser/multitab.js; exit=0; seconds=5.37 =====
+  PASS A 页写入后,B 页内存自动合并
+  PASS B 页数据已收敛(内存读到 A 页笔记)
+  PASS B 页写入后,A 页内存自动合并
+  PASS 冲突收敛:B 后写,两页都是 B 的值
+  PASS 冲突收敛:A 再写,两页都是 A 的值
+  PASS 三份数据(磁盘/A/B)最终一致
+  PASS 维护页显示个人记录占用
+  PASS 全程无页面 JS 异常
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/browser/nowcoder-quiz.js; exit=0; seconds=3.56 =====
+  PASS 选择题:选项卡渲染
+  PASS 默认隐藏正确项(自测先选)
+  PASS 显示正确答案:高亮+解析展开
+  PASS 隐藏切换:就地恢复隐藏
+  PASS 新专题 quiz-ml 在浏览页可选且有题
+  PASS 分批渲染:首屏恰好一批(100 条)
+  PASS 加载更多:分批追加后超过一批
+  PASS 首页专题进度列出 17 专题(含新 8 个)
+  PASS 360px 选择题页无横向溢出
+  PASS 全程无 JS 异常
+
+结果: 10 通过, 0 失败
+
+===== SUITE: tests/browser/pi-agent.js; exit=0; seconds=6.48 =====
+  PASS home lists the independent Pi Agent category
+  PASS built application reads back the complete bank and 30 Pi IDs
+  PASS import creates no Pi answers, scores or mastery records
+  PASS category filter displays exactly thirty questions
+  PASS scenario prompt and fused answer are both visible on arrival
+  PASS fused card keeps the written answer and the spoken version apart
+  PASS focus toggle collapses the whole answer body for self-testing
+  PASS focus toggle restores the one-shot view
+  PASS PI-004 retains its full scenario prompt
+  PASS PI-004 displays every full explanation paragraph
+  PASS PI-004 has three nested follow-ups
+  PASS PI-004 keeps all five rubric criteria
+  PASS PI-004 retains the exact pinned source URL
+  PASS PI-004 can still collapse a single block on demand
+  PASS PI-004 expands back after the manual collapse
+  PASS PI-013 retains its full scenario prompt
+  PASS PI-013 displays every full explanation paragraph
+  PASS PI-013 has three nested follow-ups
+  PASS PI-013 keeps all five rubric criteria
+  PASS PI-013 retains the exact pinned source URL
+  PASS PI-013 can still collapse a single block on demand
+  PASS PI-013 expands back after the manual collapse
+  PASS PI-024 retains its full scenario prompt
+  PASS PI-024 displays every full explanation paragraph
+  PASS PI-024 has three nested follow-ups
+  PASS PI-024 keeps all five rubric criteria
+  PASS PI-024 retains the exact pinned source URL
+  PASS PI-024 can still collapse a single block on demand
+  PASS PI-024 expands back after the manual collapse
+  PASS PI-029 retains its full scenario prompt
+  PASS PI-029 displays every full explanation paragraph
+  PASS PI-029 has three nested follow-ups
+  PASS PI-029 keeps all five rubric criteria
+  PASS PI-029 retains the exact pinned source URL
+  PASS PI-029 can still collapse a single block on demand
+  PASS PI-029 expands back after the manual collapse
+  PASS long Pi question fits 360px without page overflow
+  PASS Pi glossary is available as a document, not extra questions
+  PASS prerequisite links use real Pi question IDs
+  PASS English terminology finds Pi content
+  PASS Chinese question text is searchable
+  PASS mock mode selects Pi questions and shows the full scenario
+  PASS test round contains only five Pi questions
+  PASS all pre-existing personal fields remain unchanged
+  PASS no page errors throughout Pi integration
+
+结果: 45 通过, 0 失败
+
+===== SUITE: tests/browser/practice-contract.js; exit=0; seconds=10.52 =====
+PASS hidden quiz conceals ALL explanations, including after hide and reload
+PASS quiz options and original snapshot survive reload, completion and both exports
+PASS legacy quiz snapshots remain readable without inventing missing options
+PASS QA reveal keeps its label and has no empty interview sections
+PASS second page supports real batch update without changing unselected questions
+PASS resume total counts unique questions and pending review is not mastery
+PASS resume questions occupy distinct rows on desktop and mobile
+结果: 7 通过, 0 失败
+
+===== SUITE: tests/browser/practice-reliability.js; exit=0; seconds=21.51 =====
+PASS 草稿保护:默认继续保留回答
+PASS 点击作答:完成统计和个人表达卡一致且不重复计数
+PASS 多选重做:刷新后仍可确认新答案
+PASS 历史快照:已删除题仍按当时选项判分与导出
+PASS 计时:揭示和自评前的思考时间累加
+PASS 草稿事务:保存失败不切换，保留副本可刷新找回
+PASS 未确认多选不计完成，已练旧题新会话不泄题
+PASS 统计:30天以外的排期不假报没有排期
+PASS 训练单元:追问快照不被新版覆盖，个人回答可导出
+PASS 统计:客观正确率与自评掌握分开
+PASS 按题加载:离开学习页后旧请求不覆盖新页面
+PASS 计时:刷新保留已累计时间，停止期间不计学习时长
+PASS 简历出口:参考资料与个人表达卡区分且真实下载
+PASS 快速判分:未防抖的文字回答跨判分重绘保留
+PASS 完成出口:再来一轮保留另一页后来创建的草稿
+
+结果: 15 通过, 0 失败
+
+===== SUITE: tests/browser/project-evidence.js; exit=0; seconds=9.95 =====
+  PASS two deliberate saves produce two persisted runs
+  PASS two failed records never encourage claiming successful experience
+  PASS short pitch survives reload
+  PASS long pitch survives reload independently
+  PASS selected evidence identity survives reload
+  PASS download contains both personal pitches
+  PASS download uses the chosen saved evidence
+  PASS download does not mix in a different run snapshot
+  PASS legacy outline and honest level are preserved
+  PASS HTML carries the same evidence and both pitches
+  PASS standalone printable card fits 360px
+  PASS search opens the exact long-pitch field
+  PASS search target is visible below navigation
+  PASS restore target really has no records
+  PASS fresh restore keeps short pitch
+  PASS fresh restore keeps long pitch and evidence binding
+  PASS repeated restore does not duplicate project history
+  PASS project editor fits 360px
+  PASS newest parallel draft is the initial editor
+  PASS submitting B never fills the editor with old A
+  PASS older draft remains available by explicit choice
+  PASS completed-attempt search displays that exact historic answer
+  PASS reading a historic answer does not fill the new attempt
+  PASS review labels a completed record without a rating honestly
+  PASS review draft link resumes the specified older draft
+  PASS yesterday round does not mark today done
+  PASS today with a real answer marks today done
+  PASS entire new workflow has no page errors
+
+结果: 28 通过, 0 失败
+
+===== SUITE: tests/browser/quiz-answer.js; exit=0; seconds=7.65 =====
+  PASS 未作答时选项可点击(role=button + tabindex)
+  PASS 未作答时不显示正确项( Conceal 契约不破)
+  PASS 判定前官方解析不泄漏
+  PASS 可点击项有 cursor:pointer 供能
+  PASS 答对:结果行显示「答对了」
+  PASS 答对:正确项高亮 + 答案区块自动展开
+  PASS 答对:lastSelfTest.correct=true 且 picked=[B]
+  PASS 答对:状态不自动标 ok
+  PASS 判定后选项不再可点(role 已摘)
+  PASS 答错:结果行「答错了·已标记还不熟」
+  PASS 答错:选中项红染 + 正确项高亮
+  PASS 答错:status=weak 且 lastSelfTest.correct=false
+  PASS 答错进入 SRS:排期 rating=again
+  PASS 刷新后渲染已作答态(quiz-judged + 历史选择)
+  PASS 刷新后重做按钮存在且可见
+  PASS 重做:清除 lastSelfTest 并恢复可点击
+  PASS 重做不撤销 weak 状态(那次作答真实发生过)
+  PASS 多选题渲染确认按钮(选中前隐藏)
+  PASS 多选:点击切换选中态(quiz-picked)
+  PASS 多选:有选中后确认按钮出现
+  PASS 多选判定:选 AC 判对(答对了 + picked=[A,C])
+  PASS 多选判错:答错标记 weak 且正确项高亮
+  PASS 模拟会话:quiz 选项可点击
+  PASS 模拟会话:判定后草稿记 quizPicked 且 revealed
+  PASS 完成轮次:轮次项 mark=weak 且带 picked 留档
+  PASS 完成轮次:题目记录同样标 weak
+  PASS 重练(上次答错):选项乱序且字母集合不变
+  PASS 乱序不拆散 label 与内容
+  PASS 乱序后判定仍以 right 为准:点 B 判对
+  PASS 全局开关开启:未答过的题也乱序
+  PASS 开关默认关闭:未答过的题保持原顺序
+  PASS 维护页有「选项乱序(重练)」开关
+  PASS 开关切换持久化到 ui.shuffleOptions
+  PASS 360px 作答界面无横向溢出
+  PASS 360px 判定后无横向溢出
+  PASS 全程无 JS 异常
+
+结果: 36 通过, 0 失败
+
+===== SUITE: tests/browser/remote-sync.js; exit=0; seconds=24.25 =====
+  PASS ST-01a A 写盘计数稳定(3s→4.5s)
+  PASS ST-01b A 路由计数稳定
+  PASS ST-01c B 写盘计数稳定
+  PASS ST-01d B 路由计数稳定
+  PASS ST-01e 无反复提示
+  PASS ST-01f 跨页更新不抢走 A 的输入焦点
+  PASS ST-01g A 的滚动位置保留
+  PASS ST-02a A 内存保持新版
+  PASS ST-02b B 内存保持新版
+  PASS ST-02c 磁盘保持新版
+  PASS ST-02d A 的textarea就地显示新版(未编辑控件被更新)
+  PASS ST-02e 滚动位置未被打断
+  PASS ST-02f 刷新后仍为新版
+  PASS ST-02g 冲突时 A 的本地输入保留(不被静默覆盖)
+  PASS ST-02h A 内存为 B 的新版(数据层新者胜)
+  PASS ST-02i 给出冲突处置入口
+  PASS ST-02j 对方版本可查看
+  PASS ST-02k 保留我的后落盘为 A 的版本
+  PASS ST-02l B 收敛到 A 处置后的版本
+
+结果: 19 通过, 0 失败
+
+===== SUITE: tests/browser/resume-loop.js; exit=0; seconds=4.87 =====
+  PASS 每个分组都有定向自测按钮
+  PASS 定向自测按钮标注题数
+  PASS 手动点击 summary 可折叠分组
+  PASS 点击定向自测不会误展开 details
+  PASS 拦截版收到 label=简历·组名 与有效题号
+  PASS 跳转到模拟会话页
+  PASS 会话草稿为定向模式
+  PASS 会话 label 以「简历·」开头且含组名
+  PASS 会话题数 = 分组有效题号数
+  PASS 页面进度指示与题数一致
+  PASS 必知题按钮出现且标注题数
+  PASS 必知会话 label = 简历·必知题
+  PASS 必知会话题号保序去重且与配置一致
+  PASS 文件名形如 简历参考资料-<组名>.txt
+  PASS 表达卡含每题【题号】头
+  PASS 表达卡含问/答行且非空
+  PASS 表达卡题数与分组一致
+  PASS 全程无 JS 异常
+
+结果: 18 通过, 0 失败
+
+===== SUITE: tests/browser/resume-view.js; exit=0; seconds=3.88 =====
+  PASS 导航栏含简历入口
+  PASS APP_DATA.resume 已构建(有分区)
+  PASS 简历页渲染出分区卡片
+  PASS 题目项指向真实题库
+  PASS 进度条总数与去重后的题号总数一致
+  PASS 全部模式分组数不少于必知模式
+  PASS 切回必知模式分组数还原
+  PASS 学习页状态按钮标记基本掌握
+  PASS 已掌握题在简历页显示完成态
+  PASS 点击简历题目跳到学习页
+  PASS 360px 简历页无横向溢出
+  PASS 全程无 JS 异常
+
+结果: 12 通过, 0 失败
+
+===== SUITE: tests/browser/revision-flow.js; exit=0; seconds=10.02 =====
+PASS 看参考前不显示修订框
+PASS Enter 展开参考后焦点停在参考标题而不跳过追问
+PASS 原回答只读且修订不自动复制参考
+PASS Space 展开追问参考后焦点停在对应参考正文
+PASS Space 自评重绘后保留同一自评按钮焦点
+PASS 输入框重绘保留修订文字选区和滚动位置
+PASS 立即完成独立捕获三份原文
+PASS 一道题的原回答追问修订只计一次
+PASS 两种导出都有三份原文
+PASS 真实下载保留独立修订段
+PASS 导入刷新后的历史同时展示原回答追问修订
+PASS 搜索本人修订真实点击落到同时保留原答与修订的历史
+PASS 仅查看参考仍未作答
+PASS 刷新保留仅修订草稿且不伪造原回答
+PASS 备份导入可继续编辑修订草稿
+PASS 只有修订也按真实作答进入轮次
+PASS 跨专题提前结束只存已访问题快照
+PASS 提前结束的真实备份可导入且只计已回答题
+PASS 单选 Enter 判题后焦点在重做且关联判题结果
+PASS 单选 Space 重做后焦点回到首个可作答选项
+PASS 单选重做后可直接用 Space 再次判题
+PASS 多选 Enter / Space 选中后仍保留选项焦点
+PASS 多选 Enter 确认后焦点在重做且正确判题
+PASS 多选 Space 重做恢复首选项焦点和确认控件
+PASS 多选重做后 Space 选项与确认仍可完成判题
+PASS 修订、提前结束和键盘流程没有页面异常
+
+结果: 26 通过, 0 失败
+
+===== SUITE: tests/browser/search-browse-fix.js; exit=0; seconds=3.8 =====
+  PASS 搜索结果:同一目标只出现一次(href 唯一)
+  PASS 搜索结果:同一题号只出现一次
+  PASS 搜索结果:命中位置以标签并列展示(而不是把卡片拆开)
+  PASS 摘要:高亮确实发生(正对照,否则下一条毫无意义)
+  PASS 摘要:高亮不嵌套、不破坏标签(8 组子串关键词)
+  PASS 前置:切换前确实停在一道会被筛掉的题上
+  PASS 切筛选后:详情标题属于当前列表
+  PASS 切筛选后:分页分母等于当前筛选集总数
+  PASS 全程无页面 JS 异常
+
+结果: 9 通过, 0 失败
+
+===== SUITE: tests/browser/search-cache.js; exit=0; seconds=4.24 =====
+  PASS 就绪基线:静态层已建且题量达标
+  PASS 三次个人写入后静态层不再重建
+  PASS 新笔记可检索
+  PASS 搜索页 UI 命中个人笔记
+  PASS 搜索命中「我的追问回答」
+  PASS 深链展开具体那一轮
+  PERF(3646题,本机Chromium):同步提交 7.8ms · 全量索引就绪 358.4ms · 动态重建 3.1ms · 查询中位 1.3ms(0.8~7.4)
+  PASS 性能量级安全(全文查询中位 < 50ms,全量索引就绪 < 500ms)
+  PASS 全程无页面 JS 异常
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/browser/search-legacy.js; exit=0; seconds=4.13 =====
+  PASS archived favourite appears without rejoining active question count
+  PASS old ID opens original archived body and personal note
+  PASS archived weak history remains accessible from mistakes
+  PASS archived history retains original user answer and old-ID link
+  PASS legacy note results appear while unrelated topic downloads are blocked
+  PASS partial-match fallback respects both note scope and topic filter
+  PASS partial match within allowed scope still finds the note
+  PASS late search/index completion cannot replace a newer route
+  PASS document reader loads without waiting for question shards
+  PASS no browser exceptions
+
+10 passed
+
+===== SUITE: tests/browser/srs.js; exit=0; seconds=5.83 =====
+  PASS 手动队列显示还不熟的题(不看排期,永远优先)
+  PASS 已到期的掌握题出现在到期建议里
+  PASS 未到期的掌握题不出现在建议里
+  PASS 到期建议标注间隔与上次复盘
+  PASS 「忘了」= 标还不熟 + 排期记一次遗忘
+  PASS 「忘了」后该题回到手动队列
+  PASS 「忘了」后不再出现在建议区
+  PASS 「还记得」状态保持基本掌握
+  PASS 「还记得」重排到期日到未来
+  PASS 「还记得」记一次成功
+  PASS 模拟面试标「基本掌握」:状态不变仍重排到期日
+  PASS 模拟面试标「基本掌握」:streak 连续成功 +1
+  PASS 同一轮重复点击同一按钮:排期不变(不把一次练习当成多次)
+  PASS 更改自评:以新信号重新排期
+  PASS 记录栏显示建议到期日(未来到期)
+  PASS 没有排期的题不显示建议
+  PASS 首页第一件事包含到期建议数量并注明可无视
+  PASS 首页复习数 = 手动队列 + 到期建议
+  PASS 360px 下复习页无横向溢出
+  PASS 全程无页面 JS 异常
+
+结果: 20 通过, 0 失败
+
+===== SUITE: tests/browser/stage4-matrix.js; exit=0; seconds=7.09 =====
+  PASS S1-pre 两页与磁盘均为独立初始笔记
+  PASS S1 同毫秒 A→B: A/B/磁盘/重开四态收敛
+  PASS S2 Node 暂停恢复回归文件存在(行为结果由独立 Node 套件报告)
+  PASS S3a noteDraft 落盘且含原文
+  PASS S3b 正式笔记保持 B 的版本(不被覆盖)
+  PASS S3c 清空后备份往返:noteDraft 仍在完整备份里
+  PASS S3d 恢复后输入副本可找回
+  PASS S4-pre A/B/磁盘均为独立种子，无 S3 记录残留
+  PASS S4 正向同毫秒 B→A: A/B/磁盘/重开四态收敛
+
+结果: 9 通过, 0 失败(轨迹: delivery/reviews/stage4-matrix.json)
+
+===== SUITE: tests/browser/stats-view.js; exit=0; seconds=2.63 =====
+  PASS 热力表渲染全部专题行(20 行)
+  PASS agent 行:未练习(全库−3)/ 还不熟 2 / 基本掌握 1 / 待复习 0
+  PASS rag 行:未练习(全库−3)/ 还不熟 0 / 基本掌握 2 / 待复习 1
+  PASS 热力格带色阶(有计数的格有背景色)
+  PASS 行标签链到 #/browse?t=
+  PASS 到期摘要:今天 1 · 7天内 2 · 30天内 2 · 逾期 1
+  PASS 30 根柱子渲染
+  PASS 今天的柱子高亮
+  PASS 错题分布只含 agent(2 次)且降序
+  PASS 有数据场景全程无 JS 异常
+  PASS 空数据:热力表仍有全部专题行,非未练习列全为 0
+  PASS 空数据:预测与错题分布两块都有空态文案
+  PASS 空数据:错题分布无柱状行
+  PASS 空数据场景全程无 JS 异常
+  PASS 360px 统计页无横向溢出
+
+结果: 15 通过, 0 失败
+
+===== SUITE: tests/browser/sw-topic-cache.js; exit=0; seconds=2.67 =====
+  PASS 缓存一分为二:shell 版本名 + topics 独立名
+  PASS 分片全部落在 topics 缓存里
+  PASS topics 缓存里没有分片之外的杂项
+  PASS shell 缓存里一条分片都没有
+  PASS 幽灵分片已入缓存(前置条件)
+  PASS manifest 之外的旧分片被清掉,其余不动
+  PASS shell 缓存整包失效后分片依然在
+  PASS 全程无 JS 异常
+
+结果: 8 通过, 0 失败
+
+===== SUITE: tests/browser/ui-repro.js; exit=0; seconds=14.28 =====
+
+== 问题 A:提交尝试时写盘失败,却提示已保存 ==
+    [观测] 写盘失败前 attempts 状态 = ["draft"]
+    [观测] 提交后提示 = ["发现新版本,点击刷新","保存失败:本地存储空间已满(QuotaExceededError)","保存失败:本地存储空间已满(QuotaExceededError)","提交未落盘:本地存储空间已满(QuotaExceededError)"]
+  PASS A 写盘失败时必须提示保存失败
+  PASS A 写盘失败时不得提示「已保存」
+  PASS A 写盘失败时不得把内存记录推进为 completed(界面与磁盘不能分叉)
+
+== 问题 D:「放弃草稿」被写成一条 completed 记录 ==
+    [观测] 弹窗按钮 = ["提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","提交本次尝试","取消","放弃草稿(留痕)","提交后另开"]
+    [观测] 放弃后 attempts = [{"status":"abandoned","ans":"写了一半就想放弃的内容"},{"status":"draft","ans":""}]
+  PASS D 「放弃草稿」不得产生一条 completed 记录
+  PASS D 放弃必须留下可区分的痕迹(abandoned 或直接丢弃)
+    [观测] 空草稿开始新尝试后 attempts = [{"status":"abandoned","ans":"写了一半就想放弃的内容"},{"status":"draft","ans":""}]
+  PASS D 空草稿「开始新尝试」不得留下无内容的 completed 记录
+
+== 问题 E:复习页「今日复习」的专项聚合与进入方式 ==
+    [观测] 今日复习正文 = "📌 今日复习 没有手动标记的待复习题目\n做一轮自测\n🧩 专项练习待消化(1)\n先预测输出再运行: t = ('a', ['x']) t[1] += ['y'] print(t)"
+  PASS E-1 没有待复习题目但有未解决专项时,专项清单仍须显示
+  PASS E-3 前置:复习页出现专项链接
+    [观测] 键盘 Enter 后 location.hash = #/path?d=drill-1pred01&at=at-1
+  PASS E-3 键盘 Enter 必须进入该专项页(不得跳到 #/study/undefined)
+
+== 问题 F-2:项目/概念的检索落点无身份锚点 ==
+    [观测] 项目检索结果 href = #/path?p=proj-c-mini-rag
+  PASS F-2 项目检索落点必须带项目身份(点击后能定位到该项目)
+
+== 深锚点落点:项目运行记录 / 概念 / 项目草稿 ==
+    [观测] {"projOpen":true,"runExists":true,"runOpen":true,"runVisible":true,"scrolled":true}
+  PASS 锚点:项目卡片被展开
+  PASS 锚点:目标运行记录存在且被展开
+  PASS 锚点:页面确实滚到了该记录(不是停在顶部)
+  PASS 锚点:概念条目被展开而不是跳到某道题冒充命中
+  PASS 锚点:带 tab=draft 时项目实现记录区被展开
+
+== 清空记录后检索(真实应用接线)==
+    [观测] 清空前命中 1 清空后命中 0
+  PASS H-2 端到端:清空后搜索不再返回已清空的笔记
+  PASS 页面无 JS 异常
+
+结果: 17 通过, 0 失败
+
+===== SUITE: tests/browser/ux-fixes.js; exit=0; seconds=7.45 =====
+  PASS 搜索 rag(别名展开)返回结果
+  PASS 零结果降级显示部分匹配提示
+  PASS 部分匹配提示文案正确
+  PASS 降级后仍有结果
+  PASS 严格命中不出现部分匹配提示
+  PASS 未显式选择 + 系统 dark → 页面为暗色
+  PASS 显式 light + 系统 dark → 保持亮色
+  PASS 学习页笔记框可输入空格
+  PASS 方向键翻题仍生效
+  PASS 全程无 JS 异常(主页面)
+  PASS 全程无 JS 异常(暗色页面)
+
+结果: 11 通过, 0 失败
+
+===== TOOL: fusion-ai-series; exit=0; seconds=0.48 =====
+{
+  "sources": 98,
+  "insert": 0,
+  "update": 0,
+  "skip": 85,
+  "rewritten": 30,
+  "existing": 72,
+  "new_questions": 13
+}
+
+===== TOOL: fusion-pi-agent; exit=0; seconds=0.41 =====
+{
+  "bank_id": "pi-agent-interview-30",
+  "category": "Pi Agent",
+  "insert": 0,
+  "skip": 30,
+  "update": 0,
+  "conflict": 0,
+  "questions": 30,
+  "followups": 90
+}
+
+===== TOOL: content-selftest; exit=0; seconds=0.27 =====
+审计器自检通过:4 个真占位符全部命中,4 个正常写法全部豁免,数字断言 2 命中 / 3 豁免 / 未标注围栏照常计数
+
+===== TOOL: sources-selftest; exit=0; seconds=0.33 =====
+来源比对自检通过:5 组正反例 + 1 组简写引用不变量
+
+===== TOOL: highlights-selftest; exit=0; seconds=0.18 =====
+标注审计器自检通过:8 个用例(好标注放行 / 7 类坏标注全部命中)
+
+===== TOOL: content-audit; exit=0; seconds=1.13 =====
+题库 3646 题 / 专项练习 18 个 / 阶段 6 / 项目 4 / 文档 15
+题目总数:3646
+硬问题 0 条,提醒 24 条
+内容偏薄(前 20):
+  [薄] AG-016     总长                 857 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] RG-047     总长                 888 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] FD-024     总长                 890 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] RG-031     总长                 891 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] FD-017     总长                 894 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] FD-014     总长                 897 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] LP-001     总长                 909 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] FD-010     总长                 914 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] AD-005     总长                 918 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] RG-038     总长                 921 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] AD-002     总长                 930 字 < 全库 5% 分位 954,是相对最薄的几道
+  [薄] RG-012     总长                 931 字 < 全库 5% 分位 954,是相对最薄的几道
+核查日期过期:0 条
+
+===== TOOL: highlight-audit; exit=0; seconds=0.59 =====
+题库 3646 题 / 已标注 349 题(10%) / 标注 3453 条
+按级别:{"key": 2014, "warn": 1308, "term": 131}
+按字段:{"answer": 925, "plain": 620, "deep": 993, "example": 260, "interview": 655}
+
+进度(按专题):
+  quiz-ml            0/697 题      0 条
+  quiz-math          0/483 题      0 条
+  quiz-dl            0/362 题      0 条
+  quiz-llm           0/318 题      0 条
+  quiz-llm-dev       0/266 题      0 条
+  rag               71/259 题    597 条
+  agent             61/251 题    586 条
+  quiz-finetune      0/184 题      0 条
+  quiz-inference     0/184 题      0 条
+  quiz-cv            0/180 题      0 条
+  llm-prompt        46/145 题    453 条
+  iv-nowcoder-llm    0/ 72 题      0 条
+  iv-nowcoder-ml     0/ 60 题      0 条
+  engineering       45/ 45 题    537 条
+  python-backend    44/ 44 题    415 条
+  pi-agent          30/ 30 题    348 条
+  fundamentals      24/ 24 题    231 条
+  advanced          22/ 22 题    231 条
+  iv-company         0/ 14 题      0 条
+  langchain          6/  6 题     55 条
+
+错误 0 条 / 提醒 0 条
+
+===== TOOL: source-structure; exit=0; seconds=0.5 =====
+来源核验 2026-09-30 共 346 个唯一链接
+结构性检查完成（346 个链接可枚举）；本次未请求网络，不判断可达性或标题，不写报告。
+
+===== TOOL: bank-structure; exit=0; seconds=0.98 =====
+校验时间: 2026-09-30
+题目总数: 3646
+错误: 0
+警告: 172
+
+WARN  [nk-quiz-cv.json] CVQ-0003: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0010: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0015: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0018: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0020: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0025: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0029: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0030: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0039: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0054: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0055: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0056: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0063: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0071: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0072: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0074: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0078: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0079: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0088: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0089: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0093: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0097: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0117: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0120: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0127: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0132: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0143: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0145: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0167: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0169: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0170: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0177: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-cv.json] CVQ-0186: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0008: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0035: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0037: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0048: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0053: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0061: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0075: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0081: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0102: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0111: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0113: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0127: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0133: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0134: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0136: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0229: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0244: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0271: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0278: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0287: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0319: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0330: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0335: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0338: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0369: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0374: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0380: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-dl.json] DLQ-0387: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-llm.json] LBQ-0102: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0009: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0015: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0024: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0030: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0034: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0035: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0036: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0043: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0047: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0072: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0080: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0082: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0092: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0096: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0100: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0103: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0113: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0125: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0126: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0128: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0129: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0144: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0147: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0154: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0155: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0161: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0163: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0168: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0172: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0178: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0179: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0186: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0196: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0200: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0204: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0209: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0222: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0229: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0236: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0245: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0247: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0255: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0260: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0267: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0268: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0271: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0275: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0290: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0292: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0321: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0327: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-math.json] MAQ-0390: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0006: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0015: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0019: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0021: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0024: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0025: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0033: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0039: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0041: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0051: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0056: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0058: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0066: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0073: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0081: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0082: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0098: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0112: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0136: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0137: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0167: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0168: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0170: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0180: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0196: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0200: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0205: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0225: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0227: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0234: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0235: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0254: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0257: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0275: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0293: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0301: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0307: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0359: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0393: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0411: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0466: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0469: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0478: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0513: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0537: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0541: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0549: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0565: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0576: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0599: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0608: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0624: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0627: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0629: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0634: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0663: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0671: 解析过短(<40 字,牛客未提供或简短)
+WARN  [nk-quiz-ml.json] MLQ-0699: 解析过短(<40 字,牛客未提供或简短)
+
+===== TOOL: duplicate-candidates; exit=0; seconds=240.3 =====
+[0.70] LC-002 ↔ IVL-0051
+    如何用LangChain v1构造可控的模型—工具循环？
+    什么是LangChain
+[0.70] LC-004 ↔ IVL-0051
+    LangChain v1中间件迁移为什么不能只改import？
+    什么是LangChain
+[0.70] LC-005 ↔ IVL-0051
+    Java服务中LangChain4j的AI Services承担哪些责任？
+    什么是LangChain
+[0.61] AD-007 ↔ FTQ-0004
+    灾难性遗忘(catastrophic forgetting)怎么评估和缓解?微调后通用能力掉了怎么发现?
+    灾难性遗忘（Catastrophic Forgetting）的缓解方法中，不属于常用方案的是？
+[0.66] AD-010 ↔ INQ-0012
+    投机解码(speculative decoding)是怎么加速推理的?为什么会不改变结果?
+    推测解码（Speculative Decoding）的加速原理是什么？
+[0.66] AD-010 ↔ LBQ-0223
+    投机解码(speculative decoding)是怎么加速推理的?为什么会不改变结果?
+    Speculative Decoding(投机解码)的基本原理是什么？
+[0.62] AD-002 ↔ IVL-0039
+    量化(quantization)和 KV Cache 是怎么把大模型塞进普通显卡的?
+    什么是 KV Cache？
+[0.62] FD-024 ↔ LPQ-0045
+    模型的『上下文学习』(in-context learning, ICL)是什么?为什么不用训练就能学新任务?
+    以下哪种描述最准确地定义了"上下文学习"（In-Context Learning）？
+[0.63] FD-024 ↔ LBQ-0213
+    模型的『上下文学习』(in-context learning, ICL)是什么?为什么不用训练就能学新任务?
+    下列关于上下文学习（In-context Learning, ICL）的描述，哪一项最准确？
+[0.63] FD-024 ↔ LBQ-0375
+    模型的『上下文学习』(in-context learning, ICL)是什么?为什么不用训练就能学新任务?
+    关于大模型的上下文学习(In-Context Learning, ICL)能力，以下哪项理论解释被认为最有启发性？
+[0.70] AD-019 ↔ LDQ-0027
+    多任务学习(Multi-Task Learning)与多 LoRA 的取舍?
+    在大模型的多任务学习（Multi-task Learning）中，以下哪种策略最能提高模型的泛化能力？
+[0.62] FD-026 ↔ IVL-0039
+    KV Cache 是什么?为什么它让长对话越来越贵?
+    什么是 KV Cache？
+[0.70] AG-010 ↔ IVL-0051
+    LangChain / LlamaIndex 这类框架的价值和边界是什么?什么时候该裸写?
+    什么是LangChain
+[0.70] RG-021 ↔ IVL-0022
+    HyDE(Hypothetical Document Embeddings)是什么?为什么『先编一个假答案』反而能提升检索?
+    什么是 Embedding？
+[0.63] RG-021 ↔ LDQ-0268
+    HyDE(Hypothetical Document Embeddings)是什么?为什么『先编一个假答案』反而能提升检索?
+    在RAG系统中使用HyDE（Hypothetical Document Embeddings）技术时，其工作流程是什么？
+[0.61] RG-021 ↔ LBQ-0264
+    HyDE(Hypothetical Document Embeddings)是什么?为什么『先编一个假答案』反而能提升检索?
+    在RAG系统中，Hypothetical Document Embedding(HyDE)技术的核心思想是什么？
+[0.86] RG-021 ↔ RGQ-0155
+    HyDE(Hypothetical Document Embeddings)是什么?为什么『先编一个假答案』反而能提升检索?
+    HyDE（Hypothetical Document Embeddings）为什么能提升检索质量？
+[0.62] RG-029 ↔ RGQ-0025
+    评估指标的细账:Context Precision 和 Context Recall 分别衡量什么?为什么两个都要?
+    在RAG评估中，"上下文精确率"（Context Precision）和"上下文召回率"（Context Recall）分别衡量什么？
+[0.68] LP-014 ↔ LPQ-0015
+    自一致性(self-consistency)是什么?什么时候值得同一问题跑多次再投票?
+    Self-consistency 技术的做法是什么？
+[0.87] FD-009 ↔ IVL-0027
+    位置编码(positional encoding)是干什么的?RoPE 相比正弦编码解决了什么?
+    什么是位置编码（Positional Encoding）？
+[0.64] FD-001 ↔ IVL-0017
+    用大白话解释注意力机制和 Transformer:模型是怎么『看懂』一句话的?
+    什么是 Transformer 架构？
+[0.63] AGQ-0008 ↔ AGQ-0167
+    以下关于"Agent Checkpoint"（检查点）机制的作用，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.62] AGQ-0008 ↔ DLQ-0145
+    以下关于"Agent Checkpoint"（检查点）机制的作用，描述正确的是？
+    1x1 卷积的作用，描述正确的是
+[0.62] AGQ-0015 ↔ AGQ-0017
+    以下代码定义了Agent的状态，以下哪个字段设计存在潜在问题？```python class AgentState(TypedDict): messages:
+    以下代码使用LangGraph定义了什么结构？```python class AgentState(TypedDict): messages: Annotate
+[0.63] AGQ-0025 ↔ AGQ-0167
+    以下关于Agent中"Tool Description"（工具描述）的重要性，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0041 ↔ AGQ-0167
+    以下关于"Agent Communication Protocol"（Agent通信协议）的标准化，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.62] AGQ-0050 ↔ AGQ-0126
+    以下哪种Multi-Agent设计模式最适合"代码审查"场景？
+    以下哪种"Multi-Agent通信模式"最适合需要共识决策的场景（如投票决定最终答案）？
+[0.70] AGQ-0053 ↔ IVL-0051
+    以下关于Semantic Kernel（微软开源框架）与LangChain的对比，哪项描述正确？
+    什么是LangChain
+[0.81] AGQ-0054 ↔ AGQ-0182
+    以下关于代码解释器（Code Interpreter）作为Agent工具的描述，哪项正确？
+    以下关于代码解释器（Code Interpreter）工具的描述，正确的是？
+[0.63] AGQ-0058 ↔ AGQ-0167
+    以下关于"Agent Security Audit"（Agent安全审计）的必要性，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0074 ↔ AGQ-0167
+    以下关于"Agent Memory Summarization"（记忆摘要）策略，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0081 ↔ AGQ-0167
+    以下关于"Agent State Management"（Agent状态管理）的最佳实践，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0089 ↔ AGQ-0167
+    以下关于"Agent Benchmarking"（Agent基准测试）的局限性，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0100 ↔ AGQ-0167
+    以下关于"Agent as a Service"（AaaS）部署模式，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.70] AGQ-0102 ↔ IVL-0051
+    LangGraph相比LangChain的主要优势是什么？
+    什么是LangChain
+[0.70] AGQ-0103 ↔ AGQ-0134
+    以下哪种技术使Agent能够在工具调用失败时自动切换备用方案？
+    以下哪种技术使Agent能在"工具调用失败"时自动选择备选方案？
+[0.63] AGQ-0107 ↔ AGQ-0167
+    以下关于"Agent Sandboxing"（沙箱隔离）的必要性，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0115 ↔ AGQ-0167
+    以下关于"Agent Persona"（Agent角色设定）对行为的影响，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.60] AGQ-0129 ↔ LDQ-0246
+    Plan-and-Execute架构相比ReAct在复杂任务上的优势是什么？
+    在Agent开发中，使用Planning模式（如Plan-and-Execute）相比纯ReAct模式的优势是什么？
+[0.63] AGQ-0132 ↔ AGQ-0167
+    以下关于Agentic RAG与传统RAG的区别，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.63] AGQ-0148 ↔ AGQ-0167
+    以下关于"Agent Output Validation"（Agent输出验证）的重要性，描述正确的是？
+    以下关于Agent评估的困难，描述正确的是？
+[0.70] AGQ-0163 ↔ IVL-0051
+    以下关于LangChain的LCEL（LangChain Expression Language）在Agent中的应用，哪项正确？
+    什么是LangChain
+[0.63] AGQ-0167 ↔ AGQ-0170
+    以下关于Agent评估的困难，描述正确的是？
+    以下关于"Agent Orchestration vs Choreography"（编排vs协同）模式的区别，描述正确的是？
+[0.63] AGQ-0167 ↔ AGQ-0173
+    以下关于Agent评估的困难，描述正确的是？
+    以下关于"Agent Self-improvement"（Agent自我改进）的可行方案，描述正确的是？
+[0.63] AGQ-0167 ↔ AGQ-0178
+    以下关于Agent评估的困难，描述正确的是？
+    以下关于"Agent Observability"（Agent可观测性）工具的选择，描述正确的是？
+[0.63] AGQ-0167 ↔ AGQ-0184
+    以下关于Agent评估的困难，描述正确的是？
+    以下关于Agent安全中"最小权限原则"的应用，描述正确的是？
+[0.63] AGQ-0167 ↔ AGQ-0188
+    以下关于Agent评估的困难，描述正确的是？
+    以下关于Agent工具的"幂等性"设计原则，描述正确的是？
+[0.78] AGQ-0170 ↔ AGQ-0175
+    以下关于"Agent Orchestration vs Choreography"（编排vs协同）模式的区别，描述正确的是？
+    以下关于"Agent Orchestration vs Agent Choreography"的区别，哪项描述正确？
+[0.64] IVP-0007 ↔ IVL-0017
+    你怎么把 Transformer 用到图像任务上的？和 CNN 相比优劣在哪些场景体现？
+    什么是 Transformer 架构？
+[0.60] IVL-0001 ↔ IVL-0002
+    大模型中的“微调”是什么
+    大模型中的“SFT”是什么？
+[0.60] IVL-0001 ↔ IVL-0003
+    大模型中的“微调”是什么
+    大模型中的“CoT（Chain of Thought）”是什么？
+[0.60] IVL-0001 ↔ IVL-0004
+    大模型中的“微调”是什么
+    大模型中的“RAG（Retrieval-Augmented Generation）”是什么
+[0.60] IVL-0001 ↔ IVL-0005
+    大模型中的“微调”是什么
+    大模型中的“RL（Reinforcement Learning）”是什么？
+[0.60] IVL-0001 ↔ IVL-0006
+    大模型中的“微调”是什么
+    大模型中的“GRPO（Generative Rejection Preference Optimization）”是什么？
+[0.60] IVL-0001 ↔ IVL-0007
+    大模型中的“微调”是什么
+    大模型中的“MOE（Mixture of Experts）”是什么？
+[0.60] IVL-0001 ↔ IVL-0008
+    大模型中的“微调”是什么
+    大模型中的“Scaling（扩展规律）”是什么？
+[0.60] IVL-0001 ↔ IVL-0009
+    大模型中的“微调”是什么
+    大模型中的“软标签（Soft Label）”是什么？
+[0.60] IVL-0001 ↔ IVL-0010
+    大模型中的“微调”是什么
+    大模型中的“噪声（Noise）”是什么？
+[0.60] IVL-0001 ↔ IVL-0011
+    大模型中的“微调”是什么
+    大模型中的“温度（Temperature）”是什么？
+[0.60] IVL-0001 ↔ IVL-0012
+    大模型中的“微调”是什么
+    大模型中的“对齐（Alignment）”是什么
+[0.60] IVL-0001 ↔ IVL-0013
+    大模型中的“微调”是什么
+    大模型中的“上下文窗口（Context Window）”是什么？
+[0.60] IVL-0001 ↔ IVL-0014
+    大模型中的“微调”是什么
+    大模型中的“泛化（Generalization）”是什么？
+[0.64] IVL-0002 ↔ IVL-0003
+    大模型中的“SFT”是什么？
+    大模型中的“CoT（Chain of Thought）”是什么？
+[0.64] IVL-0002 ↔ IVL-0008
+    大模型中的“SFT”是什么？
+    大模型中的“Scaling（扩展规律）”是什么？
+[0.64] IVL-0002 ↔ IVL-0012
+    大模型中的“SFT”是什么？
+    大模型中的“对齐（Alignment）”是什么
+[0.62] IVL-0004 ↔ IVL-0014
+    大模型中的“RAG（Retrieval-Augmented Generation）”是什么
+    大模型中的“泛化（Generalization）”是什么？
+[0.78] IVL-0004 ↔ LBQ-0225
+    大模型中的“RAG（Retrieval-Augmented Generation）”是什么
+    在RAG(Retrieval-Augmented Generation)系统中，当检索到的文档与用户问题相关但包含过时信息时，最佳处理策略是什么？
+[0.78] IVL-0004 ↔ RGQ-0086
+    大模型中的“RAG（Retrieval-Augmented Generation）”是什么
+    1.RAG（Retrieval-Augmented Generation）相比纯参数记忆的LLM，核心优势是什么？
+[0.61] IVL-0005 ↔ FTQ-0110
+    大模型中的“RL（Reinforcement Learning）”是什么？
+    RLAIF（Reinforcement Learning from AI Feedback）与RLHF的主要区别是？
+[0.65] IVL-0005 ↔ LBQ-0183
+    大模型中的“RL（Reinforcement Learning）”是什么？
+    在通过RLHF（Reinforcement Learning from Human Feedback）对大模型进行对齐（Alignment）的流程中，奖励模型（
+[0.71] IVL-0006 ↔ IVL-0014
+    大模型中的“GRPO（Generative Rejection Preference Optimization）”是什么？
+    大模型中的“泛化（Generalization）”是什么？
+[0.66] IVL-0006 ↔ IVL-0036
+    大模型中的“GRPO（Generative Rejection Preference Optimization）”是什么？
+    什么是 DPO（Direct Preference Optimization）？
+[0.63] IVL-0007 ↔ INQ-0040
+    大模型中的“MOE（Mixture of Experts）”是什么？
+    MoE（Mixture of Experts）模型推理时，"expert load imbalance"问题指的是？
+[0.63] IVL-0007 ↔ LBQ-0013
+    大模型中的“MOE（Mixture of Experts）”是什么？
+    在大语言模型中引入稀疏混合专家（Sparse Mixture of Experts, SMoE）架构，其最主要的设计目标是？
+[0.63] IVL-0007 ↔ LBQ-0027
+    大模型中的“MOE（Mixture of Experts）”是什么？
+    以下哪些是MoE(Mixture of Experts)架构相比密集模型的优势？
+[0.63] IVL-0007 ↔ LBQ-0347
+    大模型中的“MOE（Mixture of Experts）”是什么？
+    在大模型中，关于Mixture of Experts(MoE)模型的推理效率和总参数量的关系，以下哪项描述最准确？
+[0.63] IVL-0012 ↔ LDQ-0078
+    大模型中的“对齐（Alignment）”是什么
+    关于多模态大模型中的对齐（Alignment）问题，以下哪些说法是正确的？
+[0.62] IVL-0013 ↔ LPQ-0009
+    大模型中的“上下文窗口（Context Window）”是什么？
+    以下哪种说法正确描述了"上下文窗口"（Context Window）？
+[0.73] IVL-0013 ↔ LDQ-0138
+    大模型中的“上下文窗口（Context Window）”是什么？
+    大语言模型中的"上下文窗口"(Context Window)指的是什么？
+[0.62] IVL-0014 ↔ LBQ-0343
+    大模型中的“泛化（Generalization）”是什么？
+    关于大模型中的"长度泛化"(Length Generalization)问题，以下哪项描述最准确？
+[0.67] IVL-0015 ↔ LDQ-0102
+    什么是大语言模型（LLM）？
+    关于大语言模型（LLM）的基础概念，下列说法正确的是（）
+[0.67] IVL-0015 ↔ LBQ-0029
+    什么是大语言模型（LLM）？
+    在大语言模型（LLM）的实际部署中，推理延迟是常见的瓶颈。以下哪种优化技术能同时有效减少模型的计算量和内存占用？
+[0.67] IVL-0015 ↔ LBQ-0053
+    什么是大语言模型（LLM）？
+    大语言模型（LLM）的 In-Context Learning (ICL) 能力主要依赖于其架构中的哪个核心机制，使得模型能够在不更新任何权重参数的情况下，根据
+[0.64] IVL-0017 ↔ IVL-0018
+    什么是 Transformer 架构？
+    为什么 Transformer 能取代 RNN？
+[0.64] IVL-0017 ↔ IVL-0026
+    什么是 Transformer 架构？
+    前馈神经网络（FFN）在 Transformer 中有什么作用？
+[0.64] IVL-0017 ↔ IVL-0053
+    什么是 Transformer 架构？
+    把 Transformer / Decoder‑only 的整体结构过一遍，各个组件分别在干什么，有哪些常见变体。
+[0.64] IVL-0017 ↔ IVM-0053
+    什么是 Transformer 架构？
+    Transformer 里因果注意力的 Q/K/V 各从哪来？Mask 具体怎么实现。
+[0.64] IVL-0017 ↔ CVQ-0008
+    什么是 Transformer 架构？
+    在 Vision Transformer (ViT) 模型中，通常会在输入序列的开头添加一个可学习的分类令牌（[CLS] token）。关于这个 [CLS] t
+[0.64] IVL-0017 ↔ CVQ-0166
+    什么是 Transformer 架构？
+    Vision Transformer (ViT) 模型将图像分割成一系列的图像块（Patches）并将其作为序列输入。由于Transformer的自注意力机制是
+[0.64] IVL-0017 ↔ CVQ-0192
+    什么是 Transformer 架构？
+    与传统的卷积神经网络（CNN）相比，Vision Transformer (ViT) 模型在处理图像时的一个根本性区别在于？
+[0.64] IVL-0017 ↔ DLQ-0015
+    什么是 Transformer 架构？
+    在自回归 Transformer 的在线推理中，哪种工程手段能显著降低每个新生成 token 的计算量，从而提升吞吐与降低延迟：
+[0.64] IVL-0017 ↔ DLQ-0029
+    什么是 Transformer 架构？
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+[0.64] IVL-0017 ↔ DLQ-0049
+    什么是 Transformer 架构？
+    在训练Transformer时希望使用权重衰减以改善泛化，但又不希望其与自适应梯度估计相互耦合影响收敛，以下哪种优化器/做法最合适？
+[0.64] IVL-0017 ↔ DLQ-0056
+    什么是 Transformer 架构？
+    Vision Transformer (ViT) 通过将图像分割成块（patches）并利用自注意力机制进行处理，取得了巨大成功。与传统的卷积神经网络（CNN）
+[0.64] IVL-0017 ↔ DLQ-0064
+    什么是 Transformer 架构？
+    Transformer中使用的正则化方式为BN
+[0.64] IVL-0017 ↔ DLQ-0073
+    什么是 Transformer 架构？
+    在自回归 Transformer 的长序列生成推理中，若希望在不改变数值结果的前提下显著减少每步的重复计算并提升吞吐，最有效的工程实践是：
+[0.64] IVL-0017 ↔ DLQ-0101
+    什么是 Transformer 架构？
+    在Transformer模型训练中，Pre-Layer Normalization（将Layer Norm置于残差分支的输入侧）相比传统Post-Layer N
+[0.64] IVL-0017 ↔ DLQ-0121
+    什么是 Transformer 架构？
+    在Tensor Parallelism中，对Transformer的MLP层进行列并行（Column Parallel）切分时，每个GPU上的计算过程是什么？
+[0.64] IVL-0017 ↔ DLQ-0132
+    什么是 Transformer 架构？
+    在Transformer的自注意力机制中，关于查询（Query, Q）、键（Key, K）、值（Value, V）的描述，正确的是？
+[0.64] IVL-0017 ↔ DLQ-0147
+    什么是 Transformer 架构？
+    在自然语言处理任务中，使用Transformer模型处理长文本序列时，限制输入长度的主要原因是：
+[0.64] IVL-0017 ↔ DLQ-0154
+    什么是 Transformer 架构？
+    Transformer 模型是自然语言处理中极具影响力的模型。下列选项中，对于 Transformer 模型的说法描述正确的是（）
+[0.64] IVL-0017 ↔ DLQ-0176
+    什么是 Transformer 架构？
+    Transformer 模型在得到矩阵 Q, K, V 以后就可以进行计算 Self-Attention 的输出，下列选项中，正确的计算公式是（）
+[0.64] IVL-0017 ↔ DLQ-0179
+    什么是 Transformer 架构？
+    在Transformer的多头注意力机制中，如果模型维度为512，使用8个注意力头，每个头的Q、K、V向量维度为多少？
+[0.64] IVL-0017 ↔ DLQ-0185
+    什么是 Transformer 架构？
+    以下关于Transformer中Multi-Head Attention的说法，哪些是正确的？
+[0.79] IVL-0017 ↔ DLQ-0189
+    什么是 Transformer 架构？
+    在自然语言处理（NLP）模型中，Transformer架构的注意力机制（Attention Mechanism）主要解决了哪种传统RNN的局限性？
+[0.64] IVL-0017 ↔ DLQ-0208
+    什么是 Transformer 架构？
+    在DeiT（Data-efficient Image Transformer）中引入的distillation token的作用是什么？
+[0.64] IVL-0017 ↔ DLQ-0255
+    什么是 Transformer 架构？
+    在Swin Transformer中，Shifted Window机制的目的是什么？
+[0.64] IVL-0017 ↔ DLQ-0258
+    什么是 Transformer 架构？
+    Transformer中自注意力机制（Self-Attention）的Q、K、V矩阵输入来源是？
+[0.64] IVL-0017 ↔ DLQ-0260
+    什么是 Transformer 架构？
+    在标准 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，模型的隐藏层维度（或称为表示维度）为
+[0.64] IVL-0017 ↔ DLQ-0263
+    什么是 Transformer 架构？
+    ViT（Vision Transformer）将图像划分为固定大小的patch后，位置编码的作用是什么？
+[0.64] IVL-0017 ↔ DLQ-0266
+    什么是 Transformer 架构？
+    ConvNeXt将标准ResNet逐步"现代化"改造以对标Swin Transformer的性能，以下哪项不是ConvNeXt采用的设计改动？
+[0.64] IVL-0017 ↔ DLQ-0282
+    什么是 Transformer 架构？
+    在Transformer模型中，Scaled Dot-Product Attention的计算公式为 `softmax((QK^T)/sqrt(d_k))V`。
+[0.64] IVL-0017 ↔ DLQ-0284
+    什么是 Transformer 架构？
+    以下哪些方法可以有效减少Transformer自注意力的计算复杂度？
+[0.64] IVL-0017 ↔ DLQ-0293
+    什么是 Transformer 架构？
+    当使用Transformer处理长文本序列时，哪种技术能最有效地降低自注意力的计算复杂度？
+[0.79] IVL-0017 ↔ DLQ-0295
+    什么是 Transformer 架构？
+    在标准的 Transformer 架构中，层归一化（Layer Normalization）的位置对训练稳定性有显著影响。与将 LayerNorm 放在残差连接
+[0.64] IVL-0017 ↔ DLQ-0303
+    什么是 Transformer 架构？
+    当训练Transformer模型时，层归一化(LayerNorm)比批归一化(BatchNorm)更适合，主要原因是什么？
+[0.64] IVL-0017 ↔ DLQ-0305
+    什么是 Transformer 架构？
+    在Transformer的自注意力机制中，引入缩放因子（将Query与Key的内积除以√d_k，其中d_k为Key的维度）的主要原因是：
+[0.64] IVL-0017 ↔ DLQ-0311
+    什么是 Transformer 架构？
+    在标准的 Transformer 自注意力（Self-Attention）机制中，计算查询（Query）矩阵 Q 与键（Key）矩阵 K 的转置的点积（QK^T
+[0.64] IVL-0017 ↔ DLQ-0314
+    什么是 Transformer 架构？
+    在Transformer中，Flash Attention的核心优化策略是什么？
+[0.64] IVL-0017 ↔ DLQ-0331
+    什么是 Transformer 架构？
+    在Transformer中，Feed-Forward Network（FFN）层的标准结构是什么？
+[0.64] IVL-0017 ↔ DLQ-0339
+    什么是 Transformer 架构？
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+[0.64] IVL-0017 ↔ DLQ-0343
+    什么是 Transformer 架构？
+    在Transformer中，Rotary Position Embedding（RoPE）的核心思想是什么？
+[0.64] IVL-0017 ↔ DLQ-0345
+    什么是 Transformer 架构？
+    在Transformer的自注意力计算中，为什么要对注意力分数除以√dk？
+[0.64] IVL-0017 ↔ DLQ-0356
+    什么是 Transformer 架构？
+    在Transformer模型中，Multi-Head Attention的作用是什么（）
+[0.64] IVL-0017 ↔ DLQ-0357
+    什么是 Transformer 架构？
+    在Transformer模型中，为什么需要Positional Encoding？
+[0.64] IVL-0017 ↔ DLQ-0372
+    什么是 Transformer 架构？
+    在Transformer的自注意力（Self-Attention）机制中，关于Q、K、V矩阵的作用及计算，以下描述正确的是？
+[0.71] IVL-0017 ↔ DLQ-0374
+    什么是 Transformer 架构？
+    随着在计算机视觉中引入transformer结构后，transformer结构的使用再创新高。其中位置编码(postional encoding)是transf
+[0.64] IVL-0017 ↔ DLQ-0386
+    什么是 Transformer 架构？
+    在Transformer的训练中，Pre-LN和Post-LN的主要区别及其影响是什么？
+[0.79] IVL-0017 ↔ FTQ-0037
+    什么是 Transformer 架构？
+    以下关于LoRA在不同Transformer架构（如Llama vs GPT-2）中应用的差异，哪项正确？
+[0.64] IVL-0017 ↔ INQ-0009
+    什么是 Transformer 架构？
+    一个7B参数的Transformer模型，32层、32头、d_model=4096、使用FP16，序列长度为2048时，KV Cache占用多少显存？
+[0.64] IVL-0017 ↔ INQ-0126
+    什么是 Transformer 架构？
+    以下哪种技术通过跳过某些Transformer层（Layer Skipping）来加速推理？
+[0.64] IVL-0017 ↔ INQ-0166
+    什么是 Transformer 架构？
+    以下关于"Selective State Spaces"（如Mamba）相比Transformer在推理上的优势，描述正确的是？
+[0.71] IVL-0017 ↔ LDQ-0012
+    什么是 Transformer 架构？
+    在大语言模型中，什么是"Switch Transformers"？
+[0.79] IVL-0017 ↔ LDQ-0051
+    什么是 Transformer 架构？
+    Transformer架构中的Self-Attention机制在大模型应用中面临计算挑战。它在序列长度上的时间复杂度是？
+[0.64] IVL-0017 ↔ LDQ-0069
+    什么是 Transformer 架构？
+    以下哪种方法不属于Transformer模型中常用的位置编码技术？
+[0.79] IVL-0017 ↔ LDQ-0101
+    什么是 Transformer 架构？
+    在Transformer架构中，位置编码设计的主要挑战是什么？
+[0.79] IVL-0017 ↔ LDQ-0105
+    什么是 Transformer 架构？
+    在Transformer架构的预训练中，如何有效处理长文本序列的注意力计算？
+[0.64] IVL-0017 ↔ LDQ-0108
+    什么是 Transformer 架构？
+    已知该 VLTransformer 仅使用 Cross-Attention 进行融合，没有引入 CLIP 风格的对比学习损失，且在增大 Cross-Attent
+[0.79] IVL-0017 ↔ LDQ-0139
+    什么是 Transformer 架构？
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.64] IVL-0017 ↔ LDQ-0191
+    什么是 Transformer 架构？
+    近年来，视觉变换器（Vision Transformer, ViT）被引入到图像增强任务中。以下关于ViT在图像增强中的应用，哪些是正确的？
+[0.64] IVL-0017 ↔ LDQ-0200
+    什么是 Transformer 架构？
+    当Transformer模型处理超长输入序列时（如10万Token），以下哪种技术最不可能有效解决Self-Attention的O(n²)计算复杂度问题？
+[0.64] IVL-0017 ↔ LDQ-0209
+    什么是 Transformer 架构？
+    在分布式训练大规模Transformer模型时，ZeRO优化器（如DeepSpeed中的ZeRO Stage）的核心创新点是什么？
+[0.79] IVL-0017 ↔ LDQ-0224
+    什么是 Transformer 架构？
+    在Transformer架构的大模型中，自注意力机制如何计算token之间的相关性权重？
+[0.79] IVL-0017 ↔ LDQ-0236
+    什么是 Transformer 架构？
+    关于 Prefix Tuning 与 Transformer 架构的交互机制，以下哪些说法是正确的？
+[0.79] IVL-0017 ↔ LBQ-0012
+    什么是 Transformer 架构？
+    在Transformer架构的自注意力机制中，其核心功能是什么？
+[0.64] IVL-0017 ↔ LBQ-0019
+    什么是 Transformer 架构？
+    在Transformer训练中，学习率warm-up的作用是什么？
+[0.64] IVL-0017 ↔ LBQ-0041
+    什么是 Transformer 架构？
+    在Transformer的多头注意力机制中，假设模型维度为d_model=1024，使用16个注意力头，每个头的维度d_k为多少？
+[0.79] IVL-0017 ↔ LBQ-0048
+    什么是 Transformer 架构？
+    当处理多语种混合输入时，大模型需要有效识别语言边界。这主要依赖Transformer架构中的哪种核心机制？
+[0.64] IVL-0017 ↔ LBQ-0061
+    什么是 Transformer 架构？
+    限定标准全注意力Transformer，长序列的注意力计算为何可能产生平方级计算开销？
+[0.64] IVL-0017 ↔ LBQ-0062
+    什么是 Transformer 架构？
+    当观察到大型Transformer模型在长文本推理时出现上下文丢失现象，最可能由什么架构限制引起？
+[0.79] IVL-0017 ↔ LBQ-0066
+    什么是 Transformer 架构？
+    在Transformer架构中，输入序列长度从N增至2N时，自注意力层的计算复杂度如何变化？
+[0.64] IVL-0017 ↔ LBQ-0090
+    什么是 Transformer 架构？
+    Switch Transformer相比传统MoE的关键改进是什么？
+[0.64] IVL-0017 ↔ LBQ-0117
+    什么是 Transformer 架构？
+    关于Transformer的位置编码方案，以下哪些属于相对位置编码？
+[0.79] IVL-0017 ↔ LBQ-0131
+    什么是 Transformer 架构？
+    在标准的 Transformer 架构中，自注意力（Self-Attention）机制是其核心组件。当处理一个长度为 N 的输入序列时，该机制的计算复杂度和内存
+[0.64] IVL-0017 ↔ LBQ-0134
+    什么是 Transformer 架构？
+    在处理长文本输入时，Transformer模型的主要瓶颈通常是自注意力机制，其根本原因是什么？
+[0.64] IVL-0017 ↔ LBQ-0145
+    什么是 Transformer 架构？
+    在Transformer的Pre-Norm和Post-Norm架构中，以下哪项关于训练稳定性的描述是正确的？
+[0.64] IVL-0017 ↔ LBQ-0168
+    什么是 Transformer 架构？
+    关于Transformer中的位置编码作用，下列表述最准确的是?
+[0.64] IVL-0017 ↔ LBQ-0176
+    什么是 Transformer 架构？
+    关于Transformer中的Multi-Query Attention(MQA)，以下哪项是其主要缺点？
+[0.79] IVL-0017 ↔ LBQ-0229
+    什么是 Transformer 架构？
+    在大型语言模型的开发中，Transformer架构相比于传统循环神经网络（RNN）的核心优势是什么？
+[0.64] IVL-0017 ↔ LBQ-0238
+    什么是 Transformer 架构？
+    在标准的Transformer解码器（Decoder）结构中，多头自注意力（Multi-Head Self-Attention）层之后通常会紧跟一个前馈神经网络
+[0.64] IVL-0017 ↔ LBQ-0241
+    什么是 Transformer 架构？
+    大型语言模型在处理长文本输入时，Transformer的注意力计算复杂度可能成为瓶颈。以下哪种方法能直接降低注意力计算的复杂度？
+[0.79] IVL-0017 ↔ LBQ-0245
+    什么是 Transformer 架构？
+    在大型语言模型的实际部署中，transformer架构的核心组件'注意力机制'主要解决了哪种工程挑战？
+[0.79] IVL-0017 ↔ LBQ-0250
+    什么是 Transformer 架构？
+    标准Transformer架构在处理超长序列时面临的主要瓶颈是其自注意力（Self-Attention）机制，该瓶颈在计算层面的具体表现是什么？
+[0.79] IVL-0017 ↔ LBQ-0280
+    什么是 Transformer 架构？
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+[0.79] IVL-0017 ↔ LBQ-0284
+    什么是 Transformer 架构？
+    Transformer 架构是现代大模型的基础。关于其自注意力（Self-Attention）机制的计算复杂度，以下哪个描述是正确的，并解释了其成为大模型扩展性
+[0.64] IVL-0017 ↔ LBQ-0286
+    什么是 Transformer 架构？
+    大模型中的位置编码(Positional Encoding)主要解决Transformer的什么固有缺陷？
+[0.79] IVL-0017 ↔ LBQ-0290
+    什么是 Transformer 架构？
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.79] IVL-0017 ↔ LBQ-0298
+    什么是 Transformer 架构？
+    在Transformer架构中，位置编码的主要作用是？
+[0.79] IVL-0017 ↔ LBQ-0348
+    什么是 Transformer 架构？
+    在 Transformer 架构中，相较于传统的循环神经网络（RNN），其能够高效处理长序列并实现大规模并行计算的核心机制是？
+[0.64] IVL-0017 ↔ MLQ-0719
+    什么是 Transformer 架构？
+    下面只使用了Transformer模型encoder的模型是（ ）
+[0.70] IVL-0022 ↔ DLQ-0097
+    什么是 Embedding？
+    以下关于RoPE（Rotary Position Embedding）的说法，哪些是正确的？
+[0.70] IVL-0022 ↔ DLQ-0225
+    什么是 Embedding？
+    在DETR模型中，位置编码（Positional Embedding）的作用是什么？
+[0.70] IVL-0022 ↔ DLQ-0316
+    什么是 Embedding？
+    在Stable Diffusion中，U-Net的时间步嵌入（timestep embedding）是如何注入网络的？
+[0.70] IVL-0022 ↔ DLQ-0343
+    什么是 Embedding？
+    在Transformer中，Rotary Position Embedding（RoPE）的核心思想是什么？
+[0.80] IVL-0022 ↔ LDQ-0075
+    什么是 Embedding？
+    在大语言模型中，什么是"Rotary Position Embedding"(RoPE)？
+[0.70] IVL-0022 ↔ LDQ-0167
+    什么是 Embedding？
+    在使用Embedding模型时，如果检索和查询使用不同的指令前缀（如"passage:"和"query:"），这种设计的目的是什么？
+[0.70] IVL-0022 ↔ LDQ-0185
+    什么是 Embedding？
+    在使用Embedding模型进行检索时，以下关于Matryoshka Representation Learning (MRL) 的描述哪个最准确？
+[0.70] IVL-0022 ↔ LDQ-0268
+    什么是 Embedding？
+    在RAG系统中使用HyDE（Hypothetical Document Embeddings）技术时，其工作流程是什么？
+[0.70] IVL-0022 ↔ LDQ-0284
+    什么是 Embedding？
+    在选择Embedding模型用于中文RAG系统时，以下哪个因素对检索效果影响最大？
+[0.70] IVL-0022 ↔ LDQ-0303
+    什么是 Embedding？
+    在使用Embedding模型进行语义检索时，以下哪些做法可以提高检索效果？
+[0.70] IVL-0022 ↔ LBQ-0082
+    什么是 Embedding？
+    在大模型中，Rotary Position Embedding(RoPE)的"旋转"操作具体应用于哪些向量？
+[0.70] IVL-0022 ↔ LBQ-0264
+    什么是 Embedding？
+    在RAG系统中，Hypothetical Document Embedding(HyDE)技术的核心思想是什么？
+[0.70] IVL-0022 ↔ LBQ-0392
+    什么是 Embedding？
+    RoPE(Rotary Position Embedding)位置编码的核心思想是什么？
+[0.70] IVL-0022 ↔ MLQ-0481
+    什么是 Embedding？
+    在现代深度学习模型中，使用嵌入（Embedding）层将高维稀疏的类别特征（如用户ID、物品ID）映射为低维稠密的向量，已成为标准做法。关于使用Embeddin
+[0.70] IVL-0022 ↔ MLQ-0704
+    什么是 Embedding？
+    在进行Embedding特征降维时，PCA和Autoencoder的关键区别是什么？
+[0.70] IVL-0022 ↔ RGQ-0083
+    什么是 Embedding？
+    以下哪种embedding模型最适合短句子查询与长文档的非对称检索？
+[0.70] IVL-0022 ↔ RGQ-0094
+    什么是 Embedding？
+    以下关于"Sparse Embedding"（稀疏嵌入，如SPLADE）与BM25的区别，描述正确的是？
+[0.70] IVL-0022 ↔ RGQ-0142
+    什么是 Embedding？
+    BGE（BAAI General Embedding）模型相比OpenAI text-embedding-ada-002的主要优势是什么？
+[0.70] IVL-0022 ↔ RGQ-0155
+    什么是 Embedding？
+    HyDE（Hypothetical Document Embeddings）为什么能提升检索质量？
+[0.70] IVL-0022 ↔ RGQ-0171
+    什么是 Embedding？
+    以下关于Embedding模型的"最大输入长度"限制对RAG的影响，哪项描述正确？
+[0.70] IVL-0022 ↔ RGQ-0183
+    什么是 Embedding？
+    在RAG中，"Document-Level vs Chunk-Level Embedding"的选择对检索有什么影响？
+[0.70] IVL-0022 ↔ RG-003
+    什么是 Embedding？
+    Embedding 和向量检索的原理是什么?为什么还要配合关键词检索做混合检索?
+[0.67] IVL-0023 ↔ IVL-0024
+    什么是 Attention 机制？
+    什么是 Self-Attention？
+[0.75] IVL-0023 ↔ DLQ-0029
+    什么是 Attention 机制？
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+[0.75] IVL-0023 ↔ DLQ-0260
+    什么是 Attention 机制？
+    在标准 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，模型的隐藏层维度（或称为表示维度）为
+[0.75] IVL-0023 ↔ DLQ-0311
+    什么是 Attention 机制？
+    在标准的 Transformer 自注意力（Self-Attention）机制中，计算查询（Query）矩阵 Q 与键（Key）矩阵 K 的转置的点积（QK^T
+[0.75] IVL-0023 ↔ DLQ-0339
+    什么是 Attention 机制？
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+[0.75] IVL-0023 ↔ DLQ-0344
+    什么是 Attention 机制？
+    在Attention机制中，Grouped Query Attention（GQA）的设计思路是什么？
+[0.75] IVL-0023 ↔ DLQ-0372
+    什么是 Attention 机制？
+    在Transformer的自注意力（Self-Attention）机制中，关于Q、K、V矩阵的作用及计算，以下描述正确的是？
+[0.67] IVL-0023 ↔ LDQ-0036
+    什么是 Attention 机制？
+    在大语言模型中，什么是"Gated Cross-Attention"？
+[0.75] IVL-0023 ↔ LDQ-0051
+    什么是 Attention 机制？
+    Transformer架构中的Self-Attention机制在大模型应用中面临计算挑战。它在序列长度上的时间复杂度是？
+[0.75] IVL-0023 ↔ LDQ-0139
+    什么是 Attention 机制？
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.75] IVL-0023 ↔ LDQ-0154
+    什么是 Attention 机制？
+    在大语言模型中，Sparse Attention机制的主要思想是什么？
+[0.67] IVL-0023 ↔ LDQ-0288
+    什么是 Attention 机制？
+    在大语言模型中，什么是"Gated Attention Unit"(GAU)？
+[0.75] IVL-0023 ↔ LBQ-0131
+    什么是 Attention 机制？
+    在标准的 Transformer 架构中，自注意力（Self-Attention）机制是其核心组件。当处理一个长度为 N 的输入序列时，该机制的计算复杂度和内存
+[0.75] IVL-0023 ↔ LBQ-0250
+    什么是 Attention 机制？
+    标准Transformer架构在处理超长序列时面临的主要瓶颈是其自注意力（Self-Attention）机制，该瓶颈在计算层面的具体表现是什么？
+[0.75] IVL-0023 ↔ LBQ-0280
+    什么是 Attention 机制？
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+[0.75] IVL-0023 ↔ LBQ-0284
+    什么是 Attention 机制？
+    Transformer 架构是现代大模型的基础。关于其自注意力（Self-Attention）机制的计算复杂度，以下哪个描述是正确的，并解释了其成为大模型扩展性
+[0.75] IVL-0023 ↔ MLQ-0454
+    什么是 Attention 机制？
+    Attention机制中使用的激活函数是（ ）
+[0.67] IVL-0024 ↔ IVL-0045
+    什么是 Self-Attention？
+    什么是 Self-RAG？
+[0.80] IVL-0024 ↔ DLQ-0029
+    什么是 Self-Attention？
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+[0.80] IVL-0024 ↔ DLQ-0176
+    什么是 Self-Attention？
+    Transformer 模型在得到矩阵 Q, K, V 以后就可以进行计算 Self-Attention 的输出，下列选项中，正确的计算公式是（）
+[0.80] IVL-0024 ↔ DLQ-0258
+    什么是 Self-Attention？
+    Transformer中自注意力机制（Self-Attention）的Q、K、V矩阵输入来源是？
+[0.80] IVL-0024 ↔ DLQ-0260
+    什么是 Self-Attention？
+    在标准 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，模型的隐藏层维度（或称为表示维度）为
+[0.80] IVL-0024 ↔ DLQ-0311
+    什么是 Self-Attention？
+    在标准的 Transformer 自注意力（Self-Attention）机制中，计算查询（Query）矩阵 Q 与键（Key）矩阵 K 的转置的点积（QK^T
+[0.80] IVL-0024 ↔ DLQ-0339
+    什么是 Self-Attention？
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+[0.80] IVL-0024 ↔ DLQ-0372
+    什么是 Self-Attention？
+    在Transformer的自注意力（Self-Attention）机制中，关于Q、K、V矩阵的作用及计算，以下描述正确的是？
+[0.60] IVL-0024 ↔ LDQ-0036
+    什么是 Self-Attention？
+    在大语言模型中，什么是"Gated Cross-Attention"？
+[0.80] IVL-0024 ↔ LDQ-0051
+    什么是 Self-Attention？
+    Transformer架构中的Self-Attention机制在大模型应用中面临计算挑战。它在序列长度上的时间复杂度是？
+[0.80] IVL-0024 ↔ LDQ-0139
+    什么是 Self-Attention？
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.80] IVL-0024 ↔ LDQ-0200
+    什么是 Self-Attention？
+    当Transformer模型处理超长输入序列时（如10万Token），以下哪种技术最不可能有效解决Self-Attention的O(n²)计算复杂度问题？
+[0.80] IVL-0024 ↔ LBQ-0131
+    什么是 Self-Attention？
+    在标准的 Transformer 架构中，自注意力（Self-Attention）机制是其核心组件。当处理一个长度为 N 的输入序列时，该机制的计算复杂度和内存
+[0.80] IVL-0024 ↔ LBQ-0238
+    什么是 Self-Attention？
+    在标准的Transformer解码器（Decoder）结构中，多头自注意力（Multi-Head Self-Attention）层之后通常会紧跟一个前馈神经网络
+[0.80] IVL-0024 ↔ LBQ-0250
+    什么是 Self-Attention？
+    标准Transformer架构在处理超长序列时面临的主要瓶颈是其自注意力（Self-Attention）机制，该瓶颈在计算层面的具体表现是什么？
+[0.80] IVL-0024 ↔ LBQ-0284
+    什么是 Self-Attention？
+    Transformer 架构是现代大模型的基础。关于其自注意力（Self-Attention）机制的计算复杂度，以下哪个描述是正确的，并解释了其成为大模型扩展性
+[0.61] IVL-0025 ↔ DLQ-0185
+    为什么要使用多头注意力（Multi-head Attention）？
+    以下关于Transformer中Multi-Head Attention的说法，哪些是正确的？
+[0.61] IVL-0025 ↔ DLQ-0356
+    为什么要使用多头注意力（Multi-head Attention）？
+    在Transformer模型中，Multi-Head Attention的作用是什么（）
+[0.61] IVL-0025 ↔ INQ-0023
+    为什么要使用多头注意力（Multi-head Attention）？
+    在KV Cache优化中，GQA（Grouped Query Attention）与MHA（Multi-Head Attention）相比，KV Cache大小
+[0.61] IVL-0025 ↔ INQ-0150
+    为什么要使用多头注意力（Multi-head Attention）？
+    以下哪种推理场景最受益于使用Multi-Query Attention（MQA）而非Multi-Head Attention（MHA）？
+[0.61] IVL-0025 ↔ LBQ-0215
+    为什么要使用多头注意力（Multi-head Attention）？
+    Grouped Query Attention(GQA)相比Multi-Head Attention(MHA)的核心改进是什么？
+[0.64] IVL-0025 ↔ LBQ-0238
+    为什么要使用多头注意力（Multi-head Attention）？
+    在标准的Transformer解码器（Decoder）结构中，多头自注意力（Multi-Head Self-Attention）层之后通常会紧跟一个前馈神经网络
+[0.61] IVL-0025 ↔ LBQ-0280
+    为什么要使用多头注意力（Multi-head Attention）？
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+[0.71] IVL-0025 ↔ LBQ-0290
+    为什么要使用多头注意力（Multi-head Attention）？
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.65] IVL-0027 ↔ DLQ-0225
+    什么是位置编码（Positional Encoding）？
+    在DETR模型中，位置编码（Positional Embedding）的作用是什么？
+[0.70] IVL-0027 ↔ DLQ-0357
+    什么是位置编码（Positional Encoding）？
+    在Transformer模型中，为什么需要Positional Encoding？
+[0.74] IVL-0027 ↔ DLQ-0374
+    什么是位置编码（Positional Encoding）？
+    随着在计算机视觉中引入transformer结构后，transformer结构的使用再创新高。其中位置编码(postional encoding)是transf
+[0.87] IVL-0027 ↔ LDQ-0043
+    什么是位置编码（Positional Encoding）？
+    在大语言模型中，位置编码(Positional Encoding)的主要作用是什么？
+[0.87] IVL-0027 ↔ LBQ-0286
+    什么是位置编码（Positional Encoding）？
+    大模型中的位置编码(Positional Encoding)主要解决Transformer的什么固有缺陷？
+[0.77] IVL-0028 ↔ LDQ-0242
+    什么是残差连接（Residual）？
+    在大语言模型中，残差连接(Residual Connection)的主要作用是什么？
+[0.67] IVL-0034 ↔ DLQ-0001
+    什么是批量归一化（BatchNorm）？
+    批归一化 (Batch normalization)已经成为深度神经网络不可缺乏的一部分，它通过对hidden层的归一化，使得训练更加稳定，使用大的learni
+[0.80] IVL-0034 ↔ DLQ-0137
+    什么是批量归一化（BatchNorm）？
+    关于批量归一化（Batch Normalization）的描述，以下正确的是？
+[0.67] IVL-0034 ↔ DLQ-0215
+    什么是批量归一化（BatchNorm）？
+    关于批归一化（Batch Normalization）层在训练（Training）和推断（Inference）阶段的行为，以下描述哪项是正确的？
+[0.67] IVL-0034 ↔ DLQ-0259
+    什么是批量归一化（BatchNorm）？
+    在批归一化（Batch Normalization）层中，将一个 mini-batch 的激活值归一化为均值为0、方差为1后，会再通过两个可学习的参数 gamm
+[0.67] IVL-0034 ↔ DLQ-0303
+    什么是批量归一化（BatchNorm）？
+    当训练Transformer模型时，层归一化(LayerNorm)比批归一化(BatchNorm)更适合，主要原因是什么？
+[0.80] IVL-0034 ↔ MLQ-0688
+    什么是批量归一化（BatchNorm）？
+    在深度神经网络训练中，批量归一化（Batch Normalization）层被广泛用于加速收敛和提升模型性能。除了其主要目标——解决内部协变量偏移（Intern
+[0.66] IVL-0036 ↔ FTQ-0065
+    什么是 DPO（Direct Preference Optimization）？
+    ORPO（Odds Ratio Preference Optimization）相比DPO的关键区别是什么？
+[0.91] IVL-0036 ↔ FTQ-0074
+    什么是 DPO（Direct Preference Optimization）？
+    DPO（Direct Preference Optimization）损失函数中的超参数β的作用是什么？
+[0.66] IVL-0036 ↔ FTQ-0075
+    什么是 DPO（Direct Preference Optimization）？
+    SimPO（Simple Preference Optimization）相比DPO的主要改进是什么？
+[0.66] IVL-0036 ↔ FTQ-0172
+    什么是 DPO（Direct Preference Optimization）？
+    在SimPO（Simple Preference Optimization）中，与DPO的核心区别是？
+[0.91] IVL-0036 ↔ LDQ-0231
+    什么是 DPO（Direct Preference Optimization）？
+    在微调大模型时，以下关于DPO（Direct Preference Optimization）相比RLHF的核心优势是什么？
+[0.91] IVL-0036 ↔ LBQ-0273
+    什么是 DPO（Direct Preference Optimization）？
+    DPO(Direct Preference Optimization)相比RLHF+PPO的最大优势是什么？
+[0.75] IVL-0038 ↔ DLQ-0043
+    什么是推理（Inference）？
+    在使用 Dropout 进行模型训练时，为了在推理（inference）阶段获得确定性的输出并利用整个网络的容量，通常会采用一种称为“Inverted Drop
+[0.75] IVL-0038 ↔ DLQ-0143
+    什么是推理（Inference）？
+    Batch Normalization (BN) 层在训练和推理阶段的行为有所不同。在模型训练完成后，进行推理（inference）时，BN 层是如何对单个样本
+[0.62] IVL-0039 ↔ IVL-0057
+    什么是 KV Cache？
+    长上下文怎么搞？Rope scaling、Position Interpolation、KV Cache 管理、检索增强、窗口注意力，你的实战方案是什么。
+[0.62] IVL-0039 ↔ IVL-0058
+    什么是 KV Cache？
+    KV Cache 在训练和推理中的差异是什么？它的加速价值有多大，吞吐与延迟你是如何权衡的，vLLM/paged‑attention 需要注意什么。
+[0.62] IVL-0039 ↔ INQ-0008
+    什么是 KV Cache？
+    以下哪种KV Cache压缩方法通过识别并驱逐"注意力权重低"的token来实现？
+[0.62] IVL-0039 ↔ INQ-0009
+    什么是 KV Cache？
+    一个7B参数的Transformer模型，32层、32头、d_model=4096、使用FP16，序列长度为2048时，KV Cache占用多少显存？
+[0.62] IVL-0039 ↔ INQ-0023
+    什么是 KV Cache？
+    在KV Cache优化中，GQA（Grouped Query Attention）与MHA（Multi-Head Attention）相比，KV Cache大小
+[0.62] IVL-0039 ↔ INQ-0030
+    什么是 KV Cache？
+    在计算大模型推理的内存需求时，KV Cache的大小计算公式正确的是？
+[0.62] IVL-0039 ↔ INQ-0057
+    什么是 KV Cache？
+    PagedAttention（vLLM）解决了KV Cache管理的什么核心问题？
+[0.62] IVL-0039 ↔ INQ-0067
+    什么是 KV Cache？
+    以下关于"Persistent KV Cache"（持久化KV缓存）的描述，正确的是？
+[0.62] IVL-0039 ↔ INQ-0169
+    什么是 KV Cache？
+    以下关于"Quantized KV Cache"与"Quantized Weights"的区别，描述正确的是？
+[0.62] IVL-0039 ↔ LDQ-0176
+    什么是 KV Cache？
+    在部署大模型时，以下关于KV Cache量化的描述哪个最准确？
+[0.62] IVL-0039 ↔ LBQ-0031
+    什么是 KV Cache？
+    以下哪些技术可以有效减少大模型推理时KV Cache的显存占用？
+[0.62] IVL-0039 ↔ LBQ-0276
+    什么是 KV Cache？
+    KV Cache在大模型推理中的作用是什么？
+[0.70] IVL-0043 ↔ LPQ-0034
+    什么是 RAG（检索增强生成）？
+    RAG（检索增强生成）技术与 Prompt 工程的结合点是什么？
+[0.67] IVL-0045 ↔ RGQ-0074
+    什么是 Self-RAG？
+    CRAG（Corrective RAG）相比Self-RAG的主要区别是？
+[0.67] IVL-0045 ↔ RGQ-0101
+    什么是 Self-RAG？
+    Self-RAG中的反思token"ISREL"的作用是什么？
+[0.83] IVL-0046 ↔ LDQ-0140
+    什么是MoE架构？
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+[0.83] IVL-0047 ↔ FTQ-0103
+    什么是 Prompt Engineering？
+    以下哪种情况下，微调比提示工程（Prompt Engineering）更合适？
+[0.83] IVL-0047 ↔ LDQ-0256
+    什么是 Prompt Engineering？
+    关于大模型的微调（Fine-tuning）和提示工程（Prompt Engineering），以下描述正确的是？
+[0.83] IVL-0047 ↔ LDQ-0281
+    什么是 Prompt Engineering？
+    在Prompt Engineering中，以下哪些技巧可以有效提高模型对复杂指令的遵循率？
+[0.83] IVL-0047 ↔ LDQ-0308
+    什么是 Prompt Engineering？
+    在Prompt Engineering中，使用Chain-of-Thought (CoT) Prompting时，以下哪种做法最能提高推理准确率？
+[0.83] IVL-0047 ↔ LBQ-0236
+    什么是 Prompt Engineering？
+    在few-shot learning场景中，如何通过prompt engineering实现模型快速适应新任务？
+[0.70] IVL-0051 ↔ LDQ-0082
+    什么是LangChain
+    在使用LangChain的OutputParser时，PydanticOutputParser相比SimpleJsonOutputParser的核心优势是什么？
+[0.70] IVL-0051 ↔ LDQ-0086
+    什么是LangChain
+    在使用LangChain Expression Language (LCEL)构建链时，以下关于RunnableParallel的描述哪个是正确的？
+[0.70] IVL-0051 ↔ LDQ-0103
+    什么是LangChain
+    在使用LangChain构建复杂应用时，以下哪些是LCEL（LangChain Expression Language）相比传统Chain的优势？
+[0.70] IVL-0051 ↔ LDQ-0151
+    什么是LangChain
+    在使用LangChain的Text Splitter时，RecursiveCharacterTextSplitter的"Recursive"（递归）体现在哪里？
+[0.70] IVL-0051 ↔ LDQ-0192
+    什么是LangChain
+    在使用LangChain构建RAG系统时，如果检索到的文档片段总Token数超过模型上下文窗口限制，以下哪种策略最合理？
+[0.70] IVL-0051 ↔ RGQ-0175
+    什么是LangChain
+    以下关于LlamaIndex和LangChain在RAG构建上的对比，哪项描述较为准确？
+[0.87] IVM-0001 ↔ IVM-0002
+    机器学习中的“监督学习（Supervised Learning）”是什么？
+    机器学习中的“无监督学习（Unsupervised Learning）”是什么？
+[0.61] IVM-0001 ↔ DLQ-0256
+    机器学习中的“监督学习（Supervised Learning）”是什么？
+    以下哪些技术属于自监督学习（Self-Supervised Learning）的预训练方法？
+[0.64] IVM-0006 ↔ MLQ-0505
+    机器学习中的“交叉验证（Cross Validation）”是什么？
+    k-fold cross validation(k折交叉验证)是机器学习中最为常用的训练方法之一，下列关于k折交叉检验以及其和bias-variance之间的关
+[1.00] IVM-0028 ↔ MAQ-0415
+    什么是信息熵、信息增益和信息增益比？它们在机器学习中有什么作用？[图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.64] IVM-0029 ↔ MLQ-0649
+    机器学习和深度学习怎么区别？
+    在机器学习和深度学习中，超参数对模型性能有重要影响。以下关于超参数的描述中，哪个是正确的？
+[0.62] LPQ-0005 ↔ LPQ-0089
+    以下哪种说法正确描述了 Prompt 工程中"示例标签"（Label）的重要性？
+    以下哪种说法正确描述了"Prompt 版本控制"的最佳实践？
+[0.76] LPQ-0010 ↔ LPQ-0028
+    以下哪种情况最适合使用 Zero-shot CoT？
+    以下哪种情况最适合使用 Few-shot prompting 而非 Zero-shot？
+[0.65] LPQ-0028 ↔ LPQ-0065
+    以下哪种情况最适合使用 Few-shot prompting 而非 Zero-shot？
+    Few-shot prompting 的核心思想是什么？
+[0.61] LPQ-0030 ↔ LPQ-0052
+    "Role prompting"（角色提示）的典型做法是什么？
+    "Persona"（人格）设计与普通角色提示（Role prompting）的主要区别是什么？
+[0.63] LPQ-0037 ↔ LDQ-0308
+    Chain-of-Thought（CoT）提示的主要优势是什么？
+    在Prompt Engineering中，使用Chain-of-Thought (CoT) Prompting时，以下哪种做法最能提高推理准确率？
+[0.70] LPQ-0037 ↔ LBQ-0149
+    Chain-of-Thought（CoT）提示的主要优势是什么？
+    关于大模型的"思维链"(Chain-of-Thought, CoT)提示，以下哪项理解最深入？
+[0.65] LPQ-0045 ↔ LPQ-0067
+    以下哪种描述最准确地定义了"上下文学习"（In-Context Learning）？
+    以下哪项正确描述了"Prompt 工程"与"上下文学习"（In-Context Learning）的关系？
+[0.62] LPQ-0045 ↔ LBQ-0040
+    以下哪种描述最准确地定义了"上下文学习"（In-Context Learning）？
+    在大型语言模型的应用中，上下文学习（In-Context Learning, ICL）和参数高效微调（Parameter-Efficient Fine-Tuni
+[0.62] LPQ-0045 ↔ LBQ-0112
+    以下哪种描述最准确地定义了"上下文学习"（In-Context Learning）？
+    大模型的“上下文学习（In-context Learning, ICL）”能力，最能体现其工程价值的核心特点是？
+[0.65] LPQ-0045 ↔ LBQ-0213
+    以下哪种描述最准确地定义了"上下文学习"（In-Context Learning）？
+    下列关于上下文学习（In-context Learning, ICL）的描述，哪一项最准确？
+[0.65] LPQ-0045 ↔ LBQ-0375
+    以下哪种描述最准确地定义了"上下文学习"（In-Context Learning）？
+    关于大模型的上下文学习(In-Context Learning, ICL)能力，以下哪项理论解释被认为最有启发性？
+[0.61] LPQ-0097 ↔ RGQ-0153
+    以下哪种做法能有效减少模型的"位置偏差"（Position Bias）？
+    以下哪种评估方式最适合检测RAG系统的"位置偏差"（Position Bias，模型倾向于使用上下文开头或结尾的文档）？
+[1.00] CVQ-0014 ↔ MAQ-0415
+    若是某个图像相邻像素如下图所示，请问其局部微分二阶导数的图像是下列哪一幅？ [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.67] CVQ-0016 ↔ MAQ-0258
+    在基于Anchor的目标检测算法（如YOLOv5）中，以下关于Anchor的说法正确的是哪一项？
+    下列说法正确的是（ ）
+[0.67] CVQ-0016 ↔ MAQ-0390
+    在基于Anchor的目标检测算法（如YOLOv5）中，以下关于Anchor的说法正确的是哪一项？
+    下面说法正确的是（ ）
+[0.67] CVQ-0016 ↔ MLQ-0674
+    在基于Anchor的目标检测算法（如YOLOv5）中，以下关于Anchor的说法正确的是哪一项？
+    下列说法正确的是？
+[0.67] CVQ-0020 ↔ MAQ-0258
+    对于变换矩阵的平移矩阵，以下说法正确的是（）?
+    下列说法正确的是（ ）
+[0.67] CVQ-0020 ↔ MAQ-0390
+    对于变换矩阵的平移矩阵，以下说法正确的是（）?
+    下面说法正确的是（ ）
+[0.67] CVQ-0020 ↔ MLQ-0674
+    对于变换矩阵的平移矩阵，以下说法正确的是（）?
+    下列说法正确的是？
+[0.71] CVQ-0026 ↔ MLQ-0283
+    在医院里，我们可能通过不同的仪器扫描出不同的医学图像，下列关于这些图像的配准问题，说法不正确的是？
+    下列说法不正确的是（ ）
+[0.71] CVQ-0026 ↔ MLQ-0341
+    在医院里，我们可能通过不同的仪器扫描出不同的医学图像，下列关于这些图像的配准问题，说法不正确的是？
+    以下说法不正确的是（）
+[0.66] CVQ-0033 ↔ CVQ-0134
+    在卷积神经网络的特征提取中，扩张卷积（Dilated Convolution）通过引入扩张率（Dilation Rate）改变卷积核的感受野覆盖方式。关于其核心
+    在卷积神经网络中，空洞卷积（Dilated Convolution）的核心优势是？
+[1.00] CVQ-0034 ↔ MAQ-0415
+    若是某个图像两个相邻像素为下图所示，则其局部微分的一阶导数是下列哪一幅图？ [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.70] CVQ-0046 ↔ CVQ-0065
+    下列算法中属于图像平滑处理的是（）
+    下列算法中属于点处理的是:（ ）
+[0.64] CVQ-0046 ↔ CVQ-0077
+    下列算法中属于图像平滑处理的是（）
+    下列算法中属于局部处理的是:（ ）
+[0.70] CVQ-0065 ↔ CVQ-0077
+    下列算法中属于点处理的是:（ ）
+    下列算法中属于局部处理的是:（ ）
+[0.64] CVQ-0067 ↔ DLQ-0252
+    我们常常对图像进行卷积运算，下列关于卷积运算的说法错误的是哪一项？
+    下列关于BN的说法错误的是
+[0.67] CVQ-0067 ↔ MLQ-0353
+    我们常常对图像进行卷积运算，下列关于卷积运算的说法错误的是哪一项？
+    下列说法错误的是
+[0.67] CVQ-0078 ↔ CVQ-0144
+    半调输出技术可以（）
+    在输出设备单像素仅能表示黑/白两级时，半调输出技术（halftoning）通过空间调制来近似连续灰度。下列说法中正确的是（可多选）：
+[0.69] CVQ-0102 ↔ CVQ-0121
+    SIFT（Scale-Invariant Feature Transform）特征描述子被设计为对以下哪种图像变换高度不变？
+    在特征检测中，SIFT（Scale-Invariant Feature Transform）描述符特别适合于？
+[1.00] CVQ-0105 ↔ MAQ-0415
+    如下图所示，某个霍夫坐标系下的直线相交情况，根据霍夫变换，原始笛卡尔坐标系可以检测出多少条直线？ [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.67] CVQ-0114 ↔ CVQ-0197
+    在目标检测任务中，IoU（Intersection over Union）指标主要用于评估哪项性能？
+    对于物体检测任务，IoU（Intersection over Union）指标常用于评估检测框与真实框的重合度。如果IoU值为0.5，以下哪项解释最符合其含义？
+[0.67] CVQ-0144 ↔ MAQ-0258
+    在输出设备单像素仅能表示黑/白两级时，半调输出技术（halftoning）通过空间调制来近似连续灰度。下列说法中正确的是（可多选）：
+    下列说法正确的是（ ）
+[0.71] CVQ-0144 ↔ MLQ-0313
+    在输出设备单像素仅能表示黑/白两级时，半调输出技术（halftoning）通过空间调制来近似连续灰度。下列说法中正确的是（可多选）：
+    以下说法中正确的是()
+[0.67] CVQ-0144 ↔ MLQ-0674
+    在输出设备单像素仅能表示黑/白两级时，半调输出技术（halftoning）通过空间调制来近似连续灰度。下列说法中正确的是（可多选）：
+    下列说法正确的是？
+[0.67] CVQ-0147 ↔ MAQ-0258
+    关于自适应直方图均衡化（CLAHE）与全局直方图均衡化的对比，以下说法正确的是？
+    下列说法正确的是（ ）
+[0.67] CVQ-0147 ↔ MAQ-0390
+    关于自适应直方图均衡化（CLAHE）与全局直方图均衡化的对比，以下说法正确的是？
+    下面说法正确的是（ ）
+[0.67] CVQ-0147 ↔ MLQ-0674
+    关于自适应直方图均衡化（CLAHE）与全局直方图均衡化的对比，以下说法正确的是？
+    下列说法正确的是？
+[0.67] CVQ-0148 ↔ LBQ-0058
+    下面哪些说法正确？
+    关于大模型生成不可靠内容的原因与控制，哪些说法正确？（多选）
+[1.00] CVQ-0164 ↔ MAQ-0415
+    小娜有如下图所示的一个卷积核模板，请问该模板最适合处理什么任务？ [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.84] CVQ-0167 ↔ MAQ-0194
+    使用下列二位图形变换矩阵将产生的变换结果为 [图](原题含图,离线不可显示)
+    使用下列二维图形变换矩阵A=T*a，将产生的变换结果为: [图](原题含图,离线不可显示)
+[1.00] CVQ-0167 ↔ MAQ-0415
+    使用下列二位图形变换矩阵将产生的变换结果为 [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.67] CVQ-0175 ↔ MAQ-0258
+    在自动驾驶场景中，需要从图像中分割出多个行人并区分每个行人个体（即每个行人对应唯一的像素组），以下关于所需分割技术的说法正确的是？
+    下列说法正确的是（ ）
+[0.67] CVQ-0175 ↔ MAQ-0390
+    在自动驾驶场景中，需要从图像中分割出多个行人并区分每个行人个体（即每个行人对应唯一的像素组），以下关于所需分割技术的说法正确的是？
+    下面说法正确的是（ ）
+[0.67] CVQ-0175 ↔ MLQ-0674
+    在自动驾驶场景中，需要从图像中分割出多个行人并区分每个行人个体（即每个行人对应唯一的像素组），以下关于所需分割技术的说法正确的是？
+    下列说法正确的是？
+[1.00] CVQ-0191 ↔ MAQ-0415
+    如下图所示，左边原图是一个寄生虫的显微镜图像，请问从左边图像到右边图像最有可能经历了什么图像处理方式？ [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.65] DLQ-0001 ↔ DLQ-0127
+    批归一化 (Batch normalization)已经成为深度神经网络不可缺乏的一部分，它通过对hidden层的归一化，使得训练更加稳定，使用大的learni
+    批规范化(Batch Normalization)的好处都有啥？
+[1.00] DLQ-0011 ↔ MAQ-0258
+    关于卷积神经网络（CNN）中的感受野（Receptive Field），下列说法正确的是：
+    下列说法正确的是（ ）
+[0.67] DLQ-0011 ↔ MAQ-0390
+    关于卷积神经网络（CNN）中的感受野（Receptive Field），下列说法正确的是：
+    下面说法正确的是（ ）
+[1.00] DLQ-0011 ↔ MLQ-0674
+    关于卷积神经网络（CNN）中的感受野（Receptive Field），下列说法正确的是：
+    下列说法正确的是？
+[1.00] DLQ-0024 ↔ DLQ-0113
+    有关深度神经网络的训练（Training）和推断（Inference），以下说法中不正确的是：
+    有关深度神经网络的训练（Training）和推断（Inference），以下说法中不正确的是：（）
+[0.71] DLQ-0024 ↔ MLQ-0313
+    有关深度神经网络的训练（Training）和推断（Inference），以下说法中不正确的是：
+    以下说法中正确的是()
+[0.71] DLQ-0024 ↔ MLQ-0341
+    有关深度神经网络的训练（Training）和推断（Inference），以下说法中不正确的是：
+    以下说法不正确的是（）
+[0.61] DLQ-0029 ↔ DLQ-0258
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+    Transformer中自注意力机制（Self-Attention）的Q、K、V矩阵输入来源是？
+[0.80] DLQ-0029 ↔ DLQ-0260
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+    在标准 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，模型的隐藏层维度（或称为表示维度）为
+[0.63] DLQ-0029 ↔ DLQ-0339
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+[0.66] DLQ-0029 ↔ LDQ-0139
+    在 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，隐藏层维度为 D，那么标准自注意力机制的
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.62] DLQ-0034 ↔ DLQ-0352
+    对于某个训练任务，发现有 2 个训练任务最外层对应的输出网络全连接层分别使用 Sigmoid 和 Softmax，则最有可能对应的任务分别是（）
+    sigmoid导数为
+[0.67] DLQ-0035 ↔ MAQ-0258
+    下列关于深度学习与机器学习算法之间的区别，说法正确的是（）
+    下列说法正确的是（ ）
+[0.67] DLQ-0035 ↔ MAQ-0390
+    下列关于深度学习与机器学习算法之间的区别，说法正确的是（）
+    下面说法正确的是（ ）
+[0.70] DLQ-0035 ↔ MLQ-0546
+    下列关于深度学习与机器学习算法之间的区别，说法正确的是（）
+    关于机器学习算法正确的是（）
+[0.67] DLQ-0035 ↔ MLQ-0674
+    下列关于深度学习与机器学习算法之间的区别，说法正确的是（）
+    下列说法正确的是？
+[0.67] DLQ-0045 ↔ MLQ-0353
+    Adam是深度学习中的一个常用的自适应学习率优化算法。该优化器被设计适用于非平稳目标和具有一定噪声、稀疏梯度的问题。下列关于adam说法错误的是（ ） [图](
+    下列说法错误的是
+[0.62] DLQ-0046 ↔ DLQ-0352
+    关于sigmoid激活函数说法正确的是（ ）
+    sigmoid导数为
+[0.67] DLQ-0046 ↔ MAQ-0258
+    关于sigmoid激活函数说法正确的是（ ）
+    下列说法正确的是（ ）
+[0.67] DLQ-0046 ↔ MAQ-0390
+    关于sigmoid激活函数说法正确的是（ ）
+    下面说法正确的是（ ）
+[0.67] DLQ-0046 ↔ MLQ-0674
+    关于sigmoid激活函数说法正确的是（ ）
+    下列说法正确的是？
+[0.62] DLQ-0058 ↔ DLQ-0127
+    在深度学习模型的推理部署阶段，Batch Normalization层计算输入特征的均值和方差时，通常采用以下哪种方式？
+    批规范化(Batch Normalization)的好处都有啥？
+[0.67] DLQ-0065 ↔ MLQ-0353
+    卷积层是计算机视觉当中常使用到的网络，下列对卷积层说法错误的是？
+    下列说法错误的是
+[0.62] DLQ-0071 ↔ DLQ-0127
+    Batch Normalization(BN) 是深度神经网络中一个重要的重参数化的方法，对于 BN 方法，下列选项中，结论正确的是（）
+    批规范化(Batch Normalization)的好处都有啥？
+[0.68] DLQ-0072 ↔ DLQ-0135
+    Depthwise Separable Convolution的计算量与标准卷积的比值近似为多少？
+    以下关于Depthwise Separable Convolution的说法，哪些是正确的？
+[1.00] DLQ-0080 ↔ DLQ-0287
+    下列哪个神经网络结构会发生权重共享
+    下列哪个神经网络结构会发生权重共享？
+[0.60] DLQ-0093 ↔ DLQ-0326
+    在Gradient Checkpointing的实现中，以下哪些说法是正确的？
+    在Gradient Checkpointing（梯度检查点）技术中，以时间换空间的核心机制是什么？
+[0.60] DLQ-0093 ↔ MLQ-0308
+    在Gradient Checkpointing的实现中，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.64] DLQ-0097 ↔ LDQ-0075
+    以下关于RoPE（Rotary Position Embedding）的说法，哪些是正确的？
+    在大语言模型中，什么是"Rotary Position Embedding"(RoPE)？
+[0.68] DLQ-0097 ↔ LBQ-0392
+    以下关于RoPE（Rotary Position Embedding）的说法，哪些是正确的？
+    RoPE(Rotary Position Embedding)位置编码的核心思想是什么？
+[0.60] DLQ-0100 ↔ MLQ-0308
+    在使用DeepSpeed ZeRO-3进行大模型训练时，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[1.00] DLQ-0102 ↔ MAQ-0415
+    构建一个神经网络，将前一层的输出和它自身作为输入。 [图](原题含图,离线不可显示) 下列哪一种架构有反馈连接？
+    [图](原题含图,离线不可显示)
+[1.00] DLQ-0105 ↔ DLQ-0111
+    下面是用keras描述的一个简单的MLP，请问一共需要训练多少个参数（ ） from keras.models import Sequential from k
+    下面是用keras描述的一个简单的MLP，请问一共需要训练多少个参数？ from keras.models import Sequential from ker
+[0.71] DLQ-0113 ↔ MLQ-0313
+    有关深度神经网络的训练（Training）和推断（Inference），以下说法中不正确的是：（）
+    以下说法中正确的是()
+[0.71] DLQ-0113 ↔ MLQ-0341
+    有关深度神经网络的训练（Training）和推断（Inference），以下说法中不正确的是：（）
+    以下说法不正确的是（）
+[0.62] DLQ-0120 ↔ DLQ-0352
+    与tanh和sigmoid函数相比，relu的好处不包括
+    sigmoid导数为
+[0.69] DLQ-0127 ↔ DLQ-0137
+    批规范化(Batch Normalization)的好处都有啥？
+    关于批量归一化（Batch Normalization）的描述，以下正确的是？
+[0.62] DLQ-0127 ↔ DLQ-0143
+    批规范化(Batch Normalization)的好处都有啥？
+    Batch Normalization (BN) 层在训练和推理阶段的行为有所不同。在模型训练完成后，进行推理（inference）时，BN 层是如何对单个样本
+[0.62] DLQ-0127 ↔ DLQ-0183
+    批规范化(Batch Normalization)的好处都有啥？
+    在深度学习模型训练中，Batch Normalization（BN）是常用的优化技术。关于BN的原理与工程应用，下列说法正确的是：
+[0.62] DLQ-0127 ↔ DLQ-0214
+    批规范化(Batch Normalization)的好处都有啥？
+    在Batch Normalization中，训练时使用mini-batch统计量，推理时使用什么统计量？
+[0.65] DLQ-0127 ↔ DLQ-0215
+    批规范化(Batch Normalization)的好处都有啥？
+    关于批归一化（Batch Normalization）层在训练（Training）和推断（Inference）阶段的行为，以下描述哪项是正确的？
+[0.65] DLQ-0127 ↔ DLQ-0259
+    批规范化(Batch Normalization)的好处都有啥？
+    在批归一化（Batch Normalization）层中，将一个 mini-batch 的激活值归一化为均值为0、方差为1后，会再通过两个可学习的参数 gamm
+[0.62] DLQ-0127 ↔ DLQ-0285
+    批规范化(Batch Normalization)的好处都有啥？
+    关于Batch Normalization（BN）的作用机制，以下描述最准确的是？
+[0.62] DLQ-0127 ↔ DLQ-0348
+    批规范化(Batch Normalization)的好处都有啥？
+    在推理阶段将模型从大批量训练切换到单张图像输入时，以下对 Batch Normalization 行为的描述最准确的是：
+[0.65] DLQ-0127 ↔ DLQ-0359
+    批规范化(Batch Normalization)的好处都有啥？
+    以下关于Batch Normalization的局限性，哪些说法是正确的？
+[0.62] DLQ-0127 ↔ DLQ-0383
+    批规范化(Batch Normalization)的好处都有啥？
+    关于Batch Normalization（BN）的描述，以下最符合其核心设计目标的是？
+[0.65] DLQ-0127 ↔ MLQ-0688
+    批规范化(Batch Normalization)的好处都有啥？
+    在深度神经网络训练中，批量归一化（Batch Normalization）层被广泛用于加速收敛和提升模型性能。除了其主要目标——解决内部协变量偏移（Intern
+[0.76] DLQ-0134 ↔ DLQ-0313
+    下列的哪种方法可以用来降低深度学习模型的过拟合问题？ 1 增加更多的数据 2 使用数据扩增技术(data augmentation) 3 集成学习 4 正规化数
+    下列的哪种方法可以用来降低深度学习模型的过拟合问题？ ①增加更多的数据 ②使用数据扩增技术(data augmentation) ③使用归纳性更好的架构 ④ 正
+[0.67] DLQ-0137 ↔ DLQ-0215
+    关于批量归一化（Batch Normalization）的描述，以下正确的是？
+    关于批归一化（Batch Normalization）层在训练（Training）和推断（Inference）阶段的行为，以下描述哪项是正确的？
+[0.64] DLQ-0137 ↔ DLQ-0383
+    关于批量归一化（Batch Normalization）的描述，以下正确的是？
+    关于Batch Normalization（BN）的描述，以下最符合其核心设计目标的是？
+[0.64] DLQ-0137 ↔ MLQ-0688
+    关于批量归一化（Batch Normalization）的描述，以下正确的是？
+    在深度神经网络训练中，批量归一化（Batch Normalization）层被广泛用于加速收敛和提升模型性能。除了其主要目标——解决内部协变量偏移（Intern
+[0.67] DLQ-0138 ↔ MLQ-0353
+    自然语言处理中，One-Hot 编码方式和分布式（词向量）编码方式是两种常用的词汇编码方式。对于这两种编码方式的比较，下列选项中，说法错误的是（）
+    下列说法错误的是
+[0.67] DLQ-0141 ↔ INQ-0119
+    以下关于Tensor Parallelism（张量并行）的说法，哪些是正确的？
+    以下关于"Tensor Parallelism Degree"（张量并行度）的选择，描述正确的是？
+[0.70] DLQ-0141 ↔ INQ-0158
+    以下关于Tensor Parallelism（张量并行）的说法，哪些是正确的？
+    以下关于Tensor Parallelism（张量并行）在前馈网络（FFN）层的切分方式，正确描述是？
+[0.61] DLQ-0141 ↔ LDQ-0278
+    以下关于Tensor Parallelism（张量并行）的说法，哪些是正确的？
+    在部署大模型时，Tensor Parallelism（张量并行）和Pipeline Parallelism（流水线并行）的主要区别是什么？
+[0.62] DLQ-0145 ↔ INQ-0068
+    1x1 卷积的作用，描述正确的是
+    以下关于"Token Budget"（token预算）机制在推理中的作用，描述正确的是？
+[0.62] DLQ-0145 ↔ RGQ-0058
+    1x1 卷积的作用，描述正确的是
+    以下关于"Reranking with Diversity"（多样性重排）的作用，描述正确的是？
+[0.62] DLQ-0145 ↔ RGQ-0107
+    1x1 卷积的作用，描述正确的是
+    以下关于"Chunking Overlap"（分块重叠）的作用，描述正确的是？
+[0.62] DLQ-0145 ↔ RGQ-0113
+    1x1 卷积的作用，描述正确的是
+    以下关于RAG系统中"guardrails"（护栏）的作用，描述正确的是？
+[1.00] DLQ-0148 ↔ MAQ-0258
+    关于LSTM（长短期记忆网络）缓解梯度消失的原理，下列说法正确的是：
+    下列说法正确的是（ ）
+[0.67] DLQ-0148 ↔ MAQ-0390
+    关于LSTM（长短期记忆网络）缓解梯度消失的原理，下列说法正确的是：
+    下面说法正确的是（ ）
+[1.00] DLQ-0148 ↔ MLQ-0674
+    关于LSTM（长短期记忆网络）缓解梯度消失的原理，下列说法正确的是：
+    下列说法正确的是？
+[1.00] DLQ-0151 ↔ MLQ-0513
+    下列哪一项在神经网络中引入了非线性？
+    下列哪一项在神经网络中引入了非线性（）
+[0.67] DLQ-0152 ↔ MLQ-0353
+    word2vec技术的出现，使得自然语言处理领域得以迅猛发展。它可以将词转换为向量，即将文本中的词变得可计算，下列关于word2vec说法错误的是
+    下列说法错误的是
+[0.67] DLQ-0156 ↔ MLQ-0353
+    我们平时训练卷积神经网络的时候，经常设置batch_size为16、32、64、128、256等数字，关于batch_size的说法错误的是（ ）
+    下列说法错误的是
+[0.73] DLQ-0165 ↔ INQ-0033
+    以下哪些是Flash Attention v2相比v1的改进？
+    FlashAttention v2相比v1的主要改进是什么？
+[0.70] DLQ-0166 ↔ DLQ-0304
+    深度学习是当前很热门的机器学习算法，在深度学习中，涉及到大量的矩阵相乘，现在需要计算三个稠密矩阵A,B,C 的乘积ABC,假设三个矩阵的尺寸分别为m∗n，n∗p
+    在深度学习中，涉及到大量的矩阵相乘，现在需要计算三个稠密矩阵A,B,C的乘积ABC,假设三个矩阵的尺寸分别为m*n，n*p，p*q，且m<n<p<q，以下计算顺
+[0.75] DLQ-0166 ↔ MLQ-0650
+    深度学习是当前很热门的机器学习算法，在深度学习中，涉及到大量的矩阵相乘，现在需要计算三个稠密矩阵A,B,C 的乘积ABC,假设三个矩阵的尺寸分别为m∗n，n∗p
+    在深度学习中，涉及到大量矩阵相乘，现在需要计算三个稠密矩阵A,B,C的乘积ABC，假设三个矩阵的尺寸分别为m*n,n*p,p*q,且m
+[1.00] DLQ-0172 ↔ MAQ-0415
+    Dropout是一种深度学习训练中的常用正则化技术，下列关于Dropout说法错误的是（ ） [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.67] DLQ-0172 ↔ MLQ-0353
+    Dropout是一种深度学习训练中的常用正则化技术，下列关于Dropout说法错误的是（ ） [图](原题含图,离线不可显示)
+    下列说法错误的是
+[0.62] DLQ-0179 ↔ LBQ-0041
+    在Transformer的多头注意力机制中，如果模型维度为512，使用8个注意力头，每个头的Q、K、V向量维度为多少？
+    在Transformer的多头注意力机制中，假设模型维度为d_model=1024，使用16个注意力头，每个头的维度d_k为多少？
+[0.69] DLQ-0181 ↔ MLQ-0555
+    在训练深度神经网络时，使用 ReLU 作为激活函数可能会遇到“神经元死亡”（Dying ReLU）问题，即神经元在训练过程中变得不再活跃，对任何输入都输出零。以
+    在训练深度神经网络时，使用ReLU作为激活函数可能会遇到“神经元死亡”（Dying ReLU）问题，即某些神经元可能永久停止对任何输入数据响应。以下哪种激活函数
+[0.60] DLQ-0183 ↔ DLQ-0285
+    在深度学习模型训练中，Batch Normalization（BN）是常用的优化技术。关于BN的原理与工程应用，下列说法正确的是：
+    关于Batch Normalization（BN）的作用机制，以下描述最准确的是？
+[1.00] DLQ-0183 ↔ MAQ-0258
+    在深度学习模型训练中，Batch Normalization（BN）是常用的优化技术。关于BN的原理与工程应用，下列说法正确的是：
+    下列说法正确的是（ ）
+[0.67] DLQ-0183 ↔ MAQ-0390
+    在深度学习模型训练中，Batch Normalization（BN）是常用的优化技术。关于BN的原理与工程应用，下列说法正确的是：
+    下面说法正确的是（ ）
+[1.00] DLQ-0183 ↔ MLQ-0674
+    在深度学习模型训练中，Batch Normalization（BN）是常用的优化技术。关于BN的原理与工程应用，下列说法正确的是：
+    下列说法正确的是？
+[0.69] DLQ-0185 ↔ DLQ-0356
+    以下关于Transformer中Multi-Head Attention的说法，哪些是正确的？
+    在Transformer模型中，Multi-Head Attention的作用是什么（）
+[0.60] DLQ-0185 ↔ LBQ-0280
+    以下关于Transformer中Multi-Head Attention的说法，哪些是正确的？
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+[0.63] DLQ-0185 ↔ LBQ-0290
+    以下关于Transformer中Multi-Head Attention的说法，哪些是正确的？
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.62] DLQ-0205 ↔ LDQ-0037
+    Lion优化器相比Adam系列的主要特点是什么？
+    在大语言模型的训练中，Lion优化器相比Adam的主要优势是什么？
+[0.64] DLQ-0225 ↔ LDQ-0043
+    在DETR模型中，位置编码（Positional Embedding）的作用是什么？
+    在大语言模型中，位置编码(Positional Encoding)的主要作用是什么？
+[0.62] DLQ-0229 ↔ DLQ-0352
+    卷积层特征图为32*32，池化层的采样区域为2*2，采样方式为4个输入相加，乘以一个可训练参数，再加上一个可训练偏置，结果通过sigmoid，经过池化操作后的特
+    sigmoid导数为
+[0.84] DLQ-0244 ↔ DLQ-0334
+    梯度下降算法的正确步骤是什么？ a.计算预测值和真实值之间的误差 b.重复迭代，直至得到网络权重的最佳值 c.把输入传入网络，得到输出值 d.用随机值初始化权重
+    梯度下降算法的正确步骤是什么？1.计算预测值和真实值之间的误差;2.重复迭代，直至得到网络权重的最佳值;3.把输入传入网络，得到输出值;4.用随机值初始化权重和
+[0.60] DLQ-0247 ↔ MLQ-0308
+    在LoRA微调中，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.62] DLQ-0248 ↔ DLQ-0352
+    相较于传统的 Sigmoid 或 Tanh 激活函数，ReLU (Rectified Linear Unit) 及其变体（如 Leaky ReLU）在现代深度神
+    sigmoid导数为
+[0.64] DLQ-0252 ↔ MAQ-0009
+    下列关于BN的说法错误的是
+    下列关于PCA的说法错误的是（）
+[0.64] DLQ-0252 ↔ MAQ-0448
+    下列关于BN的说法错误的是
+    在机器学习特征空间中，向量集合S是向量空间V的一组基。下列关于基S的说法错误的是？
+[0.64] DLQ-0252 ↔ MAQ-0487
+    下列关于BN的说法错误的是
+    最小二乘法是工程中数据拟合的常用方法，对于线性模型y=Ax+ε（ε为残差向量），下列关于最小二乘解的说法错误的是？
+[0.67] DLQ-0252 ↔ MLQ-0353
+    下列关于BN的说法错误的是
+    下列说法错误的是
+[1.00] DLQ-0257 ↔ MAQ-0415
+    下图所示的网络用于训练识别字符H和T，如下所示 [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.63] DLQ-0258 ↔ DLQ-0372
+    Transformer中自注意力机制（Self-Attention）的Q、K、V矩阵输入来源是？
+    在Transformer的自注意力（Self-Attention）机制中，关于Q、K、V矩阵的作用及计算，以下描述正确的是？
+[0.65] DLQ-0260 ↔ DLQ-0339
+    在标准 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，模型的隐藏层维度（或称为表示维度）为
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+[0.61] DLQ-0260 ↔ LDQ-0139
+    在标准 Transformer 模型中，自注意力（Self-Attention）机制是其核心组件。假设输入序列的长度为 N，模型的隐藏层维度（或称为表示维度）为
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[1.00] DLQ-0271 ↔ MAQ-0415
+    在训练神经网络时，损失函数(loss)在最初的几个epochs时没有下降，可能的原因是？ [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[1.00] DLQ-0276 ↔ MAQ-0415
+    如下图所示，连接神经网络时，缺失了一个隐藏层神经元，此种策略叫（ ） [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.67] DLQ-0281 ↔ MLQ-0353
+    以下有关循环神经网络（RNN）的说法错误的是（）
+    下列说法错误的是
+[0.63] DLQ-0285 ↔ DLQ-0348
+    关于Batch Normalization（BN）的作用机制，以下描述最准确的是？
+    在推理阶段将模型从大批量训练切换到单张图像输入时，以下对 Batch Normalization 行为的描述最准确的是：
+[0.63] DLQ-0285 ↔ DLQ-0383
+    关于Batch Normalization（BN）的作用机制，以下描述最准确的是？
+    关于Batch Normalization（BN）的描述，以下最符合其核心设计目标的是？
+[0.67] DLQ-0289 ↔ DLQ-0366
+    早停（Early Stopping）是深度学习中常用的防止过拟合的方法，其核心原理是基于以下哪一关键观察？
+    防止过拟合的方法有哪些
+[1.00] DLQ-0291 ↔ MLQ-0533
+    基于二次准则函数的H-K算法较之于感知器算法的优点是()？
+    基于二次准则函数的H-K算法较之于感知器算法的优点是()?
+[1.00] DLQ-0299 ↔ MAQ-0415
+    如下图所示，该残差连接主要解决的问题是（ ） [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.81] DLQ-0304 ↔ MLQ-0650
+    在深度学习中，涉及到大量的矩阵相乘，现在需要计算三个稠密矩阵A,B,C的乘积ABC,假设三个矩阵的尺寸分别为m*n，n*p，p*q，且m<n<p<q，以下计算顺
+    在深度学习中，涉及到大量矩阵相乘，现在需要计算三个稠密矩阵A,B,C的乘积ABC，假设三个矩阵的尺寸分别为m*n,n*p,p*q,且m
+[0.67] DLQ-0311 ↔ DLQ-0339
+    在标准的 Transformer 自注意力（Self-Attention）机制中，计算查询（Query）矩阵 Q 与键（Key）矩阵 K 的转置的点积（QK^T
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+[0.61] DLQ-0311 ↔ LDQ-0139
+    在标准的 Transformer 自注意力（Self-Attention）机制中，计算查询（Query）矩阵 Q 与键（Key）矩阵 K 的转置的点积（QK^T
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.61] DLQ-0314 ↔ LBQ-0290
+    在Transformer中，Flash Attention的核心优化策略是什么？
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.65] DLQ-0318 ↔ MLQ-0532
+    关于ChatGPT及其背后的算法，以下哪个选项是正确的？
+    对于K-近邻算法，以下哪个选项是正确的？
+[0.63] DLQ-0336 ↔ LDQ-0140
+    在Mixture of Experts（MoE）架构中，Router（门控网络）的作用是什么？
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+[0.68] DLQ-0336 ↔ LBQ-0297
+    在Mixture of Experts（MoE）架构中，Router（门控网络）的作用是什么？
+    Mixture of Experts(MoE)架构中，"路由坍塌"(Router Collapse)问题指的是什么？
+[0.65] DLQ-0339 ↔ DLQ-0372
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+    在Transformer的自注意力（Self-Attention）机制中，关于Q、K、V矩阵的作用及计算，以下描述正确的是？
+[0.63] DLQ-0339 ↔ LDQ-0139
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.61] DLQ-0339 ↔ LBQ-0284
+    Transformer模型的自注意力（Self-Attention）机制中，计算注意力权重的核心依据是？
+    Transformer 架构是现代大模型的基础。关于其自注意力（Self-Attention）机制的计算复杂度，以下哪个描述是正确的，并解释了其成为大模型扩展性
+[0.69] DLQ-0343 ↔ LDQ-0075
+    在Transformer中，Rotary Position Embedding（RoPE）的核心思想是什么？
+    在大语言模型中，什么是"Rotary Position Embedding"(RoPE)？
+[0.62] DLQ-0343 ↔ LBQ-0082
+    在Transformer中，Rotary Position Embedding（RoPE）的核心思想是什么？
+    在大模型中，Rotary Position Embedding(RoPE)的"旋转"操作具体应用于哪些向量？
+[0.78] DLQ-0343 ↔ LBQ-0392
+    在Transformer中，Rotary Position Embedding（RoPE）的核心思想是什么？
+    RoPE(Rotary Position Embedding)位置编码的核心思想是什么？
+[0.69] DLQ-0344 ↔ INQ-0088
+    在Attention机制中，Grouped Query Attention（GQA）的设计思路是什么？
+    GQA（Grouped Query Attention）解决了什么问题？
+[0.65] DLQ-0344 ↔ LDQ-0144
+    在Attention机制中，Grouped Query Attention（GQA）的设计思路是什么？
+    在大语言模型中，Grouped-Query Attention(GQA)的主要目的是什么？
+[0.62] DLQ-0344 ↔ LBQ-0215
+    在Attention机制中，Grouped Query Attention（GQA）的设计思路是什么？
+    Grouped Query Attention(GQA)相比Multi-Head Attention(MHA)的核心改进是什么？
+[0.62] DLQ-0352 ↔ DLQ-0380
+    sigmoid导数为
+    下图是一个利用sigmoid函数作为激活函数的含四个隐藏层的神经网络训练的梯度下降图。这个神经网络遇到了梯度消失的问题。下面哪个叙述是正确的（ ） [图](原题
+[0.62] DLQ-0352 ↔ MLQ-0566
+    sigmoid导数为
+    在深度神经网络中，ReLU (Rectified Linear Unit) 激活函数相比 Sigmoid 和 Tanh 等函数有许多优势，但它也引入了一个潜在的
+[0.63] DLQ-0354 ↔ LDQ-0140
+    在Mixture of Experts（MoE）架构训练中，以下哪些是需要关注的技术挑战？
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+[0.62] DLQ-0356 ↔ LBQ-0238
+    在Transformer模型中，Multi-Head Attention的作用是什么（）
+    在标准的Transformer解码器（Decoder）结构中，多头自注意力（Multi-Head Self-Attention）层之后通常会紧跟一个前馈神经网络
+[0.77] DLQ-0356 ↔ LBQ-0280
+    在Transformer模型中，Multi-Head Attention的作用是什么（）
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+[0.74] DLQ-0356 ↔ LBQ-0290
+    在Transformer模型中，Multi-Head Attention的作用是什么（）
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.70] DLQ-0357 ↔ LBQ-0286
+    在Transformer模型中，为什么需要Positional Encoding？
+    大模型中的位置编码(Positional Encoding)主要解决Transformer的什么固有缺陷？
+[0.75] DLQ-0363 ↔ FTQ-0165
+    在LoRA（Low-Rank Adaptation）微调方法中，核心假设是什么？
+    LoRA（Low-Rank Adaptation）的核心思想是什么？
+[0.65] DLQ-0363 ↔ LDQ-0030
+    在LoRA（Low-Rank Adaptation）微调方法中，核心假设是什么？
+    在参数高效微调方法LoRA（Low-Rank Adaptation）中，LoRA模块通常适用于模型的哪些部分？
+[0.76] DLQ-0363 ↔ LBQ-0042
+    在LoRA（Low-Rank Adaptation）微调方法中，核心假设是什么？
+    LoRA(Low-Rank Adaptation)微调方法中，秩r的选择对微调效果有什么影响？
+[0.63] DLQ-0372 ↔ LDQ-0139
+    在Transformer的自注意力（Self-Attention）机制中，关于Q、K、V矩阵的作用及计算，以下描述正确的是？
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.68] FTQ-0004 ↔ FTQ-0046
+    灾难性遗忘（Catastrophic Forgetting）的缓解方法中，不属于常用方案的是？
+    以下关于灾难性遗忘（Catastrophic Forgetting）的缓解策略，哪种方法不正确？
+[0.61] FTQ-0004 ↔ LBQ-0106
+    灾难性遗忘（Catastrophic Forgetting）的缓解方法中，不属于常用方案的是？
+    大语言模型在工程应用中常出现灾难性遗忘（Catastrophic Forgetting）问题。以下哪种微调方法能有效缓解此问题？
+[0.65] FTQ-0005 ↔ FTQ-0091
+    以下哪种微调方法不需要训练奖励模型（Reward Model）？
+    在训练奖励模型（Reward Model）时，以下哪种损失函数最常用？
+[0.69] FTQ-0011 ↔ FTQ-0071
+    以下哪种方法可以在不重新训练的情况下合并多个LoRA权重？
+    以下哪种方法可以在不重新训练的情况下调整LoRA微调后模型的"任务强度"？
+[0.67] FTQ-0012 ↔ FTQ-0091
+    在SFT中，以下哪种损失函数最常用？
+    在训练奖励模型（Reward Model）时，以下哪种损失函数最常用？
+[0.71] FTQ-0013 ↔ FTQ-0128
+    GRPO（Group Relative Policy Optimization）相比PPO在大模型训练中的主要优势是什么？
+    在GRPO（Group Relative Policy Optimization）中，优势估计的计算方式是？
+[0.62] FTQ-0013 ↔ LBQ-0089
+    GRPO（Group Relative Policy Optimization）相比PPO在大模型训练中的主要优势是什么？
+    关于2024年提出的RLHF替代方案GRPO(Group Relative Policy Optimization)，以下哪项描述最准确？
+[0.67] FTQ-0053 ↔ FTQ-0151
+    以下关于多任务微调（Multi-task Fine-tuning）的描述，哪项错误？
+    在多任务微调（Multi-task Fine-tuning）中，数据配比（Data Mixing Ratio）的重要性体现在？
+[0.71] FTQ-0054 ↔ FTQ-0165
+    DoRA（Weight-Decomposition Low-Rank Adaptation）相比LoRA的核心改进是什么？
+    LoRA（Low-Rank Adaptation）的核心思想是什么？
+[0.72] FTQ-0057 ↔ FTQ-0129
+    以下关于Constitutional AI（CAI）的描述，哪项正确？
+    以下关于"Constitutional AI"（CAI，Anthropic）的微调方法，描述正确的是？
+[0.63] FTQ-0057 ↔ LBQ-0288
+    以下关于Constitutional AI（CAI）的描述，哪项正确？
+    Constitutional AI(CAI)方法的核心思想是什么？
+[0.67] FTQ-0064 ↔ MAQ-0258
+    LoRA rank=8和rank=64相比，以下说法正确的是？
+    下列说法正确的是（ ）
+[0.67] FTQ-0064 ↔ MAQ-0390
+    LoRA rank=8和rank=64相比，以下说法正确的是？
+    下面说法正确的是（ ）
+[0.67] FTQ-0064 ↔ MLQ-0674
+    LoRA rank=8和rank=64相比，以下说法正确的是？
+    下列说法正确的是？
+[0.64] FTQ-0065 ↔ FTQ-0075
+    ORPO（Odds Ratio Preference Optimization）相比DPO的关键区别是什么？
+    SimPO（Simple Preference Optimization）相比DPO的主要改进是什么？
+[0.67] FTQ-0074 ↔ LDQ-0231
+    DPO（Direct Preference Optimization）损失函数中的超参数β的作用是什么？
+    在微调大模型时，以下关于DPO（Direct Preference Optimization）相比RLHF的核心优势是什么？
+[0.67] FTQ-0074 ↔ LBQ-0273
+    DPO（Direct Preference Optimization）损失函数中的超参数β的作用是什么？
+    DPO(Direct Preference Optimization)相比RLHF+PPO的最大优势是什么？
+[0.74] FTQ-0075 ↔ FTQ-0172
+    SimPO（Simple Preference Optimization）相比DPO的主要改进是什么？
+    在SimPO（Simple Preference Optimization）中，与DPO的核心区别是？
+[0.82] FTQ-0086 ↔ FTQ-0096
+    以下关于IA³（Infused Adapter by Inhibiting and Amplifying Inner Activations）的描述，正确的是？
+    以下哪种场景最适合使用IA³（Infused Adapter by Inhibiting and Amplifying Inner Activations）而非
+[0.61] FTQ-0090 ↔ INQ-0098
+    以下关于Flash Attention在微调中的作用，哪项正确？
+    以下关于FlashAttention在decode阶段效果的描述，正确的是？
+[0.78] FTQ-0097 ↔ FTQ-0182
+    以下哪个方法属于"Parameter-Efficient Fine-Tuning"（PEFT）？
+    在使用PEFT（Parameter-Efficient Fine-Tuning）时，以下哪种方式可以让LoRA权重与基础模型权重合并，实现推理时零额外延迟？
+[0.70] FTQ-0097 ↔ LDQ-0207
+    以下哪个方法属于"Parameter-Efficient Fine-Tuning"（PEFT）？
+    关于大型语言模型（LLM）的 参数效率微调（Parameter-Efficient Fine-Tuning） 方法，下列哪些说法是正确的？
+[0.80] FTQ-0097 ↔ LDQ-0286
+    以下哪个方法属于"Parameter-Efficient Fine-Tuning"（PEFT）？
+    在大语言模型中，什么是"Parameter-Efficient Fine-Tuning"(PEFT)？
+[0.70] FTQ-0097 ↔ LBQ-0040
+    以下哪个方法属于"Parameter-Efficient Fine-Tuning"（PEFT）？
+    在大型语言模型的应用中，上下文学习（In-Context Learning, ICL）和参数高效微调（Parameter-Efficient Fine-Tuni
+[0.80] FTQ-0097 ↔ LBQ-0087
+    以下哪个方法属于"Parameter-Efficient Fine-Tuning"（PEFT）？
+    在对预训练大模型进行下游任务微调（Fine-tuning）时，参数高效微调（Parameter-Efficient Fine-Tuning, PEFT）技术（如
+[0.72] FTQ-0104 ↔ LDQ-0225
+    Prefix Tuning和Prompt Tuning的主要区别是什么？
+    P-Tuning与传统Prompt Tuning的主要区别是什么？
+[0.67] FTQ-0110 ↔ LBQ-0183
+    RLAIF（Reinforcement Learning from AI Feedback）与RLHF的主要区别是？
+    在通过RLHF（Reinforcement Learning from Human Feedback）对大模型进行对齐（Alignment）的流程中，奖励模型（
+[0.61] FTQ-0113 ↔ LBQ-0008
+    在RLHF中，奖励模型（Reward Model）的训练数据格式是？
+    在通过人类反馈强化学习（RLHF）对大模型进行对齐（Alignment）的过程中，奖励模型（Reward Model）起着至关重要的作用。以下关于奖励模型的描述
+[0.82] FTQ-0113 ↔ LBQ-0315
+    在RLHF中，奖励模型（Reward Model）的训练数据格式是？
+    在RLHF流程中，奖励模型(Reward Model)的训练数据来源是什么？
+[0.71] FTQ-0128 ↔ LBQ-0089
+    在GRPO（Group Relative Policy Optimization）中，优势估计的计算方式是？
+    关于2024年提出的RLHF替代方案GRPO(Group Relative Policy Optimization)，以下哪项描述最准确？
+[0.63] FTQ-0129 ↔ LBQ-0288
+    以下关于"Constitutional AI"（CAI，Anthropic）的微调方法，描述正确的是？
+    Constitutional AI(CAI)方法的核心思想是什么？
+[0.69] FTQ-0147 ↔ INQ-0089
+    以下哪种技术是DeepSpeed ZeRO（Zero Redundancy Optimizer）的Stage 3特性？
+    DeepSpeed的ZeRO（Zero Redundancy Optimizer）技术在推理中的应用是？
+[0.61] FTQ-0147 ↔ LDQ-0300
+    以下哪种技术是DeepSpeed ZeRO（Zero Redundancy Optimizer）的Stage 3特性？
+    在大语言模型的训练中，什么是"ZeRO"(Zero Redundancy Optimizer)？
+[0.69] FTQ-0163 ↔ LBQ-0184
+    以下哪种技术是为了缓解RLHF中"奖励黑客"（Reward Hacking）问题？
+    在RLHF中，"奖励黑客"(Reward Hacking)问题指的是什么？
+[0.71] FTQ-0165 ↔ LDQ-0030
+    LoRA（Low-Rank Adaptation）的核心思想是什么？
+    在参数高效微调方法LoRA（Low-Rank Adaptation）中，LoRA模块通常适用于模型的哪些部分？
+[0.71] FTQ-0165 ↔ LBQ-0042
+    LoRA（Low-Rank Adaptation）的核心思想是什么？
+    LoRA(Low-Rank Adaptation)微调方法中，秩r的选择对微调效果有什么影响？
+[0.77] FTQ-0169 ↔ RGQ-0035
+    以下哪种场景最不适合使用参数高效微调（PEFT）方法？
+    以下哪种场景最不适合使用RAG？
+[0.62] FTQ-0179 ↔ LBQ-0363
+    以下关于知识蒸馏（Knowledge Distillation）在LLM对齐中的应用，哪项正确？
+    知识蒸馏（Knowledge Distillation）在大模型应用中最常见的作用是什么？
+[0.70] FTQ-0182 ↔ LDQ-0286
+    在使用PEFT（Parameter-Efficient Fine-Tuning）时，以下哪种方式可以让LoRA权重与基础模型权重合并，实现推理时零额外延迟？
+    在大语言模型中，什么是"Parameter-Efficient Fine-Tuning"(PEFT)？
+[0.79] INQ-0011 ↔ INQ-0127
+    以下关于"Multi-Query Attention"（MQA）和GQA的关系，描述正确的是？
+    以下关于Multi-Query Attention（MQA）的描述，哪项正确？
+[0.69] INQ-0012 ↔ INQ-0055
+    推测解码（Speculative Decoding）的加速原理是什么？
+    以下哪种情况下，Speculative Decoding的加速比最高？
+[0.66] INQ-0012 ↔ INQ-0063
+    推测解码（Speculative Decoding）的加速原理是什么？
+    以下关于"投机解码"（Speculative Decoding）中"draft model"选择的最佳实践，描述正确的是？
+[0.72] INQ-0012 ↔ INQ-0117
+    推测解码（Speculative Decoding）的加速原理是什么？
+    在使用vLLM部署时，以下哪个参数配置可以启用推测解码（Speculative Decoding）？
+[0.66] INQ-0012 ↔ INQ-0157
+    推测解码（Speculative Decoding）的加速原理是什么？
+    Medusa（多头推测解码）与标准Speculative Decoding相比，最大区别是？
+[0.76] INQ-0012 ↔ LDQ-0196
+    推测解码（Speculative Decoding）的加速原理是什么？
+    在使用vLLM部署模型时，Speculative Decoding（推测解码）的工作原理是什么？
+[0.62] INQ-0012 ↔ LBQ-0214
+    推测解码（Speculative Decoding）的加速原理是什么？
+    关于Speculative Decoding的正确性保证，以下哪项描述最准确？
+[0.69] INQ-0012 ↔ LBQ-0223
+    推测解码（Speculative Decoding）的加速原理是什么？
+    Speculative Decoding(投机解码)的基本原理是什么？
+[0.76] INQ-0023 ↔ INQ-0088
+    在KV Cache优化中，GQA（Grouped Query Attention）与MHA（Multi-Head Attention）相比，KV Cache大小
+    GQA（Grouped Query Attention）解决了什么问题？
+[0.66] INQ-0023 ↔ LBQ-0215
+    在KV Cache优化中，GQA（Grouped Query Attention）与MHA（Multi-Head Attention）相比，KV Cache大小
+    Grouped Query Attention(GQA)相比Multi-Head Attention(MHA)的核心改进是什么？
+[0.73] INQ-0033 ↔ INQ-0174
+    FlashAttention v2相比v1的主要改进是什么？
+    在FlashAttention-2中，相比FlashAttention-1的主要改进是什么？
+[0.61] INQ-0055 ↔ INQ-0072
+    以下哪种情况下，Speculative Decoding的加速比最高？
+    在以下场景中，哪种情况最适合使用Speculative Decoding？
+[0.61] INQ-0055 ↔ LBQ-0214
+    以下哪种情况下，Speculative Decoding的加速比最高？
+    关于Speculative Decoding的正确性保证，以下哪项描述最准确？
+[0.66] INQ-0063 ↔ LBQ-0223
+    以下关于"投机解码"（Speculative Decoding）中"draft model"选择的最佳实践，描述正确的是？
+    Speculative Decoding(投机解码)的基本原理是什么？
+[0.64] INQ-0084 ↔ LBQ-0028
+    以下关于"Sliding Window Attention"（滑动窗口注意力，如Mistral使用）在推理上的影响，描述正确的是？
+    关于大模型中的Sliding Window Attention(滑动窗口注意力)，以下哪项描述最准确？
+[0.62] INQ-0088 ↔ LDQ-0144
+    GQA（Grouped Query Attention）解决了什么问题？
+    在大语言模型中，Grouped-Query Attention(GQA)的主要目的是什么？
+[0.69] INQ-0088 ↔ LBQ-0116
+    GQA（Grouped Query Attention）解决了什么问题？
+    关于Llama 3 70B/405B模型中GQA（Grouped-Query Attention）的配置，以下哪项是正确的？
+[0.69] INQ-0088 ↔ LBQ-0215
+    GQA（Grouped Query Attention）解决了什么问题？
+    Grouped Query Attention(GQA)相比Multi-Head Attention(MHA)的核心改进是什么？
+[0.61] INQ-0089 ↔ LDQ-0300
+    DeepSpeed的ZeRO（Zero Redundancy Optimizer）技术在推理中的应用是？
+    在大语言模型的训练中，什么是"ZeRO"(Zero Redundancy Optimizer)？
+[0.70] INQ-0098 ↔ INQ-0152
+    以下关于FlashAttention在decode阶段效果的描述，正确的是？
+    以下关于Flash Decoding的描述，正确的是？
+[0.70] INQ-0115 ↔ INQ-0152
+    以下关于"Lookahead Decoding"的描述，正确的是？
+    以下关于Flash Decoding的描述，正确的是？
+[0.62] INQ-0117 ↔ LDQ-0196
+    在使用vLLM部署时，以下哪个参数配置可以启用推测解码（Speculative Decoding）？
+    在使用vLLM部署模型时，Speculative Decoding（推测解码）的工作原理是什么？
+[1.00] INQ-0121 ↔ LDQ-0245
+    AWQ（Activation-Aware Weight Quantization）的核心思想是什么？
+    在大语言模型中，AWQ(Activation-aware Weight Quantization)的核心思想是什么？
+[0.82] INQ-0121 ↔ LBQ-0307
+    AWQ（Activation-Aware Weight Quantization）的核心思想是什么？
+    AWQ(Activation-aware Weight Quantization)相比GPTQ的核心改进在于什么？
+[0.64] INQ-0127 ↔ INQ-0150
+    以下关于Multi-Query Attention（MQA）的描述，哪项正确？
+    以下哪种推理场景最受益于使用Multi-Query Attention（MQA）而非Multi-Head Attention（MHA）？
+[0.65] INQ-0127 ↔ INQ-0177
+    以下关于Multi-Query Attention（MQA）的描述，哪项正确？
+    以下关于Ring Attention的描述，哪项正确？
+[0.64] INQ-0127 ↔ LDQ-0054
+    以下关于Multi-Query Attention（MQA）的描述，哪项正确？
+    在大语言模型中，Multi-Query Attention(MQA)与标准多头注意力的主要区别是什么？
+[0.64] INQ-0127 ↔ LBQ-0176
+    以下关于Multi-Query Attention（MQA）的描述，哪项正确？
+    关于Transformer中的Multi-Query Attention(MQA)，以下哪项是其主要缺点？
+[0.71] INQ-0131 ↔ LBQ-0178
+    在GPTQ量化中，"逐层量化，按Hessian重要性排序"的核心思想是什么？
+    GPTQ量化方法的核心思想是什么？
+[0.65] INQ-0176 ↔ LDQ-0020
+    LLM推理时，流水线并行（Pipeline Parallelism）相比张量并行的优缺点是什么？
+    大模型训练中，流水线并行（Pipeline Parallelism）的核心思想是？
+[0.61] INQ-0185 ↔ LBQ-0056
+    在自回归推理中，prefill阶段和decode阶段的计算特点有何不同？
+    在大模型推理中，"prefill"和"decode"两个阶段的计算特性有何不同？
+[0.72] LDQ-0036 ↔ LDQ-0288
+    在大语言模型中，什么是"Gated Cross-Attention"？
+    在大语言模型中，什么是"Gated Attention Unit"(GAU)？
+[0.65] LDQ-0040 ↔ LDQ-0124
+    在大语言模型的训练中，什么是"梯度中心化"(Gradient Centralization)？
+    在大语言模型的训练中，什么是"梯度惩罚"(Gradient Penalty)？
+[0.65] LDQ-0040 ↔ LDQ-0235
+    在大语言模型的训练中，什么是"梯度中心化"(Gradient Centralization)？
+    在大语言模型的训练中，什么是"梯度噪声"(Gradient Noise)技术？
+[0.66] LDQ-0040 ↔ LDQ-0269
+    在大语言模型的训练中，什么是"梯度中心化"(Gradient Centralization)？
+    在大语言模型的训练中，什么是梯度裁剪(Gradient Clipping)？
+[0.60] LDQ-0050 ↔ MLQ-0308
+    关于大型模型的优化器选择，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.68] LDQ-0051 ↔ LDQ-0139
+    Transformer架构中的Self-Attention机制在大模型应用中面临计算挑战。它在序列长度上的时间复杂度是？
+    在Transformer架构中，self-attention机制的核心作用是什么？
+[0.62] LDQ-0055 ↔ LBQ-0363
+    在大模型推理时，使用蒸馏（Knowledge Distillation）技术的主要目的是什么？
+    知识蒸馏（Knowledge Distillation）在大模型应用中最常见的作用是什么？
+[0.61] LDQ-0055 ↔ LBQ-0384
+    在大模型推理时，使用蒸馏（Knowledge Distillation）技术的主要目的是什么？
+    在大模型推理优化中，关于模型蒸馏(Knowledge Distillation)的描述，以下哪项最准确？
+[0.60] LDQ-0056 ↔ MLQ-0308
+    关于在大型语言模型中使用 Prefix Tuning 所面临的挑战，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.63] LDQ-0063 ↔ LDQ-0180
+    在大语言模型中，ALiBi(Attention with Linear Biases)位置编码的主要创新是什么？
+    在大语言模型中，FlashAttention算法的主要创新是什么？
+[0.64] LDQ-0063 ↔ LBQ-0390
+    在大语言模型中，ALiBi(Attention with Linear Biases)位置编码的主要创新是什么？
+    ALiBi(Attention with Linear Biases)在推理时外推到训练长度之外的能力优于传统正弦位置编码，其原因是什么？
+[0.75] LDQ-0075 ↔ LBQ-0082
+    在大语言模型中，什么是"Rotary Position Embedding"(RoPE)？
+    在大模型中，Rotary Position Embedding(RoPE)的"旋转"操作具体应用于哪些向量？
+[0.64] LDQ-0075 ↔ LBQ-0392
+    在大语言模型中，什么是"Rotary Position Embedding"(RoPE)？
+    RoPE(Rotary Position Embedding)位置编码的核心思想是什么？
+[0.60] LDQ-0078 ↔ MLQ-0308
+    关于多模态大模型中的对齐（Alignment）问题，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.60] LDQ-0080 ↔ MLQ-0308
+    关于自适应提示（Adaptive Prompting）技术，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.80] LDQ-0089 ↔ LDQ-0216
+    在大语言模型中，什么是"Sequence-Level Knowledge Distillation"？
+    在大语言模型中，什么是"Knowledge Distillation"的"温度"参数？
+[0.62] LDQ-0091 ↔ LDQ-0252
+    指令微调(Instruction Tuning)与传统微调的主要区别是什么？
+    在指令微调（Instruction Tuning）过程中，Prompt Template 设计的核心原则是什么？
+[0.74] LDQ-0091 ↔ LBQ-0289
+    指令微调(Instruction Tuning)与传统微调的主要区别是什么？
+    指令微调（Instruction Tuning）的核心目标是什么？
+[0.66] LDQ-0091 ↔ LBQ-0365
+    指令微调(Instruction Tuning)与传统微调的主要区别是什么？
+    为提高大模型在特定任务上的性能，如情感分析，常使用指令微调（instruction tuning）。该过程的主要目的是什么？
+[0.62] LDQ-0092 ↔ LDQ-0119
+    在大语言模型中，什么是"Structured Pruning"？
+    在大语言模型中，什么是"Mixture-of-Experts Pruning"？
+[0.64] LDQ-0095 ↔ LBQ-0093
+    在分布式训练大型模型时，使用数据并行策略会导致哪个操作产生显著的通信开销？
+    在分布式训练大型模型时，数据并行策略的定义是什么？
+[0.79] LDQ-0101 ↔ LBQ-0298
+    在Transformer架构中，位置编码设计的主要挑战是什么？
+    在Transformer架构中，位置编码的主要作用是？
+[1.00] LDQ-0102 ↔ MAQ-0258
+    关于大语言模型（LLM）的基础概念，下列说法正确的是（）
+    下列说法正确的是（ ）
+[0.67] LDQ-0102 ↔ MAQ-0390
+    关于大语言模型（LLM）的基础概念，下列说法正确的是（）
+    下面说法正确的是（ ）
+[1.00] LDQ-0102 ↔ MLQ-0674
+    关于大语言模型（LLM）的基础概念，下列说法正确的是（）
+    下列说法正确的是？
+[0.70] LDQ-0119 ↔ LDQ-0140
+    在大语言模型中，什么是"Mixture-of-Experts Pruning"？
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+[0.65] LDQ-0124 ↔ LDQ-0235
+    在大语言模型的训练中，什么是"梯度惩罚"(Gradient Penalty)？
+    在大语言模型的训练中，什么是"梯度噪声"(Gradient Noise)技术？
+[0.65] LDQ-0124 ↔ LDQ-0269
+    在大语言模型的训练中，什么是"梯度惩罚"(Gradient Penalty)？
+    在大语言模型的训练中，什么是梯度裁剪(Gradient Clipping)？
+[0.74] LDQ-0139 ↔ LBQ-0131
+    在Transformer架构中，self-attention机制的核心作用是什么？
+    在标准的 Transformer 架构中，自注意力（Self-Attention）机制是其核心组件。当处理一个长度为 N 的输入序列时，该机制的计算复杂度和内存
+[0.68] LDQ-0139 ↔ LBQ-0250
+    在Transformer架构中，self-attention机制的核心作用是什么？
+    标准Transformer架构在处理超长序列时面临的主要瓶颈是其自注意力（Self-Attention）机制，该瓶颈在计算层面的具体表现是什么？
+[0.66] LDQ-0139 ↔ LBQ-0280
+    在Transformer架构中，self-attention机制的核心作用是什么？
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+[0.68] LDQ-0139 ↔ LBQ-0284
+    在Transformer架构中，self-attention机制的核心作用是什么？
+    Transformer 架构是现代大模型的基础。关于其自注意力（Self-Attention）机制的计算复杂度，以下哪个描述是正确的，并解释了其成为大模型扩展性
+[0.61] LDQ-0139 ↔ LBQ-0290
+    在Transformer架构中，self-attention机制的核心作用是什么？
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.62] LDQ-0139 ↔ LBQ-0298
+    在Transformer架构中，self-attention机制的核心作用是什么？
+    在Transformer架构中，位置编码的主要作用是？
+[0.77] LDQ-0140 ↔ LBQ-0013
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+    在大语言模型中引入稀疏混合专家（Sparse Mixture of Experts, SMoE）架构，其最主要的设计目标是？
+[0.63] LDQ-0140 ↔ LBQ-0147
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+    在大型语言模型架构中，采用混合专家（Mixture of Experts, MoE）层的主要目的是为了什么？
+[0.63] LDQ-0140 ↔ LBQ-0297
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+    Mixture of Experts(MoE)架构中，"路由坍塌"(Router Collapse)问题指的是什么？
+[0.63] LDQ-0140 ↔ LBQ-0318
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+    混合专家模型（Mixture of Experts, MoE）是当前构建超大规模语言模型的一种重要架构。关于 MoE 模型，以下哪个陈述是正确的？
+[0.63] LDQ-0140 ↔ LBQ-0347
+    在大语言模型中，什么是"Mixture of Experts"(MoE)架构？
+    在大模型中，关于Mixture of Experts(MoE)模型的推理效率和总参数量的关系，以下哪项描述最准确？
+[0.73] LDQ-0162 ↔ LDQ-0286
+    在大语言模型中，什么是"Sparse Fine-tuning"？
+    在大语言模型中，什么是"Parameter-Efficient Fine-Tuning"(PEFT)？
+[0.74] LDQ-0189 ↔ LDQ-0277
+    在大语言模型的预训练中，CLM(Causal Language Modeling)与MLM(Masked Language Modeling)的主要区别是什么？
+    在预训练大语言模型中，MLM(Masked Language Modeling)的主要目标是什么？
+[0.60] LDQ-0194 ↔ MLQ-0308
+    关于视觉领域的自监督学习方法，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.72] LDQ-0196 ↔ LBQ-0223
+    在使用vLLM部署模型时，Speculative Decoding（推测解码）的工作原理是什么？
+    Speculative Decoding(投机解码)的基本原理是什么？
+[0.70] LDQ-0207 ↔ LDQ-0286
+    关于大型语言模型（LLM）的 参数效率微调（Parameter-Efficient Fine-Tuning） 方法，下列哪些说法是正确的？
+    在大语言模型中，什么是"Parameter-Efficient Fine-Tuning"(PEFT)？
+[0.72] LDQ-0212 ↔ RGQ-0069
+    在使用RAGAS评估RAG系统时，Faithfulness指标衡量的是什么？
+    RAGAS评估框架中，"忠实度"（Faithfulness）指标衡量的是什么？
+[0.68] LDQ-0213 ↔ RGQ-0160
+    在RAG系统中实现Chunk策略时，以下关于Semantic Chunking（语义分块）的描述哪个最准确？
+    以下关于"Semantic Chunking"（语义分块）的实现方法，描述正确的是？
+[0.60] LDQ-0216 ↔ LDQ-0251
+    在大语言模型中，什么是"Knowledge Distillation"的"温度"参数？
+    在大语言模型中，什么是"Offline Distillation"与"Online Distillation"的主要区别？
+[0.60] LDQ-0216 ↔ MLQ-0286
+    在大语言模型中，什么是"Knowledge Distillation"的"温度"参数？
+    在使用知识蒸馏(Knowledge Distillation)时，温度参数T的作用是什么？
+[0.69] LDQ-0219 ↔ LBQ-0345
+    关于跨模态学习模型 CLIP（Contrastive Language-Image Pre-training），以下哪些说法是正确的？
+    在多模态大模型中，CLIP(Contrastive Language-Image Pre-training)的训练目标是什么？
+[0.60] LDQ-0219 ↔ MLQ-0308
+    关于跨模态学习模型 CLIP（Contrastive Language-Image Pre-training），以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.64] LDQ-0229 ↔ LDQ-0232
+    在大模型应用的成本优化中，以下关于Prompt Caching的描述哪个最准确？
+    在大模型应用的成本优化中，以下关于语义缓存（Semantic Cache）的描述哪个最准确？
+[0.81] LDQ-0231 ↔ LBQ-0273
+    在微调大模型时，以下关于DPO（Direct Preference Optimization）相比RLHF的核心优势是什么？
+    DPO(Direct Preference Optimization)相比RLHF+PPO的最大优势是什么？
+[0.65] LDQ-0235 ↔ LDQ-0269
+    在大语言模型的训练中，什么是"梯度噪声"(Gradient Noise)技术？
+    在大语言模型的训练中，什么是梯度裁剪(Gradient Clipping)？
+[0.60] LDQ-0236 ↔ MLQ-0308
+    关于 Prefix Tuning 与 Transformer 架构的交互机制，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.70] LDQ-0245 ↔ LBQ-0307
+    在大语言模型中，AWQ(Activation-aware Weight Quantization)的核心思想是什么？
+    AWQ(Activation-aware Weight Quantization)相比GPTQ的核心改进在于什么？
+[0.60] LDQ-0250 ↔ RGQ-0009
+    在RAG系统中使用Hybrid Search（混合检索）时，以下关于RRF（Reciprocal Rank Fusion）融合策略的描述哪个是正确的？
+    在RAG中，Reciprocal Rank Fusion（RRF）的计算公式是什么？
+[0.78] LDQ-0252 ↔ LBQ-0289
+    在指令微调（Instruction Tuning）过程中，Prompt Template 设计的核心原则是什么？
+    指令微调（Instruction Tuning）的核心目标是什么？
+[0.71] LDQ-0268 ↔ LBQ-0264
+    在RAG系统中使用HyDE（Hypothetical Document Embeddings）技术时，其工作流程是什么？
+    在RAG系统中，Hypothetical Document Embedding(HyDE)技术的核心思想是什么？
+[0.76] LDQ-0268 ↔ RGQ-0155
+    在RAG系统中使用HyDE（Hypothetical Document Embeddings）技术时，其工作流程是什么？
+    HyDE（Hypothetical Document Embeddings）为什么能提升检索质量？
+[0.60] LDQ-0275 ↔ MLQ-0308
+    在多模态大型模型中，关于视觉提示（Visual Prompt）的应用，以下哪些说法是正确的？
+    关于特征缩放，以下哪些说法是正确的（）
+[0.70] LDQ-0286 ↔ LBQ-0040
+    在大语言模型中，什么是"Parameter-Efficient Fine-Tuning"(PEFT)？
+    在大型语言模型的应用中，上下文学习（In-Context Learning, ICL）和参数高效微调（Parameter-Efficient Fine-Tuni
+[0.74] LDQ-0286 ↔ LBQ-0087
+    在大语言模型中，什么是"Parameter-Efficient Fine-Tuning"(PEFT)？
+    在对预训练大模型进行下游任务微调（Fine-tuning）时，参数高效微调（Parameter-Efficient Fine-Tuning, PEFT）技术（如
+[0.67] LDQ-0300 ↔ LBQ-0025
+    在大语言模型的训练中，什么是"ZeRO"(Zero Redundancy Optimizer)？
+    在大模型训练中，ZeRO(Zero Redundancy Optimizer)的三个阶段分别优化了什么？
+[0.67] LDQ-0300 ↔ LBQ-0060
+    在大语言模型的训练中，什么是"ZeRO"(Zero Redundancy Optimizer)？
+    在分布式训练中，ZeRO(Zero Redundancy Optimizer)技术主要通过什么方式优化显存使用？
+[0.77] LDQ-0305 ↔ RGQ-0029
+    在RAG系统中，使用Contextual Compression（上下文压缩）的主要目的是什么？
+    Contextual Compression（上下文压缩）在RAG中的作用是什么？
+[0.77] LDQ-0305 ↔ RGQ-0066
+    在RAG系统中，使用Contextual Compression（上下文压缩）的主要目的是什么？
+    在Contextual Compression（上下文压缩）技术中，其主要目的是？
+[0.71] LBQ-0018 ↔ LBQ-0210
+    关于大模型的稀疏激活特性，下列描述最准确的是：
+    关于大模型的稀疏激活特性（MoE架构），以下描述最准确的是？
+[0.62] LBQ-0025 ↔ LBQ-0060
+    在大模型训练中，ZeRO(Zero Redundancy Optimizer)的三个阶段分别优化了什么？
+    在分布式训练中，ZeRO(Zero Redundancy Optimizer)技术主要通过什么方式优化显存使用？
+[0.66] LBQ-0032 ↔ LBQ-0199
+    关于大模型量化（Quantization）的描述，以下哪项是正确的？
+    关于大模型“量化（Quantization）”技术的描述，以下最准确的是？
+[0.63] LBQ-0040 ↔ LBQ-0213
+    在大型语言模型的应用中，上下文学习（In-Context Learning, ICL）和参数高效微调（Parameter-Efficient Fine-Tuni
+    下列关于上下文学习（In-context Learning, ICL）的描述，哪一项最准确？
+[0.62] LBQ-0044 ↔ LBQ-0139
+    在AI领域，什么是“数据增强”？
+    在AI领域，什么是“知识图谱”？
+[0.77] LBQ-0044 ↔ LBQ-0187
+    在AI领域，什么是“数据增强”？
+    在AI领域，什么是“数据偏差”？
+[0.62] LBQ-0044 ↔ LBQ-0313
+    在AI领域，什么是“数据增强”？
+    在AI领域，什么是“无监督学习”？
+[0.68] LBQ-0049 ↔ LBQ-0180
+    关于大模型的分布式训练策略，以下哪些描述是正确的？
+    关于大模型的量化技术，以下哪些描述是正确的？
+[0.65] LBQ-0049 ↔ LBQ-0369
+    关于大模型的分布式训练策略，以下哪些描述是正确的？
+    关于大模型的FP8训练，以下哪些描述是正确的？
+[0.67] LBQ-0077 ↔ MAQ-0258
+    关于大模型推理阶段的KV缓存优化，以下说法正确的是？
+    下列说法正确的是（ ）
+[0.67] LBQ-0077 ↔ MAQ-0390
+    关于大模型推理阶段的KV缓存优化，以下说法正确的是？
+    下面说法正确的是（ ）
+[0.67] LBQ-0077 ↔ MLQ-0674
+    关于大模型推理阶段的KV缓存优化，以下说法正确的是？
+    下列说法正确的是？
+[0.62] LBQ-0082 ↔ LBQ-0392
+    在大模型中，Rotary Position Embedding(RoPE)的"旋转"操作具体应用于哪些向量？
+    RoPE(Rotary Position Embedding)位置编码的核心思想是什么？
+[0.64] LBQ-0103 ↔ LBQ-0358
+    在使用AI大模型进行客户支持时，最有效的应用方式是什么？
+    在使用AI大模型进行客户支持时，最重要的考虑因素是什么？
+[0.64] LBQ-0105 ↔ LBQ-0162
+    在模型评估中，什么是“精确率”（Precision）？
+    在模型评估中，什么是“损失函数”？
+[0.77] LBQ-0105 ↔ LBQ-0230
+    在模型评估中，什么是“精确率”（Precision）？
+    在模型评估中，什么是“准确率”？
+[0.64] LBQ-0105 ↔ LBQ-0322
+    在模型评估中，什么是“精确率”（Precision）？
+    在模型评估中，什么是“训练曲线”？
+[0.79] LBQ-0108 ↔ LBQ-0338
+    大模型的预训练阶段主要目的是什么？
+    在大型语言模型的预训练阶段，通常使用大规模无标签数据集的主要目的是什么？
+[0.63] LBQ-0112 ↔ LBQ-0213
+    大模型的“上下文学习（In-context Learning, ICL）”能力，最能体现其工程价值的核心特点是？
+    下列关于上下文学习（In-context Learning, ICL）的描述，哪一项最准确？
+[0.84] LBQ-0122 ↔ LBQ-0358
+    在使用AI大模型进行客户服务时，最重要的考虑因素是什么？
+    在使用AI大模型进行客户支持时，最重要的考虑因素是什么？
+[0.60] LBQ-0130 ↔ LBQ-0251
+    大模型的“模型压缩”主要是为了什么？
+    大模型的“可解释性”主要是为了什么？
+[0.64] LBQ-0138 ↔ LBQ-0293
+    在AI应用中，什么是“超参数调优”？
+    在AI应用中，什么是“特征工程”？
+[0.62] LBQ-0139 ↔ LBQ-0187
+    在AI领域，什么是“知识图谱”？
+    在AI领域，什么是“数据偏差”？
+[0.62] LBQ-0139 ↔ LBQ-0313
+    在AI领域，什么是“知识图谱”？
+    在AI领域，什么是“无监督学习”？
+[0.66] LBQ-0149 ↔ LBQ-0189
+    关于大模型的"思维链"(Chain-of-Thought, CoT)提示，以下哪项理解最深入？
+    关于大模型的"思维链"(Chain-of-Thought)相关技术，以下哪些描述是正确的？
+[0.65] LBQ-0155 ↔ LBQ-0357
+    在AI大模型的应用中，如何评估模型的性能？
+    在AI大模型的应用中，如何平衡模型的准确性和计算成本？
+[0.65] LBQ-0155 ↔ LBQ-0376
+    在AI大模型的应用中，如何评估模型的性能？
+    在AI大模型的应用中，如何处理模型输出的不准确结果？
+[0.65] LBQ-0159 ↔ LBQ-0360
+    在大模型的应用中，"模型验证"的主要目的是？
+    在大模型的应用中，"迁移学习"的主要目的是？
+[0.69] LBQ-0162 ↔ LBQ-0230
+    在模型评估中，什么是“损失函数”？
+    在模型评估中，什么是“准确率”？
+[0.64] LBQ-0162 ↔ LBQ-0246
+    在模型评估中，什么是“损失函数”？
+    在模型评估中，什么是“模型泛化能力”？
+[0.64] LBQ-0162 ↔ LBQ-0322
+    在模型评估中，什么是“损失函数”？
+    在模型评估中，什么是“训练曲线”？
+[0.79] LBQ-0180 ↔ LBQ-0189
+    关于大模型的量化技术，以下哪些描述是正确的？
+    关于大模型的"思维链"(Chain-of-Thought)相关技术，以下哪些描述是正确的？
+[0.68] LBQ-0180 ↔ LBQ-0369
+    关于大模型的量化技术，以下哪些描述是正确的？
+    关于大模型的FP8训练，以下哪些描述是正确的？
+[0.62] LBQ-0187 ↔ LBQ-0313
+    在AI领域，什么是“数据偏差”？
+    在AI领域，什么是“无监督学习”？
+[0.65] LBQ-0189 ↔ LBQ-0369
+    关于大模型的"思维链"(Chain-of-Thought)相关技术，以下哪些描述是正确的？
+    关于大模型的FP8训练，以下哪些描述是正确的？
+[0.64] LBQ-0194 ↔ LBQ-0202
+    大模型的一个主要优势是什么？
+    可解释性模型的一个主要优点是什么？
+[0.65] LBQ-0199 ↔ LBQ-0231
+    关于大模型“量化（Quantization）”技术的描述，以下最准确的是？
+    关于大模型“涌现能力”的描述，以下最准确的是？
+[0.79] LBQ-0203 ↔ LBQ-0305
+    在数据收集时，如何确保数据的多样性？
+    数据收集时，如何确保数据的准确性？
+[0.63] LBQ-0213 ↔ LBQ-0375
+    下列关于上下文学习（In-context Learning, ICL）的描述，哪一项最准确？
+    关于大模型的上下文学习(In-Context Learning, ICL)能力，以下哪项理论解释被认为最有启发性？
+[0.61] LBQ-0225 ↔ RGQ-0086
+    在RAG(Retrieval-Augmented Generation)系统中，当检索到的文档与用户问题相关但包含过时信息时，最佳处理策略是什么？
+    1.RAG（Retrieval-Augmented Generation）相比纯参数记忆的LLM，核心优势是什么？
+[0.60] LBQ-0226 ↔ LBQ-0252
+    根据Chinchilla等研究提出的缩放法则（Scaling Laws），在给定固定的计算预算（FLOPs）进行模型训练时，为了追求最优性能，资源分配的最佳策略
+    Chinchilla Scaling Law的核心发现是什么？
+[0.69] LBQ-0230 ↔ LBQ-0246
+    在模型评估中，什么是“准确率”？
+    在模型评估中，什么是“模型泛化能力”？
+[0.69] LBQ-0230 ↔ LBQ-0322
+    在模型评估中，什么是“准确率”？
+    在模型评估中，什么是“训练曲线”？
+[0.64] LBQ-0236 ↔ MLQ-0276
+    在few-shot learning场景中，如何通过prompt engineering实现模型快速适应新任务？
+    Prompt Learning在Few-shot Learning场景下的应用表明了什么？
+[0.64] LBQ-0246 ↔ LBQ-0322
+    在模型评估中，什么是“模型泛化能力”？
+    在模型评估中，什么是“训练曲线”？
+[0.69] LBQ-0264 ↔ RGQ-0155
+    在RAG系统中，Hypothetical Document Embedding(HyDE)技术的核心思想是什么？
+    HyDE（Hypothetical Document Embeddings）为什么能提升检索质量？
+[0.68] LBQ-0270 ↔ LBQ-0376
+    在产品运营中，如何处理AI大模型输出的不准确结果？
+    在AI大模型的应用中，如何处理模型输出的不准确结果？
+[0.71] LBQ-0280 ↔ LBQ-0290
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+    在Transformer架构中，多头注意力机制（Multi-Head Attention）的核心优势是什么？
+[0.62] LBQ-0280 ↔ LBQ-0298
+    在Transformer架构中，Multi-Head Attention机制的主要设计目的是什么？
+    在Transformer架构中，位置编码的主要作用是？
+[0.61] LBQ-0285 ↔ LBQ-0359
+    在数据预处理阶段，如何处理不平衡的数据集？
+    在数据预处理阶段，如何处理浮动数据的单位不一致问题？
+[0.74] LBQ-0289 ↔ LBQ-0365
+    指令微调（Instruction Tuning）的核心目标是什么？
+    为提高大模型在特定任务上的性能，如情感分析，常使用指令微调（instruction tuning）。该过程的主要目的是什么？
+[0.63] LBQ-0289 ↔ LBQ-0374
+    指令微调（Instruction Tuning）的核心目标是什么？
+    关于大模型中的Instruction Tuning(指令微调)，以下哪项理解最深入？
+[0.64] LBQ-0296 ↔ LBQ-0362
+    预训练大模型后，微调阶段的主要目标是什么？
+    大模型训练的主要目标是什么？
+[0.71] LBQ-0326 ↔ LBQ-0334
+    大模型的“自监督学习”主要是指什么？
+    大模型的“集成学习”主要是指什么？
+[0.69] LBQ-0363 ↔ MLQ-0286
+    知识蒸馏（Knowledge Distillation）在大模型应用中最常见的作用是什么？
+    在使用知识蒸馏(Knowledge Distillation)时，温度参数T的作用是什么？
+[0.67] MAQ-0009 ↔ MLQ-0353
+    下列关于PCA的说法错误的是（）
+    下列说法错误的是
+[0.65] MAQ-0011 ↔ MLQ-0576
+    以下对k-means聚类算法解释正确的是
+    关于K-means聚类算法说法正确的是（ ）
+[0.79] MAQ-0049 ↔ MAQ-0054
+    在区间[-2, 2]里任取两个实数，它们的和>1的概率是()
+    在区间[-2,2]里任取2个实数，它们的平方和>1的概率是大约是()
+[0.77] MAQ-0053 ↔ MAQ-0302
+    假设某个广告展现后被点击的概率是0.25，那么该广告3次展现，被点击次数少于2次的概率是（）
+    假设某个广告展现后被点击的概率是1/3（实际远小于这个数，只是为方便计算），那该广告3次展现，被点击次数少于2次的概率是?
+[0.71] MAQ-0063 ↔ MLQ-0283
+    下面有关矩阵说法不正确的是（）
+    下列说法不正确的是（ ）
+[0.71] MAQ-0063 ↔ MLQ-0341
+    下面有关矩阵说法不正确的是（）
+    以下说法不正确的是（）
+[0.85] MAQ-0116 ↔ MLQ-0200
+    以下两种描述分别对应哪两种分类算法的评价标准？ a) 描述有多少比例的小偷被警察抓了的标准 b) 警察抓小偷，描述警察抓的人中有多少个是小偷的标准
+    以下两种描述分别对应哪两种对分类算法的评价标准？ (a)警察抓小偷，描述警察抓的人中有多少个是小偷的标准。 (b)描述有多少比例的小偷给警察抓了的标准。
+[1.00] MAQ-0126 ↔ MAQ-0258
+    关于 ARMA 、 AR 、 MA 模型的功率谱，下列说法正确的是（ ）
+    下列说法正确的是（ ）
+[0.67] MAQ-0126 ↔ MAQ-0390
+    关于 ARMA 、 AR 、 MA 模型的功率谱，下列说法正确的是（ ）
+    下面说法正确的是（ ）
+[1.00] MAQ-0126 ↔ MLQ-0674
+    关于 ARMA 、 AR 、 MA 模型的功率谱，下列说法正确的是（ ）
+    下列说法正确的是？
+[0.69] MAQ-0143 ↔ MAQ-0245
+    两个人抛硬币，规定第一个抛出正面的人必须穿女装，请问先抛的人穿女装的概率多大？（）
+    两个人抛硬币，规定第一个抛出正面的人可以吃到苹果，请问先抛的人能吃到苹果的概率多大？
+[0.69] MAQ-0156 ↔ MAQ-0183
+    西京市有河东，河西共有两个区，人口比例为 3：5 ，据历史统计河东区的犯罪率为 0.01% ，河西区为 0.015% ，现有一起新案件发生在西京市，那么案件发生
+    S市A，B共有两个区，人口比例为3：5，据历史统计A的犯罪率为0.01%，B区为0.015%，现有一起新案件发生在S市，那么案件发生在A区的可能性有多大？（）
+[1.00] MAQ-0173 ↔ MAQ-0415
+    小明在面试时抽到这样一道题目：设随机变量 $X$ 的分布函数 [图](原题含图,离线不可显示), 则 $P(X=2)$ 的值为？
+    [图](原题含图,离线不可显示)
+[0.62] MAQ-0178 ↔ MAQ-0279
+    已知两个一维模式类别的类概率密度函数为: [图](原题含图,离线不可显示) [图](原题含图,离线不可显示) 先验概率P(1)=0.6，P(2)=0.4， 则样
+    设随机变量 ξ的概率密度函数为[图](原题含图,离线不可显示)，[图](原题含图,离线不可显示)=（ ）
+[0.60] MAQ-0178 ↔ MAQ-0284
+    已知两个一维模式类别的类概率密度函数为: [图](原题含图,离线不可显示) [图](原题含图,离线不可显示) 先验概率P(1)=0.6，P(2)=0.4， 则样
+    设随机变量 ξ的概率密度函数为[图](原题含图,离线不可显示)，则E( ξ)=（ ）
+[1.00] MAQ-0178 ↔ MAQ-0415
+    已知两个一维模式类别的类概率密度函数为: [图](原题含图,离线不可显示) [图](原题含图,离线不可显示) 先验概率P(1)=0.6，P(2)=0.4， 则样
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0190 ↔ MAQ-0415
+    有三个关系R、S和T如下： [图](原题含图,离线不可显示) 由关系R和S通过运算得到关系T，则所使用的运算为（ ）。
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0191 ↔ MAQ-0415
+    有如下数据集，则条件概率P(A| -) ， P(B | -) ， P(C | -) 分别为: [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.63] MAQ-0191 ↔ MLQ-0167
+    有如下数据集，则条件概率P(A| -) ， P(B | -) ， P(C | -) 分别为: [图](原题含图,离线不可显示)
+    有如下数据集，则频繁3-项集为： [图](原题含图,离线不可显示)
+[1.00] MAQ-0194 ↔ MAQ-0415
+    使用下列二维图形变换矩阵A=T*a，将产生的变换结果为: [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[0.71] MAQ-0197 ↔ MAQ-0215
+    有一个箱子，N把钥匙，只有一把钥匙能打开箱子，现在拿钥匙去看箱子。平均多少次能打开箱子？
+    有一个箱子，N把钥匙，只有一把钥匙能打开箱子，现在拿钥匙去开箱子。问恰好第k次打开箱子的概率?
+[1.00] MAQ-0203 ↔ MAQ-0415
+    一批产品共 50 个，其中 45 个是合格品， 5 个是次品，从这些产品中任取 3 个，其中有次品的概率为（ ） [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0209 ↔ MAQ-0415
+    哪项不是如下矩阵的特征值（ ） [图](原题含图,离线不可显示)
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0218 ↔ MAQ-0415
+    设A为3阶方阵，且行列式[图](原题含图,离线不可显示)则 [图](原题含图,离线不可显示)之值为（ ）
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0225 ↔ MLQ-0353
+    关于正态分布,下列说法错误的是:
+    下列说法错误的是
+[0.83] MAQ-0235 ↔ MAQ-0258
+    对于二维空间上的两个点 (0, 8) 和 (3, 4)，下列说法正确的有（）
+    下列说法正确的是（ ）
+[0.83] MAQ-0235 ↔ MLQ-0674
+    对于二维空间上的两个点 (0, 8) 和 (3, 4)，下列说法正确的有（）
+    下列说法正确的是？
+[1.00] MAQ-0241 ↔ MAQ-0415
+    整数随机变量 [图](原题含图,离线不可显示) ，服从参数为a的泊松分布，即 [图](原题含图,离线不可显示) （k是非负整数）实数随机变量 [图](原题含图,
+    [图](原题含图,离线不可显示)
+[0.83] MAQ-0258 ↔ MAQ-0291
+    下列说法正确的是（ ）
+    对于假设检验，下列说法正确的选项有：
+[0.67] MAQ-0258 ↔ MAQ-0310
+    下列说法正确的是（ ）
+    奇异值分解（SVD）A=UΣV^T在图像压缩中常用来近似原始矩阵：保留前k个最大奇异值及对应U、V的列向量。以下关于该近似的说法正确的是？
+[0.67] MAQ-0258 ↔ MAQ-0345
+    下列说法正确的是（ ）
+    机器学习优化问题中常用到矩阵的迹（tr(A)为A主对角线元素之和）。已知n阶矩阵A的特征值为λ₁,λ₂,…,λₙ，以下说法正确的是？
+[0.67] MAQ-0258 ↔ MAQ-0349
+    下列说法正确的是（ ）
+    在迭代算法（如梯度下降）的收敛性分析中，迭代矩阵M∈ℝ^(n×n)的特征值模长直接影响收敛性。若M的所有特征值的模都小于1（称为收缩矩阵），以下说法正确的是？
+[1.00] MAQ-0258 ↔ MAQ-0366
+    下列说法正确的是（ ）
+    某灰度图像的像素值对应矩阵A∈ℝ^m×n（m、n分别为图像的高和宽，且m,n>1）。关于矩阵A的秩r(A)，下列说法正确的是？
+[1.00] MAQ-0258 ↔ MAQ-0368
+    下列说法正确的是（ ）
+    在主成分分析（PCA）中，描述数据方差的协方差矩阵M是n阶实对称矩阵。关于M的特征值，下列说法正确的是？
+[0.67] MAQ-0258 ↔ MAQ-0390
+    下列说法正确的是（ ）
+    下面说法正确的是（ ）
+[1.00] MAQ-0258 ↔ MAQ-0433
+    下列说法正确的是（ ）
+    对于齐次线性方程组Ax=0，若系数矩阵A的秩r(A) < n，则下列说法正确的是？
+[1.00] MAQ-0258 ↔ MAQ-0458
+    下列说法正确的是（ ）
+    在计算机图形学中，将二维平面上的点$(x, y)$绕坐标原点逆时针旋转$ heta$角的线性变换对应的矩阵为$M$，关于矩阵$M$的行列式值，下列说法正确的是？
+[1.00] MAQ-0258 ↔ MAQ-0501
+    下列说法正确的是（ ）
+    设 A 是一个 m x n 的矩阵，且 m < n。关于线性方程组 Ax = b，下列说法正确的是？
+[0.67] MAQ-0258 ↔ MLQ-0019
+    下列说法正确的是（ ）
+    关于BP神经网络说法正确的是（ ）
+[0.67] MAQ-0258 ↔ MLQ-0051
+    下列说法正确的是（ ）
+    关于K均值和DBSCAN的比较，以下说法正确的是()
+[0.67] MAQ-0258 ↔ MLQ-0079
+    下列说法正确的是（ ）
+    关于数据挖掘中的特征选择（Feature Selection）与特征提取（Feature Extraction），以下说法正确的是？
+[0.67] MAQ-0258 ↔ MLQ-0257
+    下列说法正确的是（ ）
+    在有关数据仓库测试,下列说法不正确的是:
+[0.67] MAQ-0258 ↔ MLQ-0275
+    下列说法正确的是（ ）
+    下列关于随机森林和Adaboost说法正确的是（ ）
+[0.67] MAQ-0258 ↔ MLQ-0282
+    下列说法正确的是（ ）
+    在使用t-SNE进行高维数据可视化时，关于perplexity参数，以下说法正确的是？
+[0.67] MAQ-0258 ↔ MLQ-0283
+    下列说法正确的是（ ）
+    下列说法不正确的是（ ）
+[0.67] MAQ-0258 ↔ MLQ-0298
+    下列说法正确的是（ ）
+    下列关于主成分分析法（PCA）说法正确的是
+[0.67] MAQ-0258 ↔ MLQ-0419
+    下列说法正确的是（ ）
+    关于K-means算法说法正确的是（ ）
+[0.67] MAQ-0258 ↔ MLQ-0425
+    下列说法正确的是（ ）
+    在LightGBM中，使用GOSS(Gradient-based One-Side Sampling)采样策略时，以下说法正确的是？
+[0.67] MAQ-0258 ↔ MLQ-0447
+    下列说法正确的是（ ）
+    关于生成模型与判别模型的区别，以下说法正确的是？
+[0.67] MAQ-0258 ↔ MLQ-0520
+    下列说法正确的是（ ）
+    下列关于随机森林和GradientBoosting 说法正确的是
+[0.67] MAQ-0258 ↔ MLQ-0522
+    下列说法正确的是（ ）
+    下列关于随机森林(RF)与梯度提升树(GBDT)区别说法正确的是（ ）
+[0.67] MAQ-0258 ↔ MLQ-0541
+    下列说法正确的是（ ）
+    以下关于随机森林说法正确的是（）
+[0.67] MAQ-0258 ↔ MLQ-0576
+    下列说法正确的是（ ）
+    关于K-means聚类算法说法正确的是（ ）
+[1.00] MAQ-0258 ↔ MLQ-0644
+    下列说法正确的是（ ）
+    在某些网络结构中，开发者会选择使用两个 3x3 卷积核代替一个 5x5 的卷积核。对于这个操作，下列说法正确的是（）
+[1.00] MAQ-0258 ↔ MLQ-0674
+    下列说法正确的是（ ）
+    下列说法正确的是？
+[0.83] MAQ-0258 ↔ MLQ-0699
+    下列说法正确的是（ ）
+    假如使用逻辑回归对样本进行分类，得到训练样本的准确率和测试样本的准确率。现在，在数据中增加一个新的特征，其它特征保持不变。然后重新训练测试。则下列说法正确的
+[0.67] MAQ-0258 ↔ MLQ-0739
+    下列说法正确的是（ ）
+    隐马尔可夫模型三个基本问题以及相应的算法说法正确的是（ ）
+[0.67] MAQ-0268 ↔ MLQ-0353
+    人工批量种植盆景虎皮兰，已知它们植株高度平均70cm，标准差5cm。现在从中随机输出100盆景到市场销售，则下面说法错误的是（）：
+    下列说法错误的是
+[0.90] MAQ-0279 ↔ MAQ-0284
+    设随机变量 ξ的概率密度函数为[图](原题含图,离线不可显示)，[图](原题含图,离线不可显示)=（ ）
+    设随机变量 ξ的概率密度函数为[图](原题含图,离线不可显示)，则E( ξ)=（ ）
+[1.00] MAQ-0279 ↔ MAQ-0415
+    设随机变量 ξ的概率密度函数为[图](原题含图,离线不可显示)，[图](原题含图,离线不可显示)=（ ）
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0284 ↔ MAQ-0415
+    设随机变量 ξ的概率密度函数为[图](原题含图,离线不可显示)，则E( ξ)=（ ）
+    [图](原题含图,离线不可显示)
+[0.83] MAQ-0291 ↔ MLQ-0674
+    对于假设检验，下列说法正确的选项有：
+    下列说法正确的是？
+[0.67] MAQ-0294 ↔ MLQ-0353
+    下面关于ID3算法中说法错误的是（）
+    下列说法错误的是
+[0.67] MAQ-0310 ↔ MAQ-0390
+    奇异值分解（SVD）A=UΣV^T在图像压缩中常用来近似原始矩阵：保留前k个最大奇异值及对应U、V的列向量。以下关于该近似的说法正确的是？
+    下面说法正确的是（ ）
+[0.67] MAQ-0310 ↔ MLQ-0674
+    奇异值分解（SVD）A=UΣV^T在图像压缩中常用来近似原始矩阵：保留前k个最大奇异值及对应U、V的列向量。以下关于该近似的说法正确的是？
+    下列说法正确的是？
+[1.00] MAQ-0318 ↔ MAQ-0415
+    一个4x3的矩阵如下图所示： [图](原题含图,离线不可显示) 对这个矩阵做奇异值分解（Singular Value Decomposition）后，非0的奇异
+    [图](原题含图,离线不可显示)
+[1.00] MAQ-0321 ↔ MLQ-0353
+    给定两个矩阵 $A$ 和 $B$ ，且已知存在一个可逆矩阵 $P$ 满足 $B = P^{-1}AP$ ，那么下列说法错误的是
+    下列说法错误的是
+[0.67] MAQ-0345 ↔ MAQ-0390
+    机器学习优化问题中常用到矩阵的迹（tr(A)为A主对角线元素之和）。已知n阶矩阵A的特征值为λ₁,λ₂,…,λₙ，以下说法正确的是？
+    下面说法正确的是（ ）
+[0.67] MAQ-0345 ↔ MLQ-0674
+    机器学习优化问题中常用到矩阵的迹（tr(A)为A主对角线元素之和）。已知n阶矩阵A的特征值为λ₁,λ₂,…,λₙ，以下说法正确的是？
+    下列说法正确的是？
+[0.67] MAQ-0349 ↔ MAQ-0390
+    在迭代算法（如梯度下降）的收敛性分析中，迭代矩阵M∈ℝ^(n×n)的特征值模长直接影响收敛性。若M的所有特征值的模都小于1（称为收缩矩阵），以下说法正确的是？
+    下面说法正确的是（ ）
+[0.67] MAQ-0349 ↔ MLQ-0674
+    在迭代算法（如梯度下降）的收敛性分析中，迭代矩阵M∈ℝ^(n×n)的特征值模长直接影响收敛性。若M的所有特征值的模都小于1（称为收缩矩阵），以下说法正确的是？
+    下列说法正确的是？
+[0.67] MAQ-0366 ↔ MAQ-0390
+    某灰度图像的像素值对应矩阵A∈ℝ^m×n（m、n分别为图像的高和宽，且m,n>1）。关于矩阵A的秩r(A)，下列说法正确的是？
+    下面说法正确的是（ ）
+[1.00] MAQ-0366 ↔ MLQ-0674
+    某灰度图像的像素值对应矩阵A∈ℝ^m×n（m、n分别为图像的高和宽，且m,n>1）。关于矩阵A的秩r(A)，下列说法正确的是？
+    下列说法正确的是？
+[0.67] MAQ-0368 ↔ MAQ-0390
+    在主成分分析（PCA）中，描述数据方差的协方差矩阵M是n阶实对称矩阵。关于M的特征值，下列说法正确的是？
+    下面说法正确的是（ ）
+[1.00] MAQ-0368 ↔ MLQ-0674
+    在主成分分析（PCA）中，描述数据方差的协方差矩阵M是n阶实对称矩阵。关于M的特征值，下列说法正确的是？
+    下列说法正确的是？
+[0.67] MAQ-0390 ↔ MAQ-0433
+    下面说法正确的是（ ）
+    对于齐次线性方程组Ax=0，若系数矩阵A的秩r(A) < n，则下列说法正确的是？
+[0.67] MAQ-0390 ↔ MAQ-0458
+    下面说法正确的是（ ）
+    在计算机图形学中，将二维平面上的点$(x, y)$绕坐标原点逆时针旋转$ heta$角的线性变换对应的矩阵为$M$，关于矩阵$M$的行列式值，下列说法正确的是？
+[0.67] MAQ-0390 ↔ MAQ-0501
+    下面说法正确的是（ ）
+    设 A 是一个 m x n 的矩阵，且 m < n。关于线性方程组 Ax = b，下列说法正确的是？
+[0.67] MAQ-0390 ↔ MLQ-0019
+    下面说法正确的是（ ）
+    关于BP神经网络说法正确的是（ ）
+[0.67] MAQ-0390 ↔ MLQ-0051
+    下面说法正确的是（ ）
+    关于K均值和DBSCAN的比较，以下说法正确的是()
+[0.67] MAQ-0390 ↔ MLQ-0079
+    下面说法正确的是（ ）
+    关于数据挖掘中的特征选择（Feature Selection）与特征提取（Feature Extraction），以下说法正确的是？
+[0.67] MAQ-0390 ↔ MLQ-0275
+    下面说法正确的是（ ）
+    下列关于随机森林和Adaboost说法正确的是（ ）
+[0.67] MAQ-0390 ↔ MLQ-0282
+    下面说法正确的是（ ）
+    在使用t-SNE进行高维数据可视化时，关于perplexity参数，以下说法正确的是？
+[0.67] MAQ-0390 ↔ MLQ-0298
+    下面说法正确的是（ ）
+    下列关于主成分分析法（PCA）说法正确的是
+[0.67] MAQ-0390 ↔ MLQ-0419
+    下面说法正确的是（ ）
+    关于K-means算法说法正确的是（ ）
+[0.67] MAQ-0390 ↔ MLQ-0425
+    下面说法正确的是（ ）
+    在LightGBM中，使用GOSS(Gradient-based One-Side Sampling)采样策略时，以下说法正确的是？
+[0.67] MAQ-0390 ↔ MLQ-0447
+    下面说法正确的是（ ）
+    关于生成模型与判别模型的区别，以下说法正确的是？
+[0.67] MAQ-0390 ↔ MLQ-0520
+    下面说法正确的是（ ）
+    下列关于随机森林和GradientBoosting 说法正确的是
+[0.67] MAQ-0390 ↔ MLQ-0522
+    下面说法正确的是（ ）
+    下列关于随机森林(RF)与梯度提升树(GBDT)区别说法正确的是（ ）
+[0.67] MAQ-0390 ↔ MLQ-0541
+    下面说法正确的是（ ）
+    以下关于随机森林说法正确的是（）
+[0.67] MAQ-0390 ↔ MLQ-0576
+    下面说法正确的是（ ）
+    关于K-means聚类算法说法正确的是（ ）
+[0.67] MAQ-0390 ↔ MLQ-0644
+    下面说法正确的是（ ）
+    在某些网络结构中，开发者会选择使用两个 3x3 卷积核代替一个 5x5 的卷积核。对于这个操作，下列说法正确的是（）
+[0.67] MAQ-0390 ↔ MLQ-0674
+    下面说法正确的是（ ）
+    下列说法正确的是？
+[0.67] MAQ-0390 ↔ MLQ-0739
+    下面说法正确的是（ ）
+    隐马尔可夫模型三个基本问题以及相应的算法说法正确的是（ ）
+[1.00] MAQ-0415 ↔ MLQ-0018
+    [图](原题含图,离线不可显示)
+    有如下数据集，分别使用1-最近邻，3-最近邻，对数据点x=5.0分类，则（ ） [图](原题含图,离线不可显示)
+[1.00] MAQ-0415 ↔ MLQ-0025
+    [图](原题含图,离线不可显示)
+    考虑下表中二元分类问题的训练样本，根据信息增益，哪个是最佳划分(在a1,a2,a3中)： [图](原题含图,离线不可显示)
+[1.00] MAQ-0415 ↔ MLQ-0167
+    [图](原题含图,离线不可显示)
+    有如下数据集，则频繁3-项集为： [图](原题含图,离线不可显示)
+[1.00] MAQ-0415 ↔ MLQ-0538
+    [图](原题含图,离线不可显示)
+    设线性规划的约束条件为： [图](原题含图,离线不可显示) 则基本可行解为 （）
+[1.00] MAQ-0415 ↔ MLQ-0569
+    [图](原题含图,离线不可显示)
+    使用KNN对两类目标的数据集进行分类任务，结果如下图所示，若是K=1，则请问其错误率是（ ） [图](原题含图,离线不可显示)
+[1.00] MAQ-0415 ↔ MLQ-0592
+    [图](原题含图,离线不可显示)
+    下图显示的机器学习使用的激活函数（Activation function）的图形，是下列哪一个函数的图形？（） [图](原题含图,离线不可显示)
+[1.00] MAQ-0415 ↔ MLQ-0603
+    [图](原题含图,离线不可显示)
+    下面的图形是针对相同的数据进行不同的模型训练得到的图，下面选项正确的有？ [图](原题含图,离线不可显示)
+[1.00] MAQ-0433 ↔ MLQ-0674
+    对于齐次线性方程组Ax=0，若系数矩阵A的秩r(A) < n，则下列说法正确的是？
+    下列说法正确的是？
+[0.74] MAQ-0442 ↔ MAQ-0511
+    对于一个线性方程组 Ax = b，其中 A 是一个 m x n 的矩阵。如果该方程组有无穷多解，则下列哪个条件一定成立？
+    假设有一个线性方程组Ax = b，其中A是m×n的矩阵，x是n维向量，b是m维向量。若该方程组有无穷多解，则下列哪个条件一定成立？
+[1.00] MAQ-0443 ↔ MLQ-0313
+    有关矩阵运算，以下说法中正确的是：（）
+    以下说法中正确的是()
+[1.00] MAQ-0446 ↔ MLQ-0353
+    正交矩阵常用于描述旋转、反射等刚体变换，关于n阶实正交矩阵Q，下列说法错误的是？
+    下列说法错误的是
+[0.67] MAQ-0448 ↔ MLQ-0353
+    在机器学习特征空间中，向量集合S是向量空间V的一组基。下列关于基S的说法错误的是？
+    下列说法错误的是
+[1.00] MAQ-0458 ↔ MLQ-0674
+    在计算机图形学中，将二维平面上的点$(x, y)$绕坐标原点逆时针旋转$ heta$角的线性变换对应的矩阵为$M$，关于矩阵$M$的行列式值，下列说法正确的是？
+    下列说法正确的是？
+[0.67] MAQ-0487 ↔ MLQ-0353
+    最小二乘法是工程中数据拟合的常用方法，对于线性模型y=Ax+ε（ε为残差向量），下列关于最小二乘解的说法错误的是？
+    下列说法错误的是
+[1.00] MAQ-0488 ↔ MLQ-0353
+    在机器人运动控制中，某线性变换T对应n阶方阵A，用于描述坐标系旋转变换。若T可逆（变换可还原），下列说法错误的是？
+    下列说法错误的是
+[1.00] MAQ-0501 ↔ MLQ-0674
+    设 A 是一个 m x n 的矩阵，且 m < n。关于线性方程组 Ax = b，下列说法正确的是？
+    下列说法正确的是？
+[0.63] MAQ-0508 ↔ MAQ-0519
+    在机器学习的主成分分析（PCA）中，数据协方差矩阵的特征向量对应于数据的什么统计特征？
+    在机器学习的主成分分析（PCA）中，特征向量描述了数据的什么关键特征？
+[0.67] MLQ-0019 ↔ MLQ-0674
+    关于BP神经网络说法正确的是（ ）
+    下列说法正确的是？
+[0.61] MLQ-0047 ↔ MLQ-0162
+    在关联规则挖掘中，'支持度'指标的核心定义是什么？
+    在关联规则挖掘中，支持度的计算公式是什么？
+[0.67] MLQ-0051 ↔ MLQ-0674
+    关于K均值和DBSCAN的比较，以下说法正确的是()
+    下列说法正确的是？
+[0.65] MLQ-0054 ↔ MLQ-0180
+    在使用决策树进行分类时，以下哪一项方法不属于特征选择的标准？
+    以下哪种方法不属于特征选择的标准方法：
+[1.00] MLQ-0075 ↔ MLQ-0564
+    当不知道数据所带标签时，可以使用哪种技术促使带同类标签的数据与带其他标签的数据相分离？
+    当不知道数据所带标签时，可以使用哪种技术促使带同类标签的数据与带其他标签的数据相分离（）
+[0.67] MLQ-0079 ↔ MLQ-0674
+    关于数据挖掘中的特征选择（Feature Selection）与特征提取（Feature Extraction），以下说法正确的是？
+    下列说法正确的是？
+[0.68] MLQ-0106 ↔ MLQ-0261
+    在社交媒体用户聚类分析中，K-means 算法的适用场景存在局限，其主要弱点之一是什么？
+    在聚类分析中，K-means算法的核心步骤是什么？
+[0.60] MLQ-0107 ↔ MLQ-0419
+    在常见的聚类算法中，对于 ISODATA 和 K-Means 算法的区别，下列选项中，结论正确的是（）
+    关于K-means算法说法正确的是（ ）
+[0.62] MLQ-0107 ↔ MLQ-0706
+    在常见的聚类算法中，对于 ISODATA 和 K-Means 算法的区别，下列选项中，结论正确的是（）
+    K-Means算法中K的含义是（ ）
+[0.62] MLQ-0110 ↔ MLQ-0296
+    下列关于Adaboost和GBDT模型说法错误的是（）
+    下列关于SVM模型说法错误的是（）
+[0.67] MLQ-0110 ↔ MLQ-0353
+    下列关于Adaboost和GBDT模型说法错误的是（）
+    下列说法错误的是
+[0.65] MLQ-0138 ↔ MLQ-0414
+    下列关于 XGBoost 的说法，错误的是（）
+    下列关于XGBoost和LightGBM模型的说法中，正确的是( ) (1) XGBoost的近似直方图算法类似于LightGBM的直方图算法，但是速度还是要慢
+[0.73] MLQ-0143 ↔ MLQ-0196
+    买啤酒的人大概率会购买尿布，这种属于数据挖掘中的哪类问题（ ）
+    某超市研究销售纪录数据后发现，买啤酒的人很大概率也会购买尿布，这种属于数据挖掘的哪类问题？
+[0.61] MLQ-0162 ↔ MLQ-0244
+    在关联规则挖掘中，支持度的计算公式是什么？
+    在关联规则挖掘中，支持度（support）和置信度（confidence）的作用分别是什么？
+[1.00] MLQ-0257 ↔ MLQ-0283
+    在有关数据仓库测试,下列说法不正确的是:
+    下列说法不正确的是（ ）
+[0.71] MLQ-0257 ↔ MLQ-0341
+    在有关数据仓库测试,下列说法不正确的是:
+    以下说法不正确的是（）
+[0.67] MLQ-0257 ↔ MLQ-0674
+    在有关数据仓库测试,下列说法不正确的是:
+    下列说法正确的是？
+[0.67] MLQ-0275 ↔ MLQ-0520
+    下列关于随机森林和Adaboost说法正确的是（ ）
+    下列关于随机森林和GradientBoosting 说法正确的是
+[0.67] MLQ-0275 ↔ MLQ-0541
+    下列关于随机森林和Adaboost说法正确的是（ ）
+    以下关于随机森林说法正确的是（）
+[0.67] MLQ-0275 ↔ MLQ-0674
+    下列关于随机森林和Adaboost说法正确的是（ ）
+    下列说法正确的是？
+[1.00] MLQ-0278 ↔ MLQ-0313
+    有关 TensorFlow API，以下说法中正确的是（）
+    以下说法中正确的是()
+[0.67] MLQ-0282 ↔ MLQ-0674
+    在使用t-SNE进行高维数据可视化时，关于perplexity参数，以下说法正确的是？
+    下列说法正确的是？
+[0.71] MLQ-0283 ↔ MLQ-0341
+    下列说法不正确的是（ ）
+    以下说法不正确的是（）
+[0.71] MLQ-0283 ↔ MLQ-0359
+    下列说法不正确的是（ ）
+    下列有关SVM说法不正确的是（）
+[0.67] MLQ-0283 ↔ MLQ-0674
+    下列说法不正确的是（ ）
+    下列说法正确的是？
+[0.67] MLQ-0288 ↔ MLQ-0480
+    下列关于决策树算法的描述中，正确的是() (1) ID3算法在树的生长过程中使用的是信息增益，C4.5算法使用的是信息增益率； (2) C4.5算法的运行效率高
+    关于决策树算法的描述正确的是（ ）（多选题）
+[0.71] MLQ-0290 ↔ MLQ-0313
+    假定某同学使用Naive Bayesian（NB）分类模型时，不小心将训练数据的两个维度搞重复了，那么关于NB的说法中正确的是：
+    以下说法中正确的是()
+[0.67] MLQ-0296 ↔ MLQ-0353
+    下列关于SVM模型说法错误的是（）
+    下列说法错误的是
+[0.67] MLQ-0298 ↔ MLQ-0674
+    下列关于主成分分析法（PCA）说法正确的是
+    下列说法正确的是？
+[0.71] MLQ-0313 ↔ MLQ-0537
+    以下说法中正确的是()
+    有关机器学习算法，以下说法中不正确的是（ ）
+[0.67] MLQ-0314 ↔ MLQ-0353
+    语音预处理是为了消除因为人类发声器官本身和由于采集语音信号的设备所带来的混叠、高次谐波失真、高频等等因素，对语音信号质量的影响。 下列有关预处理说法错误的是：
+    下列说法错误的是
+[0.71] MLQ-0341 ↔ MLQ-0359
+    以下说法不正确的是（）
+    下列有关SVM说法不正确的是（）
+[0.71] MLQ-0341 ↔ MLQ-0537
+    以下说法不正确的是（）
+    有关机器学习算法，以下说法中不正确的是（ ）
+[0.62] MLQ-0344 ↔ MLQ-0706
+    以K-Means算法为例，期望最大化算法中的
+    K-Means算法中K的含义是（ ）
+[0.67] MLQ-0353 ↔ MLQ-0363
+    下列说法错误的是
+    关于Kmeans的说法错误的是
+[0.67] MLQ-0353 ↔ MLQ-0380
+    下列说法错误的是
+    图像滤波是一种比较常用的方法，通过滤波操作，就可以突出一些特征或者去除图像中不需要的成分。下面关于图像滤波说法错误的是？
+[0.67] MLQ-0353 ↔ MLQ-0418
+    下列说法错误的是
+    下面关于SVM算法说法错误的是（ ）
+[0.67] MLQ-0353 ↔ MLQ-0455
+    下列说法错误的是
+    关于BN归一化方式说法错误的是（ ）
+[0.67] MLQ-0353 ↔ MLQ-0483
+    下列说法错误的是
+    人工智能领域的核心在于数据，而人工数据标注的成本非常高。因此无监督学习/自监督学习方向是人工智能领域最受欢迎的领域之一。下列关于这些领域说法错误的是
+[0.67] MLQ-0353 ↔ MLQ-0492
+    下列说法错误的是
+    下面关于机器学习说法错误的是
+[0.67] MLQ-0353 ↔ MLQ-0553
+    下列说法错误的是
+    模型评估是对机器学习模型性能进行客观评价的过程。它帮助我们了解模型在现实数据上的表现，以便判断模型是否达到预期目标。下面关于模型评估说法错误的是？
+[0.67] MLQ-0353 ↔ MLQ-0565
+    下列说法错误的是
+    下列关于线性回归说法错误的是（）
+[0.67] MLQ-0353 ↔ MLQ-0634
+    下列说法错误的是
+    已知一组数据的协方差矩阵P,下面关于主分量说法错误的是（ ）
+[1.00] MLQ-0353 ↔ MLQ-0662
+    下列说法错误的是
+    关于支持向量机SVM,下列说法错误的是（）
+[0.60] MLQ-0387 ↔ MLQ-0582
+    以下属于生成式模型的是：（）
+    有监督机器学习方法可以被分为判别式模型和生成式模型，下面属于生成式模型的有（ ）
+[0.87] MLQ-0419 ↔ MLQ-0576
+    关于K-means算法说法正确的是（ ）
+    关于K-means聚类算法说法正确的是（ ）
+[0.67] MLQ-0419 ↔ MLQ-0674
+    关于K-means算法说法正确的是（ ）
+    下列说法正确的是？
+[0.67] MLQ-0425 ↔ MLQ-0674
+    在LightGBM中，使用GOSS(Gradient-based One-Side Sampling)采样策略时，以下说法正确的是？
+    下列说法正确的是？
+[0.62] MLQ-0437 ↔ MLQ-0663
+    下列模型属于机器学习生成式模型的是（）
+    下列属于机器学习生成模型的是：
+[0.67] MLQ-0447 ↔ MLQ-0674
+    关于生成模型与判别模型的区别，以下说法正确的是？
+    下列说法正确的是？
+[0.67] MLQ-0492 ↔ MLQ-0553
+    下面关于机器学习说法错误的是
+    模型评估是对机器学习模型性能进行客观评价的过程。它帮助我们了解模型在现实数据上的表现，以便判断模型是否达到预期目标。下面关于模型评估说法错误的是？
+[0.71] MLQ-0499 ↔ MLQ-0580
+    以下对于 随机森林算法 描述错误的是：
+    以下描述错误的是：
+[0.67] MLQ-0520 ↔ MLQ-0541
+    下列关于随机森林和GradientBoosting 说法正确的是
+    以下关于随机森林说法正确的是（）
+[0.67] MLQ-0520 ↔ MLQ-0674
+    下列关于随机森林和GradientBoosting 说法正确的是
+    下列说法正确的是？
+[0.80] MLQ-0521 ↔ MLQ-0686
+    下列属于无监督学习的模型是：（）
+    下列属于无监督学习的是：
+[0.67] MLQ-0522 ↔ MLQ-0541
+    下列关于随机森林(RF)与梯度提升树(GBDT)区别说法正确的是（ ）
+    以下关于随机森林说法正确的是（）
+[0.67] MLQ-0522 ↔ MLQ-0674
+    下列关于随机森林(RF)与梯度提升树(GBDT)区别说法正确的是（ ）
+    下列说法正确的是？
+[0.79] MLQ-0526 ↔ MLQ-0527
+    在某神经网络的隐层输出中，包含0.75，那么该神经网络采用的激活函数可能是（）
+    在某神经网络的隐层输出中，包含-1.5，那么该神经网络采用的激活函数不可能是（）
+[0.60] MLQ-0537 ↔ MLQ-0546
+    有关机器学习算法，以下说法中不正确的是（ ）
+    关于机器学习算法正确的是（）
+[0.67] MLQ-0541 ↔ MLQ-0674
+    以下关于随机森林说法正确的是（）
+    下列说法正确的是？
+[0.70] MLQ-0557 ↔ MLQ-0568
+    在语音识别系统中，以下哪种模型属于生成模型，能建模语音信号概率分布并用于音素序列生成？
+    以下哪个模型属于生成模型（）
+[0.67] MLQ-0576 ↔ MLQ-0674
+    关于K-means聚类算法说法正确的是（ ）
+    下列说法正确的是？
+[0.62] MLQ-0600 ↔ MLQ-0662
+    下面关于支持向量机（SVM）的描述错误的是（ ）？
+    关于支持向量机SVM,下列说法错误的是（）
+[0.69] MLQ-0601 ↔ MLQ-0609
+    在逻辑回归（Logistic Regression）中，以下哪种方法可以用于处理多重共线性问题？
+    关于逻辑回归（Logistic Regression），表述错误的是？
+[1.00] MLQ-0644 ↔ MLQ-0674
+    在某些网络结构中，开发者会选择使用两个 3x3 卷积核代替一个 5x5 的卷积核。对于这个操作，下列说法正确的是（）
+    下列说法正确的是？
+[0.83] MLQ-0674 ↔ MLQ-0699
+    下列说法正确的是？
+    假如使用逻辑回归对样本进行分类，得到训练样本的准确率和测试样本的准确率。现在，在数据中增加一个新的特征，其它特征保持不变。然后重新训练测试。则下列说法正确的
+[0.67] MLQ-0674 ↔ MLQ-0739
+    下列说法正确的是？
+    隐马尔可夫模型三个基本问题以及相应的算法说法正确的是（ ）
+[0.61] RGQ-0004 ↔ RGQ-0048
+    在RAG中，"Answer Relevance"（答案相关性）低的典型原因是什么？
+    在RAG评估中，"Answer Relevancy"（答案相关性）的计算方式是什么？
+[0.60] RGQ-0009 ↔ RGQ-0156
+    在RAG中，Reciprocal Rank Fusion（RRF）的计算公式是什么？
+    以下关于"Reciprocal Rank Fusion"（RRF）算法的参数k=60的含义，描述正确的是？
+[0.68] RGQ-0015 ↔ RGQ-0124
+    在生产环境RAG系统中，以下哪种缓存策略最有效？
+    在部署RAG系统时，以下哪种缓存策略最有效？
+[0.69] RGQ-0029 ↔ RGQ-0066
+    Contextual Compression（上下文压缩）在RAG中的作用是什么？
+    在Contextual Compression（上下文压缩）技术中，其主要目的是？
+[0.72] RGQ-0031 ↔ RGQ-0042
+    以下关于Step-Back Prompting（后退提示）在RAG中的应用，哪项正确？
+    在RAG中，"Step-back Prompting"（后退提示）的思路是什么？
+[0.80] RGQ-0034 ↔ RGQ-0144
+    向量数据库中HNSW（Hierarchical Navigable Small World）索引的查询时间复杂度是？
+    在向量数据库中，HNSW（Hierarchical Navigable Small World）索引相比FAISS的Flat索引的优势是？
+[0.62] RGQ-0035 ↔ RGQ-0165
+    以下哪种场景最不适合使用RAG？
+    在RAG系统中，以下哪种场景最适合使用稀疏检索（BM25）而非密集检索？
+[0.62] RGQ-0052 ↔ RGQ-0120
+    以下关于"Cross-encoder Reranking"的计算复杂度，描述正确的是？
+    在RAG系统中，以下关于"re-ranking with cross-encoder"的性能权衡，描述正确的是？
+[0.66] RGQ-0059 ↔ RGQ-0105
+    以下关于"Adaptive Retrieval"（自适应检索）的描述，正确的是？
+    以下关于"Iterative Retrieval"（迭代检索）的描述，正确的是？
+共 3646 题,预警 837 对(≥ 0.6,需人工判断:同义合并 / 实质不同保留)
+
+===== TOOL: quotes-idempotent; exit=0; seconds=not recorded =====
+agent.json OK already
+ai-series-new.json OK already
+b10-adv.json OK already
+b11-rag.json OK already
+b12-rag-agent.json OK already
+b13-lp.json OK already
+b14-python.json OK already
+b15-eng.json OK already
+b16-agent.json OK already
+b17-python.json OK already
+b18-lp.json OK already
+b19-rag.json OK already
+b2-agent.json OK already
+b2-eng-fund.json OK already
+b2-llm.json OK already
+b2-python.json OK already
+b2-rag.json OK already
+b20-eng.json OK already
+b21-agent.json OK already
+b22-eng.json OK already
+b23-fund-adv.json OK already
+b24-rag.json OK already
+b25-eng-py.json OK already
+b26-agent.json OK already
+b28-lp-rag.json OK already
+b29-final.json OK already
+b3-agent.json OK already
+b3-eng.json OK already
+b3-fund-adv.json OK already
+b3-llm.json OK already
+b3-python.json OK already
+b3-rag.json OK already
+b30-final.json OK already
+b31-final.json OK already
+b32-final.json OK already
+b4-agent-eng-fund.json OK already
+b4-python-llm.json OK already
+b4-rag.json OK already
+b5-rag1.json OK already
+b5-rag2.json OK already
+b6-agent1.json OK already
+b6b-lp.json OK already
+b7-python.json OK already
+b8-eng.json OK already
+b9-fund.json OK already
+engineering.json OK already
+fundamentals.json OK already
+llm-prompt.json OK already
+nk-agent.json OK already
+nk-iv-company.json OK already
+nk-iv-nowcoder-llm.json OK already
+nk-iv-nowcoder-ml.json OK already
+nk-llm-prompt.json OK already
+nk-quiz-cv.json OK already
+nk-quiz-dl.json OK already
+nk-quiz-finetune.json OK already
+nk-quiz-inference.json OK already
+nk-quiz-llm-dev.json OK already
+nk-quiz-llm.json OK already
+nk-quiz-math.json OK already
+nk-quiz-ml.json OK already
+nk-rag.json OK already
+pi-agent.json OK already
+python-backend.json OK already
+rag.json OK already
+
+===== TOOL: javascript-syntax; exit=0; seconds=not recorded =====
+PASS app.js
+PASS common.js
+PASS express.js
+PASS highlight.js
+PASS markdown.js
+PASS search.js
+PASS srs.js
+PASS store.js
+PASS util.js
+PASS views-guides.js
+PASS views-knowledge.js
+PASS views-practice.js
+PASS views-resume.js
+PASS views-review.js
+PASS views-stats.js
+PASS data.js
+PASS sw.js
+
+===== BUILD =====
+{
+  "passes": 2,
+  "files": 27,
+  "identical": true,
+  "sha256": {
+    "app/data/assets/docs.4c87e2e04a1b.json": "0eaed81eb2965058266832293658c997c2906ddd26c5d59ab0159e1a0130e43d",
+    "app/data/assets/guides.152ce198af11.json": "2809de074580a46b91f0dabca187b528148185f8d599d41090072ad86c79652c",
+    "app/data/assets/legacy.ed24ca04c75d.json": "b75942c00d06dd5d2b55d16da30f3abcd1d90d2ef193a37beec7f0482baa9600",
+    "app/data/manifest.json": "c1432d860bbe6766e94260d6d8e8c8c7afcfddb6a723cf959595437c9c66710c",
+    "app/data/topics/advanced.4acfd9f736e3.json": "5e5a9b8fd1f82e6ba082dfc5a747b9a3391ebc69c29319de3f050fea7dd3933f",
+    "app/data/topics/agent.209bcaf0c51d.json": "a4672dfa248f3c45d0391bfba3a74eb0055ab2542afdf3e939a6ee2a89cda2a4",
+    "app/data/topics/engineering.90fde6c00a14.json": "92347f49285108b4d986ef946d44b251104d2181268569fc42c0f148406b915c",
+    "app/data/topics/fundamentals.8a49606c92c0.json": "fa32922d596580cda9cb17e39d92480b0b04e734135d5dc2edf3294953636944",
+    "app/data/topics/iv-company.c4350173e5bc.json": "dc36b26fdc3875e3995bcb062b6d11f71bfae712ffca099f74dcde56a1982cb1",
+    "app/data/topics/iv-nowcoder-llm.861fb4992864.json": "947c1b38f2ea9cdf2f3fd26b7422a0dd9a0f7aa48cd58f81ac7ee68997afa274",
+    "app/data/topics/iv-nowcoder-ml.1482f4446af2.json": "3bac6c2eee8923fdaad72df036ca0b2b4b364056f3aa4409a8154039ec83509a",
+    "app/data/topics/langchain.d639b938166a.json": "3b9cac4a252c6647a3148332b1bba1ca08255269393f3a6e700795e345f3e120",
+    "app/data/topics/llm-prompt.ad24e269f528.json": "854d117179d55c03ce23461c8bfcbc797fb84fd26ad8d25bbda15b47163fa394",
+    "app/data/topics/pi-agent.1abcb263ae94.json": "09a31295e69f8e536d2f5005f12080a268a8b08d46b76e5e2941b21817ee3cf0",
+    "app/data/topics/python-backend.3527f8f4cfcf.json": "f758506ffbbfd24c04cba45deb043e7eab2d55d43f5b464b7631a4f5382cb730",
+    "app/data/topics/quiz-cv.6427881cfa58.json": "f68bae73af5a536ab984a1a07135a5b50fc16c53a31c4f6c98512aeaaffa5252",
+    "app/data/topics/quiz-dl.75a2e19c2c05.json": "71e82c07b485ed1327466578d0f44b33cf0e422f7a4cb0f2c2f1f3a2bfd9d8f4",
+    "app/data/topics/quiz-finetune.f61ccd0e9458.json": "d7fd2e473c6069a4fb9b40ca0179f4ebed3a67293605258137cd8865733b462c",
+    "app/data/topics/quiz-inference.f3de481940c2.json": "5d44151abdf9c2ebe5d3168a6a557959762663a4654efcaeed4e9daf62b5ce7d",
+    "app/data/topics/quiz-llm-dev.ae9f069e32ee.json": "59d85aa0db7d306c32f2081eb5778f99ecff1a771752be59cbaf81a3144583cb",
+    "app/data/topics/quiz-llm.589c842a11a7.json": "760c1de81977f4c07195b477df193264897a3c83248ff9c1a6f4a7b46b17bdb9",
+    "app/data/topics/quiz-math.f3dcd7b46f5d.json": "3f31d484a25df1b7533df4d1c674a455d10fc14763fa98635e03d0fc120287d4",
+    "app/data/topics/quiz-ml.5cf7882b6ec5.json": "98d3d8b966a5de36ea002d81d3b29d6026de6aeb00c3fae5eb40096b85aa0ff6",
+    "app/data/topics/rag.3ab7b470989a.json": "0e1e1829a81a4a1f66fa8a02404c5e473d49695d92b8d9d1ec540cc5bbedeb83",
+    "app/data.js": "de281d663caa744cfa1f796cc3ab03a71092bfd58aea58a0fb2951d905bb2996",
+    "app/sw.js": "855c1b263673754ccd17ab486346d8b45dbbecf74600a19a01a50efe645f4d61",
+    "delivery/stats.json": "c0c3a526e6498f50ca9a83a5c946a6862ac11ababd293c790ec0cbe6124de713"
+  }
+}
+
+===== PERFORMANCE (budget assertions enabled; exit=1) =====
+Observed failure: cold median exceeds 8 seconds. Saved observations also fail the 200ms long-task budget.
+{
+  "recordedAt": "2026-09-29T17:02:17.294Z",
+  "viewport": "1280x900",
+  "network": {
+    "downloadMbps": 3,
+    "uploadMbps": 1,
+    "latencyMs": 100,
+    "cpuSlowdown": 4
+  },
+  "serviceWorkers": "blocked to isolate document loading",
+  "cold": [
+    {
+      "readyMs": 9331,
+      "dataBytes": 1755281,
+      "topicRequests": 1,
+      "longTasks": [
+        284,
+        145,
+        240,
+        1768
+      ]
+    },
+    {
+      "readyMs": 9420,
+      "dataBytes": 1755281,
+      "topicRequests": 1,
+      "longTasks": [
+        295,
+        131,
+        262,
+        1649
+      ]
+    },
+    {
+      "readyMs": 9806,
+      "dataBytes": 1755281,
+      "topicRequests": 1,
+      "longTasks": [
+        233,
+        144,
+        299,
+        2048
+      ]
+    },
+    {
+      "readyMs": 8088,
+      "dataBytes": 1755281,
+      "topicRequests": 1,
+      "longTasks": [
+        264,
+        64,
+        132,
+        890
+      ]
+    },
+    {
+      "readyMs": 9011,
+      "dataBytes": 1755281,
+      "topicRequests": 1,
+      "longTasks": [
+        242,
+        131,
+        227,
+        1403
+      ]
+    }
+  ],
+  "browser": "148.0.7778.96",
+  "warm": {
+    "search": [
+      78.89999999990687,
+      53.5,
+      32.5,
+      41.10000000009313,
+      38.39999999990687,
+      50,
+      35.90000000037253,
+      49.299999999813735,
+      34.90000000037253,
+      41.39999999990687,
+      35.10000000009313,
+      44.60000000009313,
+      25,
+      30.40000000037253,
+      37.39999999990687,
+      47.10000000009313,
+      46,
+      45.40000000037253,
+      33.60000000009313,
+      33.89999999990687,
+      27.100000000093132,
+      37.5,
+      28.700000000186265,
+      36.3000000002794,
+      32.799999999813735,
+      40,
+      38.200000000186265,
+      43.6999999997206,
+      38.299999999813735,
+      44
+    ],
+    "routes": [
+      838.2000000001863,
+      168.09999999962747,
+      180.60000000009313,
+      144.3000000002794,
+      179.5,
+      198.39999999990687,
+      166.5,
+      175.8000000002794,
+      182.60000000009313,
+      160.8000000002794,
+      112.6999999997206,
+      170.70000000018626,
+      183.60000000009313,
+      170.70000000018626,
+      161.79999999981374,
+      148.79999999981374,
+      176.39999999990687,
+      146.6999999997206,
+      195.6999999997206,
+      130.79999999981374,
+      150.90000000037253,
+      95.39999999990687,
+      159,
+      139.5,
+      119.79999999981374,
+      90.5,
+      60,
+      84.6999999997206,
+      123.3000000002794,
+      70.60000000009313
+    ],
+    "typing": [
+      10.799999999813735,
+      8,
+      7.7000000001862645,
+      4.7999999998137355,
+      6.899999999906868,
+      6.899999999906868,
+      8.899999999906868,
+      17.700000000186265,
+      7.2999999998137355,
+      6.5,
+      6.5,
+      7.100000000093132,
+      6.800000000279397,
+      8.299999999813735,
+      5.399999999906868,
+      7,
+      7.5,
+      9.200000000186265,
+      8.699999999720603,
+      6.100000000093132,
+      9.899999999906868,
+      8.200000000186265,
+      6.2000000001862645,
+      6,
+      8,
+      11.100000000093132,
+      9.299999999813735,
+      5.600000000093132,
+      6.2999999998137355,
+      6.900000000372529
+    ],
+    "longTasks": [
+      55,
+      51,
+      51,
+      844,
+      159,
+      161,
+      131,
+      166,
+      174,
+      152,
+      159,
+      169,
+      148,
+      111,
+      148,
+      174,
+      145,
+      163,
+      132,
+      158,
+      134,
+      182,
+      120,
+      139,
+      85,
+      134,
+      128,
+      119,
+      80,
+      82,
+      102,
+      68
+    ]
+  },
+  "summary": {
+    "coldMedianMs": 9331,
+    "maxDataBytes": 1755281,
+    "maxTopicRequests": 1,
+    "searchP95Ms": 53.5,
+    "routeP95Ms": 198.39999999990687,
+    "typingP95Ms": 11.100000000093132,
+    "maxColdLongTaskMs": 2048,
+    "maxWarmLongTaskMs": 844
+  }
+}

@@ -13,35 +13,30 @@
   "prerequisites": [
    "PY-004"
   ],
-  "answer": "Pydantic 校验分三层:①类型与约束声明(字段类型+Field 的 gt/le/pattern 等)——声明式,优先用,零代码;②field_validator——单字段的业务校验与归一化(去空格、格式转换、值域判断,依赖单个字段);③model_validator——跨字段校验(结束时间>开始时间、二选一字段必填其一)与整体归一化。选择原则:能用声明解决的不用 validator,能单字段的不用 model 级——层次越深,报错信息越难定位、复用性越差。v2 的关键变化:validator 装饰器带模式(mode='before'/'after')区分原始输入与类型化之后,序列化与校验分离( serialization 与 validation 是两套配置)。",
-  "plain": "Pydantic 校验像海关的三道岗:第一道自动安检门(类型与约束,机器自动查);第二道人工核对单件行李(field_validator:这一项特殊要求);第三道整体放行审查(model_validator:几项合起来对不对——回程日期不能早于出发日期)。能在第一道解决就别排到第三道——越靠后,旅客越难知道『到底哪一项不合格』。比喻局限:v2 里校验与序列化是分开的两套流程(读进来查一道,写出去还有一道),海关比喻没有这个对称性。",
-  "deep": "1) 声明层:Field(ge=0, max_length=100, pattern=...);Annotated 类型复用(PositiveInt = Annotated[int, Field(gt=0)])——团队级类型字典,一致性来源;constr/conset 等快捷方式。\n2) field_validator:mode='before' 处理原始输入(如 '1,2,3' 字符串拆成列表——在类型解析前);mode='after' 处理类型化后的业务规则;@classmethod 装饰、info 参数拿上下文;错误抛 ValueError(框架转成 422 明细)。\n3) model_validator:mode='before'(整体原始 dict,少用)与 mode='after'(类型化实例,常用,跨字段规则);dataclass/TypedDict 场景的差异。\n4) v2 核心概念:校验(validation,入站)与序列化(serialization,出站)分离——field_serializer 控制输出格式(如日期输出格式),dump 时的排除(exclude)防敏感字段泄漏(响应模型,PY-004 的 response_model 呼应);model_config 控制行为(extra='forbid' 拒绝未知字段——API 严格性的关键开关)。\n5) 工程纪律:模型即文档(字段名+描述+示例生成 OpenAPI);校验错误信息面向调用者(人话+字段定位);业务校验与格式校验分层(格式进 Pydantic,业务进 service 层——查数据库的校验别塞进模型)。",
-  "example": "```python\nfrom pydantic import BaseModel, Field, field_validator, model_validator\n\nclass Booking(BaseModel):\n    model_config = {\"extra\": \"forbid\"}          # 未知字段直接拒\n    guest: str = Field(min_length=1)\n    check_in: date\n    check_out: date\n    room_type: Literal[\"standard\", \"suite\"]\n    promo_code: str | None = None\n\n    @field_validator(\"guest\", mode=\"before\")\n    @classmethod\ndef strip(cls, v): return v.strip()\n\n    @model_validator(mode=\"after\")\n    def check_dates(self):\n        if self.check_out <= self.check_in:\n            raise ValueError(\"check_out 必须晚于 check_in\")\n        return self\n```",
-  "interview": "口述版:『Pydantic 校验三层:声明式约束优先(零代码、报错自动定位),field_validator 做单字段归一化与业务校验(before/after 模式区分原始输入与类型化后),model_validator 做跨字段规则。v2 的两个要点我会主动提:校验与序列化分离(出站格式与防泄漏单独配置),extra=forbid 拒绝未知字段。纪律是:格式校验进模型,查库的业务校验进 service 层——模型保持纯净可复用。』追问展开:before/after 的选择、extra 配置的取舍、校验错误信息设计。",
+  "answer": "Pydantic v2 可在字段层和模型层校验。field_validator 适合单字段规范化或约束，模式包括 before、after、plain、wrap；model_validator 适合模型整体与跨字段约束，模式有 before、after、wrap。验证模式决定拿到原始输入还是已解析值，不能只记装饰器名字。",
+  "plain": "校验可以分成几道检查：先把输入转换成合适类型，再检查某个字段范围，再检查多个字段是否相互矛盾。Pydantic 的不同模式决定在哪道检查前后插入逻辑。即使订单模型全部通过，数据库中的库存仍可能被另一请求改掉；数据格式正确与事务提交安全是两个问题，后者不能靠模型校验代劳。",
+  "deep": "先按输入阶段选模式：before 接收尚未解析的输入，负责可接受的预处理；after 处理解析后的值，更适合常规范围和关系约束。plain 可以在返回后结束该字段的后续内部类型验证，因此若原样返回任意对象，类型注解也不再保证实际值符合预期；wrap 可决定是否调用后续处理器，灵活性同样要求明确合同。\n\n字段校验访问其他字段时，只能依赖已经按定义顺序验证成功的数据；需要完整实例的 start/end 关系一般放在 model_validator 的 after 阶段，并返回实例。校验器应返回预期值，失败时抛适当验证异常。before 不能假定原始输入总是字典；若先原地修改输入再报错，还可能给后续联合类型分支留下意外状态。默认值是否被校验也要看 validate_default 配置，不能只测试调用方显式传值的路径。\n\n把校验保持为可重复、无外部副作用的检查更容易推理：发邮件、扣库存等应放在明确业务事务中。金额为正不代表账户有权限，两个请求各自查到有库存也不代表最终都能扣成功；授权、唯一约束和原子条件更新分别放到对应边界。验收至少包括原始类型错误、单字段越界、字段间矛盾、缺字段与默认值，以及并发提交场景，避免“模型能创建”被误当成整条业务已安全。",
+  "example": "设计练习：订单输入中 amount 要为正数，用字段约束；start 和 end 均能解析后，模型 after 校验 start 不晚于 end，并返回当前实例。若输入 end 早于 start，应产生模型验证错误，而非静默交换日期，因为交换会改变用户意图。\n\n接着分别测试：金额字符串是否按预定严格模式接受、缺省金额是否需要校验、日期单字段格式错误时关系校验是否仍有完整数据。模型通过后，在服务层检查账户归属，再让数据库用库存足够这一条件执行原子扣减。两次并发请求即使都通过 Pydantic，也必须由提交边界判定谁能成功。这是分层验收练习，不是可直接运行的数据库实现。",
+  "interview": "Pydantic v2 可在字段层和模型层校验。field_validator 适合单字段规范化或约束，模式包括 before、after、plain、wrap；model_validator 适合模型整体与跨字段约束，模式有 before、after、wrap。验证模式决定拿到原始输入还是已解析值，不能只记装饰器名字。\n\n展开时先说明：把输入形状、跨字段不变量和事务一致性分别说明。",
   "followups": [
    {
-    "q": "extra='forbid' 还是 'ignore'?",
-    "a": "对外 API 推荐 forbid:未知字段往往是拼写错误或版本不匹配,静默忽略会掩盖 bug,还能防『客户端传敏感字段猜测服务端结构』;内部 DTO 或需要向前兼容的存储模型用 ignore。默认值是 ignore——显式配置体现 API 严格性的态度。"
+    "q": "plain 模式为什么要谨慎？",
+    "a": "它可直接终止字段验证，不再保证后续内部类型检查发生；只有明确替代完整校验合同时才使用。"
    },
    {
-    "q": "为什么查数据库的业务校验不放进 Pydantic 模型?",
-    "a": "模型要『纯』:只做结构正确性(可离线测试、可复用于多场景);依赖外部状态(库存、唯一性)的校验放 service 层——它们需要事务与并发控制,且失败语义是业务错误(409)不是格式错误(422)。混在一起会让模型测试变慢且耦合数据库。"
-   },
-   {
-    "q": "field_validator 的 before 模式典型用途?",
-    "a": "输入归一化:'1,2,3'→[1,2,3]、空串→None、大小写统一——在类型解析前把『人类输入』洗成『可解析形态』。after 模式则是业务规则(值域、格式语义)。分不清时问:这个错误是『解析不了』(before)还是『解析了但不合规』(after)?"
+    "q": "模型校验时查过库存，提交时就安全了吗？",
+    "a": "不保证。检查与写入之间可能变化，需要数据库事务、锁或原子条件更新。"
    }
   ],
   "pitfalls": [
-   "所有校验堆进 model_validator,报错定位差、复用性差。",
-   "忘记 extra 配置,客户端拼错字段名静默丢失(『我明明传了 coupon_id』)。",
-   "校验器里做 IO(查库/调接口),模型实例化变慢且不可测。",
-   "v1/v2 语法混用(v2 的 validator 必须配 @classmethod),报错难懂。"
+   "只列 before/after 忽略 plain/wrap 的行为。",
+   "把字段顺序相关读取当成任意跨字段访问。",
+   "用模型校验替代授权和并发约束。"
   ],
   "check": {
-   "q": "需求:优惠券字段 promo_code 只有当 room_type='suite' 时才允许填写。校验器怎么写?",
-   "a": "model_validator(mode='after')——这是跨字段条件校验(promo_code 的合法性依赖 room_type),单字段 validator 拿不到完整上下文。校验逻辑:if self.room_type != 'suite' and self.promo_code: raise ValueError('promo_code 仅适用于 suite 房型')。错误信息里说明『哪个字段的组合条件』,方便调用者修正。",
-   "explain": "检验点:跨字段条件选 model_validator 的判断,以及错误信息面向调用者的设计。"
+   "q": "两个字段都合法但 end 早于 start，应在哪里检查？",
+   "a": "模型层适合整体关系；字段本身的类型和范围先在字段层处理。",
+   "explain": "把输入形状、跨字段不变量和事务一致性分别说明。"
   },
   "related": [
    "PY-004",
@@ -53,22 +48,33 @@
   ],
   "sources": [
    {
-    "name": "Pydantic v2 官方文档(validators)",
+    "kind": "official",
+    "name": "Pydantic validators",
     "url": "https://docs.pydantic.dev/latest/concepts/validators/",
-    "kind": "official-docs",
-    "note": "库语义参考(未逐页抓取,标注)"
-   },
-   {
-    "name": "独立整理",
-    "url": "",
-    "kind": "independent",
-    "note": "分层纪律为独立整理"
+    "note": "Pydantic v2；仅支持本题相关机制，工程例子为独立设计。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-06",
-   "note": "分层纪律为独立整理;v2 具体 API 以官方文档为准。"
+   "checked_date": "2026-09-29",
+   "note": "核心机制已对照一手资料；设计例子不代表用户项目已完成，性能与外部服务行为未实测。"
+  },
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "补齐 v2 校验模式及 plain 绕过风险，区分模型校验和事务约束。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "deep",
+    "example",
+    "interview",
+    "followups",
+    "pitfalls",
+    "check",
+    "sources",
+    "verify"
+   ]
   }
  },
  {

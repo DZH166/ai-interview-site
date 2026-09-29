@@ -16,6 +16,10 @@ const Store = (() => {
     { id: 'review', label: '待复习', cls: 'st-review' }
   ];
   const STATUS_IDS = STATUS.map(s => s.id);
+  function builtinQuestions() {
+    const app = (typeof window !== 'undefined' && window.APP_DATA) || {};
+    return (app.questions || app.questions_index || []).concat(app.legacy_index || []);
+  }
 
   /* 模拟面试轮次保留上限。上限必须只有一份:本地完成轮次的截断(store)与
      备份合并的截断(mergeRounds)各自写一个数字,迟早两边不一致。 */
@@ -25,7 +29,7 @@ const Store = (() => {
     return {
       v: 3,
       questions: {},          // qid -> {status, fav, note, viewedAt, practiceCount, lastPracticedAt, lastResult, _updatedAt}
-      mock: { rounds: [], draft: null, ended: {} },   // 轮次 + 草稿 + 会话终态登记(sid -> {status,ts})
+      mock: { rounds: [], draft: null, ended: {}, alternates: [] },   // 轮次 + 草稿 + 会话终态登记(sid -> {status,ts})
       drillAttempts: {},                    // drillId -> [attempt];attempt 稳定归属不依赖题目
       resetEpoch: 0,          // 清空纪元:每次 clearAll 递增,旧纪元快照不得越过清空边界(SP-05)
       resetTs: 0,             // 本次清空发生的时刻(同机时钟,用于放行清空后新写的记录)
@@ -94,18 +98,35 @@ const Store = (() => {
   let data = blank();
   let savedRaw = null;
 
+  /* Released Mock.finish used null when a removed question had no saved snapshot.
+     Normalize only that historical round sentinel on parsed copies. Other invalid
+     snapshots (including draft nulls) still go through the unchanged validator. */
+  function migrateLegacyNullRoundSnapshots(records) {
+    const rounds = records && records.mock && records.mock.rounds;
+    if (!Array.isArray(rounds)) return records;
+    rounds.forEach(round => {
+      if (!round || !Array.isArray(round.items)) return;
+      round.items.forEach(item => {
+        if (item && typeof item === 'object' && !Array.isArray(item)
+            && item.questionSnapshot === null) delete item.questionSnapshot;
+      });
+    });
+    return records;
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(KEY_RECORDS);
       savedRaw = raw;
       if (raw) {
-        const parsed = JSON.parse(raw);
+        const parsed = migrateLegacyNullRoundSnapshots(JSON.parse(raw));
         if (parsed && typeof parsed === 'object') {
           data = Object.assign(blank(), parsed);
           data.questions = (parsed.questions && typeof parsed.questions === 'object') ? parsed.questions : {};
           data.mock = parsed.mock && Array.isArray(parsed.mock.rounds) ? parsed.mock : { rounds: [], draft: null, ended: {} };
           if (!Array.isArray(data.mock.rounds)) data.mock.rounds = [];
           if (!('draft' in data.mock)) data.mock.draft = null;
+          if (!Array.isArray(data.mock.alternates)) data.mock.alternates = [];
           if (!data.mock.ended || typeof data.mock.ended !== 'object') data.mock.ended = {};
           data.ui = Object.assign(blank().ui, parsed.ui || {});
           data.drillAttempts = (parsed.drillAttempts && typeof parsed.drillAttempts === 'object' && !Array.isArray(parsed.drillAttempts)) ? parsed.drillAttempts : {};
@@ -151,20 +172,28 @@ const Store = (() => {
 
   function saveNow() {
     let next = data;
+    let remoteChanges = null;
     try {
       const raw = localStorage.getItem(KEY_RECORDS);
       if (raw && raw !== savedRaw) {
-        const remote = JSON.parse(raw);
+        const remote = migrateLegacyNullRoundSnapshots(JSON.parse(raw));
         const errors = validateRecordsObj(remote);
         if (errors.length) throw new Error('磁盘记录校验失败:' + errors[0]);
-        next = reconcileRecords(data, remote).merged;
+        const result = reconcileRecords(data, remote);
+        next = result.merged;
+        remoteChanges = result.changes;
       }
     } catch (e) {
       lastSaveError = '保存前读取最新记录失败:' + e.message;
       toast(lastSaveError, 'err');
       return false;
     }
-    return writeRecords(next);
+    const saved = writeRecords(next);
+    /* 保存可能先于storage事件采纳远端值，界面也必须获知这次合并，
+       否则dirty DOM会在pagehide时把旧输入写回正式笔记。
+       先提交data/savedRaw，再通知：订阅者保存冲突副本时不会重复采纳同一远端值。 */
+    if (saved && remoteChanges && remoteChanges.hasChanges) notifyRemote(remoteChanges);
+    return saved;
   }
 
   function rec(qid) {
@@ -329,7 +358,7 @@ const Store = (() => {
   /* 校验一批题目。existingIds:视为已存在的编号集合(默认当前全库)。 */
   function validateQuestions(arr, existingIds) {
     const existing = existingIds || new Set(
-      (((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id))
+      (builtinQuestions().map(q => q.id))
         .concat(extraBankLoad().map(q => q.id))
     );
     const seen = new Set();
@@ -394,7 +423,7 @@ const Store = (() => {
       }
       return [];
     }
-    const seen = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
+    const seen = new Set(builtinQuestions().map(q => q.id));
     const qs = obj.questions;
     const good = [], bads = [];
     qs.forEach(q => {
@@ -469,17 +498,55 @@ const Store = (() => {
       errs.push('缺少 questions 字段'); return errs;
     }
     const isTs = v => typeof v === 'number' && isFinite(v) && v >= 0;
+    const isRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    const isTextList = v => Array.isArray(v) && v.every(x => typeof x === 'string');
+    const validateGuideSources = (sources, where) => {
+      if (sources === undefined) return;
+      if (!Array.isArray(sources) || sources.some(s => !isRecord(s)
+          || ['url','title','version','checkedAt'].some(k => s[k] !== undefined && typeof s[k] !== 'string'))) {
+        errs.push(where + ': sources 必须是来源对象数组，来源字段必须是文本');
+      }
+    };
+    /* 新字段缺省时保留旧草稿；字段存在时按实际恢复/导出消费的形状校验。
+       活动草稿、并存草稿与历史轮次走同一规则，坏备份在写盘前整份拒绝。 */
+    const validateGuideSnapshot = (guide, where) => {
+      if (guide === undefined) return;
+      if (!isRecord(guide)) { errs.push(where + ': guideSnapshot 必须是对象'); return; }
+      ['id','title','mainQuestion','mainQuestionId','answer60','answer180'].forEach(k => {
+        if (guide[k] !== undefined && typeof guide[k] !== 'string') errs.push(where + ': guideSnapshot.' + k + ' 必须是文本');
+      });
+      ['resumeGroupIds','sourceQuestionIds'].forEach(k => {
+        if (guide[k] !== undefined && !isTextList(guide[k])) errs.push(where + ': guideSnapshot.' + k + ' 必须是文本数组');
+      });
+      if (guide.followups !== undefined && (!Array.isArray(guide.followups) || guide.followups.some(f =>
+        typeof f !== 'string' && (!isRecord(f) || typeof f.q !== 'string' || typeof f.a !== 'string'
+          || ['id','kind'].some(k => f[k] !== undefined && typeof f[k] !== 'string'))))) {
+        errs.push(where + ': guideSnapshot.followups 必须是文本或含 q/a 文本的追问数组');
+      }
+      validateGuideSources(guide.sources, where + '.guideSnapshot');
+      if (guide.rubric !== undefined && (!isRecord(guide.rubric)
+          || ['basic','competent','deep'].some(k => guide.rubric[k] !== undefined && !isTextList(guide.rubric[k])))) {
+        errs.push(where + ': guideSnapshot.rubric 必须是分级文本数组对象');
+      }
+      if (guide.projectEvidence !== undefined && (!isRecord(guide.projectEvidence)
+          || ['status','note'].some(k => guide.projectEvidence[k] !== undefined && typeof guide.projectEvidence[k] !== 'string')
+          || (guide.projectEvidence.prompts !== undefined && !isTextList(guide.projectEvidence.prompts)))) {
+        errs.push(where + ': guideSnapshot.projectEvidence 字段无效');
+      }
+    };
     const validateSnapshot = (snapshot, qid, where) => {
       if (snapshot === undefined) return;
       if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) { errs.push(where + ': questionSnapshot 必须是对象'); return; }
       if (snapshot.id !== qid || typeof snapshot.title !== 'string') errs.push(where + ': 快照题号或题目标题无效');
-      ['prompt','answer','plain','interview','fusion_notes','topic','type','difficulty','format','qtype'].forEach(k => {
+      ['prompt','answer','plain','interview','fusion_notes','topic','type','difficulty','format','qtype',
+        'guideId','guideRevision','sourceQuestionId','sourceQuestionTitle','referenceKind'].forEach(k => {
         if (snapshot[k] !== undefined && typeof snapshot[k] !== 'string') errs.push(where + ': 快照字段 ' + k + ' 必须是文本');
       });
       if (snapshot.options !== undefined && (!Array.isArray(snapshot.options) || snapshot.options.some(o => !o || typeof o.label !== 'string' || typeof o.text !== 'string' || typeof o.right !== 'boolean'))) errs.push(where + ': 快照选项字段无效');
       for (const k of ['tags','pitfalls']) if (snapshot[k] !== undefined && (!Array.isArray(snapshot[k]) || snapshot[k].some(v => typeof v !== 'string'))) errs.push(where + ': 快照字段 ' + k + ' 必须是文本数组');
       if (snapshot.followups !== undefined && (!Array.isArray(snapshot.followups) || snapshot.followups.some(f => !f || typeof f.q !== 'string' || typeof f.a !== 'string'))) errs.push(where + ': 快照追问字段无效');
       if (snapshot.content_version !== undefined && (!snapshot.content_version || typeof snapshot.content_version !== 'object' || typeof snapshot.content_version.rev !== 'string')) errs.push(where + ': 快照版本无效');
+      if (snapshot.referenceKind === 'guide') validateGuideSources(snapshot.sources, where);
     };
     Object.keys(incoming.questions).forEach(qid => {
       const r = incoming.questions[qid];
@@ -561,17 +628,35 @@ const Store = (() => {
     if (mock !== undefined) {
       if (!mock || typeof mock !== 'object') errs.push('mock 必须是对象');
       else {
+        if (mock.alternates !== undefined) {
+          if (!Array.isArray(mock.alternates)) errs.push('mock.alternates 必须是数组');
+          else mock.alternates.forEach((draft, index) => {
+            validateRecordsObj({ v: 3, questions: {}, mock: { rounds: [], draft } }).forEach(e => errs.push('保留草稿 #' + index + ': ' + e));
+          });
+        }
+        if (mock.draft && typeof mock.draft === 'object') {
+          const d = mock.draft;
+          if (d.durationMs !== undefined && !isTs(d.durationMs)) errs.push('mock.draft.durationMs 必须是非负数字');
+          if (d.qms !== undefined && (!d.qms || typeof d.qms !== 'object' || Array.isArray(d.qms) || Object.values(d.qms).some(v => !isTs(v)))) errs.push('mock.draft.qms 必须是非负时长映射');
+          if (d.guideId !== undefined && typeof d.guideId !== 'string') errs.push('mock.draft.guideId 必须是字符串');
+          validateGuideSnapshot(d.guideSnapshot, 'mock.draft');
+        }
         if (mock.rounds !== undefined && !Array.isArray(mock.rounds)) errs.push('mock.rounds 必须是数组');
         (mock.rounds || []).forEach((rd, i) => {
           if (!rd || typeof rd !== 'object' || Array.isArray(rd)) { errs.push(`轮次 #${i}: 不是对象`); return; }
           if (!isTs(rd.ts)) errs.push(`轮次 #${i}: ts 必须是非负数字`);
           if (rd.sessionId !== undefined && typeof rd.sessionId !== 'string') errs.push(`轮次 #${i}: sessionId 必须是字符串`);
+          if (rd.guideId !== undefined && typeof rd.guideId !== 'string') errs.push(`轮次 #${i}: guideId 必须是字符串`);
+          validateGuideSnapshot(rd.guideSnapshot, `轮次 #${i}`);
         if (!Array.isArray(rd.items)) { errs.push(`轮次 #${i}: 缺少 items 数组`); return; }
           rd.items.forEach((it, j) => {
             if (!it || typeof it !== 'object' || !it.qid) errs.push(`轮次 #${i} 第 ${j + 1} 题: 缺少 qid`);
             else {
               validateSnapshot(it.questionSnapshot, it.qid, `轮次 #${i} 第 ${j + 1} 题`);
+              if (it.revision !== undefined && typeof it.revision !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: revision 必须是字符串`);
               if (it.mark !== undefined && it.mark !== '' && !['weak', 'ok', 'review'].includes(it.mark)) errs.push(`轮次 #${i} 第 ${j + 1} 题: mark 非法`);
+              if (it.quizCorrect !== undefined && typeof it.quizCorrect !== 'boolean') errs.push(`轮次 #${i} 第 ${j + 1} 题: quizCorrect 必须是布尔`);
+              if (it.ms !== undefined && !isTs(it.ms)) errs.push(`轮次 #${i} 第 ${j + 1} 题: ms 必须是非负数字`);
               if (it.qRev !== undefined && typeof it.qRev !== 'string') errs.push(`轮次 #${i} 第 ${j + 1} 题: qRev 必须是字符串`);
               if (it.quizPicked !== undefined && (!Array.isArray(it.quizPicked) || it.quizPicked.some(x => typeof x !== 'string'))) errs.push(`轮次 #${i} 第 ${j + 1} 题: quizPicked 必须是字符串数组`);
               if (it.followups !== undefined) {
@@ -596,6 +681,9 @@ const Store = (() => {
             const a = mock.draft.answers[qid];
             if (!a || typeof a !== 'object' || Array.isArray(a)) return;
             validateSnapshot(a.questionSnapshot, qid, 'mock.draft.answers.' + qid);
+            if (a.revision !== undefined && typeof a.revision !== 'string') errs.push(`mock.draft.answers.${qid}.revision 必须是字符串`);
+            if (a.quizPicked !== undefined && (!Array.isArray(a.quizPicked) || a.quizPicked.some(x => typeof x !== 'string'))) errs.push('mock.draft.answers.' + qid + '.quizPicked 必须是字符串数组');
+            if (a.quizCorrect !== undefined && typeof a.quizCorrect !== 'boolean') errs.push('mock.draft.answers.' + qid + '.quizCorrect 必须是布尔');
             if (a.qRev !== undefined && typeof a.qRev !== 'string') errs.push(`mock.draft.answers.${qid}.qRev 必须是字符串`);
             if (a.fu !== undefined && a.fu !== null && (typeof a.fu !== 'object' || Array.isArray(a.fu))) {
               errs.push(`mock.draft.answers.${qid}.fu 必须是对象`);
@@ -987,29 +1075,29 @@ const Store = (() => {
     });
     merged.mock.rounds.sort((a, b) => (b.ts || 0) - (a.ts || 0));
     merged.mock.rounds = merged.mock.rounds.slice(0, MAX_ROUNDS);
-    /* 草稿恢复(SP-06):该会话已有终态(completed/abandoned)时,任何旧草稿不得复活;
-       同一会话的两份草稿按 savedAt 新者胜(同刻按内容哈希决胜,不依赖到达顺序);
-       不同会话的草稿沿用「已有草稿优先」,备份草稿仅在本地没有时恢复 */
-    /* 本页已挂起的草稿若属于已终结会话(终态由另一页登记后合并到达),同样清除 */
-    if (merged.mock.draft && merged.mock.draft.sessionId && merged.mock.ended[merged.mock.draft.sessionId]) {
-      merged.mock.draft = null;
-    }
-    const incDraft = incomingMock && incomingMock.draft;
-    if (incDraft && typeof incDraft === 'object') {
-      const sid = incDraft.sessionId || '';
-      if (sid && merged.mock.ended[sid]) return;              /* 终态会话:草稿不复活 */
-      if (!merged.mock.draft) {
-        merged.mock.draft = JSON.parse(JSON.stringify(incDraft));
-        report.draftsAdopted++;
-      } else if (sid && merged.mock.draft.sessionId === sid) {
-        const a = merged.mock.draft, b = incDraft;
-        const ta = a.savedAt || 0, tb = b.savedAt || 0;
-        if (tb > ta || (tb === ta && contentHash(JSON.stringify(b)) > contentHash(JSON.stringify(a)))) {
-          merged.mock.draft = JSON.parse(JSON.stringify(b));
-          report.draftsAdopted++;
-        }
+    // Preserve every unfinished session; a terminal marker always wins over any copy.
+    const draftKey = d => d.sessionId || ('legacy-' + contentHash(JSON.stringify([d.savedAt, d.items])));
+    const localDrafts = new Map([merged.mock.draft, ...(merged.mock.alternates || [])].filter(Boolean).map(d => [draftKey(d), JSON.stringify(d)]));
+    const candidates = [merged.mock.draft, ...(merged.mock.alternates || []),
+      incomingMock && incomingMock.draft, ...((incomingMock && incomingMock.alternates) || [])].filter(Boolean);
+    const drafts = new Map();
+    candidates.forEach(d => {
+      const key = draftKey(d);
+      if (merged.mock.ended[key]) return;
+      const prev = drafts.get(key);
+      if (!prev || (d.savedAt || 0) > (prev.savedAt || 0) ||
+          ((d.savedAt || 0) === (prev.savedAt || 0) && contentHash(JSON.stringify(d)) > contentHash(JSON.stringify(prev)))) {
+        drafts.set(key, JSON.parse(JSON.stringify(d)));
       }
-    }
+    });
+    const activeKey = merged.mock.draft && draftKey(merged.mock.draft);
+    const incomingKey = incomingMock && incomingMock.draft && draftKey(incomingMock.draft);
+    const selected = (activeKey && drafts.get(activeKey)) || (incomingKey && drafts.get(incomingKey)) || null;
+    if (selected && JSON.stringify(selected) !== JSON.stringify(merged.mock.draft)) report.draftsAdopted++;
+    merged.mock.draft = selected;
+    merged.mock.alternates = [...drafts].filter(([key]) => !selected || key !== draftKey(selected)).map(([, d]) => d);
+    merged.mock.alternates.forEach(d => { if (localDrafts.get(draftKey(d)) !== JSON.stringify(d)) report.draftsAdopted++; });
+
   }
 
   /* 合并专项尝试:按 attemptId 幂等;两份都有时 updatedAt 新者胜 */
@@ -1049,7 +1137,7 @@ const Store = (() => {
     if (obj.v !== undefined && obj.v !== 1 && obj.v !== 2) {
       throw new Error(`不支持的备份版本:v${obj.v}`);
     }
-    const incoming = obj.records || obj;
+    const incoming = migrateLegacyNullRoundSnapshots(obj.records || obj);
     if (incoming !== obj && incoming.v !== undefined && incoming.v !== 1 && incoming.v !== 2 && incoming.v !== 3) {
       throw new Error(`不支持的记录版本:v${incoming.v}`);
     }
@@ -1131,11 +1219,19 @@ const Store = (() => {
         }
       });
     });
-    if ((incoming.mock || {}).draft && !(local.mock || {}).draft) {
-      out.drafts.push({ id: incoming.mock.draft.sessionId || '(旧格式)', action: 'added', reason: '本地没有未完成草稿', after: clip(JSON.stringify(incoming.mock.draft.answers || {})) });
-    }
+    const draftId = d => d.sessionId || ('legacy-' + contentHash(JSON.stringify([d.savedAt, d.items])));
+    const draftMap = value => new Map([value.mock.draft, ...(value.mock.alternates || [])].filter(Boolean).map(d => [draftId(d), d]));
+    const localDrafts = draftMap(local), restoredDrafts = draftMap(merged);
+    [incoming.mock?.draft, ...(incoming.mock?.alternates || [])].filter(Boolean).forEach(d => {
+      const id = draftId(d), before = localDrafts.get(id), after = restoredDrafts.get(id);
+      if (!after) { out.drafts.push({ id, action: 'kept', reason: '该会话已有终态，旧草稿不恢复' }); return; }
+      const changed = JSON.stringify(before) !== JSON.stringify(after);
+      out.drafts.push({ id, action: before ? (changed ? 'overridden' : 'kept') : 'added',
+        reason: merged.mock.draft && draftId(merged.mock.draft) === id ? '恢复为当前练习草稿' : '保存在自测页的保留草稿中',
+        before: clip(JSON.stringify(before?.answers || {})), after: clip(JSON.stringify(after.answers || {})) });
+    });
     if (report.runsMigrated > 0) out.notes.push('备份中有 ' + report.runsMigrated + ' 条旧格式项目运行记录,已补齐确定性ID后合并(与正式导入同一流程)。');
-    if (report.draftsAdopted > 0) out.notes.push('恢复了 ' + report.draftsAdopted + ' 份未完成草稿(仅本地没有时)。');
+    if (report.draftsAdopted > 0) out.notes.push('恢复或更新了 ' + report.draftsAdopted + ' 份未完成练习草稿；不同会话保留为独立草稿。');
     if (report.draftsKept > 0) out.notes.push('保留本机 ' + report.draftsKept + ' 份项目草稿(本机较新)。');
     return out;
   }
@@ -1223,7 +1319,7 @@ const Store = (() => {
     let questionsAdded = 0, docsAdded = 0;
     let newQ = null, newD = null;
     if (Array.isArray(qs)) {
-      const exist = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
+      const exist = new Set(builtinQuestions().map(q => q.id));
       extraBankLoad().forEach(q => exist.add(q.id));
       newQ = extraBankLoad().slice();
       qs.forEach(q => {
@@ -1267,7 +1363,7 @@ const Store = (() => {
     if (obj.type !== 'aiiv-full') throw new Error(`备份类型不匹配:${obj.type || '(缺失)'}(本入口接受 aiiv-full)`);
     if (obj.v !== undefined && obj.v !== 1) throw new Error(`不支持的备份版本:v${obj.v}`);
     /* 记录部分 */
-    const incoming = obj.records;
+    const incoming = migrateLegacyNullRoundSnapshots(obj.records);
     if (!incoming || typeof incoming !== 'object') throw new Error('完整备份缺少 records');
     const recErrs = validateRecordsObj(incoming);
     if (recErrs.length) throw new Error('记录校验未通过:' + recErrs.slice(0, 5).join(';'));
@@ -1289,7 +1385,7 @@ const Store = (() => {
         }
       });
       if (hardErrors.length) throw new Error('题库校验未通过:' + hardErrors.slice(0, 5).join(';'));
-      const exist = new Set(((typeof window !== 'undefined' && window.APP_DATA && window.APP_DATA.questions) || []).map(q => q.id));
+      const exist = new Set(builtinQuestions().map(q => q.id));
       extraBankLoad().forEach(q => exist.add(q.id));
       newQ = extraBankLoad().slice();
       obj.questions.forEach(q => {
@@ -1358,7 +1454,7 @@ const Store = (() => {
     let latest = data;
     try {
       const raw = localStorage.getItem(KEY_RECORDS);
-      if (raw) latest = reconcileRecords(data, JSON.parse(raw)).merged;
+      if (raw) latest = reconcileRecords(data, migrateLegacyNullRoundSnapshots(JSON.parse(raw))).merged;
     } catch (e) {
       lastSaveError = '清空前读取记录失败:' + e.message;
       toast(lastSaveError, 'err');
@@ -1373,7 +1469,7 @@ const Store = (() => {
   /* 取出「清空时刻之后新写」的记录(同机时钟可比):清空边界两侧的筛选器(SP-05)。
      题目记录按 _updatedAt;专项尝试/项目记录按 updatedAt;轮次按 ts;草稿按 savedAt。 */
   function extractPostClear(d, clearTs) {
-    const out = { v: 3, questions: {}, mock: { rounds: [], draft: null, ended: {} }, drillAttempts: {}, ui: { projectRuns: {}, projectDrafts: {} } };
+    const out = { v: 3, questions: {}, mock: { rounds: [], draft: null, ended: {}, alternates: [] }, drillAttempts: {}, ui: { projectRuns: {}, projectDrafts: {} } };
     if (!clearTs) {   /* 没有可比较的时刻(异常情形):宁可少同步,不越过边界 */
       return out;
     }
@@ -1383,6 +1479,7 @@ const Store = (() => {
     });
     (d.mock && d.mock.rounds || []).forEach(r => { if ((r.ts || 0) > clearTs) out.mock.rounds.push(JSON.parse(JSON.stringify(r))); });
     if (d.mock && d.mock.draft && (d.mock.draft.savedAt || 0) > clearTs) out.mock.draft = JSON.parse(JSON.stringify(d.mock.draft));
+    out.mock.alternates = ((d.mock && d.mock.alternates) || []).filter(draft => (draft.savedAt || 0) > clearTs).map(draft => JSON.parse(JSON.stringify(draft)));
     Object.entries((d.mock && d.mock.ended) || {}).forEach(([sid, end]) => {
       if ((end.ts || 0) > clearTs) out.mock.ended[sid] = JSON.parse(JSON.stringify(end));
     });
@@ -1426,6 +1523,7 @@ const Store = (() => {
       ended: sig(d.mock.ended || {}),
       reset: sig([d.resetEpoch || 0, d.resetTs || 0]),
       mockDraft: d.mock.draft ? sig(d.mock.draft) : '',
+      mockAlternates: sig(d.mock.alternates || []),
       docPos: sig(d.ui.docPos || null),
       pathProgress: sig(d.ui.pathProgress || {})
       /* 不计入:savedAt / lastHash / ui.search / ui.browse —— 纯元数据与界面偏好,
@@ -1443,6 +1541,7 @@ const Store = (() => {
     if (a.ended !== b.ended) sections.push('ended');
     if (a.reset !== b.reset) sections.push('reset');
     if (a.mockDraft !== b.mockDraft) sections.push('mockDraft');
+    if (a.mockAlternates !== b.mockAlternates) sections.push('mockAlternates');
     if (a.docPos !== b.docPos) sections.push('docPos');
     if (a.pathProgress !== b.pathProgress) sections.push('pathProgress');
     return { qids, drillIds, pids, sections, hasChanges: (qids.length + drillIds.length + pids.length + sections.length) > 0 };
@@ -1494,7 +1593,7 @@ const Store = (() => {
 
   function adoptRemoteRecords(jsonText) {
     let incoming;
-    try { incoming = JSON.parse(jsonText); } catch (e) { return { ok: false, error: 'JSON 解析失败' }; }
+    try { incoming = migrateLegacyNullRoundSnapshots(JSON.parse(jsonText)); } catch (e) { return { ok: false, error: 'JSON 解析失败' }; }
     if (!incoming || typeof incoming !== 'object') return { ok: false, error: '记录必须是对象' };
     const errs = validateRecordsObj(incoming);
     if (errs.length) return { ok: false, error: '校验未通过:' + errs.slice(0, 3).join(';') };

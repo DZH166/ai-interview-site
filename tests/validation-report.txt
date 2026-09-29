@@ -1,7 +1,7 @@
-校验时间: 2026-09-06
-题目总数: 3900
+校验时间: 2026-09-30
+题目总数: 3646
 错误: 0
-警告: 177
+警告: 172
 
 WARN  [nk-quiz-cv.json] CVQ-0003: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0010: 解析过短(<40 字,牛客未提供或简短)
@@ -12,7 +12,6 @@ WARN  [nk-quiz-cv.json] CVQ-0025: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0029: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0030: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0039: 解析过短(<40 字,牛客未提供或简短)
-WARN  [nk-quiz-cv.json] CVQ-0043: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0054: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0055: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0056: 解析过短(<40 字,牛客未提供或简短)
@@ -22,17 +21,14 @@ WARN  [nk-quiz-cv.json] CVQ-0072: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0074: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0078: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0079: 解析过短(<40 字,牛客未提供或简短)
-WARN  [nk-quiz-cv.json] CVQ-0084: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0088: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0089: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0093: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0097: 解析过短(<40 字,牛客未提供或简短)
-WARN  [nk-quiz-cv.json] CVQ-0110: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0117: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0120: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0127: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0132: 解析过短(<40 字,牛客未提供或简短)
-WARN  [nk-quiz-cv.json] CVQ-0136: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0143: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0145: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0167: 解析过短(<40 字,牛客未提供或简短)
@@ -40,7 +36,6 @@ WARN  [nk-quiz-cv.json] CVQ-0169: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0170: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0177: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-cv.json] CVQ-0186: 解析过短(<40 字,牛客未提供或简短)
-WARN  [nk-quiz-dl.json] DLQ-0002: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-dl.json] DLQ-0008: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-dl.json] DLQ-0035: 解析过短(<40 字,牛客未提供或简短)
 WARN  [nk-quiz-dl.json] DLQ-0037: 解析过短(<40 字,牛客未提供或简短)

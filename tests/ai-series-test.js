@@ -40,7 +40,7 @@ test('new framework category contains six distinct learning questions with valid
 await testAsync('built data and fused search do not create answers or erase existing user state', async () => {
   const records = { v: 3, questions: { 'AG-010': { note: 'original note', fav: true, status: 'ok', practiceCount: 3 }, 'PI-001': { note: 'Pi note', status: 'weak' } }, mock: { rounds: [], draft: null }, drillAttempts: {}, ui: {} };
   const disk = new Map([['aiiv:records', JSON.stringify(records)]]);
-  const c = { window: {}, console, toast() {}, debounce: f => f, esc: String, localStorage: { getItem: k => disk.get(k) || null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) } };
+  const c = { window: {}, console, setTimeout, clearTimeout, performance, toast() {}, debounce: f => f, esc: String, localStorage: { getItem: k => disk.get(k) || null, setItem: (k, v) => disk.set(k, String(v)), removeItem: k => disk.delete(k) } };
   /* Track E:题库拆成 app/data/topics/ 分片后,壳里只有 questions_index。
      vm 里没有真 fetch,给一个从磁盘读分片的桩,语义与浏览器加载路径一致。 */
   c.fs = fs; c.path = path; c.ROOT = ROOT;
@@ -59,6 +59,7 @@ await testAsync('built data and fused search do not create answers or erase exis
   assert.strictEqual(disk.get('aiiv:records'), JSON.stringify(records));
   assert.strictEqual(c.D.allQuestions().filter(q => q.topic === 'pi-agent').length, 30);
   c.Search.build({ questions: c.D.allQuestions(), docs: c.D.allDocs(), records: c.S.data });
+  await c.Search.whenIdle();   /* 正文索引采用异步批次，保留原来的全量检索断言。 */
   assert(c.Search.query('fencing token').some(r => r.unit.qid === 'AG-033'));
   const card = c.Card.buildFromRound([{ ts: 1, items: [{ qid: 'AG-033', self: 'my answer' }] }], 0, id => c.D.question(id));
   assert(card.markdown.includes('fencing token')); assert(card.html.includes('fencing token'));

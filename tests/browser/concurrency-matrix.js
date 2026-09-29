@@ -27,7 +27,7 @@ const reopenNote = async (A, qid) => {
   await P.close();
   return v;
 };
-const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms || 6000 }).then(() => true).catch(() => false);
+const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms || 6000 }).then(() => true);
 
 (async () => {
   let browser;
@@ -41,7 +41,7 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     const log = [];
 
     /* ---- 情境1: 同时写同字段(顺序发生的读改写) ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '1') {
       const A = await context.newPage(), B = await context.newPage();
       await reseed(A, { 'AG-001': { note: '初始' } });
       await open(A, '#/home'); await open(B, '#/home');
@@ -58,7 +58,7 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     }
 
     /* ---- 情境2: 同时写不同字段(不同题)——无冲突,不得静默丢弃 ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '2') {
       const A = await context.newPage(), B = await context.newPage();
       await reseed(A, {});
       await open(A, '#/home'); await open(B, '#/home');
@@ -78,7 +78,7 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     }
 
     /* ---- 情境3: 同毫秒双写(同 _updatedAt)——决胜规则稳定,不依赖事件到达顺序 ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '3') {
       const A = await context.newPage(), B = await context.newPage();
       await reseed(A, {});
       await open(A, '#/home'); await open(B, '#/home');
@@ -118,16 +118,16 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
       const okAll = s1 === s2 && (s1 === 'A同毫秒版本' || s1 === 'B同毫秒版本') && reopen1 === s1;
       log.push({ case: '同毫秒双写(决胜稳定性)', states: st, ok: okAll });
       check('3. 同毫秒双写:决胜规则确定且磁盘/重开一致', okAll, JSON.stringify(st));
-      await A.close(); await B2.close();
+      await A.close(); await B.close(); await B2.close();
     }
 
     /* ---- 情境4: 双清空(两次清空,计数与时刻都不同) ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '4') {
       const A = await context.newPage(), B = await context.newPage();
       await reseed(A, { 'AG-001': { note: '将被清空的笔记' } });
       await open(A, '#/home'); await open(B, '#/home');
       await A.evaluate(() => { Store.clearAll(); Store.saveNow(); });
-      await wait(B, () => B.evaluate(() => Store.data.resetEpoch >= 1).then(() => true).catch(() => false));
+      await wait(B, () => Store.data.resetEpoch >= 1);
       const epAfterFirst = await B.evaluate(() => Store.data.resetEpoch);
       await B.evaluate(() => { Store.clearAll(); Store.saveNow(); });
       await wait(A, () => Store.data.resetEpoch >= 2);
@@ -145,14 +145,18 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     }
 
     /* ---- 情境5: 暂停恢复(旧页在暂停期间错过事件,恢复后保存) ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '5') {
       const A = await context.newPage(), B = await context.newPage();
+      await B.addInitScript(() => window.addEventListener('storage', event => { if (window.__paused) event.stopImmediatePropagation(); }, true));
       await reseed(A, { 'AG-001': { note: '初始' } });
       await open(A, '#/home'); await open(B, '#/home');
+      /* 启动路由有250ms保存；先让它完成，暂停只模拟错过之后的远端事件。 */
+      await sleep(350);
       /* B 暂停:停掉事件处理(模拟后台标签页错过 storage 事件) */
       await B.evaluate(() => { window.__paused = true; });
       await A.evaluate(() => { Store.setNote('AG-001', 'A在B暂停时写的'); Store.saveNow(); });
       await sleep(300);
+      assert.strictEqual(await B.evaluate(() => Store.rec('AG-001').note), '初始', '暂停页必须确实错过新笔记事件');
       /* B 恢复并保存自己的旧值(顺序发生的旧页写入) */
       await B.evaluate(() => {
         window.__paused = false;
@@ -162,32 +166,59 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
       await wait(A, () => Store.rec('AG-001').note === 'A在B暂停时写的');
       const st = { a: await A.evaluate(() => Store.rec('AG-001').note), b: await B.evaluate(() => Store.rec('AG-001').note),
                    disk: await diskNote(A, 'AG-001'), reopen: await reopenNote(A, 'AG-001') };
-      const okAll = st.a === 'A在B暂停时写的' && st.disk === 'A在B暂停时写的' && st.reopen === 'A在B暂停时写的';
+      const okAll = st.a === 'A在B暂停时写的' && st.b === 'A在B暂停时写的' && st.disk === 'A在B暂停时写的' && st.reopen === 'A在B暂停时写的';
       log.push({ case: '暂停恢复后旧页保存', states: st, ok: okAll });
       check('5. 暂停恢复:B 的旧内存不得覆盖 A 已保存的新值', okAll, JSON.stringify(st));
       await A.close(); await B.close();
     }
 
     /* ---- 情境6: 关闭前保存(pagehide flush 与对页保存竞争) ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '6') {
       const A = await context.newPage(), B = await context.newPage();
+      await A.addInitScript(() => window.addEventListener('storage', event => {
+        if (window.__pausedStorage) { window.__blockedStorage = (window.__blockedStorage || 0) + 1; event.stopImmediatePropagation(); }
+      }, true));
       await reseed(A, { 'AG-001': { note: '初始' } });
       await open(A, '#/study/AG-001'); await open(B, '#/home');
+      await A.waitForSelector('#note-area'); await sleep(350);
+      /* 固定两个调度点：阻断storage，并握住A的250ms保存到B确实落盘之后。
+         这走真实防抖回调/真实saveNow，不靠随机调度命中竞态。 */
+      await A.evaluate(() => {
+        window.__pausedStorage = true;
+        const held = new Map(), nativeSet = window.setTimeout, nativeClear = window.clearTimeout;
+        let id = -1;
+        window.setTimeout = (fn, ms, ...args) => {
+          if (ms !== 250) return nativeSet(fn, ms, ...args);
+          const key = id--; held.set(key, () => fn(...args)); return key;
+        };
+        window.clearTimeout = key => { if (held.has(key)) held.delete(key); else nativeClear(key); };
+        window.__flushHeldSaves = () => {
+          window.setTimeout = nativeSet; window.clearTimeout = nativeClear;
+          const jobs = [...held.values()]; held.clear(); jobs.forEach(fn => fn()); return jobs.length;
+        };
+      });
       /* A 在学习页输入(触发 dirty),B 同时保存同题 */
       await A.locator('#note-area').fill('A关闭前输入的内容');
+      const editedAt = await A.evaluate(() => Store.rec('AG-001')._updatedAt);
+      // 本场景要求B是明确后写者；同毫秒的确定性决胜另由情境3覆盖。
+      await B.waitForFunction(at => Date.now() > at, editedAt);
       await B.evaluate(() => { Store.setNote('AG-001', 'B在A关闭时保存的'); Store.saveNow(); });
+      await wait(A, () => window.__blockedStorage > 0);
+      assert.strictEqual(await A.evaluate(() => Store.rec('AG-001').note), 'A关闭前输入的内容', '主动保存前确实没收到远端合并');
+      assert(await A.evaluate(() => window.__flushHeldSaves()) > 0, '必须执行真实挂起的防抖保存');
       await wait(A, () => Store.rec('AG-001').note === 'B在A关闭时保存的');
       /* A pagehide flush:dirty 输入的处置 = 保留在冲突副本,不静默覆盖正式笔记 */
       await A.evaluate(() => { window.dispatchEvent(new Event('pagehide')); });
       await sleep(400);
-      const st = { disk: await diskNote(A, 'AG-001'), reopen: await reopenNote(A, 'AG-001'),
+      const st = { a: await A.evaluate(() => Store.rec('AG-001').note), disk: await diskNote(A, 'AG-001'), reopen: await reopenNote(A, 'AG-001'),
                    b: await B.evaluate(() => Store.rec('AG-001').note) };
       /* 冲突时:磁盘/重开保持 B 的已保存版本;A 的输入在冲突副本里可找回 */
       const conflictKept = await A.evaluate(() => {
-        const ui = Store.data.ui;
-        return JSON.stringify(Object.keys(ui.conflictDrafts || {}));
+        const draft = Store.rec('AG-001').noteDraft || {};
+        const persisted = JSON.parse(localStorage.getItem('aiiv:records')).questions['AG-001'].noteDraft || {};
+        return [draft, persisted].every(d => Object.values(d.versions || {}).some(v => v.text === 'A关闭前输入的内容'));
       });
-      const okAll = st.disk === 'B在A关闭时保存的' && st.reopen === 'B在A关闭时保存的' && st.b === 'B在A关闭时保存的';
+      const okAll = st.a === 'B在A关闭时保存的' && st.disk === 'B在A关闭时保存的' && st.reopen === 'B在A关闭时保存的' && st.b === 'B在A关闭时保存的' && conflictKept;
       log.push({ case: '关闭前保存与对页写入竞争', states: st, conflictDrafts: conflictKept, ok: okAll });
       check('6. pagehide 竞争:已保存版本不被旧输入覆盖(A 的输入留在冲突副本)', okAll,
         JSON.stringify(st) + ' conflict=' + conflictKept);
@@ -195,12 +226,12 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     }
 
     /* ---- 情境7: 清空与对页新写入交错 ---- */
-    {
+    if (!process.env.CASE || process.env.CASE === '7') {
       const A = await context.newPage(), B = await context.newPage();
       await reseed(A, { 'AG-001': { note: '旧' } });
       await open(A, '#/home'); await open(B, '#/home');
       await A.evaluate(() => { Store.clearAll(); Store.saveNow(); });
-      await wait(B, () => B.evaluate(() => Store.data.resetEpoch >= 1).then(() => true).catch(() => false));
+      await wait(B, () => Store.data.resetEpoch >= 1);
       await B.evaluate(() => { Store.setNote('RG-010', '清空后B写的新记录'); Store.saveNow(); });
       await wait(A, () => Store.rec('RG-010').note === '清空后B写的新记录');
       const st = {
@@ -215,11 +246,12 @@ const wait = (page, cond, ms) => page.waitForFunction(cond, null, { timeout: ms 
     }
 
     /* 机器可读基线记录 */
-    const out = { date: '2026-09-15', head: require('child_process').execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(),
+    const out = { date: new Date().toISOString().slice(0, 10), workingTree: true, head: require('child_process').execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(),
       cases: log, env: '隔离Chromium双页,固定种子,独立端口' };
-    fs.mkdirSync(path.join(ROOT, 'delivery', 'reviews'), { recursive: true });
-    fs.writeFileSync(path.join(ROOT, 'delivery', 'reviews', 'concurrency-matrix.json'),
-      JSON.stringify(out, null, 1), 'utf8');
-    console.log(`\n结果: ${passed} 通过, 0 失败(矩阵记录: delivery/reviews/concurrency-matrix.json)`);
+    if (!process.env.CASE) {
+      fs.mkdirSync(path.join(ROOT, 'delivery', 'reviews'), { recursive: true });
+      fs.writeFileSync(path.join(ROOT, 'delivery', 'reviews', 'concurrency-matrix.json'), JSON.stringify(out, null, 1), 'utf8');
+    }
+    console.log(`\n结果: ${passed} 通过, 0 失败${process.env.CASE ? '(定向场景，未改完整矩阵记录)' : '(矩阵记录: delivery/reviews/concurrency-matrix.json)'}`);
   } finally { if (browser) await browser.close(); server.kill(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

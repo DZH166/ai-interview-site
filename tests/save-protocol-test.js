@@ -99,25 +99,29 @@ console.log('== 4. 同刻冲突:决胜确定 ==');
   ok('本页内存与磁盘一致', Store.rec('RG-020').note === first);
 }
 
-console.log('\n== 6. 反向验证:无收敛传播时同刻跨页合并产生分歧(证明传播是必要修复) ==');
+console.log('\n== 6. 传播回归:同刻内存胜者必须写回磁盘(禁用传播应失败) ==');
 {
-  /* 同刻下磁盘被另一页覆盖为 B 版本;adopt 按内容哈希决胜并传播——磁盘最终为胜者,
-     与内存一致。若无传播(旧实现),磁盘停留在 B 版本而 A 内存胜者可能不同。 */
+  /* 明确把哈希胜者放内存、败者放磁盘，避免磁盘本来就是胜者时，
+     即使完全禁用传播也能通过的假绿。adopt 必须把胜者实际写回磁盘。 */
   localStorage.clear(); Store.load();
   const T2 = 1700000000000;
-  Store.rec('RG-030').note = 'A版本';
+  const hashA2 = Store.contentHash(JSON.stringify('A版本'));
+  const hashB2 = Store.contentHash(JSON.stringify('B版本'));
+  const expectWinner = hashA2 > hashB2 ? 'A版本' : 'B版本';
+  const diskLoser = hashA2 > hashB2 ? 'B版本' : 'A版本';
+  Store.rec('RG-030').note = expectWinner;
   Store.rec('RG-030')._updatedAt = T2;
   Store.saveNow();
   const dObj = JSON.parse(localStorage.getItem('aiiv:records'));
-  dObj.questions['RG-030'] = { note: 'B版本', _updatedAt: T2, status: '', fav: false, viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 };
+  dObj.questions['RG-030'] = { note: diskLoser, _updatedAt: T2, status: '', fav: false, viewedAt: 0, practiceCount: 0, lastPracticedAt: 0 };
   localStorage.setItem('aiiv:records', JSON.stringify(dObj));
+  ok('前置真实分歧:内存为同刻胜者，磁盘为败者',
+    hashA2 !== hashB2 && Store.rec('RG-030').note === expectWinner
+      && disk().questions['RG-030'].note === diskLoser && expectWinner !== diskLoser);
   Store.adoptRemoteRecords(localStorage.getItem('aiiv:records'));
   const mem = Store.rec('RG-030').note;
   const diskV = (JSON.parse(localStorage.getItem('aiiv:records')).questions['RG-030'] || {}).note;
   ok('收敛传播生效:合并胜者已写回磁盘(内存=磁盘)', mem === diskV, `mem=${mem} disk=${diskV}`);
-  const hashA2 = Store.contentHash(JSON.stringify('A版本'));
-  const hashB2 = Store.contentHash(JSON.stringify('B版本'));
-  const expectWinner = hashA2 > hashB2 ? 'A版本' : 'B版本';
   ok('胜者由内容哈希决定(对称稳定): ' + diskV, diskV === expectWinner, `hashA=${hashA2} hashB=${hashB2}`);
 }
 

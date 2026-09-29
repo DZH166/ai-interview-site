@@ -20,7 +20,7 @@ const StatsView = (() => {
      4 个状态列。色阶用 rgba 透明度映射 count/max:不引色板变量是刻意的,
      亮暗两套主题下同一 alpha 都落在可读区间(≤.5),文字色仍由主题控制。 */
   const HEAT = {
-    '':       { label: '未练习',   rgb: '107,114,128' },   /* 灰 */
+    '':       { label: '未自评',   rgb: '107,114,128' },   /* 灰:可能已答题但尚未选择掌握状态 */
     'weak':   { label: '还不熟',   rgb: '220,38,38' },     /* 红 */
     'ok':     { label: '基本掌握', rgb: '37,99,235' },     /* 蓝 */
     'review': { label: '待复习',   rgb: '37,99,235' }      /* 蓝 */
@@ -87,7 +87,9 @@ const StatsView = (() => {
       if (due === null) return;
       total++;
       if (due < t0) { overdue++; return; }
-      const day = Math.floor((due - t0) / DAY);
+      const date = new Date(due);
+      const day = Math.round((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+        - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / DAY);
       if (day < 30) buckets[day]++;
     });
     return { buckets, overdue, total, t0 };
@@ -99,14 +101,15 @@ const StatsView = (() => {
   }
 
   function renderForecast() {
-    const { buckets, overdue, t0 } = forecastData();
-    if (!overdue && !buckets.some(n => n > 0)) {
+    const { buckets, overdue, t0, total } = forecastData();
+    if (!total) {
       return `<div class="empty">还没有任何间隔重复排期。标记题目状态后会自动生成到期计划。</div>`;
     }
     const max = Math.max(...buckets, 1);
     const sum = (a, b) => buckets.slice(a, b + 1).reduce((x, y) => x + y, 0);
     const bars = buckets.map((n, i) => {
-      const ts = t0 + i * DAY;
+      const day = new Date(t0); day.setDate(day.getDate() + i);
+      const ts = day.getTime();
       /* 非零桶保底 3px 高:0 题的「贴地」与 1 题的「矮柱」在视觉上必须可区分 */
       const h = n ? Math.max(3, Math.round(n / max * 64)) : 1;
       return `<div class="sf-col${i === 0 ? ' sf-today' : ''}">
@@ -119,6 +122,7 @@ const StatsView = (() => {
         今天到期 ${buckets[0]} · 明天 ${buckets[1]} · 7天内 ${sum(0, 6)} · 30天内 ${sum(0, 29)} · 逾期 ${overdue}
       </div>
       <div class="stats-forecast" data-test="stats-forecast">${bars}</div>
+      ${!overdue && !buckets.some(n => n > 0) ? `<p class="muted small">已有 ${total} 题排期，未来 30 天没有到期题目。</p>` : ''}
       <div class="muted small" style="margin-top:4px">柱高 = 当日到期题数(悬停看日期与数量);深色柱为今天。</div>`;
   }
 
@@ -159,6 +163,22 @@ const StatsView = (() => {
       <div class="muted small" style="margin-top:4px">按标记次数降序,最多 10 个专题;点击专题名可去刷对应的题。</div>`;
   }
 
+  function renderQuizAccuracy() {
+    let correct = 0, wrong = 0, unknown = 0;
+    (Store.data.mock.rounds || []).forEach(rd => (rd.items || []).forEach(it => {
+      if (!Array.isArray(it.quizPicked) || !it.quizPicked.length) return;
+      if (it.quizCorrect === true) correct++;
+      else if (it.quizCorrect === false) wrong++;
+      else unknown++;
+    }));
+    const judged = correct + wrong;
+    return `<div data-test="stats-quiz-accuracy">
+      <p>已提交选择 ${judged + unknown} 次 · 答对 ${correct} · 答错 ${wrong} · 旧记录无判定 ${unknown}</p>
+      <p>${judged ? `客观正确率 ${Math.round(correct / judged * 100)}%（${correct} / ${judged} 次有判定的作答）` : '还没有可计算正确率的选择题作答。'}</p>
+      <p class="muted small">只统计已完成模拟轮次的已提交选择。未确认多选、查看参考和自评状态不进入正确率。</p>
+    </div>`;
+  }
+
   function render(root) {
     root.innerHTML = `
       <div class="card stats-block">
@@ -172,7 +192,11 @@ const StatsView = (() => {
         ${renderForecast()}
       </div>
       <div class="card stats-block">
-        <b>🎯 错题专题分布</b>
+        <b>选择题作答结果</b>
+        ${renderQuizAccuracy()}
+      </div>
+      <div class="card stats-block">
+        <b>🎯 还不熟的专题</b>
         <span class="muted small" style="margin-left:8px">模拟面试中标记「还不熟」的题,按专题汇总。</span>
         ${renderWeak()}
       </div>`;

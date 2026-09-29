@@ -462,8 +462,8 @@
     "right": false
    }
   ],
-  "answer": "A\n\nRRF分数 = Σ 1/(rank_i + k)，其中rank_i是文档在第i个检索结果列表中的排名，k通常为60（防止高排名文档得分过高）。RRF不需要归一化不同检索系统的分数，鲁棒性强，是混合检索的标准融合方法。",
-  "plain": "RRF分数 = Σ 1/(rank_i + k)，其中rank_i是文档在第i个检索结果列表中的排名，k通常为60（防止高排名文档得分过高）。RRF不需要归一化不同检索系统的分数，鲁棒性强，是混合检索的标准融合方法。",
+  "answer": "A\n\nRRF按各路排名贡献求和：score(d)=Σ 1/(k+rank_i(d))，未出现在某路候选中的文档不获得该路贡献。k是平滑常数，不是返回条数；60是常见实现默认值，不是所有任务最优。\n\n逐项判断：\nA：这是排名倒数求和，须说明排名从1开始。\nB：平均原始名次不是RRF，还需处理某路缺失候选。\nC：取最大相关性分数依赖原始分数，不是排名融合。\nD：分数几何平均同样不是RRF。",
+  "plain": "RRF按各路排名贡献求和：score(d)=Σ 1/(k+rank_i(d))，未出现在某路候选中的文档不获得该路贡献。k是平滑常数，不是返回条数；60是常见实现默认值，不是所有任务最优。\n\n逐项判断：\nA：这是排名倒数求和，须说明排名从1开始。\nB：平均原始名次不是RRF，还需处理某路缺失候选。\nC：取最大相关性分数依赖原始分数，不是排名融合。\nD：分数几何平均同样不是RRF。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -473,16 +473,52 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Elasticsearch RRF",
+    "url": "https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640387,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "这是排名倒数求和，须说明排名从1开始。"
+   },
+   {
+    "label": "B",
+    "explanation": "平均原始名次不是RRF，还需处理某路缺失候选。"
+   },
+   {
+    "label": "C",
+    "explanation": "取最大相关性分数依赖原始分数，不是排名融合。"
+   },
+   {
+    "label": "D",
+    "explanation": "分数几何平均同样不是RRF。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "补缺失候选规则并区分默认值与最优参数。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -732,8 +768,8 @@
     "right": false
    }
   ],
-  "answer": "C\n\n该技术让LLM为每个文档块生成多个可能的问题，将这些问题与文档一起索引（或作为元数据）。检索时，用户问题与这些假设问题的匹配效果通常优于直接与文档文本匹配。",
-  "plain": "该技术让LLM为每个文档块生成多个可能的问题，将这些问题与文档一起索引（或作为元数据）。检索时，用户问题与这些假设问题的匹配效果通常优于直接与文档文本匹配。",
+  "answer": "C\n\n在建库侧为块生成假设问题，并将问题向量关联回原文，是一种多表示索引设计。生成的问题只是检索入口，不能当事实证据；收益取决于问题覆盖和检索评测。\n\n逐项判断：\nA：HyDE通常在查询侧生成假设文档。\nB：Multi-query通常改写当前查询并多路检索。\nC：题设描述建库侧的假设问题索引。\nD：Query decomposition把查询拆成子问题，不等同给文档建假设问题索引。",
+  "plain": "在建库侧为块生成假设问题，并将问题向量关联回原文，是一种多表示索引设计。生成的问题只是检索入口，不能当事实证据；收益取决于问题覆盖和检索评测。\n\n逐项判断：\nA：HyDE通常在查询侧生成假设文档。\nB：Multi-query通常改写当前查询并多路检索。\nC：题设描述建库侧的假设问题索引。\nD：Query decomposition把查询拆成子问题，不等同给文档建假设问题索引。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -743,16 +779,52 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "HyDE原论文",
+    "url": "https://arxiv.org/abs/2212.10496",
+    "kind": "paper",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640369,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "HyDE通常在查询侧生成假设文档。"
+   },
+   {
+    "label": "B",
+    "explanation": "Multi-query通常改写当前查询并多路检索。"
+   },
+   {
+    "label": "C",
+    "explanation": "题设描述建库侧的假设问题索引。"
+   },
+   {
+    "label": "D",
+    "explanation": "Query decomposition把查询拆成子问题，不等同给文档建假设问题索引。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "去掉普遍优于原文匹配的保证，并要求回到真实证据。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -1096,7 +1168,7 @@
    },
    {
     "label": "B",
-    "text": "512更适合需要完整段落上下文的检索，128召回精度更高但单块信息不完整",
+    "text": "512可能保留更多邻近信息，128可能更聚焦但更易丢失关系；效果需评测",
     "right": true
    },
    {
@@ -1110,8 +1182,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n大chunk（512）：单块语义完整，适合问题需要连续段落信息的场景，但向量表示可能\"稀释\"（一个向量同时表示多个主题），检索准确性下降。小chunk（128）：检索精度高（向量聚焦），但可能截断完整意思，生成时缺乏上下文。实践中常用父子块（small chunk检索，大chunk生成）平衡两者。",
-  "plain": "大chunk（512）：单块语义完整，适合问题需要连续段落信息的场景，但向量表示可能\"稀释\"（一个向量同时表示多个主题），检索准确性下降。小chunk（128）：检索精度高（向量聚焦），但可能截断完整意思，生成时缺乏上下文。实践中常用父子块（small chunk检索，大chunk生成）平衡两者。",
+  "answer": "B\n\n块大小改变检索粒度和生成上下文。大块可能保留更多邻近信息，也可能混合多个主题；小块可能更聚焦，也可能丢失关系。512与128只是比较示例，不能从长度直接推出精度高低。\n\n逐项判断：\nA：更多上下文可能引入噪声或截断，不能始终更好。\nB：描述了粒度取舍；精度仍需在同一评测集比较。\nC：文档总长度不能单独决定块大小。\nD：不同分块会改变索引、召回和上下文，不能视为等价。",
+  "plain": "块大小改变检索粒度和生成上下文。大块可能保留更多邻近信息，也可能混合多个主题；小块可能更聚焦，也可能丢失关系。512与128只是比较示例，不能从长度直接推出精度高低。\n\n逐项判断：\nA：更多上下文可能引入噪声或截断，不能始终更好。\nB：描述了粒度取舍；精度仍需在同一评测集比较。\nC：文档总长度不能单独决定块大小。\nD：不同分块会改变索引、召回和上下文，不能视为等价。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -1121,16 +1193,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640262,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "更多上下文可能引入噪声或截断，不能始终更好。"
+   },
+   {
+    "label": "B",
+    "explanation": "描述了粒度取舍；精度仍需在同一评测集比较。"
+   },
+   {
+    "label": "C",
+    "explanation": "文档总长度不能单独决定块大小。"
+   },
+   {
+    "label": "D",
+    "explanation": "不同分块会改变索引、召回和上下文，不能视为等价。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "修正小块必然更准的绝对结论。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -1140,32 +1249,32 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "在RAG系统中，以下哪种嵌入模型特别适合检索任务（而非通用文本相似度）？",
-  "prompt": "在RAG系统中，以下哪种嵌入模型特别适合检索任务（而非通用文本相似度）？",
+  "title": "已选用 intfloat/e5-large-v2 做非对称检索，接入时哪项检查最必要？",
+  "prompt": "已选用 intfloat/e5-large-v2 做非对称检索，接入时哪项检查最必要？",
   "options": [
    {
     "label": "A",
-    "text": "BERT-base-uncased",
+    "text": "只比较参数量，不必检查输入格式",
     "right": false
    },
    {
     "label": "B",
-    "text": "text-embedding-3-large（OpenAI）",
-    "right": false
-   },
-   {
-    "label": "C",
-    "text": "E5-large-instruct（支持指令格式的检索优化模型）",
+    "text": "核对查询/文档前缀、长度限制与归一化，并做领域召回评测",
     "right": true
    },
    {
+    "label": "C",
+    "text": "默认模型可编码任意长的文档",
+    "right": false
+   },
+   {
     "label": "D",
-    "text": "sentence-transformers/all-mpnet-base-v2",
+    "text": "名称含embedding即可保证检索效果",
     "right": false
    }
   ],
-  "answer": "C\n\nE5-large-instruct等支持指令的嵌入模型（如Instructor、BGE-M3、GTE）专为检索场景优化，可通过指令前缀区分查询和文档的嵌入方式，在MTEB等基准上显著优于通用模型。",
-  "plain": "E5-large-instruct等支持指令的嵌入模型（如Instructor、BGE-M3、GTE）专为检索场景优化，可通过指令前缀区分查询和文档的嵌入方式，在MTEB等基准上显著优于通用模型。",
+  "answer": "正确选项：B。\n\n选择嵌入模型要看具体训练目标、语言、输入契约和本地评测。多种模型可以用于检索，不能把E5列为唯一正确品牌；本题改考已固定E5-large-v2时应核查的接口行为。\n\n逐项判断：\nA：只比较参数量不能判断是否符合输入契约。\nB：应按该 checkpoint 的 query: / passage: 输入约定编码，并验证长度限制和归一化。\nC：检索模型也有最大输入长度，不能默认无限长。\nD：模型名称不能代替领域检索评测。",
+  "plain": "选择嵌入模型要看具体训练目标、语言、输入契约和本地评测。多种模型可以用于检索，不能把E5列为唯一正确品牌；本题改考已固定E5-large-v2时应核查的接口行为。\n\n逐项判断：\nA：只比较参数量不能判断是否符合输入契约。\nB：应按该 checkpoint 的 query: / passage: 输入约定编码，并验证长度限制和归一化。\nC：检索模型也有最大输入长度，不能默认无限长。\nD：模型名称不能代替领域检索评测。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -1175,16 +1284,55 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "E5-large-v2官方模型卡",
+    "url": "https://huggingface.co/intfloat/e5-large-v2",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640368,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "只比较参数量不能判断是否符合输入契约。"
+   },
+   {
+    "label": "B",
+    "explanation": "应按该 checkpoint 的 query: / passage: 输入约定编码，并验证长度限制和归一化。"
+   },
+   {
+    "label": "C",
+    "explanation": "检索模型也有最大输入长度，不能默认无限长。"
+   },
+   {
+    "label": "D",
+    "explanation": "模型名称不能代替领域检索评测。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "原题将可用于检索的其他模型都判错，缺少唯一答案条件。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -1218,8 +1366,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nBM25和dense retrieval的分数尺度不同，直接加权平均需要归一化（复杂且不稳定）。RRF公式：score(d) = Σ 1/(k + rank_i(d))，k通常为60，只使用排名而非分数，避免跨系统分数比较问题。RRF在实验中表现稳定，是混合检索融合的标准方法，效果通常优于单一检索。",
-  "plain": "BM25和dense retrieval的分数尺度不同，直接加权平均需要归一化（复杂且不稳定）。RRF公式：score(d) = Σ 1/(k + rank_i(d))，k通常为60，只使用排名而非分数，避免跨系统分数比较问题。RRF在实验中表现稳定，是混合检索融合的标准方法，效果通常优于单一检索。",
+  "answer": "B\n\nRRF先让不同检索器各自排序，再按排名贡献融合候选并集，因此不要求BM25与向量原始分数同量纲。仍需统一文档ID、处理重复和设候选规模；融合并不保证每个查询优于单路。\n\n逐项判断：\nA：RRF公式本身不需要训练融合网络。\nB：只使用名次是其核心特征。\nC：直接加权原始分数是另一种融合，需校准尺度。\nD：可以保留只被一路召回的文档，不限交集。",
+  "plain": "RRF先让不同检索器各自排序，再按排名贡献融合候选并集，因此不要求BM25与向量原始分数同量纲。仍需统一文档ID、处理重复和设候选规模；融合并不保证每个查询优于单路。\n\n逐项判断：\nA：RRF公式本身不需要训练融合网络。\nB：只使用名次是其核心特征。\nC：直接加权原始分数是另一种融合，需校准尺度。\nD：可以保留只被一路召回的文档，不限交集。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -1229,16 +1377,52 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Elasticsearch RRF",
+    "url": "https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640265,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "RRF公式本身不需要训练融合网络。"
+   },
+   {
+    "label": "B",
+    "explanation": "只使用名次是其核心特征。"
+   },
+   {
+    "label": "C",
+    "explanation": "直接加权原始分数是另一种融合，需校准尺度。"
+   },
+   {
+    "label": "D",
+    "explanation": "可以保留只被一路召回的文档，不限交集。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "区分排名融合与分数融合，删除必然效果提升暗示。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -1356,8 +1540,8 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "以下代码存在什么问题？```python embedding = model.encode(document) # 文档嵌入 query_embedding =",
-  "prompt": "以下代码存在什么问题？```python\nembedding = model.encode(document) # 文档嵌入\nquery_embedding = model.encode(query) # 查询嵌入（同一模型，无指令前缀）\nsimilarity = cosine_similarity(embedding, query_embedding)\n```",
+  "title": "E5-large-v2非对称检索：下列编码遗漏了什么？",
+  "prompt": "使用 intfloat/e5-large-v2 做查询到文档的非对称检索。以下只讨论输入前缀，已另行处理返回向量形状与相似度计算：\n```python\nembedding = model.encode(document)\nquery_embedding = model.encode(query)\n```\n遗漏了什么？",
   "options": [
    {
     "label": "A",
@@ -1366,7 +1550,7 @@
    },
    {
     "label": "B",
-    "text": "非对称嵌入模型需要不同前缀：文档和查询应使用不同的指令前缀",
+    "text": "按模型卡分别为查询添加query:、为文档添加passage:前缀",
     "right": true
    },
    {
@@ -1380,8 +1564,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n对于E5、Instructor等非对称检索模型，文档编码应使用\"passage: \"前缀，查询应使用\"query: \"前缀，分别优化两种嵌入的语义空间。使用相同编码方式会损失检索精度。BGE系列也有类似的指令前缀要求。",
-  "plain": "对于E5、Instructor等非对称检索模型，文档编码应使用\"passage: \"前缀，查询应使用\"query: \"前缀，分别优化两种嵌入的语义空间。使用相同编码方式会损失检索精度。BGE系列也有类似的指令前缀要求。",
+  "answer": "B\n\n题设固定intfloat/e5-large-v2用于非对称检索：查询加query:，文档加passage:。这来自该模型训练契约，不能泛化给Instructor或整个BGE系列；先核对模型卡，再对比召回。\n\n逐项判断：\nA：本题指定E5-large-v2检索，遗漏前缀偏离其推荐输入。\nB：该checkpoint的查询与文档前缀不同，符合模型卡。\nC：距离选择不是题设缺少前缀的替代修复。\nD：编码后向量维度需一致，原始文本长度不必相同。",
+  "plain": "题设固定intfloat/e5-large-v2用于非对称检索：查询加query:，文档加passage:。这来自该模型训练契约，不能泛化给Instructor或整个BGE系列；先核对模型卡，再对比召回。\n\n逐项判断：\nA：本题指定E5-large-v2检索，遗漏前缀偏离其推荐输入。\nB：该checkpoint的查询与文档前缀不同，符合模型卡。\nC：距离选择不是题设缺少前缀的替代修复。\nD：编码后向量维度需一致，原始文本长度不必相同。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -1391,16 +1575,67 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "E5-large-v2官方模型卡",
+    "url": "https://huggingface.co/intfloat/e5-large-v2",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
+   },
+   {
+    "name": "INSTRUCTOR官方模型卡",
+    "url": "https://huggingface.co/hkunlp/instructor-large",
+    "kind": "official-docs",
+    "note": "用于核对不同实现的边界。"
+   },
+   {
+    "name": "BGE官方模型卡",
+    "url": "https://huggingface.co/BAAI/bge-large-en-v1.5",
+    "kind": "official-docs",
+    "note": "用于核对不同实现的边界。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640393,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "本题指定E5-large-v2检索，遗漏前缀偏离其推荐输入。"
+   },
+   {
+    "label": "B",
+    "explanation": "该checkpoint的查询与文档前缀不同，符合模型卡。"
+   },
+   {
+    "label": "C",
+    "explanation": "距离选择不是题设缺少前缀的替代修复。"
+   },
+   {
+    "label": "D",
+    "explanation": "编码后向量维度需一致，原始文本长度不必相同。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "补模型名与检索任务；分开E5、Instructor、BGE输入格式。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -1911,7 +2146,7 @@
    },
    {
     "label": "C",
-    "text": "需要根据嵌入模型的最优输入长度和查询类型平衡选择",
+    "text": "先满足模型最大输入限制，再按文档结构和查询跨度评测选择",
     "right": true
    },
    {
@@ -1920,8 +2155,8 @@
     "right": false
    }
   ],
-  "answer": "C\n\n分块大小需平衡：小块检索精度高但上下文信息少；大块上下文丰富但检索噪声多。需考虑：嵌入模型最优输入长度（如BGE建议512）、文档特性（段落自然边界）、查询类型（事实型vs. 理解型）。",
-  "plain": "分块大小需平衡：小块检索精度高但上下文信息少；大块上下文丰富但检索噪声多。需考虑：嵌入模型最优输入长度（如BGE建议512）、文档特性（段落自然边界）、查询类型（事实型vs. 理解型）。",
+  "answer": "C\n\n先满足模型最大输入限制，再按文档结构、查询跨度、索引成本和上下文预算选择块大小。“模型允许512”不等于“512最佳”，结构切分后也需限制过长块。\n\n逐项判断：\nA：大块可能混入多个主题和超过模型输入限制。\nB：小块可能把回答所需的关系拆散。\nC：在模型限制与任务需求间做可评测的取舍正确。\nD：512不是跨模型、跨语料的固定最佳值。",
+  "plain": "先满足模型最大输入限制，再按文档结构、查询跨度、索引成本和上下文预算选择块大小。“模型允许512”不等于“512最佳”，结构切分后也需限制过长块。\n\n逐项判断：\nA：大块可能混入多个主题和超过模型输入限制。\nB：小块可能把回答所需的关系拆散。\nC：在模型限制与任务需求间做可评测的取舍正确。\nD：512不是跨模型、跨语料的固定最佳值。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -1931,16 +2166,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640378,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "大块可能混入多个主题和超过模型输入限制。"
+   },
+   {
+    "label": "B",
+    "explanation": "小块可能把回答所需的关系拆散。"
+   },
+   {
+    "label": "C",
+    "explanation": "在模型限制与任务需求间做可评测的取舍正确。"
+   },
+   {
+    "label": "D",
+    "explanation": "512不是跨模型、跨语料的固定最佳值。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "将最优输入长度改为允许上限与任务评测。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -1960,7 +2232,7 @@
    },
    {
     "label": "B",
-    "text": "大规模（>100万文档）、需要高召回率和高精度的企业级知识库问答系统",
+    "text": "两路召回有互补错误、候选排序存在瓶颈，且实测延迟预算允许",
     "right": true
    },
    {
@@ -1974,8 +2246,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n三阶段架构适用于大规模高质量检索：①稠密检索（FAISS/Milvus ANN）：快速从百万文档中召回top-100，语义感知；②稀疏检索（BM25）：精确词汇匹配补充召回；③Rerank（BGE-Reranker/Cohere）：对top-100精排取top-5，兼顾精度。小规模文档库（<1万）直接全量cross-encoder即可；实时场景三阶段延迟约200-500ms，需要权衡。",
-  "plain": "三阶段架构适用于大规模高质量检索：①稠密检索（FAISS/Milvus ANN）：快速从百万文档中召回top-100，语义感知；②稀疏检索（BM25）：精确词汇匹配补充召回；③Rerank（BGE-Reranker/Cohere）：对top-100精排取top-5，兼顾精度。小规模文档库（<1万）直接全量cross-encoder即可；实时场景三阶段延迟约200-500ms，需要权衡。",
+  "answer": "B\n\n当两路召回有互补错误，候选已包含答案但前排噪声较多，且延迟预算允许时，可评估混合召回加重排。是否采用不能仅按文档数量决定；小库也不能默认全量cross-encoder足够快。\n\n逐项判断：\nA：小库也能受益，但规模本身不是增加阶段的依据。\nB：题设给定互补召回、排序瓶颈和预算，是适合评估的条件。\nC：极紧延迟预算需先测阶段耗时，不能直接堆叠。\nD：内容无差异时增加复杂排序通常缺少收益依据。",
+  "plain": "当两路召回有互补错误，候选已包含答案但前排噪声较多，且延迟预算允许时，可评估混合召回加重排。是否采用不能仅按文档数量决定；小库也不能默认全量cross-encoder足够快。\n\n逐项判断：\nA：小库也能受益，但规模本身不是增加阶段的依据。\nB：题设给定互补召回、排序瓶颈和预算，是适合评估的条件。\nC：极紧延迟预算需先测阶段耗时，不能直接堆叠。\nD：内容无差异时增加复杂排序通常缺少收益依据。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -1985,16 +2257,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Sentence Transformers Retrieve and Re-Rank",
+    "url": "https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640310,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "小库也能受益，但规模本身不是增加阶段的依据。"
+   },
+   {
+    "label": "B",
+    "explanation": "题设给定互补召回、排序瓶颈和预算，是适合评估的条件。"
+   },
+   {
+    "label": "C",
+    "explanation": "极紧延迟预算需先测阶段耗时，不能直接堆叠。"
+   },
+   {
+    "label": "D",
+    "explanation": "内容无差异时增加复杂排序通常缺少收益依据。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "删除百万规模阈值、200–500ms以及小于1万全量重排断言。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -2328,8 +2637,8 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "以下哪种分块策略最适合处理代码文件的RAG索引？",
-  "prompt": "以下哪种分块策略最适合处理代码文件的RAG索引？",
+  "title": "代码语法结构清楚且解析可靠时，哪种索引分块方案是合理基线？",
+  "prompt": "代码语法结构清楚且解析可靠时，哪种索引分块方案是合理基线？",
   "options": [
    {
     "label": "A",
@@ -2343,7 +2652,7 @@
    },
    {
     "label": "C",
-    "text": "按代码结构分块（函数/类级别），保持代码逻辑完整性",
+    "text": "按函数/类结构组织，保留必要上下文，并为过长定义与解析失败设置后备规则",
     "right": true
    },
    {
@@ -2352,8 +2661,8 @@
     "right": false
    }
   ],
-  "answer": "C\n\n代码具有严格的结构边界（函数、类、方法），随意截断会破坏语义完整性（如函数被截断无法理解其功能）。最佳实践是使用AST（抽象语法树）解析代码，按函数/类/模块级别分块，同时保留文件路径、函数签名等元数据。LlamaIndex的CodeHierarchyNodeParser专门处理代码分块，是RAG代码搜索的推荐方案。",
-  "plain": "代码具有严格的结构边界（函数、类、方法），随意截断会破坏语义完整性（如函数被截断无法理解其功能）。最佳实践是使用AST（抽象语法树）解析代码，按函数/类/模块级别分块，同时保留文件路径、函数签名等元数据。LlamaIndex的CodeHierarchyNodeParser专门处理代码分块，是RAG代码搜索的推荐方案。",
+  "answer": "正确选项：C。\n\n可解析的代码优先保留函数、类、签名、文件路径和父级关系，再处理过长节点。AST结构有助定位，不保证一个函数就是完整语义；跨文件依赖、动态代码和解析失败都需补充策略。\n\n逐项判断：\nA：固定长度可作兜底，但可能切断定义。\nB：相似度边界不天然对应语法和调用关系。\nC：结构切分保留定位信息，并需要过长节点与解析失败兜底。\nD：固定行数没有考虑语法边界。",
+  "plain": "可解析的代码优先保留函数、类、签名、文件路径和父级关系，再处理过长节点。AST结构有助定位，不保证一个函数就是完整语义；跨文件依赖、动态代码和解析失败都需补充策略。\n\n逐项判断：\nA：固定长度可作兜底，但可能切断定义。\nB：相似度边界不天然对应语法和调用关系。\nC：结构切分保留定位信息，并需要过长节点与解析失败兜底。\nD：固定行数没有考虑语法边界。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -2363,16 +2672,55 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640280,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "固定长度可作兜底，但可能切断定义。"
+   },
+   {
+    "label": "B",
+    "explanation": "相似度边界不天然对应语法和调用关系。"
+   },
+   {
+    "label": "C",
+    "explanation": "结构切分保留定位信息，并需要过长节点与解析失败兜底。"
+   },
+   {
+    "label": "D",
+    "explanation": "固定行数没有考虑语法边界。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "限定可解析代码；删未经核验的特定parser推荐。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -2770,7 +3118,7 @@
    },
    {
     "label": "B",
-    "text": "Cross-encoder对每对（query, doc）独立前向传播，时间复杂度O(n)，n为候选文档数，只适合对少量候选精排",
+    "text": "固定模型与每对输入长度时，逐对打分工作量随候选数n增长；墙钟时间还受批处理影响",
     "right": true
    },
    {
@@ -2784,8 +3132,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nBi-encoder（两塔模型）：query和doc分别编码（可预计算doc向量），检索时只需query向量与doc向量的内积，O(1)单次查询（+ANN搜索开销）。Cross-encoder（单塔）：每对(query, doc)拼接后完整前向传播，无法预计算，复杂度O(n×L²)（L为序列长度）。1M文档库直接cross-encoder检索约需100万次推理≈数小时。因此cross-encoder只能对bi-encoder召回的top-50~100候选精排，两阶段架构是必然选择。",
-  "plain": "Bi-encoder（两塔模型）：query和doc分别编码（可预计算doc向量），检索时只需query向量与doc向量的内积，O(1)单次查询（+ANN搜索开销）。Cross-encoder（单塔）：每对(query, doc)拼接后完整前向传播，无法预计算，复杂度O(n×L²)（L为序列长度）。1M文档库直接cross-encoder检索约需100万次推理≈数小时。因此cross-encoder只能对bi-encoder召回的top-50~100候选精排，两阶段架构是必然选择。",
+  "answer": "B\n\n固定模型与每对输入长度时，逐对重排的计算工作量随候选数n增加。输入长度变化还影响注意力计算；批处理会改变墙钟时间。bi-encoder可预计算文档向量，但在线查询仍有编码与搜索开销。\n\n逐项判断：\nA：要评分更多文档通常需要更多计算。\nB：固定输入长度时工作量近似随候选数线性增加。\nC：不能脱离模型、批量、硬件比较速度。\nD：查询和文档长度影响每对前向传播成本。",
+  "plain": "固定模型与每对输入长度时，逐对重排的计算工作量随候选数n增加。输入长度变化还影响注意力计算；批处理会改变墙钟时间。bi-encoder可预计算文档向量，但在线查询仍有编码与搜索开销。\n\n逐项判断：\nA：要评分更多文档通常需要更多计算。\nB：固定输入长度时工作量近似随候选数线性增加。\nC：不能脱离模型、批量、硬件比较速度。\nD：查询和文档长度影响每对前向传播成本。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -2795,16 +3143,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Sentence Transformers Retrieve and Re-Rank",
+    "url": "https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640329,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "要评分更多文档通常需要更多计算。"
+   },
+   {
+    "label": "B",
+    "explanation": "固定输入长度时工作量近似随候选数线性增加。"
+   },
+   {
+    "label": "C",
+    "explanation": "不能脱离模型、批量、硬件比较速度。"
+   },
+   {
+    "label": "D",
+    "explanation": "查询和文档长度影响每对前向传播成本。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "去掉O(1)整次查询、固定小时数和只可top50–100的绝对结论。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -3094,7 +3479,7 @@
    },
    {
     "label": "B",
-    "text": "在保证相关性的同时，确保检索结果覆盖不同角度/子话题，避免返回大量内容重复的文档",
+    "text": "兼顾相关性与有用角度的覆盖，减少重复候选；是否改善最终结果仍需评测",
     "right": true
    },
    {
@@ -3108,8 +3493,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nMMR（Maximal Marginal Relevance）是经典的多样性检索算法：在选择下一个文档时，同时考虑与query的相关性和与已选文档的差异性：score = λ×sim(doc, query) - (1-λ)×max_sim(doc, selected)。避免返回10个几乎相同内容的文档（浪费上下文窗口）。对于宽泛问题（如\"机器学习应用\"），多样性检索能覆盖更多不同角度，生成更全面的答案。",
-  "plain": "MMR（Maximal Marginal Relevance）是经典的多样性检索算法：在选择下一个文档时，同时考虑与query的相关性和与已选文档的差异性：score = λ×sim(doc, query) - (1-λ)×max_sim(doc, selected)。避免返回10个几乎相同内容的文档（浪费上下文窗口）。对于宽泛问题（如\"机器学习应用\"），多样性检索能覆盖更多不同角度，生成更全面的答案。",
+  "answer": "正确选项：B。\n\n多样性重排在相关性之外惩罚与已选结果的冗余。MMR是常见形式，但参数取舍会影响精确查找任务，去重和多样性不等于提高每条结果的相关性。\n\n逐项判断：\nA：只看相关性可能把相似段落重复占满上下文。\nB：覆盖不同有用角度是目标，需控制离题代价。\nC：相关性可能下降，但不能断言所有任务都下降。\nD：也可用于研究问题和文档检索，不限新闻。",
+  "plain": "多样性重排在相关性之外惩罚与已选结果的冗余。MMR是常见形式，但参数取舍会影响精确查找任务，去重和多样性不等于提高每条结果的相关性。\n\n逐项判断：\nA：只看相关性可能把相似段落重复占满上下文。\nB：覆盖不同有用角度是目标，需控制离题代价。\nC：相关性可能下降，但不能断言所有任务都下降。\nD：也可用于研究问题和文档检索，不限新闻。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -3119,16 +3504,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Sentence Transformers Retrieve and Re-Rank",
+    "url": "https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640333,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "只看相关性可能把相似段落重复占满上下文。"
+   },
+   {
+    "label": "B",
+    "explanation": "覆盖不同有用角度是目标，需控制离题代价。"
+   },
+   {
+    "label": "C",
+    "explanation": "相关性可能下降，但不能断言所有任务都下降。"
+   },
+   {
+    "label": "D",
+    "explanation": "也可用于研究问题和文档检索，不限新闻。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "补精确查找的多样性代价，去除全局收益承诺。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -3408,8 +3830,8 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "在计算RAG的上下文窗口时，如果每个chunk大小为512 tokens，检索top-k=5，还需要预留512 tokens给回答，则最少需要多大的上下文窗口？",
-  "prompt": "在计算RAG的上下文窗口时，如果每个chunk大小为512 tokens，检索top-k=5，还需要预留512 tokens给回答，则最少需要多大的上下文窗口？",
+  "title": "只计算5个各512-token的证据块和512-token输出预留，暂不计系统提示、问题与格式开销，预算下界是多少？",
+  "prompt": "只计算5个各512-token的证据块和512-token输出预留，暂不计系统提示、问题与格式开销，预算下界是多少？",
   "options": [
    {
     "label": "A",
@@ -3432,8 +3854,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n总计：5个chunks × 512 tokens + 512 tokens回答 + system prompt等 = 2560 tokens + 额外开销。最少需要约3072 tokens的上下文窗口。实际还需考虑原始query、分隔符和格式化文本。",
-  "plain": "总计：5个chunks × 512 tokens + 512 tokens回答 + system prompt等 = 2560 tokens + 额外开销。最少需要约3072 tokens的上下文窗口。实际还需考虑原始query、分隔符和格式化文本。",
+  "answer": "B\n\n仅计算5个512-token证据块与512-token输出预留，预算下界为5×512+512=3072。真实请求还要加入系统提示、用户问题、工具定义及格式开销，因此3072不等于可直接使用的完整窗口。\n\n逐项判断：\nA：2048小于证据块总量2560。\nB：在明确忽略其他开销的题设下，3072是算术下界。\nC：4096可能提供余量，但不是本题只计两项的最小和。\nD：1024不足容纳这些证据。",
+  "plain": "仅计算5个512-token证据块与512-token输出预留，预算下界为5×512+512=3072。真实请求还要加入系统提示、用户问题、工具定义及格式开销，因此3072不等于可直接使用的完整窗口。\n\n逐项判断：\nA：2048小于证据块总量2560。\nB：在明确忽略其他开销的题设下，3072是算术下界。\nC：4096可能提供余量，但不是本题只计两项的最小和。\nD：1024不足容纳这些证据。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -3443,16 +3865,54 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640361,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "2048小于证据块总量2560。"
+   },
+   {
+    "label": "B",
+    "explanation": "在明确忽略其他开销的题设下，3072是算术下界。"
+   },
+   {
+    "label": "C",
+    "explanation": "4096可能提供余量，但不是本题只计两项的最小和。"
+   },
+   {
+    "label": "D",
+    "explanation": "1024不足容纳这些证据。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "原解析算术与system额外开销混写，补忽略项条件。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -3580,7 +4040,7 @@
    },
    {
     "label": "B",
-    "text": "先用长上下文模型编码完整文档，再对token embeddings按块池化，保留上下文信息",
+    "text": "在模型可处理的输入范围内先上下文化编码，再对token表示按块池化",
     "right": true
    },
    {
@@ -3594,8 +4054,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nLate Chunking（Jina AI提出）先将完整文档输入长上下文嵌入模型获取每个token的上下文感知嵌入，再对这些token embeddings按分块边界进行平均池化。每个块的表示保留了全文语境，优于独立分块后编码。",
-  "plain": "Late Chunking（Jina AI提出）先将完整文档输入长上下文嵌入模型获取每个token的上下文感知嵌入，再对这些token embeddings按分块边界进行平均池化。每个块的表示保留了全文语境，优于独立分块后编码。",
+  "answer": "正确选项：B。\n\nLate Chunking先获得长上下文模型的token级表示，再按块边界池化为块向量，目标是保留跨块语境。可编码的整体仍受模型窗口限制；实验收益不能推广为所有文档必然更准。\n\n逐项判断：\nA：不是等检索结束才给文档分块。\nB：先上下文化再池化是核心顺序。\nC：离线建索引也可以使用，不要求每次查询时才做。\nD：块大小可以调整，但不是其定义性机制。",
+  "plain": "Late Chunking先获得长上下文模型的token级表示，再按块边界池化为块向量，目标是保留跨块语境。可编码的整体仍受模型窗口限制；实验收益不能推广为所有文档必然更准。\n\n逐项判断：\nA：不是等检索结束才给文档分块。\nB：先上下文化再池化是核心顺序。\nC：离线建索引也可以使用，不要求每次查询时才做。\nD：块大小可以调整，但不是其定义性机制。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -3605,16 +4065,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Late Chunking原论文",
+    "url": "https://arxiv.org/abs/2409.04701",
+    "kind": "paper",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640372,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "不是等检索结束才给文档分块。"
+   },
+   {
+    "label": "B",
+    "explanation": "先上下文化再池化是核心顺序。"
+   },
+   {
+    "label": "C",
+    "explanation": "离线建索引也可以使用，不要求每次查询时才做。"
+   },
+   {
+    "label": "D",
+    "explanation": "块大小可以调整，但不是其定义性机制。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "保留方法原理，限定窗口与效果。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -3801,7 +4298,7 @@
    },
    {
     "label": "C",
-    "text": "两个参数都与文档长度有关",
+    "text": "k1控制文档长度归一化，b控制词频饱和",
     "right": false
    },
    {
@@ -3810,8 +4307,8 @@
     "right": false
    }
   ],
-  "answer": "A\n\nBM25关键参数：k1（通常1.2-2.0）控制词频（TF）的饱和曲线，防止高频词无限累加权重；b（通常0.75）控制文档长度归一化，b=0不做归一化，b=1完全按文档长度归一化。根据语料特性调整这两个参数可改善检索效果。",
-  "plain": "BM25关键参数：k1（通常1.2-2.0）控制词频（TF）的饱和曲线，防止高频词无限累加权重；b（通常0.75）控制文档长度归一化，b=0不做归一化，b=1完全按文档长度归一化。根据语料特性调整这两个参数可改善检索效果。",
+  "answer": "正确选项：A。\n\nBM25的k1影响词频饱和，b控制文档长度归一化强度。b=0关闭长度归一化，b=1使用完整长度归一化因子；具体默认值和适合值应按实现与语料说明。\n\n逐项判断：\nA：对应两个参数的主要作用。\nB：k1不是逆文档频率权重，b不是查询扩展。\nC：两个作用写反了：k1主要调节词频饱和，b调节长度归一化。\nD：BM25实现通常暴露这些参数。",
+  "plain": "BM25的k1影响词频饱和，b控制文档长度归一化强度。b=0关闭长度归一化，b=1使用完整长度归一化因子；具体默认值和适合值应按实现与语料说明。\n\n逐项判断：\nA：对应两个参数的主要作用。\nB：k1不是逆文档频率权重，b不是查询扩展。\nC：两个作用写反了：k1主要调节词频饱和，b调节长度归一化。\nD：BM25实现通常暴露这些参数。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -3821,16 +4318,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Elasticsearch Similarity/BM25",
+    "url": "https://www.elastic.co/docs/reference/elasticsearch/index-settings/similarity",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640411,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "对应两个参数的主要作用。"
+   },
+   {
+    "label": "B",
+    "explanation": "k1不是逆文档频率权重，b不是查询扩展。"
+   },
+   {
+    "label": "C",
+    "explanation": "两个作用写反了：k1主要调节词频饱和，b调节长度归一化。"
+   },
+   {
+    "label": "D",
+    "explanation": "BM25实现通常暴露这些参数。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "解释参数机制，避免把常见默认当调优结论。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -4066,7 +4600,7 @@
    },
    {
     "label": "B",
-    "text": "支持结构化元数据过滤，适合生产环境的持久化存储和分布式部署",
+    "text": "作为数据库服务集成payload过滤、持久化和服务运维能力；FAISS自身也可读写索引文件",
     "right": true
    },
    {
@@ -4080,8 +4614,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nFAISS是库级别工具，不支持持久化和元数据过滤，适合原型和研究。Qdrant/Milvus/Weaviate等向量数据库提供持久化存储、元数据过滤（hybrid filtering）、分布式扩展、REST/gRPC API等生产级特性。",
-  "plain": "FAISS是库级别工具，不支持持久化和元数据过滤，适合原型和研究。Qdrant/Milvus/Weaviate等向量数据库提供持久化存储、元数据过滤（hybrid filtering）、分布式扩展、REST/gRPC API等生产级特性。",
+  "answer": "B\n\nFAISS是相似性搜索库，支持索引文件读写；不能说它不支持持久化。Qdrant提供服务端payload过滤等数据库能力，比较重点是部署、更新、过滤与运维契约，而非保证更快或更省内存。\n\n逐项判断：\nA：速度取决于数据、索引与硬件，不能作无条件优势。\nB：数据库服务提供集成的payload过滤与持久化/服务运维能力。\nC：内存占用同样依赖配置和表示方式。\nD：索引类型的说法不能概括数据库核心优势。",
+  "plain": "FAISS是相似性搜索库，支持索引文件读写；不能说它不支持持久化。Qdrant提供服务端payload过滤等数据库能力，比较重点是部署、更新、过滤与运维契约，而非保证更快或更省内存。\n\n逐项判断：\nA：速度取决于数据、索引与硬件，不能作无条件优势。\nB：数据库服务提供集成的payload过滤与持久化/服务运维能力。\nC：内存占用同样依赖配置和表示方式。\nD：索引类型的说法不能概括数据库核心优势。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -4091,16 +4625,59 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "FAISS Index IO",
+    "url": "https://github.com/facebookresearch/faiss/wiki/Index-IO,-cloning-and-hyper-parameter-tuning",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
+   },
+   {
+    "name": "Qdrant Filtering",
+    "url": "https://qdrant.tech/documentation/search/filtering/",
+    "kind": "official-docs",
+    "note": "用于核对不同实现的边界。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640377,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "速度取决于数据、索引与硬件，不能作无条件优势。"
+   },
+   {
+    "label": "B",
+    "explanation": "数据库服务提供集成的payload过滤与持久化/服务运维能力。"
+   },
+   {
+    "label": "C",
+    "explanation": "内存占用同样依赖配置和表示方式。"
+   },
+   {
+    "label": "D",
+    "explanation": "索引类型的说法不能概括数据库核心优势。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正FAISS不能持久化，将库与数据库职责分开。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -4272,8 +4849,8 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "以下哪种分块策略对于法律合同文档的RAG效果最好？",
-  "prompt": "以下哪种分块策略对于法律合同文档的RAG效果最好？",
+  "title": "对于条款层级清晰的合同，哪种分块方案是保留条款关系的合理基线？",
+  "prompt": "对于条款层级清晰的合同，哪种分块方案是保留条款关系的合理基线？",
   "options": [
    {
     "label": "A",
@@ -4282,7 +4859,7 @@
    },
    {
     "label": "B",
-    "text": "按语义分块（结合句子边界和语义相似度），识别条款边界",
+    "text": "按条款/子条款层级组织，保留标题与父级关系，对过长条款再切分",
     "right": true
    },
    {
@@ -4296,8 +4873,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n法律合同有明确的条款结构（第X条：..., (a)..., (b)...），按固定大小随意截断会破坏条款完整性，导致检索时找到的是条款片段而非完整条款。最佳策略：结合句子边界和语义连续性分块，识别条款标题（\"第X条\"）作为分块分隔符，保证每块是完整条款或子条款。专门的法律NLP工具（如LexNLP）可辅助实现结构化分块。",
-  "plain": "法律合同有明确的条款结构（第X条：..., (a)..., (b)...），按固定大小随意截断会破坏条款完整性，导致检索时找到的是条款片段而非完整条款。最佳策略：结合句子边界和语义连续性分块，识别条款标题（\"第X条\"）作为分块分隔符，保证每块是完整条款或子条款。专门的法律NLP工具（如LexNLP）可辅助实现结构化分块。",
+  "answer": "B\n\n对于条款和层级清晰的合同，先按条款结构保留标题、编号及父级引用，再对过长条款切分，通常是可解释的基线。是否加语义相似度边界需评测，不能断言某算法对法律文档最好。\n\n逐项判断：\nA：固定token可以作上限兜底，但不应忽略条款结构。\nB：结构优先并保留上下文，符合题设；不等于必须使用embedding分句。\nC：页面可能截断条款，也可能混合多个主题。\nD：单向量可能丢失细节且超过模型长度限制。",
+  "plain": "对于条款和层级清晰的合同，先按条款结构保留标题、编号及父级引用，再对过长条款切分，通常是可解释的基线。是否加语义相似度边界需评测，不能断言某算法对法律文档最好。\n\n逐项判断：\nA：固定token可以作上限兜底，但不应忽略条款结构。\nB：结构优先并保留上下文，符合题设；不等于必须使用embedding分句。\nC：页面可能截断条款，也可能混合多个主题。\nD：单向量可能丢失细节且超过模型长度限制。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -4307,16 +4884,55 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640308,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "固定token可以作上限兜底，但不应忽略条款结构。"
+   },
+   {
+    "label": "B",
+    "explanation": "结构优先并保留上下文，符合题设；不等于必须使用embedding分句。"
+   },
+   {
+    "label": "C",
+    "explanation": "页面可能截断条款，也可能混合多个主题。"
+   },
+   {
+    "label": "D",
+    "explanation": "单向量可能丢失细节且超过模型长度限制。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "原题把结构分块与语义相似度分块混为同一种。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -4444,7 +5060,7 @@
    },
    {
     "label": "B",
-    "text": "专为非对称检索训练的bi-encoder（如bge-large-en，支持query和passage的不同instruction）",
+    "text": "优先评估专为检索训练的bi-encoder，并遵守具体checkpoint的查询/文档处理契约",
     "right": true
    },
    {
@@ -4458,8 +5074,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n非对称检索（asymmetric retrieval）：短query vs 长document，两者语义密度差异大。专门为此训练的bi-encoder（如bge-large-en-v1.5使用\"Represent this sentence for searching relevant passages: {query}\"指令）在BEIR等非对称检索基准上显著优于普通embedding。E5、GTE等模型也通过指令区分query和passage编码。",
-  "plain": "非对称检索（asymmetric retrieval）：短query vs 长document，两者语义密度差异大。专门为此训练的bi-encoder（如bge-large-en-v1.5使用\"Represent this sentence for searching relevant passages: {query}\"指令）在BEIR等非对称检索基准上显著优于普通embedding。E5、GTE等模型也通过指令区分query和passage编码。",
+  "answer": "B\n\n短查询到长文档可优先评估为检索训练的bi-encoder，并按checkpoint区分查询和文档处理。以BGE v1.5为例，短查询可加检索指令，文档不用同样指令；不是所有模型都使用两种前缀。\n\n逐项判断：\nA：对称编码也可能有效，不能仅凭名称绝对排除。\nB：应选择有检索训练依据且在目标任务验证的模型。\nC：cross-encoder通常输出相关性分数，不提供用于ANN的独立文档向量。\nD：词袋可做稀疏基线，但不是题设的神经语义嵌入模型。",
+  "plain": "短查询到长文档可优先评估为检索训练的bi-encoder，并按checkpoint区分查询和文档处理。以BGE v1.5为例，短查询可加检索指令，文档不用同样指令；不是所有模型都使用两种前缀。\n\n逐项判断：\nA：对称编码也可能有效，不能仅凭名称绝对排除。\nB：应选择有检索训练依据且在目标任务验证的模型。\nC：cross-encoder通常输出相关性分数，不提供用于ANN的独立文档向量。\nD：词袋可做稀疏基线，但不是题设的神经语义嵌入模型。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -4469,16 +5085,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "BGE官方模型卡",
+    "url": "https://huggingface.co/BAAI/bge-large-en-v1.5",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640285,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "对称编码也可能有效，不能仅凭名称绝对排除。"
+   },
+   {
+    "label": "B",
+    "explanation": "应选择有检索训练依据且在目标任务验证的模型。"
+   },
+   {
+    "label": "C",
+    "explanation": "cross-encoder通常输出相关性分数，不提供用于ANN的独立文档向量。"
+   },
+   {
+    "label": "D",
+    "explanation": "词袋可做稀疏基线，但不是题设的神经语义嵌入模型。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "删模型普遍排名优势，精确说明BGE查询侧指令。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -4918,10 +5571,10 @@
   "topic": "rag",
   "format": "quiz",
   "type": "quiz",
-  "qtype": "single",
+  "qtype": "multi",
   "difficulty": "basic",
-  "title": "以下关于\"Embedding Model Fine-tuning\"（embedding模型微调）对RAG的影响，描述正确的是？",
-  "prompt": "以下关于\"Embedding Model Fine-tuning\"（embedding模型微调）对RAG的影响，描述正确的是？",
+  "title": "对查询和文档共用的嵌入编码器进行领域微调后，哪些说法合理？（多选）",
+  "prompt": "对查询和文档共用的嵌入编码器进行领域微调后，哪些说法合理？（多选）",
   "options": [
    {
     "label": "A",
@@ -4930,7 +5583,7 @@
    },
    {
     "label": "B",
-    "text": "在领域数据上微调embedding模型可以使向量空间更好地反映领域语义，显著提升特定领域的检索召回率",
+    "text": "在匹配的领域数据上微调可能改善召回，但必须通过独立评测验证",
     "right": true
    },
    {
@@ -4940,12 +5593,12 @@
    },
    {
     "label": "D",
-    "text": "微调后的embedding模型与微调前不兼容，需要重建整个索引",
-    "right": false
+    "text": "若共享文档编码器改变，应重新编码文档并构建与新模型兼容的索引",
+    "right": true
    }
   ],
-  "answer": "B\n\n通用embedding模型（如BGE、E5）在特定领域（如法律、医疗、金融）可能对专业术语理解不足。微调方案：使用领域内的（query, positive_passage, hard_negative_passage）三元组，对比学习微调。效果：在领域内任务的召回率通常提升10-20%。注意：微调后确实需要重建索引（新embedding与旧embedding不同空间），但这是一次性操作，之后的检索质量提升是持续的。",
-  "plain": "通用embedding模型（如BGE、E5）在特定领域（如法律、医疗、金融）可能对专业术语理解不足。微调方案：使用领域内的（query, positive_passage, hard_negative_passage）三元组，对比学习微调。效果：在领域内任务的召回率通常提升10-20%。注意：微调后确实需要重建索引（新embedding与旧embedding不同空间），但这是一次性操作，之后的检索质量提升是持续的。",
+  "answer": "B、D\n\n微调可能改善领域召回，也可能过拟合或损伤通用能力。若文档编码器改变，通常要重新编码文档并建立兼容索引；查询端单独训练等特殊方案必须明确说明。不能承诺固定百分比收益。\n\n逐项判断：\nA：参数变化可能影响检索表示，不能断言无影响。\nB：这是可能收益，需要独立测试集证实。\nC：过拟合是风险，不是必然结果。\nD：题设为共享双塔编码器改动，文档向量应重建以与新查询表示匹配。",
+  "plain": "微调可能改善领域召回，也可能过拟合或损伤通用能力。若文档编码器改变，通常要重新编码文档并建立兼容索引；查询端单独训练等特殊方案必须明确说明。不能承诺固定百分比收益。\n\n逐项判断：\nA：参数变化可能影响检索表示，不能断言无影响。\nB：这是可能收益，需要独立测试集证实。\nC：过拟合是风险，不是必然结果。\nD：题设为共享双塔编码器改动，文档向量应重建以与新查询表示匹配。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -4955,16 +5608,56 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "BGE官方模型卡",
+    "url": "https://huggingface.co/BAAI/bge-large-en-v1.5",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640316,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "参数变化可能影响检索表示，不能断言无影响。"
+   },
+   {
+    "label": "B",
+    "explanation": "这是可能收益，需要独立测试集证实。"
+   },
+   {
+    "label": "C",
+    "explanation": "过拟合是风险，不是必然结果。"
+   },
+   {
+    "label": "D",
+    "explanation": "题设为共享双塔编码器改动，文档向量应重建以与新查询表示匹配。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "原单选D与解析自相矛盾；改多选B、D并限定共享编码器改变。",
+   "changed_fields": [
+    "qtype",
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -5038,7 +5731,7 @@
    },
    {
     "label": "B",
-    "text": "BM25基于精确词汇频率统计；SPLADE等稀疏神经嵌入通过BERT学习词汇权重，支持词汇扩展（query中\"犬\"可以匹配文档中\"狗\"），兼顾稀疏性和语义理解",
+    "text": "BM25使用词项统计评分；SPLADE学习词表空间中的稀疏权重与扩展，具体匹配能力取决于模型",
     "right": true
    },
    {
@@ -5052,8 +5745,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nSPLADE（Sparse Lexical And Expansion model）：使用BERT编码query和document，通过ReLU激活产生词表维度的稀疏向量（大多数维度为0，只有重要词有非零权重）。优势：①词汇扩展（语义相近词权重也高）；②稀疏性（可用倒排索引快速检索，类似BM25效率）；③精度优于BM25。Qdrant等向量数据库原生支持sparse vectors，可与dense vectors混合使用（hybrid search）。",
-  "plain": "SPLADE（Sparse Lexical And Expansion model）：使用BERT编码query和document，通过ReLU激活产生词表维度的稀疏向量（大多数维度为0，只有重要词有非零权重）。优势：①词汇扩展（语义相近词权重也高）；②稀疏性（可用倒排索引快速检索，类似BM25效率）；③精度优于BM25。Qdrant等向量数据库原生支持sparse vectors，可与dense vectors混合使用（hybrid search）。",
+  "answer": "正确选项：B。\n\nBM25以词项统计打分；SPLADE通过神经模型产生词表维度的稀疏权重并进行词项扩展。它仍需合适训练与语言覆盖，不保证任意同义词都被扩展，也不保证比BM25固定更快或更准。\n\n逐项判断：\nA：二者可用稀疏索引，但权重来源和扩展机制不同。\nB：描述神经稀疏权重与词项扩展的核心差异。\nC：固定100倍缺少模型和硬件条件。\nD：支持稀疏向量的服务可承载此类表示。",
+  "plain": "BM25以词项统计打分；SPLADE通过神经模型产生词表维度的稀疏权重并进行词项扩展。它仍需合适训练与语言覆盖，不保证任意同义词都被扩展，也不保证比BM25固定更快或更准。\n\n逐项判断：\nA：二者可用稀疏索引，但权重来源和扩展机制不同。\nB：描述神经稀疏权重与词项扩展的核心差异。\nC：固定100倍缺少模型和硬件条件。\nD：支持稀疏向量的服务可承载此类表示。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -5063,16 +5756,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "SPLADE原论文",
+    "url": "https://arxiv.org/abs/2107.05720",
+    "kind": "paper",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640318,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "二者可用稀疏索引，但权重来源和扩展机制不同。"
+   },
+   {
+    "label": "B",
+    "explanation": "描述神经稀疏权重与词项扩展的核心差异。"
+   },
+   {
+    "label": "C",
+    "explanation": "固定100倍缺少模型和硬件条件。"
+   },
+   {
+    "label": "D",
+    "explanation": "支持稀疏向量的服务可承载此类表示。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正ReLU就保证稀疏、通用同义匹配及类似BM25速度的简化。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -5578,7 +6308,7 @@
    },
    {
     "label": "B",
-    "text": "基于文档结构的章节级分块（识别Abstract/Introduction/Methods等标题）",
+    "text": "按章节/小节结构组织，并对超过预算的单元二次切分",
     "right": true
    },
    {
@@ -5592,8 +6322,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n科学论文有明确的章节结构（摘要/引言/方法/结果/讨论/结论），按章节分块可以：1) 保持每个章节的完整语义；2) 为不同部分添加章节类型元数据（查方法时搜索Methods块）；3) 支持细粒度的信息检索（只看实验结果vs.理论方法）。",
-  "plain": "科学论文有明确的章节结构（摘要/引言/方法/结果/讨论/结论），按章节分块可以：1) 保持每个章节的完整语义；2) 为不同部分添加章节类型元数据（查方法时搜索Methods块）；3) 支持细粒度的信息检索（只看实验结果vs.理论方法）。",
+  "answer": "B\n\n论文具有标题层级时可先按章节或小节组织，再对长段落和表格做长度控制，保留章节类型与原文定位。整章可能超过模型窗口，不应将每章固定视为一个块。\n\n逐项判断：\nA：随机切分丢失可利用的结构。\nB：结构优先并对过长单元继续切分，便于定位方法或结果。\nC：固定字符数可兜底，但单独使用会忽略章节。\nD：只索引摘要无法回答方法细节等问题。",
+  "plain": "论文具有标题层级时可先按章节或小节组织，再对长段落和表格做长度控制，保留章节类型与原文定位。整章可能超过模型窗口，不应将每章固定视为一个块。\n\n逐项判断：\nA：随机切分丢失可利用的结构。\nB：结构优先并对过长单元继续切分，便于定位方法或结果。\nC：固定字符数可兜底，但单独使用会忽略章节。\nD：只索引摘要无法回答方法细节等问题。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -5603,16 +6333,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640438,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "随机切分丢失可利用的结构。"
+   },
+   {
+    "label": "B",
+    "explanation": "结构优先并对过长单元继续切分，便于定位方法或结果。"
+   },
+   {
+    "label": "C",
+    "explanation": "固定字符数可兜底，但单独使用会忽略章节。"
+   },
+   {
+    "label": "D",
+    "explanation": "只索引摘要无法回答方法细节等问题。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "补章节过长二次切分条件。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -5700,8 +6467,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nLangChain的RecursiveCharacterTextSplitter按优先级使用分隔符（\\n\\n, \\n, 空格, 字符）递归分块，尽量在语义边界处分割。配合Parent Document Retriever，子块用于检索，子块ID指向父块，检索时返回父块完整内容。",
-  "plain": "LangChain的RecursiveCharacterTextSplitter按优先级使用分隔符（\\n\\n, \\n, 空格, 字符）递归分块，尽量在语义边界处分割。配合Parent Document Retriever，子块用于检索，子块ID指向父块，检索时返回父块完整内容。",
+  "answer": "B\n\n父子检索需要维护子块到父文档的明确映射。子块用于搜索，命中后取父内容作为上下文；递归字符分割只提供切块，并不会自动创建父子索引或保证语义完整。\n\n逐项判断：\nA：随机切分本身不建立父子映射。\nB：切分器加显式父文档映射可实现题设能力。\nC：按段落也能搭配父子索引，但仅分段不会自动提供回取。\nD：按字节切分不保证字符及语义边界，也不提供父级映射。",
+  "plain": "父子检索需要维护子块到父文档的明确映射。子块用于搜索，命中后取父内容作为上下文；递归字符分割只提供切块，并不会自动创建父子索引或保证语义完整。\n\n逐项判断：\nA：随机切分本身不建立父子映射。\nB：切分器加显式父文档映射可实现题设能力。\nC：按段落也能搭配父子索引，但仅分段不会自动提供回取。\nD：按字节切分不保证字符及语义边界，也不提供父级映射。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -5711,16 +6478,52 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640416,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "随机切分本身不建立父子映射。"
+   },
+   {
+    "label": "B",
+    "explanation": "切分器加显式父文档映射可实现题设能力。"
+   },
+   {
+    "label": "C",
+    "explanation": "按段落也能搭配父子索引，但仅分段不会自动提供回取。"
+   },
+   {
+    "label": "D",
+    "explanation": "按字节切分不保证字符及语义边界，也不提供父级映射。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "区分切分器与父子检索器职责，不依赖过时导入路径。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -5740,7 +6543,7 @@
    },
    {
     "label": "B",
-    "text": "相邻分块共享一定数量的token（如50-100 tokens重叠），防止关键信息恰好在分块边界处被截断，提升边界区域的检索召回",
+    "text": "让相邻分块共享部分内容，可能缓解边界信息缺失，但会增加重复与索引成本，效果需验证",
     "right": true
    },
    {
@@ -5754,8 +6557,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nChunk overlap（分块重叠）是防止\"边界信息丢失\"的重要技术：若关键句子恰好跨越两个chunk的边界，两个chunk都会包含这句话的一部分，单独看都不完整。加入重叠（如overlap=50 tokens）确保每个chunk包含前后文片段，提升边界区域信息的完整性。代价：索引中存在重复内容（存储成本+1%~20%），检索可能返回重复chunk（需要去重）。通常overlap=10-20%的chunk_size是合理设置。",
-  "plain": "Chunk overlap（分块重叠）是防止\"边界信息丢失\"的重要技术：若关键句子恰好跨越两个chunk的边界，两个chunk都会包含这句话的一部分，单独看都不完整。加入重叠（如overlap=50 tokens）确保每个chunk包含前后文片段，提升边界区域信息的完整性。代价：索引中存在重复内容（存储成本+1%~20%），检索可能返回重复chunk（需要去重）。通常overlap=10-20%的chunk_size是合理设置。",
+  "answer": "正确选项：B。\n\n重叠可缓解块边界附近的信息断裂，但不是完整性保证；跨度超过重叠区的关系仍可能丢失。重叠增加存储与重复召回，需要去重和同预算比较。比例应按语料评测，不承诺固定成本区间。\n\n逐项判断：\nA：成本增加不意味着应完全禁止，要看是否补足边界信息。\nB：适度重叠提供邻近上下文，但效果需验证。\nC：100%重叠不能有效推进切分，还造成冗余。\nD：稠密和稀疏检索都可能受边界影响。",
+  "plain": "重叠可缓解块边界附近的信息断裂，但不是完整性保证；跨度超过重叠区的关系仍可能丢失。重叠增加存储与重复召回，需要去重和同预算比较。比例应按语料评测，不承诺固定成本区间。\n\n逐项判断：\nA：成本增加不意味着应完全禁止，要看是否补足边界信息。\nB：适度重叠提供邻近上下文，但效果需验证。\nC：100%重叠不能有效推进切分，还造成冗余。\nD：稠密和稀疏检索都可能受边界影响。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -5765,16 +6568,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640340,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "成本增加不意味着应完全禁止，要看是否补足边界信息。"
+   },
+   {
+    "label": "B",
+    "explanation": "适度重叠提供邻近上下文，但效果需验证。"
+   },
+   {
+    "label": "C",
+    "explanation": "100%重叠不能有效推进切分，还造成冗余。"
+   },
+   {
+    "label": "D",
+    "explanation": "稠密和稀疏检索都可能受边界影响。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "删除固定存储增长1%–20%与确保完整的说法。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -5956,7 +6796,7 @@
    },
    {
     "label": "B",
-    "text": "在提示中要求LLM在每个陈述后标注来源文档ID，并在后处理中验证引用的真实性",
+    "text": "要求关键陈述标注提供的证据ID，并检查引用存在性及对该陈述的支持关系",
     "right": true
    },
    {
@@ -5970,8 +6810,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n引用标注实现：1) 在提示中提供带编号的文档上下文；2) 要求LLM在每个陈述后添加[文档n]标记；3) 后处理阶段验证引用是否真实存在于对应文档（防止幻觉引用）；4) 生成可点击的来源链接。这是企业级RAG的标准功能。",
-  "plain": "引用标注实现：1) 在提示中提供带编号的文档上下文；2) 要求LLM在每个陈述后添加[文档n]标记；3) 后处理阶段验证引用是否真实存在于对应文档（防止幻觉引用）；4) 生成可点击的来源链接。这是企业级RAG的标准功能。",
+  "answer": "正确选项：B。\n\n引用实现需同时检查ID能解析到证据、证据属于当前版本且有权查看，以及证据是否支持该论断。仅有链接或合法编号不能证明答案正确；未知和不支持的论断应标记、重写或拒答。\n\n逐项判断：\nA：任意引用允许捏造来源。\nB：绑定真实证据并核对支持关系，才有可审查的引用。\nC：给文档加编号不自动生成论断与证据的对应。\nD：只标第一段会遗漏其他事实主张。",
+  "plain": "引用实现需同时检查ID能解析到证据、证据属于当前版本且有权查看，以及证据是否支持该论断。仅有链接或合法编号不能证明答案正确；未知和不支持的论断应标记、重写或拒答。\n\n逐项判断：\nA：任意引用允许捏造来源。\nB：绑定真实证据并核对支持关系，才有可审查的引用。\nC：给文档加编号不自动生成论断与证据的对应。\nD：只标第一段会遗漏其他事实主张。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -5981,16 +6821,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640437,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "任意引用允许捏造来源。"
+   },
+   {
+    "label": "B",
+    "explanation": "绑定真实证据并核对支持关系，才有可审查的引用。"
+   },
+   {
+    "label": "C",
+    "explanation": "给文档加编号不自动生成论断与证据的对应。"
+   },
+   {
+    "label": "D",
+    "explanation": "只标第一段会遗漏其他事实主张。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "把引用存在性与内容支持拆成两步。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -6024,8 +6901,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n在高风险领域（医疗诊断、法律咨询、金融建议），RAG的每个答案陈述都需要可追溯到具体来源文档的特定段落，支持人工核查。幻觉溯源通过NLI模型验证每个陈述的来源，并在输出中注明引用，是合规和问责的基础。",
-  "plain": "在高风险领域（医疗诊断、法律咨询、金融建议），RAG的每个答案陈述都需要可追溯到具体来源文档的特定段落，支持人工核查。幻觉溯源通过NLI模型验证每个陈述的来源，并在输出中注明引用，是合规和问责的基础。",
+  "answer": "B\n\n需要严格问责的高风险应用尤其重视论断到原文的可追溯性。自动支持判断只能辅助筛查，仍可能漏判；应保留版本、原文与必要人工复核，不能把NLI分数视为合规证明。\n\n逐项判断：\nA：娱乐应用也可需要溯源，但通常风险约束不同。\nB：高影响决策更需要可核对证据和审查过程。\nC：摘要也可能加入来源没有的细节，不能免除检查。\nD：离线运行不改变内容风险，仍可能需要溯源。",
+  "plain": "需要严格问责的高风险应用尤其重视论断到原文的可追溯性。自动支持判断只能辅助筛查，仍可能漏判；应保留版本、原文与必要人工复核，不能把NLI分数视为合规证明。\n\n逐项判断：\nA：娱乐应用也可需要溯源，但通常风险约束不同。\nB：高影响决策更需要可核对证据和审查过程。\nC：摘要也可能加入来源没有的细节，不能免除检查。\nD：离线运行不改变内容风险，仍可能需要溯源。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -6035,16 +6912,52 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640413,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "娱乐应用也可需要溯源，但通常风险约束不同。"
+   },
+   {
+    "label": "B",
+    "explanation": "高影响决策更需要可核对证据和审查过程。"
+   },
+   {
+    "label": "C",
+    "explanation": "摘要也可能加入来源没有的细节，不能免除检查。"
+   },
+   {
+    "label": "D",
+    "explanation": "离线运行不改变内容风险，仍可能需要溯源。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "删除NLI自动保证合规或每句真实性的暗示。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -6108,32 +7021,32 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "以下关于\"Late Chunking\"（延迟分块）技术的描述，正确的是？",
-  "prompt": "以下关于\"Late Chunking\"（延迟分块）技术的描述，正确的是？",
+  "title": "文档超过长上下文嵌入模型的最大输入窗口时，Late Chunking 应怎样处理？",
+  "prompt": "文档超过长上下文嵌入模型的最大输入窗口时，Late Chunking 应怎样处理？",
   "options": [
    {
     "label": "A",
-    "text": "Late Chunking在检索后才对文档分块",
+    "text": "池化会自动恢复窗口外的全部内容",
     "right": false
    },
    {
     "label": "B",
-    "text": "先用长上下文embedding模型对整个文档编码获得全局感知的token表示，再从这些表示中分块池化得到chunk向量，保留跨chunk的语义信息",
+    "text": "按模型支持的方式处理超长文档，并检查跨窗口关系损失后评测",
     "right": true
    },
    {
     "label": "C",
-    "text": "Late Chunking要求文档长度固定",
+    "text": "只需把输出chunk切小，输入窗口就不再有限制",
     "right": false
    },
    {
     "label": "D",
-    "text": "Late Chunking是一种数据库索引技术",
+    "text": "增大向量维度即可消除输入token上限",
     "right": false
    }
   ],
-  "answer": "B\n\n传统分块先切割再embedding，chunk向量缺乏跨块的上下文信息（如代词指代）。Late Chunking（jina-embeddings提出）：①用支持长上下文的embedding模型对整个文档前向传播，获得每个token的上下文感知表示；②按预定义边界对token表示做mean pooling，得到各chunk的向量。这样chunk向量包含了整个文档的上下文信息，检索质量显著提升（尤其对跨段落引用问题）。",
-  "plain": "传统分块先切割再embedding，chunk向量缺乏跨块的上下文信息（如代词指代）。Late Chunking（jina-embeddings提出）：①用支持长上下文的embedding模型对整个文档前向传播，获得每个token的上下文感知表示；②按预定义边界对token表示做mean pooling，得到各chunk的向量。这样chunk向量包含了整个文档的上下文信息，检索质量显著提升（尤其对跨段落引用问题）。",
+  "answer": "B\n\n长文超过所用嵌入模型窗口时，Late Chunking不能让窗口外信息自动进入token表示。应采用模型支持的长文本处理方案，并检查跨窗口关系损失；与RGQ-0067的原理主问组成失败场景变式。\n\n逐项判断：\nA：窗口外信息未被编码，不能从池化中恢复。\nB：先处理模型窗口与跨窗口关系，再比较策略，符合题设。\nC：切得更细不能使未编码的上下文出现。\nD：增加向量维度不等于扩大token输入窗口。",
+  "plain": "长文超过所用嵌入模型窗口时，Late Chunking不能让窗口外信息自动进入token表示。应采用模型支持的长文本处理方案，并检查跨窗口关系损失；与RGQ-0067的原理主问组成失败场景变式。\n\n逐项判断：\nA：窗口外信息未被编码，不能从池化中恢复。\nB：先处理模型窗口与跨窗口关系，再比较策略，符合题设。\nC：切得更细不能使未编码的上下文出现。\nD：增加向量维度不等于扩大token输入窗口。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -6143,16 +7056,55 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Late Chunking原论文",
+    "url": "https://arxiv.org/abs/2409.04701",
+    "kind": "paper",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640311,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "窗口外信息未被编码，不能从池化中恢复。"
+   },
+   {
+    "label": "B",
+    "explanation": "先处理模型窗口与跨窗口关系，再比较策略，符合题设。"
+   },
+   {
+    "label": "C",
+    "explanation": "切得更细不能使未编码的上下文出现。"
+   },
+   {
+    "label": "D",
+    "explanation": "增加向量维度不等于扩大token输入窗口。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "原题与RGQ0067同义重复，改为窗口超限诊断变式。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -6726,8 +7678,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nBM25是经典的稀疏检索算法，基于TF-IDF改进，通过词频（TF）和逆文档频率（IDF）计算query-document相关性，只匹配出现在query中的词（稀疏表示）。优点：计算快、可解释、对精确词匹配效果好；缺点：无法理解语义相似性（如\"汽车\"和\"轿车\"不相关）。通常与dense retrieval结合使用（混合检索）。",
-  "plain": "BM25是经典的稀疏检索算法，基于TF-IDF改进，通过词频（TF）和逆文档频率（IDF）计算query-document相关性，只匹配出现在query中的词（稀疏表示）。优点：计算快、可解释、对精确词匹配效果好；缺点：无法理解语义相似性（如\"汽车\"和\"轿车\"不相关）。通常与dense retrieval结合使用（混合检索）。",
+  "answer": "B\n\nBM25是基于词项统计的稀疏词汇检索方法，常用倒排索引。它本身不学习语义向量；分词、同义词扩展和字段处理会影响匹配，不能说任何跨语言或同义情况都无效。\n\n逐项判断：\nA：BM25不产生低维稠密语义向量。\nB：词频、稀有度与长度归一化是其主要机制。\nC：BM25自身不提供神经语义编码，外部扩展另论。\nD：经典BM25不需要训练神经网络。",
+  "plain": "BM25是基于词项统计的稀疏词汇检索方法，常用倒排索引。它本身不学习语义向量；分词、同义词扩展和字段处理会影响匹配，不能说任何跨语言或同义情况都无效。\n\n逐项判断：\nA：BM25不产生低维稠密语义向量。\nB：词频、稀有度与长度归一化是其主要机制。\nC：BM25自身不提供神经语义编码，外部扩展另论。\nD：经典BM25不需要训练神经网络。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -6737,16 +7689,52 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Elasticsearch Similarity/BM25",
+    "url": "https://www.elastic.co/docs/reference/elasticsearch/index-settings/similarity",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640263,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "BM25不产生低维稠密语义向量。"
+   },
+   {
+    "label": "B",
+    "explanation": "词频、稀有度与长度归一化是其主要机制。"
+   },
+   {
+    "label": "C",
+    "explanation": "BM25自身不提供神经语义编码，外部扩展另论。"
+   },
+   {
+    "label": "D",
+    "explanation": "经典BM25不需要训练神经网络。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "保留分类，避免将检索管线能力等同裸BM25。",
+   "changed_fields": [
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -7080,8 +8068,8 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "在RAG系统中，BM25与稠密向量检索（Dense Retrieval）的混合搜索通常比单独使用任一方法更好，原因是？",
-  "prompt": "在RAG系统中，BM25与稠密向量检索（Dense Retrieval）的混合搜索通常比单独使用任一方法更好，原因是？",
+  "title": "为什么值得评估 BM25 与稠密向量检索的混合方案，而不是直接认定某一路最优？",
+  "prompt": "为什么值得评估 BM25 与稠密向量检索的混合方案，而不是直接认定某一路最优？",
   "options": [
    {
     "label": "A",
@@ -7104,8 +8092,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nBM25基于TF-IDF，擅长捕获精确关键词（适合特定术语、人名、代码），稠密检索通过语义向量捕获同义词和上下位关系。混合两者可覆盖更广的查询类型，RRF（Reciprocal Rank Fusion）是常用融合算法。",
-  "plain": "BM25基于TF-IDF，擅长捕获精确关键词（适合特定术语、人名、代码），稠密检索通过语义向量捕获同义词和上下位关系。混合两者可覆盖更广的查询类型，RRF（Reciprocal Rank Fusion）是常用融合算法。",
+  "answer": "B\n\n稀疏与稠密检索可能在精确词、改写和领域表达上互补；混合是否改善取决于两路质量、候选和融合。若两路都错，或融合稀释了正确结果，指标也可能下降。\n\n逐项判断：\nA：不能固定断言一方更快另一方更准。\nB：不同匹配机制提供潜在互补，是合理动机。\nC：去重需要显式ID与规则，不因混合自动完成。\nD：维护两套表示一般增加而非减半存储。",
+  "plain": "稀疏与稠密检索可能在精确词、改写和领域表达上互补；混合是否改善取决于两路质量、候选和融合。若两路都错，或融合稀释了正确结果，指标也可能下降。\n\n逐项判断：\nA：不能固定断言一方更快另一方更准。\nB：不同匹配机制提供潜在互补，是合理动机。\nC：去重需要显式ID与规则，不因混合自动完成。\nD：维护两套表示一般增加而非减半存储。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -7115,16 +8103,54 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Elasticsearch RRF",
+    "url": "https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640360,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "不能固定断言一方更快另一方更准。"
+   },
+   {
+    "label": "B",
+    "explanation": "不同匹配机制提供潜在互补，是合理动机。"
+   },
+   {
+    "label": "C",
+    "explanation": "去重需要显式ID与规则，不因混合自动完成。"
+   },
+   {
+    "label": "D",
+    "explanation": "维护两套表示一般增加而非减半存储。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "把效果保证改为潜在互补和评测要求。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -7134,8 +8160,8 @@
   "type": "quiz",
   "qtype": "single",
   "difficulty": "basic",
-  "title": "在RAG系统中，\"Semantic Chunking\"（语义分块）相比固定大小分块的核心优势是？",
-  "prompt": "在RAG系统中，\"Semantic Chunking\"（语义分块）相比固定大小分块的核心优势是？",
+  "title": "语义分块相对固定长度分块的设计目标是什么？",
+  "prompt": "语义分块相对固定长度分块的设计目标是什么？",
   "options": [
    {
     "label": "A",
@@ -7144,7 +8170,7 @@
    },
    {
     "label": "B",
-    "text": "按语义边界而非字符数分块，保持语义完整性",
+    "text": "依据语义变化选择边界，目标是保留主题关联；是否优于固定分块需评测",
     "right": true
    },
    {
@@ -7158,8 +8184,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n语义分块通过计算相邻句子的嵌入相似度，在语义突变点（相似度下降）处分块，确保每个chunk包含完整的语义单元（如同一话题的多个句子）。相比固定大小分块，语义分块减少了跨语义边界的截断问题。",
-  "plain": "语义分块通过计算相邻句子的嵌入相似度，在语义突变点（相似度下降）处分块，确保每个chunk包含完整的语义单元（如同一话题的多个句子）。相比固定大小分块，语义分块减少了跨语义边界的截断问题。",
+  "answer": "正确选项：B。\n\n基于句子表示变化的语义切分试图沿主题变化形成块，但阈值与模型会影响边界。它不保证每块语义完整，也不必比结构切分更好；需要与固定长度和结构基线比较。\n\n逐项判断：\nA：额外编码和相似度计算通常增加处理成本。\nB：以语义边界为目标是区别，不是效果保证。\nC：块数量受阈值和文本决定，不一定更少。\nD：方法可用于多种语言，但依赖模型语言能力。",
+  "plain": "基于句子表示变化的语义切分试图沿主题变化形成块，但阈值与模型会影响边界。它不保证每块语义完整，也不必比结构切分更好；需要与固定长度和结构基线比较。\n\n逐项判断：\nA：额外编码和相似度计算通常增加处理成本。\nB：以语义边界为目标是区别，不是效果保证。\nC：块数量受阈值和文本决定，不一定更少。\nD：方法可用于多种语言，但依赖模型语言能力。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -7169,16 +8195,55 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640404,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "额外编码和相似度计算通常增加处理成本。"
+   },
+   {
+    "label": "B",
+    "explanation": "以语义边界为目标是区别，不是效果保证。"
+   },
+   {
+    "label": "C",
+    "explanation": "块数量受阈值和文本决定，不一定更少。"
+   },
+   {
+    "label": "D",
+    "explanation": "方法可用于多种语言，但依赖模型语言能力。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "从“确保完整”改为目标与失败边界。",
+   "changed_fields": [
+    "title",
+    "prompt",
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -7360,7 +8425,7 @@
    },
    {
     "label": "B",
-    "text": "在生成时要求模型在答案中标注具体引用来源（passage ID或句子），并验证引用是否真实存在",
+    "text": "限定使用已提供的证据ID，并核对引用是否存在及内容是否支持对应声明",
     "right": true
    },
    {
@@ -7374,8 +8439,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n幻觉引用指模型声称引用了某文档但实际上该文档不支持该观点（或根本没有该文档）。解决方案：①生成时要求LLM输出结构化引用（\"根据文档[1]第3段...\"）；②后处理验证：自动检查引用文档ID是否存在且内容是否支持该声明；③使用专门的Citation Verification模型（如FactScore）。这是企业RAG系统可信度的关键。",
-  "plain": "幻觉引用指模型声称引用了某文档但实际上该文档不支持该观点（或根本没有该文档）。解决方案：①生成时要求LLM输出结构化引用（\"根据文档[1]第3段...\"）；②后处理验证：自动检查引用文档ID是否存在且内容是否支持该声明；③使用专门的Citation Verification模型（如FactScore）。这是企业RAG系统可信度的关键。",
+  "answer": "正确选项：B。\n\n防止幻觉引用要核对证据ID、版本和论断支持关系；模型变大或温度变低都不能替代证据验证。FActScore是细粒度事实评估方法，不宜笼统称作现成的Citation Verification模型。\n\n逐项判断：\nA：更多证据可能增加噪声且不保证引用正确。\nB：存在性与支持性一起核对才针对问题。\nC：大模型仍可能错引或编造。\nD：低温降低随机性，不保证事实正确。",
+  "plain": "防止幻觉引用要核对证据ID、版本和论断支持关系；模型变大或温度变低都不能替代证据验证。FActScore是细粒度事实评估方法，不宜笼统称作现成的Citation Verification模型。\n\n逐项判断：\nA：更多证据可能增加噪声且不保证引用正确。\nB：存在性与支持性一起核对才针对问题。\nC：大模型仍可能错引或编造。\nD：低温降低随机性，不保证事实正确。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -7385,16 +8450,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640305,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "更多证据可能增加噪声且不保证引用正确。"
+   },
+   {
+    "label": "B",
+    "explanation": "存在性与支持性一起核对才针对问题。"
+   },
+   {
+    "label": "C",
+    "explanation": "大模型仍可能错引或编造。"
+   },
+   {
+    "label": "D",
+    "explanation": "低温降低随机性，不保证事实正确。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正FActScore类别，明确核对支持关系。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -8332,7 +9434,7 @@
    },
    {
     "label": "B",
-    "text": "k是平滑参数，防止排名第1的文档权重过大（分母为rank+k），通常k=60在各任务上表现最稳定",
+    "text": "k用于平滑名次贡献差异，60是常见默认而非所有任务最优",
     "right": true
    },
    {
@@ -8346,8 +9448,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nRRF公式：score(d) = Σ_i 1/(k + rank_i(d))。k的作用：当rank=1时，分数=1/(k+1)；rank=2时=1/(k+2)。k越大，排名1和2的分数差异越小（分布越平滑）；k越小，排名靠前的文档优势越大（分布越尖锐）。原始论文实验表明k=60在多个检索融合任务上都能取得稳定优秀的效果，因此成为事实上的默认值。",
-  "plain": "RRF公式：score(d) = Σ_i 1/(k + rank_i(d))。k的作用：当rank=1时，分数=1/(k+1)；rank=2时=1/(k+2)。k越大，排名1和2的分数差异越小（分布越平滑）；k越小，排名靠前的文档优势越大（分布越尖锐）。原始论文实验表明k=60在多个检索融合任务上都能取得稳定优秀的效果，因此成为事实上的默认值。",
+  "answer": "B\n\nRRF的k位于rank+k分母中。k增大时高低名次的单路贡献差异变小；它不表示路数或每路返回数。60是常见默认，不是所有任务最优，也不会自动截断60名之后结果。\n\n逐项判断：\nA：检索器数量是另一参数。\nB：平滑名次差异正确，最优值需按任务比较。\nC：每路候选数与k独立设置。\nD：是否进入候选由检索窗口决定，不由k直接截断。",
+  "plain": "RRF的k位于rank+k分母中。k增大时高低名次的单路贡献差异变小；它不表示路数或每路返回数。60是常见默认，不是所有任务最优，也不会自动截断60名之后结果。\n\n逐项判断：\nA：检索器数量是另一参数。\nB：平滑名次差异正确，最优值需按任务比较。\nC：每路候选数与k独立设置。\nD：是否进入候选由检索窗口决定，不由k直接截断。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -8357,16 +9459,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Elasticsearch RRF",
+    "url": "https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640341,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "检索器数量是另一参数。"
+   },
+   {
+    "label": "B",
+    "explanation": "平滑名次差异正确，最优值需按任务比较。"
+   },
+   {
+    "label": "C",
+    "explanation": "每路候选数与k独立设置。"
+   },
+   {
+    "label": "D",
+    "explanation": "是否进入候选由检索窗口决定，不由k直接截断。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "删除各任务最稳定的泛化断言。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -8494,7 +9633,7 @@
    },
    {
     "label": "B",
-    "text": "基于HTML标签层次结构（h1/h2/p/div）的语义分块",
+    "text": "利用HTML标题和正文层级组织分块，保留父级路径，对过长节点设后备规则",
     "right": true
    },
    {
@@ -8508,8 +9647,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\nHTML内容有明确的语义层次（标题/段落/列表），按HTML结构分块可以保留文档的自然语义单元，避免在句子中间或段落中间截断。LangChain的HTMLHeaderTextSplitter就是基于这种思路实现的。",
-  "plain": "HTML内容有明确的语义层次（标题/段落/列表），按HTML结构分块可以保留文档的自然语义单元，避免在句子中间或段落中间截断。LangChain的HTMLHeaderTextSplitter就是基于这种思路实现的。",
+  "answer": "正确选项：B。\n\n网页可先剔除导航等噪声，按标题、段落和列表组织内容，再控制块长度并保留URL与标题路径。HTML标签不都表达语义层级，div尤其可能只是布局；动态页面还需确认实际正文被提取。\n\n逐项判断：\nA：固定切分可兜底，但忽略可用标题信息。\nB：利用真实标题和内容结构是可解释起点，不应机械按每个div切。\nC：按句可保留局部结构，仍需父级标题与长度控制。\nD：按词切会损失上下文。",
+  "plain": "网页可先剔除导航等噪声，按标题、段落和列表组织内容，再控制块长度并保留URL与标题路径。HTML标签不都表达语义层级，div尤其可能只是布局；动态页面还需确认实际正文被提取。\n\n逐项判断：\nA：固定切分可兜底，但忽略可用标题信息。\nB：利用真实标题和内容结构是可解释起点，不应机械按每个div切。\nC：按句可保留局部结构，仍需父级标题与长度控制。\nD：按词切会损失上下文。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -8519,16 +9658,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Anthropic Contextual Retrieval",
+    "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640400,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "固定切分可兜底，但忽略可用标题信息。"
+   },
+   {
+    "label": "B",
+    "explanation": "利用真实标题和内容结构是可解释起点，不应机械按每个div切。"
+   },
+   {
+    "label": "C",
+    "explanation": "按句可保留局部结构，仍需父级标题与长度控制。"
+   },
+   {
+    "label": "D",
+    "explanation": "按词切会损失上下文。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "区分HTML布局标签与真实内容结构。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {
@@ -8710,7 +9886,7 @@
    },
    {
     "label": "B",
-    "text": "对初步检索（top-k）的文档进行精细打分重排，提升最终top-n的质量",
+    "text": "对初步检索候选重新评分排序，目标是改善最终证据顺序，效果需在目标任务验证",
     "right": true
    },
    {
@@ -8724,8 +9900,8 @@
     "right": false
    }
   ],
-  "answer": "B\n\n向量检索（ANN）速度快但精度有限，通常检索top-50~100个候选。Reranker（cross-encoder）对query和每个候选文档进行全文对比打分（而非向量内积），精度更高但计算量大（O(n×query×doc_len)）。实际流程：ANN检索top-100（召回阶段）→Reranker精排top-5（精度阶段），兼顾效率和质量。",
-  "plain": "向量检索（ANN）速度快但精度有限，通常检索top-50~100个候选。Reranker（cross-encoder）对query和每个候选文档进行全文对比打分（而非向量内积），精度更高但计算量大（O(n×query×doc_len)）。实际流程：ANN检索top-100（召回阶段）→Reranker精排top-5（精度阶段），兼顾效率和质量。",
+  "answer": "正确选项：B。\n\n重排对已召回候选重新打分并排序，通常用于改善传给生成器的前排证据；它无法找回从未进入候选池的文档。候选数、文本长度和模型决定成本，不固定为top100到top5。\n\n逐项判断：\nA：全库逐对打分可以做，但不是题设两阶段重排职责。\nB：对候选重排是职责，质量提升需在目标集验证。\nC：查询改写属于另一环节。\nD：拼接上下文是组装环节，不是相关性打分。",
+  "plain": "重排对已召回候选重新打分并排序，通常用于改善传给生成器的前排证据；它无法找回从未进入候选池的文档。候选数、文本长度和模型决定成本，不固定为top100到top5。\n\n逐项判断：\nA：全库逐对打分可以做，但不是题设两阶段重排职责。\nB：对候选重排是职责，质量提升需在目标集验证。\nC：查询改写属于另一环节。\nD：拼接上下文是组装环节，不是相关性打分。",
   "tags": [
    "RAG",
    "牛客题库"
@@ -8735,16 +9911,53 @@
     "name": "牛客人工智能题库(官方解析随题)",
     "kind": "web",
     "note": "牛客网公开题库,含官方解析;抓取于 2026-09-16"
+   },
+   {
+    "name": "Sentence Transformers Retrieve and Re-Rank",
+    "url": "https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html",
+    "kind": "official-docs",
+    "note": "2026-09-29支持特定机制/边界；非本人的项目实测结果。"
    }
   ],
   "verify": {
    "status": "partial",
-   "checked_date": "2026-09-16",
-   "note": "选择题:题干/选项/官方解析来自牛客公开题库,逐字保留;格式为选择题分支,不做十要素叙述改写。"
+   "checked_date": "2026-09-29",
+   "note": "保留牛客导入出处；本站已逐项审校并独立改写解析。具体一手核验范围见content-reviews，未实测模型效果。"
   },
   "metadata": {
    "nowcoder_id": 11640268,
    "src_file": ""
+  },
+  "optionExplanations": [
+   {
+    "label": "A",
+    "explanation": "全库逐对打分可以做，但不是题设两阶段重排职责。"
+   },
+   {
+    "label": "B",
+    "explanation": "对候选重排是职责，质量提升需在目标集验证。"
+   },
+   {
+    "label": "C",
+    "explanation": "查询改写属于另一环节。"
+   },
+   {
+    "label": "D",
+    "explanation": "拼接上下文是组装环节，不是相关性打分。"
+   }
+  ],
+  "content_version": {
+   "rev": "core-review-20260929",
+   "date": "2026-09-29",
+   "summary": "纠正复杂度简式及固定候选规模，补召回上限。",
+   "changed_fields": [
+    "options",
+    "answer",
+    "plain",
+    "sources",
+    "verify",
+    "optionExplanations"
+   ]
   }
  },
  {

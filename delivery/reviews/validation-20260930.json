@@ -1,0 +1,905 @@
+{
+  "recordedAt": "2026-09-29T17:12:43.804717+00:00",
+  "localDate": "2026-09-30",
+  "branch": "codex/dev",
+  "baselineCommit": "336c0f9f5fd840e6b6057264c23a7f1f18f0f8c4",
+  "scope": "Functional and core-content delivery; performance acceptance remains incomplete.",
+  "environment": {
+    "os": "Windows 11 Home Chinese 10.0.26200",
+    "cpu": "Intel Core i5-13500H",
+    "python": "3.13.9",
+    "node": "v24.19.0",
+    "chromium": "148.0.7778.96",
+    "browserExecution": "headless; disposable test contexts"
+  },
+  "functional": {
+    "suites": [
+      {
+        "suite": "tests/ai-series-test.js",
+        "exitCode": 0,
+        "seconds": 1.49,
+        "log": "output/validation/tests_ai-series-test.js.log"
+      },
+      {
+        "suite": "tests/asset-loader-test.js",
+        "exitCode": 0,
+        "seconds": 0.17,
+        "log": "output/validation/tests_asset-loader-test.js.log"
+      },
+      {
+        "suite": "tests/behavior-tests.js",
+        "exitCode": 0,
+        "seconds": 0.93,
+        "log": "output/validation/tests_behavior-tests.js.log"
+      },
+      {
+        "suite": "tests/data-loader-test.js",
+        "exitCode": 0,
+        "seconds": 0.12,
+        "log": "output/validation/tests_data-loader-test.js.log"
+      },
+      {
+        "suite": "tests/express-card-test.js",
+        "exitCode": 0,
+        "seconds": 0.07,
+        "log": "output/validation/tests_express-card-test.js.log"
+      },
+      {
+        "suite": "tests/fusion-review-guard-test.js",
+        "exitCode": 0,
+        "seconds": 0.07,
+        "log": "output/validation/tests_fusion-review-guard-test.js.log"
+      },
+      {
+        "suite": "tests/learning-records-test.js",
+        "exitCode": 0,
+        "seconds": 0.23,
+        "log": "output/validation/tests_learning-records-test.js.log"
+      },
+      {
+        "suite": "tests/legacy-archive-test.js",
+        "exitCode": 0,
+        "seconds": 5.42,
+        "log": "output/validation/tests_legacy-archive-test.js.log"
+      },
+      {
+        "suite": "tests/legacy-null-snapshot-test.js",
+        "exitCode": 0,
+        "seconds": 0.26,
+        "log": "output/validation/tests_legacy-null-snapshot-test.js.log"
+      },
+      {
+        "suite": "tests/mock-revision-test.js",
+        "exitCode": 0,
+        "seconds": 0.12,
+        "log": "output/validation/tests_mock-revision-test.js.log"
+      },
+      {
+        "suite": "tests/pi-agent-test.js",
+        "exitCode": 0,
+        "seconds": 1.67,
+        "log": "output/validation/tests_pi-agent-test.js.log"
+      },
+      {
+        "suite": "tests/preview-restore-test.js",
+        "exitCode": 0,
+        "seconds": 0.1,
+        "log": "output/validation/tests_preview-restore-test.js.log"
+      },
+      {
+        "suite": "tests/project-card-test.js",
+        "exitCode": 0,
+        "seconds": 0.33,
+        "log": "output/validation/tests_project-card-test.js.log"
+      },
+      {
+        "suite": "tests/record-boundary-test.js",
+        "exitCode": 0,
+        "seconds": 0.13,
+        "log": "output/validation/tests_record-boundary-test.js.log"
+      },
+      {
+        "suite": "tests/regression-tests.js",
+        "exitCode": 0,
+        "seconds": 0.09,
+        "log": "output/validation/tests_regression-tests.js.log"
+      },
+      {
+        "suite": "tests/remote-merge-test.js",
+        "exitCode": 0,
+        "seconds": 0.09,
+        "log": "output/validation/tests_remote-merge-test.js.log"
+      },
+      {
+        "suite": "tests/save-notification-test.js",
+        "exitCode": 0,
+        "seconds": 0.09,
+        "log": "output/validation/tests_save-notification-test.js.log"
+      },
+      {
+        "suite": "tests/save-protocol-test.js",
+        "exitCode": 0,
+        "seconds": 0.08,
+        "log": "output/validation/tests_save-protocol-test.js.log"
+      },
+      {
+        "suite": "tests/search-cache-test.js",
+        "exitCode": 0,
+        "seconds": 0.1,
+        "log": "output/validation/tests_search-cache-test.js.log"
+      },
+      {
+        "suite": "tests/search-progressive-test.js",
+        "exitCode": 0,
+        "seconds": 0.21,
+        "log": "output/validation/tests_search-progressive-test.js.log"
+      },
+      {
+        "suite": "tests/shell-cache-stamp-test.js",
+        "exitCode": 0,
+        "seconds": 0.13,
+        "log": "output/validation/tests_shell-cache-stamp-test.js.log"
+      },
+      {
+        "suite": "tests/srs-test.js",
+        "exitCode": 0,
+        "seconds": 0.09,
+        "log": "output/validation/tests_srs-test.js.log"
+      },
+      {
+        "suite": "tests/stage4-pause-test.js",
+        "exitCode": 0,
+        "seconds": 0.09,
+        "log": "output/validation/tests_stage4-pause-test.js.log"
+      },
+      {
+        "suite": "tests/baseline2/issues-node-test.js",
+        "exitCode": 0,
+        "seconds": 0.08,
+        "log": "output/validation/tests_baseline2_issues-node-test.js.log"
+      },
+      {
+        "suite": "tests/ai-series-math-test.py",
+        "exitCode": 0,
+        "seconds": 0.48,
+        "log": "output/validation/tests_ai-series-math-test.py.log"
+      },
+      {
+        "suite": "tests/core-content-test.py",
+        "exitCode": 0,
+        "seconds": 1.02,
+        "log": "output/validation/tests_core-content-test.py.log"
+      },
+      {
+        "suite": "tests/lp003_mock_test.py",
+        "exitCode": 0,
+        "seconds": 5.16,
+        "log": "output/validation/tests_lp003_mock_test.py.log"
+      },
+      {
+        "suite": "tests/path_exercise_test.py",
+        "exitCode": 0,
+        "seconds": 9.73,
+        "log": "output/validation/tests_path_exercise_test.py.log"
+      },
+      {
+        "suite": "tests/proj_a_test.py",
+        "exitCode": 0,
+        "seconds": 0.68,
+        "log": "output/validation/tests_proj_a_test.py.log"
+      },
+      {
+        "suite": "tests/proj_c_claims_test.py",
+        "exitCode": 0,
+        "seconds": 0.23,
+        "log": "output/validation/tests_proj_c_claims_test.py.log"
+      },
+      {
+        "suite": "tests/proj_c_layers_test.py",
+        "exitCode": 0,
+        "seconds": 0.21,
+        "log": "output/validation/tests_proj_c_layers_test.py.log"
+      },
+      {
+        "suite": "tests/proj_c_test.py",
+        "exitCode": 0,
+        "seconds": 0.17,
+        "log": "output/validation/tests_proj_c_test.py.log"
+      },
+      {
+        "suite": "tests/browser/a11y-360.js",
+        "exitCode": 0,
+        "seconds": 8.95,
+        "log": "output/validation/tests_browser_a11y-360.js.log"
+      },
+      {
+        "suite": "tests/browser/ai-series.js",
+        "exitCode": 0,
+        "seconds": 6.56,
+        "log": "output/validation/tests_browser_ai-series.js.log"
+      },
+      {
+        "suite": "tests/browser/concurrency-matrix.js",
+        "exitCode": 0,
+        "seconds": 17.23,
+        "log": "output/validation/tests_browser_concurrency-matrix.js.log"
+      },
+      {
+        "suite": "tests/browser/data-split.js",
+        "exitCode": 0,
+        "seconds": 2.92,
+        "log": "output/validation/tests_browser_data-split.js.log"
+      },
+      {
+        "suite": "tests/browser/e2e-acceptance.js",
+        "exitCode": 0,
+        "seconds": 18.06,
+        "log": "output/validation/tests_browser_e2e-acceptance.js.log"
+      },
+      {
+        "suite": "tests/browser/followup.js",
+        "exitCode": 0,
+        "seconds": 5.69,
+        "log": "output/validation/tests_browser_followup.js.log"
+      },
+      {
+        "suite": "tests/browser/guides-offline.js",
+        "exitCode": 0,
+        "seconds": 6.98,
+        "log": "output/validation/tests_browser_guides-offline.js.log"
+      },
+      {
+        "suite": "tests/browser/hardening.js",
+        "exitCode": 0,
+        "seconds": 3.31,
+        "log": "output/validation/tests_browser_hardening.js.log"
+      },
+      {
+        "suite": "tests/browser/highlight.js",
+        "exitCode": 0,
+        "seconds": 3.28,
+        "log": "output/validation/tests_browser_highlight.js.log"
+      },
+      {
+        "suite": "tests/browser/lazy-loading.js",
+        "exitCode": 0,
+        "seconds": 8.07,
+        "log": "output/validation/tests_browser_lazy-loading.js.log"
+      },
+      {
+        "suite": "tests/browser/learning-integrity.js",
+        "exitCode": 0,
+        "seconds": 13.37,
+        "log": "output/validation/tests_browser_learning-integrity.js.log"
+      },
+      {
+        "suite": "tests/browser/legacy-null-snapshot.js",
+        "exitCode": 0,
+        "seconds": 3.66,
+        "log": "output/validation/tests_browser_legacy-null-snapshot.js.log"
+      },
+      {
+        "suite": "tests/browser/mock-timer.js",
+        "exitCode": 0,
+        "seconds": 7.59,
+        "log": "output/validation/tests_browser_mock-timer.js.log"
+      },
+      {
+        "suite": "tests/browser/multitab.js",
+        "exitCode": 0,
+        "seconds": 5.37,
+        "log": "output/validation/tests_browser_multitab.js.log"
+      },
+      {
+        "suite": "tests/browser/nowcoder-quiz.js",
+        "exitCode": 0,
+        "seconds": 3.56,
+        "log": "output/validation/tests_browser_nowcoder-quiz.js.log"
+      },
+      {
+        "suite": "tests/browser/pi-agent.js",
+        "exitCode": 0,
+        "seconds": 6.48,
+        "log": "output/validation/tests_browser_pi-agent.js.log"
+      },
+      {
+        "suite": "tests/browser/practice-contract.js",
+        "exitCode": 0,
+        "seconds": 10.52,
+        "log": "output/validation/tests_browser_practice-contract.js.log"
+      },
+      {
+        "suite": "tests/browser/practice-reliability.js",
+        "exitCode": 0,
+        "seconds": 21.51,
+        "log": "output/validation/tests_browser_practice-reliability.js.log"
+      },
+      {
+        "suite": "tests/browser/project-evidence.js",
+        "exitCode": 0,
+        "seconds": 9.95,
+        "log": "output/validation/tests_browser_project-evidence.js.log"
+      },
+      {
+        "suite": "tests/browser/quiz-answer.js",
+        "exitCode": 0,
+        "seconds": 7.65,
+        "log": "output/validation/tests_browser_quiz-answer.js.log"
+      },
+      {
+        "suite": "tests/browser/remote-sync.js",
+        "exitCode": 0,
+        "seconds": 24.25,
+        "log": "output/validation/tests_browser_remote-sync.js.log"
+      },
+      {
+        "suite": "tests/browser/resume-loop.js",
+        "exitCode": 0,
+        "seconds": 4.87,
+        "log": "output/validation/tests_browser_resume-loop.js.log"
+      },
+      {
+        "suite": "tests/browser/resume-view.js",
+        "exitCode": 0,
+        "seconds": 3.88,
+        "log": "output/validation/tests_browser_resume-view.js.log"
+      },
+      {
+        "suite": "tests/browser/revision-flow.js",
+        "exitCode": 0,
+        "seconds": 10.02,
+        "log": "output/validation/tests_browser_revision-flow.js.log"
+      },
+      {
+        "suite": "tests/browser/search-browse-fix.js",
+        "exitCode": 0,
+        "seconds": 3.8,
+        "log": "output/validation/tests_browser_search-browse-fix.js.log"
+      },
+      {
+        "suite": "tests/browser/search-cache.js",
+        "exitCode": 0,
+        "seconds": 4.24,
+        "log": "output/validation/tests_browser_search-cache.js.log"
+      },
+      {
+        "suite": "tests/browser/search-legacy.js",
+        "exitCode": 0,
+        "seconds": 4.13,
+        "log": "output/validation/tests_browser_search-legacy.js.log"
+      },
+      {
+        "suite": "tests/browser/srs.js",
+        "exitCode": 0,
+        "seconds": 5.83,
+        "log": "output/validation/tests_browser_srs.js.log"
+      },
+      {
+        "suite": "tests/browser/stage4-matrix.js",
+        "exitCode": 0,
+        "seconds": 7.09,
+        "log": "output/validation/tests_browser_stage4-matrix.js.log"
+      },
+      {
+        "suite": "tests/browser/stats-view.js",
+        "exitCode": 0,
+        "seconds": 2.63,
+        "log": "output/validation/tests_browser_stats-view.js.log"
+      },
+      {
+        "suite": "tests/browser/sw-topic-cache.js",
+        "exitCode": 0,
+        "seconds": 2.67,
+        "log": "output/validation/tests_browser_sw-topic-cache.js.log"
+      },
+      {
+        "suite": "tests/browser/ui-repro.js",
+        "exitCode": 0,
+        "seconds": 14.28,
+        "log": "output/validation/tests_browser_ui-repro.js.log"
+      },
+      {
+        "suite": "tests/browser/ux-fixes.js",
+        "exitCode": 0,
+        "seconds": 7.45,
+        "log": "output/validation/tests_browser_ux-fixes.js.log"
+      }
+    ],
+    "passed": 65,
+    "failed": 0,
+    "command": "python tools/validate_all.py --unit --browser --jobs 1",
+    "unitSuites": 32,
+    "browserSuites": 33,
+    "countMeaning": "suites, not assertions; full outputs archived in combinedLog"
+  },
+  "toolChecks": [
+    {
+      "check": "fusion-ai-series",
+      "exitCode": 0,
+      "seconds": 0.48,
+      "log": "output/validation/fusion-ai-series.log"
+    },
+    {
+      "check": "fusion-pi-agent",
+      "exitCode": 0,
+      "seconds": 0.41,
+      "log": "output/validation/fusion-pi-agent.log"
+    },
+    {
+      "check": "content-selftest",
+      "exitCode": 0,
+      "seconds": 0.27,
+      "log": "output/validation/content-selftest.log"
+    },
+    {
+      "check": "sources-selftest",
+      "exitCode": 0,
+      "seconds": 0.33,
+      "log": "output/validation/sources-selftest.log"
+    },
+    {
+      "check": "highlights-selftest",
+      "exitCode": 0,
+      "seconds": 0.18,
+      "log": "output/validation/highlights-selftest.log"
+    },
+    {
+      "check": "content-audit",
+      "exitCode": 0,
+      "seconds": 1.13,
+      "log": "output/validation/content-audit.log"
+    },
+    {
+      "check": "highlight-audit",
+      "exitCode": 0,
+      "seconds": 0.59,
+      "log": "output/validation/highlight-audit.log"
+    },
+    {
+      "check": "source-structure",
+      "exitCode": 0,
+      "seconds": 0.5,
+      "log": "output/validation/source-structure.log"
+    },
+    {
+      "check": "bank-structure",
+      "exitCode": 0,
+      "seconds": 0.98,
+      "log": "output/validation/bank-structure.log"
+    },
+    {
+      "check": "duplicate-candidates",
+      "exitCode": 0,
+      "seconds": 240.3,
+      "log": "output/validation/duplicate-candidates.log"
+    },
+    {
+      "check": "quotes-idempotent",
+      "exitCode": 0,
+      "log": "output/validation/quotes-idempotent.log"
+    },
+    {
+      "check": "javascript-syntax",
+      "exitCode": 0,
+      "log": "output/validation/syntax.log"
+    }
+  ],
+  "build": {
+    "passes": 2,
+    "files": 27,
+    "identical": true,
+    "sha256": {
+      "app/data/assets/docs.4c87e2e04a1b.json": "0eaed81eb2965058266832293658c997c2906ddd26c5d59ab0159e1a0130e43d",
+      "app/data/assets/guides.152ce198af11.json": "2809de074580a46b91f0dabca187b528148185f8d599d41090072ad86c79652c",
+      "app/data/assets/legacy.ed24ca04c75d.json": "b75942c00d06dd5d2b55d16da30f3abcd1d90d2ef193a37beec7f0482baa9600",
+      "app/data/manifest.json": "c1432d860bbe6766e94260d6d8e8c8c7afcfddb6a723cf959595437c9c66710c",
+      "app/data/topics/advanced.4acfd9f736e3.json": "5e5a9b8fd1f82e6ba082dfc5a747b9a3391ebc69c29319de3f050fea7dd3933f",
+      "app/data/topics/agent.209bcaf0c51d.json": "a4672dfa248f3c45d0391bfba3a74eb0055ab2542afdf3e939a6ee2a89cda2a4",
+      "app/data/topics/engineering.90fde6c00a14.json": "92347f49285108b4d986ef946d44b251104d2181268569fc42c0f148406b915c",
+      "app/data/topics/fundamentals.8a49606c92c0.json": "fa32922d596580cda9cb17e39d92480b0b04e734135d5dc2edf3294953636944",
+      "app/data/topics/iv-company.c4350173e5bc.json": "dc36b26fdc3875e3995bcb062b6d11f71bfae712ffca099f74dcde56a1982cb1",
+      "app/data/topics/iv-nowcoder-llm.861fb4992864.json": "947c1b38f2ea9cdf2f3fd26b7422a0dd9a0f7aa48cd58f81ac7ee68997afa274",
+      "app/data/topics/iv-nowcoder-ml.1482f4446af2.json": "3bac6c2eee8923fdaad72df036ca0b2b4b364056f3aa4409a8154039ec83509a",
+      "app/data/topics/langchain.d639b938166a.json": "3b9cac4a252c6647a3148332b1bba1ca08255269393f3a6e700795e345f3e120",
+      "app/data/topics/llm-prompt.ad24e269f528.json": "854d117179d55c03ce23461c8bfcbc797fb84fd26ad8d25bbda15b47163fa394",
+      "app/data/topics/pi-agent.1abcb263ae94.json": "09a31295e69f8e536d2f5005f12080a268a8b08d46b76e5e2941b21817ee3cf0",
+      "app/data/topics/python-backend.3527f8f4cfcf.json": "f758506ffbbfd24c04cba45deb043e7eab2d55d43f5b464b7631a4f5382cb730",
+      "app/data/topics/quiz-cv.6427881cfa58.json": "f68bae73af5a536ab984a1a07135a5b50fc16c53a31c4f6c98512aeaaffa5252",
+      "app/data/topics/quiz-dl.75a2e19c2c05.json": "71e82c07b485ed1327466578d0f44b33cf0e422f7a4cb0f2c2f1f3a2bfd9d8f4",
+      "app/data/topics/quiz-finetune.f61ccd0e9458.json": "d7fd2e473c6069a4fb9b40ca0179f4ebed3a67293605258137cd8865733b462c",
+      "app/data/topics/quiz-inference.f3de481940c2.json": "5d44151abdf9c2ebe5d3168a6a557959762663a4654efcaeed4e9daf62b5ce7d",
+      "app/data/topics/quiz-llm-dev.ae9f069e32ee.json": "59d85aa0db7d306c32f2081eb5778f99ecff1a771752be59cbaf81a3144583cb",
+      "app/data/topics/quiz-llm.589c842a11a7.json": "760c1de81977f4c07195b477df193264897a3c83248ff9c1a6f4a7b46b17bdb9",
+      "app/data/topics/quiz-math.f3dcd7b46f5d.json": "3f31d484a25df1b7533df4d1c674a455d10fc14763fa98635e03d0fc120287d4",
+      "app/data/topics/quiz-ml.5cf7882b6ec5.json": "98d3d8b966a5de36ea002d81d3b29d6026de6aeb00c3fae5eb40096b85aa0ff6",
+      "app/data/topics/rag.3ab7b470989a.json": "0e1e1829a81a4a1f66fa8a02404c5e473d49695d92b8d9d1ec540cc5bbedeb83",
+      "app/data.js": "de281d663caa744cfa1f796cc3ab03a71092bfd58aea58a0fb2951d905bb2996",
+      "app/sw.js": "855c1b263673754ccd17ab486346d8b45dbbecf74600a19a01a50efe645f4d61",
+      "delivery/stats.json": "c0c3a526e6498f50ca9a83a5c946a6862ac11ababd293c790ec0cbe6124de713"
+    }
+  },
+  "performance": {
+    "exitCode": 1,
+    "assertionsEnabled": true,
+    "baselineReport": "delivery/reviews/performance-baseline-20260929.json",
+    "candidateReport": "delivery/reviews/performance-candidate-20260929.json",
+    "baselineSummary": {
+      "coldMedianMs": 36773,
+      "maxDataBytes": 11566840,
+      "maxTopicRequests": 20,
+      "searchP95Ms": 35,
+      "routeP95Ms": 112.30000000004657,
+      "typingP95Ms": 8.700000000186265,
+      "maxColdLongTaskMs": 1668,
+      "maxWarmLongTaskMs": 429
+    },
+    "candidateSummary": {
+      "coldMedianMs": 9331,
+      "maxDataBytes": 1755281,
+      "maxTopicRequests": 1,
+      "searchP95Ms": 53.5,
+      "routeP95Ms": 198.39999999990687,
+      "typingP95Ms": 11.100000000093132,
+      "maxColdLongTaskMs": 2048,
+      "maxWarmLongTaskMs": 844
+    },
+    "budgets": [
+      {
+        "metric": "coldMedianMs",
+        "actual": 9331,
+        "maximum": 8000,
+        "passed": false
+      },
+      {
+        "metric": "maxDataBytes",
+        "actual": 1755281,
+        "maximum": 2000000,
+        "passed": true
+      },
+      {
+        "metric": "maxTopicRequests",
+        "actual": 1,
+        "maximum": 1,
+        "passed": true
+      },
+      {
+        "metric": "searchP95Ms",
+        "actual": 53.5,
+        "maximum": 200,
+        "passed": true
+      },
+      {
+        "metric": "routeP95Ms",
+        "actual": 198.39999999990687,
+        "maximum": 200,
+        "passed": true
+      },
+      {
+        "metric": "typingP95Ms",
+        "actual": 11.100000000093132,
+        "maximum": 100,
+        "passed": true
+      },
+      {
+        "metric": "maxLongTaskMs",
+        "actual": 2048,
+        "maximum": 200,
+        "passed": false
+      }
+    ],
+    "coreShellPlusTopicBytes": {
+      "agent": 1755281,
+      "langchain": 904739,
+      "llm-prompt": 1414517,
+      "python-backend": 1212093,
+      "quiz-llm": 1549615,
+      "rag": 1799324
+    },
+    "failedBudgets": [
+      "coldMedianMs",
+      "maxLongTaskMs"
+    ],
+    "limitations": [
+      "Service Workers blocked; PWA startup not measured.",
+      "Synthetic throttling, not average user speed; desktop background processes not stopped.",
+      "Only AG-001 has five cold timing samples; six core topics checked for bytes.",
+      "Search measures query CPU time; routes and input measure until next animation-frame callback, not exact paint completion.",
+      "P95 route budget passes but first warm route takes 838.2ms; long-task failure retained."
+    ]
+  },
+  "content": {
+    "activeQuestions": 3646,
+    "topics": 20,
+    "documents": 15,
+    "coreReviews": 133,
+    "guides": 17,
+    "corePrimaryChecked": 52,
+    "corePartiallyChecked": 81,
+    "extraReview": [
+      "IVL-0001"
+    ],
+    "legacyQuestions": 254,
+    "contentErrors": 0,
+    "contentWarnings": 24,
+    "structureErrors": 0,
+    "structureWarnings": 172,
+    "duplicateCandidatesAt06": 837,
+    "enumerableSourceUrls": 346,
+    "sourceStructureCheckRequestedNetwork": false,
+    "heavyModelTrainingExecuted": false
+  },
+  "combinedLog": "delivery/reviews/validation-20260930.log",
+  "combinedLogSha256": "ebe3c78b696ef6d1bd53f618f33b4c0176af1ee54b5adb8dd38a68c06e271214",
+  "sourceFingerprints": {
+    "algorithm": "SHA-256; CRLF normalized to LF for text; app/data/tools/tests/.github, excluding logs and bytecode",
+    "files": {
+      "app/css/style.css": "192ae321c62f6c41bc2c733ca3443f92a955a879c3371914055af65506ac3f0b",
+      "app/data/assets/docs.4c87e2e04a1b.json": "0eaed81eb2965058266832293658c997c2906ddd26c5d59ab0159e1a0130e43d",
+      "app/data/assets/guides.152ce198af11.json": "2809de074580a46b91f0dabca187b528148185f8d599d41090072ad86c79652c",
+      "app/data/assets/legacy.ed24ca04c75d.json": "b75942c00d06dd5d2b55d16da30f3abcd1d90d2ef193a37beec7f0482baa9600",
+      "app/data/manifest.json": "c1432d860bbe6766e94260d6d8e8c8c7afcfddb6a723cf959595437c9c66710c",
+      "app/data/topics/advanced.4acfd9f736e3.json": "5e5a9b8fd1f82e6ba082dfc5a747b9a3391ebc69c29319de3f050fea7dd3933f",
+      "app/data/topics/agent.209bcaf0c51d.json": "a4672dfa248f3c45d0391bfba3a74eb0055ab2542afdf3e939a6ee2a89cda2a4",
+      "app/data/topics/engineering.90fde6c00a14.json": "92347f49285108b4d986ef946d44b251104d2181268569fc42c0f148406b915c",
+      "app/data/topics/fundamentals.8a49606c92c0.json": "fa32922d596580cda9cb17e39d92480b0b04e734135d5dc2edf3294953636944",
+      "app/data/topics/iv-company.c4350173e5bc.json": "dc36b26fdc3875e3995bcb062b6d11f71bfae712ffca099f74dcde56a1982cb1",
+      "app/data/topics/iv-nowcoder-llm.861fb4992864.json": "947c1b38f2ea9cdf2f3fd26b7422a0dd9a0f7aa48cd58f81ac7ee68997afa274",
+      "app/data/topics/iv-nowcoder-ml.1482f4446af2.json": "3bac6c2eee8923fdaad72df036ca0b2b4b364056f3aa4409a8154039ec83509a",
+      "app/data/topics/langchain.d639b938166a.json": "3b9cac4a252c6647a3148332b1bba1ca08255269393f3a6e700795e345f3e120",
+      "app/data/topics/llm-prompt.ad24e269f528.json": "854d117179d55c03ce23461c8bfcbc797fb84fd26ad8d25bbda15b47163fa394",
+      "app/data/topics/pi-agent.1abcb263ae94.json": "09a31295e69f8e536d2f5005f12080a268a8b08d46b76e5e2941b21817ee3cf0",
+      "app/data/topics/python-backend.3527f8f4cfcf.json": "f758506ffbbfd24c04cba45deb043e7eab2d55d43f5b464b7631a4f5382cb730",
+      "app/data/topics/quiz-cv.6427881cfa58.json": "f68bae73af5a536ab984a1a07135a5b50fc16c53a31c4f6c98512aeaaffa5252",
+      "app/data/topics/quiz-dl.75a2e19c2c05.json": "71e82c07b485ed1327466578d0f44b33cf0e422f7a4cb0f2c2f1f3a2bfd9d8f4",
+      "app/data/topics/quiz-finetune.f61ccd0e9458.json": "d7fd2e473c6069a4fb9b40ca0179f4ebed3a67293605258137cd8865733b462c",
+      "app/data/topics/quiz-inference.f3de481940c2.json": "5d44151abdf9c2ebe5d3168a6a557959762663a4654efcaeed4e9daf62b5ce7d",
+      "app/data/topics/quiz-llm-dev.ae9f069e32ee.json": "59d85aa0db7d306c32f2081eb5778f99ecff1a771752be59cbaf81a3144583cb",
+      "app/data/topics/quiz-llm.589c842a11a7.json": "760c1de81977f4c07195b477df193264897a3c83248ff9c1a6f4a7b46b17bdb9",
+      "app/data/topics/quiz-math.f3dcd7b46f5d.json": "3f31d484a25df1b7533df4d1c674a455d10fc14763fa98635e03d0fc120287d4",
+      "app/data/topics/quiz-ml.5cf7882b6ec5.json": "98d3d8b966a5de36ea002d81d3b29d6026de6aeb00c3fae5eb40096b85aa0ff6",
+      "app/data/topics/rag.3ab7b470989a.json": "0e1e1829a81a4a1f66fa8a02404c5e473d49695d92b8d9d1ec540cc5bbedeb83",
+      "app/data.js": "de281d663caa744cfa1f796cc3ab03a71092bfd58aea58a0fb2951d905bb2996",
+      "app/icons/icon-192.png": "447ec7fcb0c600b9ec0c9a867654a35a260d85fd04326e6161ad9c250d05a3ff",
+      "app/icons/icon-512.png": "5563d140ca61372f0248a93351a289b1e0a174f34668195e138a641c05567b14",
+      "app/icons/icon-maskable-512.png": "3216c8fd1d63c00aa9f4a40318dddd0d8afa8517f2f97495e8bea21ce4f8182c",
+      "app/index.html": "742eaacb6eb8d6af42d0216ef01a1d03f70ac7cdcbc2676fc8ae11a52cf1e83a",
+      "app/js/app.js": "6cb14111eab63ab0d04f7ff49e2405178f477447ae538232ddc554e5bade0669",
+      "app/js/common.js": "fe1e60e8ed730059fcf97e394097b4a9aa87b0303f8e4034ce1052945a1d267e",
+      "app/js/express.js": "cdf9f8fb1c18707ac482adc39e925fb4e3d518f3a0415963aef32b7349acefd5",
+      "app/js/highlight.js": "9d264cb596ec2b9fda39eb76c4f3330979c6b3f2344accab77e07c13a8d10440",
+      "app/js/markdown.js": "302eb821e6b0886d8c7a7754df1433c7695f95f60565f4e488b227d151ea9000",
+      "app/js/search.js": "970c050f402a53477900e292077f55c37ad02ba6a4f3676c365f9103a9512d56",
+      "app/js/srs.js": "222c164d3947d1b0c98714cc4fcd0f618ffae155653dca4e8a3c1882ed713639",
+      "app/js/store.js": "e6a135a5e35cdc78539e1e9f027af679ce26b916f59599d5416b2a5500488ba1",
+      "app/js/util.js": "e6c55d98ade697d1fe222541accff499ccfddc7ec3b1946ea21dc8793cd795a3",
+      "app/js/views-guides.js": "2f008486eefacd90c3cf7d1adbe90152b0935afc6d1ecf892cf15adf7eb1232a",
+      "app/js/views-knowledge.js": "a02d4ada614e86799c48e5a3a7752fc02b6bf9be98cfda62837c8e8a91ab609c",
+      "app/js/views-practice.js": "bb14514a1c346dbc6e2ff0525d4fa395dbef6cc7baa6dde62d366cf6fd33dd7a",
+      "app/js/views-resume.js": "b3d78005d8cea533650499daa1732ab45d7b15523a980b42cad48447623f8942",
+      "app/js/views-review.js": "4b6f930b02f59a0ba62c6959b0bd747f750ee961597f4bc95d95750850f613c2",
+      "app/js/views-stats.js": "bb9c2d7eb6fd6829d3b5a941a39d43471313daad90bca1e4c57512ddb89632ee",
+      "app/manifest.webmanifest": "d2244d2f183ad5c6a74f83c0bee060901363112b6eea057f346c9c963af1b435",
+      "app/sw.js": "855c1b263673754ccd17ab486346d8b45dbbecf74600a19a01a50efe645f4d61",
+      "data/candidates.json": "18d50808e73963f70ce1df0edebd0e8e668dbbf48b2ad2e1040a4ae4f4841af4",
+      "data/concepts.json": "a7cc540ec9579ac82d5131d605c4e461ee658408870f775f62375c1f16b35797",
+      "data/content-reviews.json": "4d5fa3722d05b9d173740bdf3344eff5cc411998b415af54420568a19b20349a",
+      "data/docs/advanced-0.md": "9bbefb9cae8c7348f1c5ac60828f031b713527a9bda3bede4b378ae26a6fe422",
+      "data/docs/advanced-1.md": "6e6fbafde3bcd40a8c38b714da81722cb83a0f5f212d041c9ec2ea8c1dca5567",
+      "data/docs/agent.md": "a10a5ee4aa230db0dd70499cd24ffb16e2810873b6ba7f21c4593bd6fade8b3c",
+      "data/docs/ai-series.md": "5dc70f8b54a0884cfc32b32585410345ba39ca1b82f2b0fac9e600db6c739f26",
+      "data/docs/eng-2.md": "74acb58d46547203031afad0af33fd11dfe32515413687642b4e06117f85a0d8",
+      "data/docs/engineering.md": "fa7f19c1852a77ebb95f3d0024f00d91953e35dd2168defda665701874103cfd",
+      "data/docs/fundamentals.md": "ad755f512e1602940c99248cecef09f68c4dcf5f4fff06b9605b672d591d43df",
+      "data/docs/guide-1.md": "b78a8ea998de151a3e2414938090b7adfd3651b3b7667ee320a94ccb2d5891fa",
+      "data/docs/langchain.md": "e835a3554d483550af4c24be8a11f2a48c0a28210e3fe86099f58e5d33697e7d",
+      "data/docs/llm-prompt.md": "dd6c5d9d7447412106b16ff4518baff66be4149b746ab15ddf0fd23d6de7fdfd",
+      "data/docs/path-1.md": "48e5ab4ad7f5a1df8c3081dd0dd37b004ed37967b078ee80751b9b5b4b8c9849",
+      "data/docs/pi-agent.md": "89b989ddcfec31ced70cc6847fa44356fdccaff7c3a66654032d8a321b9fa8d4",
+      "data/docs/python-backend.md": "a6534fff164225f66bbceb860bea4557404f310f60a7e8c00dbb5e6728dba560",
+      "data/docs/rag-2.md": "0e462c2a33acee6509e50fcffbf0ddb1f6128f6ff6a4764ed49ff8efd094ce36",
+      "data/docs/rag.md": "2ea7f5046f4699be6125241438b192dfd11703982002c57e28776158f15a9d7b",
+      "data/highlights/advanced.json": "042d7a3365073dd30067fdbe4ff9e5442b6bde78295c5f22813ea70c395eaa30",
+      "data/highlights/agent.json": "02b2e09719e31dc3995997ef8bc6600e1b1d21ac7f8417dfaef52a25ebc4ea69",
+      "data/highlights/engineering.json": "4da50d348d601170e393e6abf36fb0e8ffaaeeac15f3d42acbed499940aa4e74",
+      "data/highlights/fundamentals.json": "0b0f34b618c70464ae6c5365beef8100f3836226e3061960a4ab7939a48ff9a1",
+      "data/highlights/langchain.json": "04256dc0a02d2a08f9f395afe52836b5d410dcaa86d9939c9e6ea9d1f6f134e9",
+      "data/highlights/llm-prompt.json": "a2a166a16d10117f30af54e8f2b7e235d27cb1f2fde38596b9387304003d39ab",
+      "data/highlights/pi-agent.json": "58c52610e69adca088ad3ed91fc06469411a176c3c6e66631cbf0aef6d4c3900",
+      "data/highlights/python-backend.json": "ada298cd211ed260a690161e893cd0bdd7d790992d22efb0c9fb75004bfaf8f2",
+      "data/highlights/rag.json": "2d1efc8c390f9b44cbd6ccb715c41a34bb8fce0d1976d3acaa9d11f4656a77b3",
+      "data/imports/ai-series/fusion-plan.json": "3408c2f11d2aef7edc43c7d2737bf3e4bfa14b001b9a32771c0b0db23a8f2829",
+      "data/imports/ai-series/model-edits.json": "c6cb5f024e92381ab4eb1bae378e98e801bcb8af171947a68f0a441258d34d71",
+      "data/imports/ai-series/new-questions.json": "3f9cd95c4b36d6b53c748579c9c45d5135998931330466e79663fd92cd0015cf",
+      "data/imports/ai-series/runtime-edits.json": "4d5a136504f04080f565ecbefffad77a975661f9430631d1ff2aabdf9dea8cd5",
+      "data/imports/pi-agent/GLOSSARY.md": "2b78382b62f93fd6cbcbd846fcd4494fc971766060288e28632c6e16eec55a41",
+      "data/imports/pi-agent/import-manifest.json": "1feadff1874b1c3d414ac21f20550d353c58c3b0c87c0d2314dce5b87cfec101",
+      "data/imports/pi-agent/questions.json": "f68ce76a622fc9911b400a28e6219fbf9b408127898294958080a692bd96d072",
+      "data/imports/pi-agent/SOURCE_SCOPE.md": "ea246792e8cd40c5d8d4d783831bad9583ca8df1f7baea27a1a6381fdcc56521",
+      "data/interview-guides.json": "4a2ddfa963b555082f04ddba55b6b023d02e761706329608061682b470ee9499",
+      "data/legacy-questions.json": "ab352ae93b87a30a9c14ffcfddfddfb422f353ad5d3f7e7a35d7cf7c5fcc5c77",
+      "data/paths.json": "c38a0a1f59cd33c2325460a05eac78dcdace77cce6e42b2b85105b90db67d922",
+      "data/projects.json": "7a1a199155ef75053b6f1fabae363d42773f4ce731b2c2782a9e22633f3bc799",
+      "data/questions/agent.json": "ca9b2393985d8ac5d8e4a995a7909ff15f427350898d430c934508ce15ad3e93",
+      "data/questions/ai-series-new.json": "bbc2b4720b3ac54485694d46f5d24eceb3a65bd1d1444bb4e0d2abd9d50fa26b",
+      "data/questions/b10-adv.json": "a11cce878982ae6a7eab9dd232f0fa4b28851e4ab116fc38cfd6f2003505ae4f",
+      "data/questions/b11-rag.json": "5f014700ddd74e8409f24b17991f0fe61d596f5ab3b2de22d449fa0cc48d73c9",
+      "data/questions/b12-rag-agent.json": "8813beeb6f9c7dc5fc1261bb46411c0d2f5e87aa5febaf3490cc33e79a0061ae",
+      "data/questions/b13-lp.json": "9e287c2f337c73b01abe98deec306402af4fc4efda4012f27613dd173a453912",
+      "data/questions/b14-python.json": "9fb913eca2484fec4004813770c0f2610683923622d8770a0464d7be2b387c65",
+      "data/questions/b15-eng.json": "c9b706958304a8e85620febbe7633f197fa812ed722682edf0c8f389c8f9899f",
+      "data/questions/b16-agent.json": "bba96868eadb9fd7eeb7c8ebc37e8793e7dbda47936286863884171edfab67b7",
+      "data/questions/b17-python.json": "c5b3ba83069daef404896fb1199182dee6f52330d2f21534e4afe96a2bae3dcb",
+      "data/questions/b18-lp.json": "b202a7fd79b1a945e7f93fb03af989f923cc39a4e51a48695d10b4f2c18ca5d5",
+      "data/questions/b19-rag.json": "4997efeece831b75961aa4f2ba362ac589c1e186e5bf6c185c4e10b429c7e206",
+      "data/questions/b2-agent.json": "96b9c0865fe5bd68112a87cf2d06b98abfa664a0180c656f8a896aa4e69e2c11",
+      "data/questions/b2-eng-fund.json": "05e8affc69ce9238dceef7e36b59f573e0de7ffcc9cf7d938572124879192b8a",
+      "data/questions/b2-llm.json": "689758a67df8fcf932f18360fd27008d55adf250060d0e85ceb83ed365875859",
+      "data/questions/b2-python.json": "ec747e85aa647b7f1655cffe4fdb3f36448c8a0bbf055d391d2cac513d56bd1f",
+      "data/questions/b2-rag.json": "0ac5cff0bb82b8504ccc84cbf35e782f7431798953890186d0a4f5bd3332f183",
+      "data/questions/b20-eng.json": "cfc6cacc24519b1f50f0580717e4c5971148be2dc15c405641242b0ea6937245",
+      "data/questions/b21-agent.json": "446b29239ad35d35232fa10a5eac8c6af74c0de95292ec2d0f31bbad248fcc1e",
+      "data/questions/b22-eng.json": "c30c32ec942b438a17dec4c0c273843426f71425e633cdf0b2ff5cd1caaf37bc",
+      "data/questions/b23-fund-adv.json": "ca2c3ab5328504a1de83710c5d791387cf1c4ce7577cb2cf6cd5f147cacb3dc8",
+      "data/questions/b24-rag.json": "316e5645c431d536855299b19b194ed582ad8c93adb39e89c8053ab212785cf2",
+      "data/questions/b25-eng-py.json": "ac7d32e5f7f4160a927850f8dd6ad0d4f8a100374fbbb4c0567d95385406db18",
+      "data/questions/b26-agent.json": "aa1a590e5ceb7a6cc2e503ad60370e0256e860a033d38ebd4b00fe246d8c97cb",
+      "data/questions/b28-lp-rag.json": "c2d52133cc02c2e3b329359c6fdf15cefe90b57c4c66542b3efca66869a522b7",
+      "data/questions/b29-final.json": "f1e42b65743d8587fc5b3841f64cddabd3ff2ff59c096dc58918ead10c8ed400",
+      "data/questions/b3-agent.json": "72957f832245ba7026cabb95707558cebbde060c297b04da228cb305a808c51e",
+      "data/questions/b3-eng.json": "b2f8ff75a09b5c28d502f9c7c9ca66006985c0f037ef60b65ec123539d21f310",
+      "data/questions/b3-fund-adv.json": "7a463e260c4b3c923ee3b1ef1374a6aabfcbc259ba75ad0c07a1d68ae7252019",
+      "data/questions/b3-llm.json": "9bc7e42d754984005816c2fc6752c30d2b0a6fae938df5ab84c0a27e71117337",
+      "data/questions/b3-python.json": "e55658937c0a1e24b38a972fd81c9aae2c3569b67b049b90b328f00e9a892787",
+      "data/questions/b3-rag.json": "0863bdcb69d5d4a6c253bb40f85363c1b88d5f23230dc2a59842062227a40601",
+      "data/questions/b30-final.json": "c62c3ca7a354e9db1cb69d9f92987157800a91a1482501daa9aad32712339508",
+      "data/questions/b31-final.json": "1b24d32c870cb6d2a2d2c69ca4090dc25ecb7645ac6fbf9578d280f098820aea",
+      "data/questions/b32-final.json": "b03ea4371a61d1e35aa4a31966c0b1cf28d0d12dd569962520e85d7f453c363a",
+      "data/questions/b4-agent-eng-fund.json": "21eee3837ae34c9fad94a9090db8d5fce4143f5f7ba96cc03d9c978f7b735b25",
+      "data/questions/b4-python-llm.json": "8cbbc743d5a74a204a43a634541b724d14d1ee7bf8e49f8a0377722d69a4cfeb",
+      "data/questions/b4-rag.json": "97722779c2fe985bb789326e7618c221158136dbfe50423c6e752c4169b732b9",
+      "data/questions/b5-rag1.json": "eb707f1285dd048d8d196b288b215ffe34dbee715ccb947222e4a28d9b92f58b",
+      "data/questions/b5-rag2.json": "e9184cac22dc57c00209e2f171c5bb16de5551cdc6cc86bab2ff4f9b23f9ff8e",
+      "data/questions/b6-agent1.json": "c5c37afafaa34c4e05e4ddf645b2503185888a664e79f62c68bdc89b76d43c51",
+      "data/questions/b6b-lp.json": "fb64f42ccaf851b8cb0371c070c98c160d44e9017647d8bd10a52c0a21ad5c70",
+      "data/questions/b7-python.json": "a624d1ecd3a37c11484704c1f5f059324c8aed9b4c80fda1438dbb616e9bd0e6",
+      "data/questions/b8-eng.json": "11b847b3999e0e8254cda7efa7a2382490259a60ac3b17f8274ca023a23f299e",
+      "data/questions/b9-fund.json": "f9614498033a2bdefe9aaf2c1833004f58f3211b9eab07f455376bbbc5004ee8",
+      "data/questions/engineering.json": "0a6d5bf8829f88f3c4711ade4181ae7059aaa128336c5376805d121391c76694",
+      "data/questions/fundamentals.json": "31dc887acf143f98d0a10c6de9e655cdb0c8b762b9599815853b00aa860a1a2f",
+      "data/questions/llm-prompt.json": "678783b3aa8c8f1016128321c3e1c2cf1d72e5a3ddbc75880e6faa7c88463429",
+      "data/questions/nk-agent.json": "f1fb1761dab8f6a3a57a6a20133997fd2e07f8c7460fc9ed53633193e4f9335a",
+      "data/questions/nk-iv-company.json": "91c449fcdd15dc4884935fc67fb4d184bf1eba40275b3f38bdc36a3c3333f8db",
+      "data/questions/nk-iv-nowcoder-llm.json": "375ca2d4fa812f1a30df61c16df93181e305ea95a6b9a3be9e15ce982ae38aab",
+      "data/questions/nk-iv-nowcoder-ml.json": "3c982d12c93a33cb277116a0964f6b5a6f0f483a434896c14614ecc2d4d9b886",
+      "data/questions/nk-llm-prompt.json": "4ef02e237e5c544dc728af4b97c533f7ed35b3a79569db3f2280b69618ec8fbf",
+      "data/questions/nk-quiz-cv.json": "3df0e797427f76bfb0f8d9c9c6eb1146cf877c39d466efc125dc8581ff32cf04",
+      "data/questions/nk-quiz-dl.json": "9df77dfa42f37e541c06bbf44b04c8d2d8bf5dfbaa0bdf8e05f3bd6f5eb2a48c",
+      "data/questions/nk-quiz-finetune.json": "ea2e074730ea0ea75266fa86dc32c99655d54ed898365ac13eeb4afc8e43124d",
+      "data/questions/nk-quiz-inference.json": "00fdf4c18d9ecef4fbc7b6bc1b85df279e85198aee05cc983975bd8404a494fa",
+      "data/questions/nk-quiz-llm-dev.json": "6c1ebd59f27f565cbd460b4fa35b0022efa954f86283d94d7484812742c4fc94",
+      "data/questions/nk-quiz-llm.json": "cac9a5136b17c4ca23d0c34c2d59601a27d155dddf7735cc5120270ddd210b7c",
+      "data/questions/nk-quiz-math.json": "1bb6b0d43cc0a9c76e5f4ee6d10a3a20ed851119a272bfb1a1ef890625557674",
+      "data/questions/nk-quiz-ml.json": "f6bc14d7f5c752c78b33d613948740746c71328fcb83ffa0189a40ac6cf2b466",
+      "data/questions/nk-rag.json": "771db6651246cfa393a07cd0965fd137d86e04dc2f9f44254cd7acf43f586625",
+      "data/questions/pi-agent.json": "d6efff7c1ef4feaff1c897afaa0c435d99aa7885c38cec66853d39e69af088bb",
+      "data/questions/python-backend.json": "413ed2c3f63c6d1da11b242d09555ed56c68fc1c6793fb936c7855802e676dda",
+      "data/questions/rag.json": "1aea6d86c21705319c247e9f0d3372d734c2ce69fd992736f2fe3e87adaab8a6",
+      "data/resume-profile.json": "a62351a434af4adb6e144e5fcc5dce3da9551e84faebe8446ec9a2655648eb8a",
+      "data/sources.json": "c9f731e59262e890ef75e5d03cefd025de1946767d6827c43dd381cddc1aefb6",
+      "data/topics.json": "fc183e717bb84b854a57ca2f37bed50150aa67017fad7ef8a7e2280bb1663fa3",
+      "tools/_add_iv_topics.py": "67138f2269b56e8d6e5205a49f7ab42157b44a879e664cd8a990961bce22afb9",
+      "tools/_build_resume_data.py": "b653f5b2613e414e876d0b5c5f511c1e85591612619119926812437a9530dd44",
+      "tools/_dbg2.py": "a6fd4195d7d5a86053be3ab02012539f8eb2eaf69be2906cc68bbd0c89f8f064",
+      "tools/_fix_lp003_escape.py": "c5e2677d3cf8c89a1ce5a2b646593003aed0186e5a4c286b45f8f057e974afcc",
+      "tools/_merge_highlights.py": "0c6f02f2a2dd6bcd04029fbc547061117c00a70a1a3bff272e455ed344f2fdbb",
+      "tools/_patch_b3.py": "4a7829c8458fd77fad551418616d66b7b61c93f6361d2da563058bd758865a87",
+      "tools/_patch_b4_sources.py": "01ee57c03b36eaaf4938884fe08a8064a13365e0240c0acdb64771aac852ef3a",
+      "tools/_patch_content_1.py": "bc66e35ac4dd332c818c48efb8b12d692113bdc234fffd5239c2107c0053d324",
+      "tools/_patch_content_2.py": "3e55cd34ec4dc3964791836abe0dd10bfd342c81338622f729c0329dd3a0613c",
+      "tools/_patch_content_3.py": "fcbe98241684592281bad98140b3e42ae7c4d548f65b7f96caacbbc7fb7fb9d7",
+      "tools/_patch_content_versions.py": "cb9d32894a3e6e09c875c31fd736f0733fc4150b597bcde459081568df2957dc",
+      "tools/_patch_fd027.py": "85022ab021d3940534b1036c267f248de059811ca746ae39bb8c4ace76b4a208",
+      "tools/_patch_lp003_3layer.py": "3efb8c603fc22f7c6ae55a0b95fc7fb3ecc6a4ef5062369c0cb714cb0c6e7965",
+      "tools/_patch_r3_data.py": "e1257eb017e1a8a9a95728d02373465aad86316039952c56651a108d11f5c072",
+      "tools/_patch_r3_sources.py": "7c0f22ef724527440cd2f4e1db901fac3690edb153654be564e00f7949183e8b",
+      "tools/_patch_r3_ui.py": "c26198934bc8f76e474bec8b15100b23d9fd57773947aa611c28890acc01a5ff",
+      "tools/_patch_r4_s3.py": "267fad7f676b81a050cfdefb877983ce657bb286f81c9463a5088b24e665e650",
+      "tools/_patch_r4_s6.py": "ffecbef5fe22e405b9995e014f13c8921ae66e78c5eb64fdbb15647db1af1566",
+      "tools/_patch_r5_explains.py": "4917d346062268cee6e3d8c64ddbf4f512733361383a1f558e61ae48e5b9a930",
+      "tools/_patch_r6_drills.py": "1619a6ae9aae3abb3b98e97dce9211c3a2e65bd6856526e08707bdeb8555c783",
+      "tools/_patch_stage8_content.py": "66b9f73ed2e510d958e74a3eb20a78fb02a7230c07ee3a472632549e16ade322",
+      "tools/_reorder_doc_basics.py": "da76b67d46e90c7faecf65c8e0ceb6cdbaf8dd4b606362776ef11092d5dd34ea",
+      "tools/_write_audit_doc.py": "e05d8da98477f438163649a27f7376a1604df7a4c3a917e7038b744c0a79bad5",
+      "tools/build.py": "e4f23cfa2f04b4ad38a596c2a4d86c0ad66cc785c715a99499f180ff00825f06",
+      "tools/content_audit.py": "5f66b36157c46158bfe440541368f6d28cada43f811203b9eaf457769e59152e",
+      "tools/convert_nowcoder.py": "f74aee5473b298f74489ce6a131c3161598355b03bb2f7a0686895936f82ba34",
+      "tools/convert_nowcoder_interview.py": "97a1b36c513bce6a6335b8e8834334704209e0236b4fd70aefa62ce15563d44a",
+      "tools/dedup_check.py": "f42e781faca54dc4a067598f044cb32aeb3f247776dbc517a7c7ab541a902ede",
+      "tools/fix_quotes.py": "0a8faedee6bdc7a4e4af64226d23c0ebb262e349bb26952ac0bf0026e3b2770d",
+      "tools/fuse-ai-series.js": "865e8161761a0b83ff38ae11bd080b32f17957a2826096a5b3fa0e401b7e9eec",
+      "tools/gen_audit_stats.py": "67c29412dbc43c1d04591daf43aabf0f414e1cbe03166834a08299771856decc",
+      "tools/gen_thin_list.py": "ba054a86bb32308f0053a0785f3743b678a1b305041d08b5bde7304ec9c9e5db",
+      "tools/gen_verify_report.py": "8da2576dbf64a35bcedec9ee0b35719929990a5569de3dd8ee6338548951119e",
+      "tools/highlight_audit.py": "4c950d00963e54d9e825d6dba8f2c5c3c3434f7cf51e9215ce4b0c14159eb3a4",
+      "tools/import-pi-agent.js": "aa87c3e4c0723db7e8533f47767873c17dc8bf3c15540b3e1bcbde2a5bc0ff5a",
+      "tools/README.md": "57aa9788ee0c7f2d57e53f394565eb8708620aac2d74b6afdf2ea5ee0fd5301e",
+      "tools/restore_legacy_questions.py": "b6584fc6ea2dcf0bcbf03599ca6ef1a326610fe5054d61700ecef0027db7b6b9",
+      "tools/serve.py": "b517ff237f1f95452f35d147abeaa240d9605e7280c5efd4a7a21d82da165d0a",
+      "tools/validate_all.py": "1cab745456d6b65347238701dba7b1937567d076475fc282535474e0996c4cf7",
+      "tools/validate_bank.py": "e28b11c5de18d3c1523dda86db722f18a46602928508fcb5e1c9990043717dd3",
+      "tools/verify_sources.py": "a12696f79d7d014fc608dcb42227189b43aa68eb5a61917595e8940a1393602f",
+      "tests/_absence_claim.py": "e8fe84d5d9171922d708ebdf90394ac1a273ddbc9c2f62a3c9ee8ccd86eb7785",
+      "tests/_r13_gather_traces.py": "b65546aabbe560dd50dee4d66b7296d3f47176547c74f0cc012f118f5677632d",
+      "tests/ai-series-math-test.py": "70b81fa7c6ac9350237a9a107bf05fdee4c93dd32481d69a1ce6e6be91e666da",
+      "tests/ai-series-test.js": "e66c6033bbc8d30fbc3f8ebf252631d05d20da1de151abe77e00b9ea5e1eefee",
+      "tests/asset-loader-test.js": "567302b6a90693a98fda671fe129796064752657fe558c4f0f42e0d34a4c4c93",
+      "tests/baseline2/issues-node-test.js": "644f838056096567dcd4be22e1639a792ba3807e7bbd9b7005d98bab2df98888",
+      "tests/behavior-tests.js": "9accc7d7f98623c66ef7a3e379619a11f875c3f8723f2d2750fd470bf172b9d8",
+      "tests/browser/a11y-360.js": "84a88fe1b27ef1379d620963efa8066223842df96b3f54f33179a67625996e6b",
+      "tests/browser/ai-series.js": "87420ede36f748e4fd1f65099af035fb806389f0cd7094370b52359c1e71385e",
+      "tests/browser/concurrency-matrix.js": "eb736a38940ee9bd5132a68b991d0f77ee3da03508100565fca55328ca78a399",
+      "tests/browser/data-split.js": "b8dd60df6ce0b8255c401f793bf1ba8d69f7cc13aea74c0625af355321523c72",
+      "tests/browser/e2e-acceptance.js": "bd82436914f4d23ad819f7dbd427d2c1d05936dd11f6c359ab98b6623f56559d",
+      "tests/browser/followup.js": "72aab9e2fae1b2330d272acebc7b7eaa8df46bbfba5a73c97e6daaaee3be49ad",
+      "tests/browser/guides-offline.js": "d5870b6cab5cce073892f4c1f8468716881858f16822fc70ec6d7ff564668ea1",
+      "tests/browser/hardening.js": "b7ebfe284954f78f4c25cce09041e55b8924807866f69b5df758f1a09a7d18b1",
+      "tests/browser/highlight.js": "cc69c0f7165cfb0734819dc1299275644b13a73eb55048c42558ae3431bba4c3",
+      "tests/browser/lazy-loading.js": "a252e61590e41c0746228a6fd1bfffbfd59c46816b900285347e874c1ac2e268",
+      "tests/browser/learning-integrity.js": "497107c3bf6040fede32feb8ae8e8d3458a7ca50bd2ef08bb34319fb1862b9e7",
+      "tests/browser/legacy-null-snapshot.js": "148632eb87f98d23cfe4a45977fd9e4d2600d05fe7606169cd7a622a89e1a5db",
+      "tests/browser/mock-timer.js": "280e0d8041a0b47598c8d6eb159b918a0c9cae8a7720233646bd7e6db13bcee1",
+      "tests/browser/multitab.js": "bc1b9af9df8d45670d287d713743650a258ece5ebd6feb79dc49fd25f657d7fd",
+      "tests/browser/nowcoder-quiz.js": "25eed7242b48742925a90176a196ce03b3b35163d0a3861a027f532944bcf3e4",
+      "tests/browser/performance.js": "7c66c8cb02cbae36109712514f93d071e2cf237a8149f0e7a77ba695ed43a2ad",
+      "tests/browser/pi-agent.js": "694eb44cd53818587e9cead44b1274e4bbd80b94222c555fe405fcc27662ce96",
+      "tests/browser/practice-contract.js": "b9c274f38661dc25126c9b86d031ecc597d2bd601f6a3a152a4042f0f4199da8",
+      "tests/browser/practice-reliability.js": "fb8bd5892aa7039d841bb97e212fd0bfa65ca9af05645ea04179ac5c5c1f1746",
+      "tests/browser/project-evidence.js": "2ee87a3db34d3962c6a40231f923d7e88649a6df0c50a9434f3be6e7821aa07a",
+      "tests/browser/quiz-answer.js": "eedaad28fcf35d6a1e3388505a72a62334cb6c82d44af953b747b99f8ebd128e",
+      "tests/browser/remote-sync.js": "1eb7076994f3da0866b7153a75c941ae198f75e05d01efead2c6d2a66fa7cae5",
+      "tests/browser/resume-loop.js": "9dc1d9a8fc2466ab757c4a59c4c49771a61594d5f074b12ea3dc5366eeb30edc",
+      "tests/browser/resume-view.js": "301f0d10b28e28b9ef9f3e19e45e282c586e2c0c333028d121061ec64939c71a",
+      "tests/browser/revision-flow.js": "4a6a2675b91a2187586861b5a13a8707fa7c5cd95dde70375b06d04d790ffc6d",
+      "tests/browser/search-browse-fix.js": "463662cd3fe3f3c1a9903e0b29e6a07b55568aaa5f7cc8f38bb830341a8ce2e6",
+      "tests/browser/search-cache.js": "baad2c6fa51cf9d59e7c35c1c0200efabd1ef4ba5919283f3621d5b0cfd6c1be",
+      "tests/browser/search-legacy.js": "1de1e7e727ddb89a372bd47ed7ce8d0a969f2feeafd6ebc3d450803e390710b0",
+      "tests/browser/srs.js": "b7333daeec9222ae4e056797700e9db73c5a1569a1bc7ac48f481a95d4cd3d10",
+      "tests/browser/stage4-matrix.js": "296229e90f62bdf0b90d99af440a4d2b76a3fde6c94df1f4891a3c19e4351241",
+      "tests/browser/stats-view.js": "8d639ecd1da76f35401097352a0527e63438df1c3c390bc018019fd8e2feb122",
+      "tests/browser/sw-topic-cache.js": "bc3a713bd0485e4b852a8bf28c2fdd3aa9a097d07ef90c91bd3ffa6f97c0f3b3",
+      "tests/browser/ui-repro.js": "8053ae544901d5a7f51b0885e232fb48e4eb8eb4c79893af2dd42844092aab06",
+      "tests/browser/ux-fixes.js": "d919eb550e6fb8994d0210039711da355886b5cd1369df86cfaf875a024449b7",
+      "tests/core-content-test.py": "26ce740b2617b2b8c5a1def31378654ca6233a92a20e4e996730455f9085d996",
+      "tests/data-loader-test.js": "e53e03597bca45fefda8eb7d60b282c49d86707db8d6773d8ce0c9f7c649d4e6",
+      "tests/express-card-test.js": "02dcd6a6b85b39e5c1b25300d78f7d11abc7e0305d4d3396ed2cba688d9f5fb4",
+      "tests/fusion-review-guard-test.js": "fd40ab030f309ca28f9a8737c92ff7ea4aa58bbfc2b73a87e2375384c812d808",
+      "tests/learning-records-test.js": "7f2339c79a84dc4e5600d416a43a9b4557489bfc9f117da732aeddf25947b1d6",
+      "tests/legacy-archive-test.js": "58837b97839ec07181cc34878ee35c0471189effc26810aa6cbbed0e50917cb2",
+      "tests/legacy-null-snapshot-test.js": "e607b98cf2da669f2d5e0e9b63c3d6da88eab45e2b5fbf58a053eff738466c7d",
+      "tests/lp003_mock_test.py": "bf0182bc0a388b677eb2bc7b120f0a3e77a50d1841ae4a0cd8c72136587bb126",
+      "tests/mock-revision-test.js": "95f5c9cae088fb85e50d9151f029e963a1ae2b0a5b35679ddea46f43718fab11",
+      "tests/path_exercise_test.py": "f660cf5aea9a4a68524f0fa572f8316346cadda15c09db233172ee413f902e4a",
+      "tests/pi-agent-test.js": "de9519bcba8803bde4600ed0c4c3297c7bb9a8570b79ac25b02fb87bbf1d86d2",
+      "tests/preview-restore-test.js": "5474ca2ea2d96208191010496045ec210c30f978d431aba6f72faee94e13dc18",
+      "tests/proj_a_test.py": "c57049752440c966f487acb4b00d2833ac7b82b280050e4320bb36ba34d537dc",
+      "tests/proj_c_claims_test.py": "333ee863d137a68a167a40c1f3a02261924000f64367038af7bf36b8f526f4a5",
+      "tests/proj_c_layers_test.py": "63487b70311615965ccb110bf40962bf2a563a36865e376b9423007b11a92c9c",
+      "tests/proj_c_test.py": "532f7cf558ab3da149a76aec5bafb8cd93f9794868d0d324cdaf04432d34e19f",
+      "tests/project-card-test.js": "7ddcf275cbffd22e9505206243df94ab2d21921ad01ad017243a9e9c678d37aa",
+      "tests/record-boundary-test.js": "e05ac71fad49bf7b76b08983dc0fc56d71a2e51982c6c56949e4a5b71eba6f57",
+      "tests/regression-tests.js": "79c92b071aced8839de492c762bdea2c3afe183ae8b645dc8f03ff839acf80a2",
+      "tests/remote-merge-test.js": "4f407c9e2ee655854912390b1b88ae90a693165720d377d2746e6ab03136df2a",
+      "tests/save-notification-test.js": "c0933b28e4b859b798831b8d65025ddae487048bf7d035b8215235507c1c25a8",
+      "tests/save-protocol-test.js": "dc1af4f9439442277719d9b45a56cbfab9edec361e337ebfade35cdaecb9f14c",
+      "tests/search-cache-test.js": "23a7d4f767b858ef159b1150afa911bf7225bdf50d705c8cdf31b001423367bf",
+      "tests/search-progressive-test.js": "5fd0827da1dc08f050c5f35d64ed294ba33106ba4922cc2b0fa6aac4cd518e16",
+      "tests/shell-cache-stamp-test.js": "38977d6f1f5a9accb59cf98a73b17c49f76e6158f54b0295d67fc5b040dce4c1",
+      "tests/srs-test.js": "152743e88146ab5d1dcaac3fa2ac47d76bb5b43fa3c862e97236ac1a7ea41c6c",
+      "tests/stage4-pause-test.js": "68969d44e38a1f06a8987eb4704355f6814968f27e810972115323bde2530e80",
+      "tests/validation-report.txt": "e49e3a176bfb39203ed0494d483483a39b76f5174145819b6e12c3fdcd410ef4",
+      ".github/ISSUE_TEMPLATE/config.yml": "280e3b17aea7be13a5bcee6f8b37b43b7823eebc1acdb3a503c7e256d2e6846b",
+      ".github/ISSUE_TEMPLATE/question-feedback.yml": "f009f644bd2a50f8990f3c814b393a6e5f837c23cdcd4f45530f574b0406cd0b",
+      ".github/workflows/validate.yml": "da2202dd4acda270f01dde3cd044183f3db71057f78253260f34337dffa8db48"
+    }
+  }
+}

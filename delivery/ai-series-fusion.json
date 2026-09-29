@@ -1017,7 +1017,12 @@
       "id": "AG-015",
       "disposition": "revised",
       "before_hash": "1e9b57c65b58464c8ff060f1b930d5317596b4a44a2c14b74b0aa61736f364e8",
-      "output_hash": "3246c721f43ffff250a4f93a73bc8f01b9269834ba192c5257e408067d5e6810"
+      "output_hash": "cb79f0a95d9827de967fd49e238d4b1da4b5e687fbda6ad549737eb46605c697",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "3246c721f43ffff250a4f93a73bc8f01b9269834ba192c5257e408067d5e6810"
+      }
     },
     {
       "id": "AG-007",
@@ -1029,13 +1034,23 @@
       "id": "AG-005",
       "disposition": "revised",
       "before_hash": "611daaae4c7e2f15b3faa171378fd01f3fb53f8c062a547c4e29facaa996bf0f",
-      "output_hash": "27cb497a5d9ba339f3355889bc35878bb4a3af20951f2733b5add180b1a63a02"
+      "output_hash": "13d16316df7ca6c188322301f59693cc5ccc1474ad83726435bee3b46ea4abaf",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "27cb497a5d9ba339f3355889bc35878bb4a3af20951f2733b5add180b1a63a02"
+      }
     },
     {
       "id": "AG-023",
       "disposition": "supplemented",
       "before_hash": "c6cfe37ffd7b2eea768ff5eb729f624d0a6a0553dce507d70a84dabfb9a9f027",
-      "output_hash": "f17e44e5026b6595ee0b9c2c24696dbe53194450aa9da18674c8408152e32903"
+      "output_hash": "7d16c513a42c94104ca998ab665d0eceae6dff465ed332aa2f91202ee7a995ae",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "f17e44e5026b6595ee0b9c2c24696dbe53194450aa9da18674c8408152e32903"
+      }
     },
     {
       "id": "AG-008",
@@ -1047,7 +1062,12 @@
       "id": "AG-031",
       "disposition": "supplemented",
       "before_hash": "8cfa051f08e3d54ecafdc26e6b3ffcb05baad659fb1a2afb65b0269b97b7a0cb",
-      "output_hash": "df2a2f7c0a4722e2e0d824a8753b5013094870307552a6e23746ea8c423c5bdd"
+      "output_hash": "65b5643d10f49daf860d47c25aaaef0cb14f9650a4bfc7a332c4182f142bef5e",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "df2a2f7c0a4722e2e0d824a8753b5013094870307552a6e23746ea8c423c5bdd"
+      }
     },
     {
       "id": "AG-010",
@@ -1131,13 +1151,23 @@
       "id": "RG-023",
       "disposition": "supplemented",
       "before_hash": "44398a656457e6fd0315ac4c8e66c2721094856b74376d776779ede1e769e565",
-      "output_hash": "af0ea6f8794c2971b753fc62667d3d1fb6632aa07bf9ec34529893e09906f1a6"
+      "output_hash": "c4ea04676dab28371f85a587048a2ff54352021e3226560099a7bbe9a8c1d6f7",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "af0ea6f8794c2971b753fc62667d3d1fb6632aa07bf9ec34529893e09906f1a6"
+      }
     },
     {
       "id": "RG-051",
       "disposition": "supplemented",
       "before_hash": "abdb1e7f119617985cf27d745b65212839a6c76e96df4f11e5cc0804de6ecbfc",
-      "output_hash": "ff780357d96ea9ef59d2d9e37f0d7514046e8324f1ae22654165530843f8ed07"
+      "output_hash": "5193680a798e1ec2a64096934c508895833fbcaf69f9d033997344a2561cc57e",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "ff780357d96ea9ef59d2d9e37f0d7514046e8324f1ae22654165530843f8ed07"
+      }
     },
     {
       "id": "RG-003",
@@ -1155,7 +1185,12 @@
       "id": "RG-006",
       "disposition": "supplemented",
       "before_hash": "ea5c090b869b24704e8169ab1657f85825c44a7d4eeecd3b9acded2ae9154652",
-      "output_hash": "7f377d6c17a22d08ab2109c5c280d6f620a2211913ec534861d4a6610521f932"
+      "output_hash": "672366567ff5b700fab834b86b7dc306593fc93eefaac0b264f5ee9beac7e815",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "7f377d6c17a22d08ab2109c5c280d6f620a2211913ec534861d4a6610521f932"
+      }
     },
     {
       "id": "RG-007",
@@ -1167,7 +1202,12 @@
       "id": "RG-040",
       "disposition": "supplemented",
       "before_hash": "13c27786857db2446633de40408943eb09748b689589130b4a99909a2487e6eb",
-      "output_hash": "1db955bdaff24ebf482dec401a396e6ebd4346de5d84845a963c27f0847a5892"
+      "output_hash": "488d5c5dbfc2ea12bab8395d83634378183578f60be9c7da8339de43ba8f90a1",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "1db955bdaff24ebf482dec401a396e6ebd4346de5d84845a963c27f0847a5892"
+      }
     },
     {
       "id": "RG-020",
@@ -1191,7 +1231,12 @@
       "id": "RG-011",
       "disposition": "supplemented",
       "before_hash": "e482d505cfd234b6c275e73c2ea6a8acd896320a0197b700e8106c1df4531ebb",
-      "output_hash": "28622ea2f0e91898b2bdda7d67c79a2d814b41b3447f8d7f089f254d70839cee"
+      "output_hash": "a6007bf28e91d6b38cdf48c991b58b2c863e7dfd82275ce045d9cd5973b95b99",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "28622ea2f0e91898b2bdda7d67c79a2d814b41b3447f8d7f089f254d70839cee"
+      }
     },
     {
       "id": "RG-029",
@@ -1209,7 +1254,12 @@
       "id": "RG-014",
       "disposition": "supplemented",
       "before_hash": "af982d4617906e1887238793587e18782257bd8f002f17fe07f871698a0d2039",
-      "output_hash": "cbec80cdc74fc1bfc99e7755dab6fca1d83c141743b89972bfe60fd0dc62e657"
+      "output_hash": "6782799dc17ac8d8389bfedfc7bc58000614c72366ae41344094960cc347d12b",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "cbec80cdc74fc1bfc99e7755dab6fca1d83c141743b89972bfe60fd0dc62e657"
+      }
     },
     {
       "id": "RG-004",
@@ -1227,7 +1277,12 @@
       "id": "AG-002",
       "disposition": "revised",
       "before_hash": "68f71980e6b058ff900af435cded0e7dcab2b4494b1a22a29041e32f7f26c290",
-      "output_hash": "da957f45187a10cdd5b120dbfdd93c0cf98c9973f838a345f08f3b7a719b55a8"
+      "output_hash": "7a5507779106ad44bc4095c0814ab50cf4bf87c60304a4075942a5a786a13a7b",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "da957f45187a10cdd5b120dbfdd93c0cf98c9973f838a345f08f3b7a719b55a8"
+      }
     },
     {
       "id": "LP-046",
@@ -1239,37 +1294,67 @@
       "id": "AG-004",
       "disposition": "revised",
       "before_hash": "818da251fe135374abafade69191e115a277b3a6293219fb2b676d6323fdc5e8",
-      "output_hash": "0fc2489e7b4307881831e9f33cef750609be00413381e9d4f63bd5d84c99df15"
+      "output_hash": "dbcdc20bfb9b9957cb1c22205410827eac4e8b34c00cf6666bd932bb9ceb8684",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "0fc2489e7b4307881831e9f33cef750609be00413381e9d4f63bd5d84c99df15"
+      }
     },
     {
       "id": "AG-019",
       "disposition": "revised",
       "before_hash": "a91942714e66aa5797ba020f2ca9a4db91907213ec2247ec632503c874b32807",
-      "output_hash": "dfe45d679b27f4de9b286c99b5fdd19afce9d5591fa727636c19d1ba9978f449"
+      "output_hash": "90528ed2a579248ba78e52a7fdbcf3194bb92f7ae09d81302545f50fea6f3b39",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "dfe45d679b27f4de9b286c99b5fdd19afce9d5591fa727636c19d1ba9978f449"
+      }
     },
     {
       "id": "AG-018",
       "disposition": "revised",
       "before_hash": "c515242d2a9b0e30bc0439b6384c215d2b4d37b11d0ac380069f0d174505f5da",
-      "output_hash": "1605817b9a87e827909580bad624dabfa6fc4d150b8a4f6d526a15eecefe812d"
+      "output_hash": "cf9b53aa8456102561934d5a9b4a6c4d6dae18b1b7a6b908190756db8232ffa6",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "1605817b9a87e827909580bad624dabfa6fc4d150b8a4f6d526a15eecefe812d"
+      }
     },
     {
       "id": "AG-059",
       "disposition": "new",
       "before_hash": null,
-      "output_hash": "fb32afda872bdabe242c6962ed1babb2a419ad395ab26fa9549a85ea403d9f9e"
+      "output_hash": "5f2d62d990c110593df36d56b30eaca25fe277d6cc6c80c9e56741b70495597d",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "fb32afda872bdabe242c6962ed1babb2a419ad395ab26fa9549a85ea403d9f9e"
+      }
     },
     {
       "id": "AG-060",
       "disposition": "new",
       "before_hash": null,
-      "output_hash": "1c9573832603c40584634b8a0d741aec003414c689ebb729f6cdba863bacf425"
+      "output_hash": "53b33096fc066010729e5aa6fc9566cfc97781672656f4b0de8645af85bc42de",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "1c9573832603c40584634b8a0d741aec003414c689ebb729f6cdba863bacf425"
+      }
     },
     {
       "id": "AG-011",
       "disposition": "revised",
       "before_hash": "2ed5e42db632a1233d4c55aebeed1756e7f19b9bbceea019c7873b29a57141cb",
-      "output_hash": "a1f9520ff452cb8e1f19b954fc9d8dc31061c8529467576dde13292fbbe92464"
+      "output_hash": "35bf3088b6200715702172ba588a22e04ab83a15f8fc9ea9613494cc131d25d8",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "a1f9520ff452cb8e1f19b954fc9d8dc31061c8529467576dde13292fbbe92464"
+      }
     },
     {
       "id": "LP-005",
@@ -1293,7 +1378,12 @@
       "id": "AG-061",
       "disposition": "new",
       "before_hash": null,
-      "output_hash": "2cd73281119c9381a445638368ab1fa30c8e5dc768237042d4eda35ee2698f4c"
+      "output_hash": "528e755c9ed1f017c296c77de769968db893f55923e39690a31e8ebf9fcc92b8",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "2cd73281119c9381a445638368ab1fa30c8e5dc768237042d4eda35ee2698f4c"
+      }
     },
     {
       "id": "AG-014",
@@ -1413,13 +1503,23 @@
       "id": "LP-006",
       "disposition": "supplemented",
       "before_hash": "3cd8ed0bef4a5f3d5ae8bcf189623d105c5c74af67948ef22ea1fe380946483d",
-      "output_hash": "ef29942dbd79acae53e041f7fd045aafba88c04e50712fd595a227e7845f26bd"
+      "output_hash": "baef0562d2b94e67dd20089679ea0eca8fb0eb447bb0dcb0c6977a14745ef33c",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "ef29942dbd79acae53e041f7fd045aafba88c04e50712fd595a227e7845f26bd"
+      }
     },
     {
       "id": "LP-018",
       "disposition": "supplemented",
       "before_hash": "92bdbcfeb7f938d125e8da79ce724c5631cc432c73c242a1fb06d5744c619c8a",
-      "output_hash": "3d4efee715db9024101a4fe8407b5ed1e27eecfd7b26a92387aa30ebacaa9ef8"
+      "output_hash": "50547f64ce7c617beb26741aae49755a4c268673b81fb8024c459c663b7ad410",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "3d4efee715db9024101a4fe8407b5ed1e27eecfd7b26a92387aa30ebacaa9ef8"
+      }
     },
     {
       "id": "FD-002",
@@ -1497,7 +1597,12 @@
       "id": "LC-003",
       "disposition": "new",
       "before_hash": null,
-      "output_hash": "15ec396d239ebaff12925e261eaf9de7faf08e6456b655c2dc8e043531a2fe15"
+      "output_hash": "c361a55b60bd735693edc5d2617f75acd7408657295ab317d2a13d6fedb43cc0",
+      "content_review": {
+        "rev": "core-review-20260929",
+        "date": "2026-09-29",
+        "previous_output_hash": "15ec396d239ebaff12925e261eaf9de7faf08e6456b655c2dc8e043531a2fe15"
+      }
     },
     {
       "id": "LC-004",
