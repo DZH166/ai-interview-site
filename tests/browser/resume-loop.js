@@ -93,10 +93,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     check('会话 label 以「简历·」开头且含组名',
       draft1 && draft1.label.startsWith('简历·') && draft1.label.includes(groupExpect[0].name), draft1 && draft1.label);
     check('会话题数 = 分组有效题号数', draft1 && draft1.count === groupExpect[0].ids.length, `${draft1 && draft1.count} vs ${groupExpect[0].ids.length}`);
-    check('页面进度指示与题数一致', await page.evaluate(n => {
+    /* Stage4 后 run 页门控 = bankReady(题库+标注):CI 慢机上点击落点可能还在
+       「题库加载中」占位,进度条尚未渲染 —— 等它出现再断言,断言意图不变 */
+    check('页面进度指示与题数一致', await page.waitForFunction(n => {
       const t = (document.querySelector('.mock-progress') || {}).textContent || '';
       return t.includes(`/ ${n} 题`);
-    }, groupExpect[0].ids.length));
+    }, groupExpect[0].ids.length, { timeout: 60000 }).then(() => true).catch(() => false));
 
     /* ---- ③ 顶层「必知题定向自测」:去重后的 mustKnow 题号 ---- */
     await open('#/resume');
