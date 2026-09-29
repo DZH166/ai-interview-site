@@ -94,10 +94,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       draft1 && draft1.label.startsWith('简历·') && draft1.label.includes(groupExpect[0].name), draft1 && draft1.label);
     check('会话题数 = 分组有效题号数', draft1 && draft1.count === groupExpect[0].ids.length, `${draft1 && draft1.count} vs ${groupExpect[0].ids.length}`);
     await page.waitForSelector('#m-self');
-    check('页面进度指示与题数一致', await page.evaluate(n => {
+    /* 本题正文异步加载完成后，再等对应轮次的真实进度，保留题数断言。 */
+    check('页面进度指示与题数一致', await page.waitForFunction(n => {
       const t = (document.querySelector('.mock-progress') || {}).textContent || '';
       return t.includes(`/ ${n} 题`);
-    }, groupExpect[0].ids.length));
+    }, groupExpect[0].ids.length, { timeout: 60000 }).then(() => true).catch(() => false));
 
     /* ---- ③ 顶层「必知题定向自测」:去重后的 mustKnow 题号 ---- */
     await open('#/resume');
