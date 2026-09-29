@@ -75,15 +75,16 @@ const App = (() => {
      重建 Data 内存(扩展题库/资料)并全量重建索引;失败抛错由调用方反馈真实结果。
      另外把上下文提供者交给 Search:数据版本变化时索引会按需自动重建,
      这样「某个调用点忘了重建索引」不再是一类可能的 bug。
-     全量题字段异步合并(Track E)后的两次构建:
-       ① 立即构建一次 —— 加载窗口内索引虽只有 index 元数据,但笔记/尝试等
-          动态层必须即刻生效(个人写入后立刻可检索,与拆分前行为一致);
-       ② questionsReady 后再构建一次 —— 补齐题干/答案/追问等全量静态字段,
-          半份索引被完整版覆盖。 */
+     全量题字段异步合并(Track E)后的两次构建(Stage5 消除白建):
+       ① 立即构建一次 —— 但只刷动态层(skipStatic):笔记/尝试等个人写入
+          即刻可检索(与拆分前行为一致);静态层用 index 半份题建了也注定
+          在就绪后被签名翻转丢弃,搜索 UI 又门控在就绪之后,白建零收益;
+       ② bankReady 后再构建一次 —— 补齐题干/答案/追问等全量静态字段,
+          完整静态层只在这里建一次。 */
   function rebuildIndex() {
     Data.init();
-    Search.build(StudyView.currentCtx());
-    Data.questionsReady().then(() => {
+    Search.build(StudyView.currentCtx(), { skipStatic: true });
+    Data.bankReady().then(() => {
       /* 重进 init:让 contentVersion 以「已就绪」状态重算(搜静态层签名必须翻转,
          否则静态层缓存一直是 index-only 的半份题库)。mergedBank 保证重入不丢字段。 */
       Data.init();

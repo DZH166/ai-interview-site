@@ -213,14 +213,18 @@ const Search = (() => {
     return out;
   }
 
-  function build(ctx) {
+  function build(ctx, opts) {
     /* ctx: {contentVersion?, questions, docs, userDocs, records, concepts, drills, projects, drillAttempts} */
     /* 静态层签名:优先内容版本(Data.contentVersionOf:build.py 哈希+题库规模+文档集);
        旧调用方未提供时回退规模签名(仅追加场景仍正确) */
     const sig = typeof ctx.contentVersion === 'string' && ctx.contentVersion
       ? ctx.contentVersion
       : (ctx.questions || []).length + '|' + (ctx.docs || []).length;
-    if (staticCache.sig !== sig) {
+    /* opts.skipStatic(Stage5):题库未就绪阶段的构建只刷动态层(笔记/尝试即刻可检索),
+       静态层跳过 —— 用 index 半份题建的静态层注定在就绪后被签名翻转整体丢弃,
+       是一次纯浪费的全量扫描;搜索 UI 本身就门控在 questionsLoaded 之后,
+       加载窗口内没有任何查询路径消费半份静态层,跳过零损失。 */
+    if (!(opts && opts.skipStatic) && staticCache.sig !== sig) {
       staticCache.units = buildStatic(ctx);
       staticCache.sig = sig;
       staticCache.staticBuilds++;

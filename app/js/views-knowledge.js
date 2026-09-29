@@ -319,12 +319,13 @@ const SearchView = (() => {
         <div id="s-results"></div>
       </div>`;
     const input = $('#s-input');
-    /* 深链进入时索引必须等全量题库合并(Track E):未就绪先给「加载中」空态,
-       questionsReady 后再真正查询;用户手动点搜索时索引通常已建好,同步路径不变。 */
+    /* 深链进入时索引必须等「题库+重点标注」都就绪(Track E + Stage5):
+       全量索引在 bankReady 后才建成(skipStatic 消白建),若只等 questionsReady,
+       查询会落进「就绪但索引未建全」的窗口,返回空结果且不再重查。 */
     const goSearch = (val, keep) => {
-      if (Data.questionsLoaded()) { doSearch(val, keep); return; }
+      if (Data.bankLoaded()) { doSearch(val, keep); return; }
       $('#s-results').innerHTML = '<div class="empty">题库加载中…</div>';
-      Data.questionsReady().then(() => {
+      Data.bankReady().then(() => {
         /* 等待期间用户可能已离开搜索页:DOM 换人了就别往回写 */
         if (!document.getElementById('s-results')) return;
         doSearch(val, keep);
