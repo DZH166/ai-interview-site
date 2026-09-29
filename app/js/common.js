@@ -362,6 +362,25 @@ const QRender = (() => {
      对「读这道题」本身都是旁支,全部铺在正文前面会把题面与答案挤出首屏 ——
      移动端实测正文起点在 531px,占掉 844 视口的 84%。
      收起来不等于藏起来:summary 里直接报出有什么、各多少,一眼就能判断值不值得展开。 */
+  /* 同标签相似题(Stage7):relLinks 的手工字段覆盖率有限(prerequisites/related
+     靠人工维护),而 tags 数据现成(index 同步可用,无需等分片)。规则:
+     同专题 + 标签交集非空,按交集大小降序取 3 道(同分按题号稳定排序),
+     排除自己与手工关联已列出的题 —— 补一行「同标签题」,把学习从「单题」连成「簇」。 */
+  function similarByTags(q) {
+    const myTags = new Set((q.tags || []).map(t => String(t).toLowerCase()));
+    if (!myTags.size) return [];
+    const exclude = new Set([q.id, ...(q.prerequisites || []), ...(q.related || [])]);
+    const scored = [];
+    Data.allQuestions().forEach(c => {
+      if (!c || exclude.has(c.id) || c.topic !== q.topic) return;
+      let hit = 0;
+      for (const t of (c.tags || [])) if (myTags.has(String(t).toLowerCase())) hit++;
+      if (hit) scored.push({ id: c.id, hit });
+    });
+    scored.sort((a, b) => b.hit - a.hit || (a.id < b.id ? -1 : 1));
+    return scored.slice(0, 3).map(s => s.id);
+  }
+
   function relLinks(q) {
     const pre = (q.prerequisites || []).filter(id => Data.question(id));
     const rel = (q.related || []).filter(id => Data.question(id));
@@ -369,10 +388,12 @@ const QRender = (() => {
     const tdoc = Data.topicMainDoc(q.topic);
     const pc = prereqConcepts(q);
     const myConcepts = conceptsOf(q.id);
+    const similar = similarByTags(q);
     const rows = [
       pc.length ? `<div class="rel-row"><span class="rel-label">先懂这些概念:</span>${pc.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : '',
       pre.length ? `<div class="rel-row"><span class="rel-label">前置题目:</span>${pre.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
       rel.length ? `<div class="rel-row"><span class="rel-label">相关题目:</span>${rel.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
+      similar.length ? `<div class="rel-row"><span class="rel-label">同标签题:</span>${similar.map(id => `<a class="rel-link" href="#/study/${id}">${id}</a>`).join(' ')}</div>` : '',
       docs.length ? `<div class="rel-row"><span class="rel-label">原理章节:</span>${docs.map(id => `<a class="rel-link" href="#/docs/${id}">${esc(Data.doc(id) ? Data.doc(id).title : id)}</a>`).join(' ')}</div>` : '',
       tdoc ? `<div class="rel-row"><span class="rel-label">本专题章节:</span><a class="rel-link" href="#/docs/${tdoc.id}">${esc(Data.topicName(q.topic))}</a></div>` : '',
       myConcepts.length ? `<div class="rel-row"><span class="rel-label">本题涉及概念:</span>${myConcepts.map(c => `<a class="rel-link" href="#/study/${(c.questions || [])[0]}" title="${esc(c.definition)}">${esc(c.name)}</a>`).join(' · ')}</div>` : ''
@@ -383,6 +404,7 @@ const QRender = (() => {
     if (pc.length) bits.push(pc.length + ' 个前置概念');
     if (pre.length) bits.push(pre.length + ' 道前置题');
     if (rel.length) bits.push(rel.length + ' 道相关题');
+    if (similar.length) bits.push(similar.length + ' 道同标签题');
     if (nDocs) bits.push(nDocs + ' 个原理章节');
     if (myConcepts.length) bits.push(myConcepts.length + ' 个涉及概念');
     return `
