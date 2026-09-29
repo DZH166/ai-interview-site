@@ -416,6 +416,7 @@ const ReviewView = (() => {
       const items = rd.items || [];
       const revealed = items.filter(it => it.revealed).length;
       const label = rd.config && rd.config.label ? esc(rd.config.label) : '';
+      const examMode = !!(rd.config && rd.config.examMode);
       const marked = items.filter(it => it.mark === 'weak').length;
       const fuCount = items.reduce((n, it) => n + (it.followups || []).filter(fu => (fu.self || '').trim()).length, 0);
       const focusRound = dq && dq.r && (rd.id === dq.r || roundIdOf(rd) === dq.r);
@@ -425,6 +426,7 @@ const ReviewView = (() => {
             <b>${fmtTime(rd.ts)}</b> · ${items.length} 题 · 对照参考 ${revealed} 题${fuCount ? ` · 追问回答 ${fuCount} 条` : ''}
             ${marked ? `<span class="badge st-weak">还不熟 ${marked}</span>` : ''}
             ${label ? `<span class="badge b-tag">${label}</span>` : ''}
+            ${examMode ? '<span class="badge b-topic">考试模式</span>' : ''}
           </summary>
           <div class="round-actions">
             <button class="btn btn-small" data-card-round="${ri}">导出这一轮的表达卡</button>
@@ -438,7 +440,8 @@ const ReviewView = (() => {
                   <div class="round-head">
                     <a class="qid" href="#/study/${esc(it.qid)}">${i + 1}. ${esc(it.qid)}</a>
                     ${st ? QRender.badge(st.label, 'st-' + it.mark) : '<span class="muted">未复盘</span>'}
-                    <span class="muted" style="font-size:12px">${it.revealed ? '已对照参考' : '未对照参考'}</span>
+                    ${it.timeout ? '<span class="badge vf-todo" title="单题限时到,自动进入下一题">⏰ 超时</span>' : ''}
+                    <span class="muted" style="font-size:12px">${it.revealed ? '已对照参考' : (it.quizJudged ? '选择题已判定(考试模式未对照)' : '未对照参考')}</span>
                   </div>
                   <div class="round-title">${esc(it.title || (q ? q.title : it.qid))}</div>
                   ${it.self ? `<div class="round-self"><b>我的回答:</b>${esc(it.self)}</div>` : '<div class="round-self muted">(未作答)</div>'}

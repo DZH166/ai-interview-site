@@ -956,3 +956,19 @@ button.toc-l { display: block; width: 100%; text-align: left; background: none;
 }
 
 }
+
+/* ---- 模拟面试:单题倒计时 + 考试模式 + 口述按钮(Stage2) ---- */
+.mock-countdown {
+  font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px;
+  color: var(--muted); flex-shrink: 0;
+}
+.mock-countdown.mock-cd-warn { color: var(--danger); }
+.mic-btn.recording {
+  background: #fee2e2; border-color: #dc2626; color: #b91c1c;
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+[data-theme="dark"] .mic-btn.recording { background: #3f1d1d; }
+@keyframes mic-pulse { 50% { opacity: .55; } }
+.exam-ref { margin: 8px 0 0; }
+.exam-ref summary { cursor: pointer; color: var(--primary); font-size: 13px; }
+.exam-ref .fu-a { margin-top: 6px; }
