@@ -83,7 +83,7 @@ const BrowseView = (() => {
       </div>
       <div class="browse-pane">
         <div class="q-list" id="q-list"></div>
-        <div class="q-detail" id="q-detail"></div>
+        <div class="q-detail" id="q-detail" tabindex="-1"></div>
       </div>`;
 
     const kwInput = $('#f-kw');
@@ -215,10 +215,14 @@ const BrowseView = (() => {
     /* 详情面板渲染标准区块(答案/追问/理解检查)需要全量题字段(Track E):
        全量未合并时先上占位,就绪后重进本函数;此时列表/选中态已同步,不重做。 */
     if ((q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) || !Data.bankLoaded()) {
-      $('#q-detail', root).innerHTML = '<div class="empty">题库加载中…</div>';
+      $('#q-detail', root).innerHTML = '<div class="empty" role="status">题库加载中…</div>';
       Data.bankReady().then(() => {
         if (!root.isConnected || DetailQid !== qid) return;   /* 已换题/换页:丢弃 */
         select(root, filters(), qid);
+        /* 就绪重渲后焦点落到详情面板:占位(role=status)播报「加载中」,完成后
+           读屏需要被带到新内容,否则用户停在已消失的占位上无所适从 */
+        const d = $('#q-detail', root);
+        if (d) d.focus({ preventScroll: true });
       });
       return;
     }
@@ -484,10 +488,11 @@ const StudyView = (() => {
        判定「还没全量」:无 answer 字段且加载未完成(导入题/Node 桩天然带全量,立即渲染)。
        等待期给轻量占位;等不到(分片缺失)→ 按空态降级,绝不炸页。 */
     if ((q && q.answer === undefined && !q.followups && !q.sources && !Data.questionsLoaded()) || (q && !Data.bankLoaded())) {
-      root.innerHTML = '<div class="empty">题库加载中…</div>';
+      root.innerHTML = '<div class="empty" role="status">题库加载中…</div>';
       Data.bankReady().then(() => {
         if (!root.isConnected) return;                  /* 等待期间已离开学习页 */
         render(root, qid, anchor);                      /* 就绪后按同一 qid 重进;缺失走下方空态 */
+        $('#view') && $('#view').focus({ preventScroll: true });
       });
       return;
     }
@@ -1090,10 +1095,11 @@ const MockView = (() => {
        把整轮烧完(实测:带草稿刷新直达 #/mock/run,两题被静默跳过直接出完成页) */
     const rawQ = Data.question(rawId);
     if ((rawQ && rawQ.answer === undefined && !rawQ.followups && !rawQ.sources && !Data.questionsLoaded()) || !Data.bankLoaded()) {
-      root.innerHTML = '<div class="empty">题库加载中…</div>';
+      root.innerHTML = '<div class="empty" role="status">题库加载中…</div>';
       Data.bankReady().then(() => {
         if (!root.isConnected || !state || state.ended) return;   /* 已离开/已结束:丢弃 */
         renderRun(root);
+        $('#view') && $('#view').focus({ preventScroll: true });
       });
       return;
     }

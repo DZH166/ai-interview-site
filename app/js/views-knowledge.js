@@ -324,11 +324,13 @@ const SearchView = (() => {
        查询会落进「就绪但索引未建全」的窗口,返回空结果且不再重查。 */
     const goSearch = (val, keep) => {
       if (Data.bankLoaded()) { doSearch(val, keep); return; }
-      $('#s-results').innerHTML = '<div class="empty">题库加载中…</div>';
+      $('#s-results').innerHTML = '<div class="empty" role="status">题库加载中…</div>';
       Data.bankReady().then(() => {
         /* 等待期间用户可能已离开搜索页:DOM 换人了就别往回写 */
         if (!document.getElementById('s-results')) return;
         doSearch(val, keep);
+        const r = document.getElementById('s-results');
+        if (r) { r.setAttribute('tabindex', '-1'); r.focus({ preventScroll: true }); }
       });
     };
     $('#s-go').addEventListener('click', () => doSearch(input.value));
